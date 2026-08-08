@@ -39,6 +39,7 @@ recognition) — never at redefining them.
 - Telegram: client-side manual send/auto-send works; server-side heartbeat workflow (`.github/workflows/telegram-heartbeat.yml`) is ready but needs `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` repo secrets to run.
 - Deployment: GitHub Pages, deployed both by `.github/workflows/deploy-pages.yml` (on push to `main`) and by `market-data.yml` (on its schedule) — both share the `pages` concurrency group so they don't race.
 - Git workflow on this project: open a PR, then merge it directly — don't leave PRs sitting open waiting for manual approval, per explicit instruction from Daniel.
+- Communication: whenever a piece of work is finished (a module, a fix, a merged PR), give Daniel a clear completion signal plus a short summary of what changed and what's next — written so he can forward it as-is. Don't just merge silently and move on.
 
 ## Roadmap — do not build ahead of need
 

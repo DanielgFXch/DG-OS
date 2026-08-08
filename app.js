@@ -54,6 +54,15 @@ function computeDecision(){
   return {checks,metCount,total,tier};
 }
 
+const CONF_RING_CIRCUMFERENCE=213.63;
+const TIER_COLOR={wait:'#f2b544',watch:'#2fd9f2',ready:'#ff4d6d'};
+function setConfidence(pct,tier){
+  $('confidence').textContent=`${pct}%`;
+  const ring=$('confRing');
+  ring.style.stroke=TIER_COLOR[tier]||TIER_COLOR.wait;
+  ring.style.strokeDashoffset=CONF_RING_CIRCUMFERENCE*(1-pct/100);
+}
+
 function render(){
   $('asiaHigh').textContent=state.asia?'4302.00':'—';
   $('asiaLow').textContent=state.asia?'4290.00':'—';
@@ -72,7 +81,7 @@ function render(){
   if(tier==='ready'){
     $('action').className='action ready';
     $('action').textContent='🔴 SELL READY';
-    $('confidence').textContent='94%';
+    setConfidence(94,'ready');
     $('tradeType').textContent='Countertrend Scalp';
     $('opportunity').textContent='Countertrend Sell';
     $('intradayTarget').textContent='Asia Low';
@@ -80,7 +89,7 @@ function render(){
   } else if(tier==='watch'){
     $('action').className='action watch';
     $('action').textContent='🟠 SELL WATCH';
-    $('confidence').textContent='76%';
+    setConfidence(76,'watch');
     $('tradeType').textContent='Bearishe Confirmation fehlt';
     $('opportunity').textContent='Sell beobachten';
     $('intradayTarget').textContent='Asia Low';
@@ -88,7 +97,7 @@ function render(){
   } else {
     $('action').className='action wait';
     $('action').textContent='🟡 WAIT';
-    $('confidence').textContent=state.asia?'58%':'54%';
+    setConfidence(state.asia?58:54,'wait');
     $('tradeType').textContent='Noch keine Trade-Freigabe';
     $('opportunity').textContent='Keine';
     $('intradayTarget').textContent='—';

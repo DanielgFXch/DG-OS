@@ -21,12 +21,12 @@
         <div class="sub">XAUUSD Market Assistant</div>
       </div>
     </div>
-    <div id="connectionBadge" class="badge">OFFLINE DEMO</div>
+    <div id="connectionBadge" class="badge"><span class="live-dot"></span>OFFLINE DEMO</div>
   </header>
 
   <main class="app">
     <section class="greeting card">
-      <div class="eyebrow" id="sessionName">—</div>
+      <div class="eyebrow"><span class="live-dot"></span><span id="sessionName">—</span></div>
       <div id="greetingText" class="greetingText">Guten Morgen, Daniel Gomes</div>
       <div class="muted" id="sessionSub">—</div>
     </section>
@@ -40,7 +40,14 @@
       </div>
       <div class="confidence">
         <div class="eyebrow">DG CONFIDENCE</div>
-        <div id="confidence">54%</div>
+        <div class="conf-ring-wrap">
+          <svg class="conf-ring" viewBox="0 0 84 84" width="84" height="84">
+            <circle class="conf-ring-scan" cx="42" cy="42" r="40"></circle>
+            <circle class="conf-ring-bg" cx="42" cy="42" r="34"></circle>
+            <circle id="confRing" class="conf-ring-fg" cx="42" cy="42" r="34"></circle>
+          </svg>
+          <div id="confidence" class="conf-value">54%</div>
+        </div>
       </div>
     </section>
 

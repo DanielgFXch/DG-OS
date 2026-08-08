@@ -67,8 +67,10 @@ body{
 .section-title::before{content:"//";color:var(--cyan-dim)}
 .action{font-size:31px;font-weight:900;letter-spacing:-.02em;margin-top:6px;font-family:var(--hud-font)}
 .action.wait{color:var(--gold);text-shadow:0 0 18px rgba(242,181,68,.35)}
-.action.sell{color:var(--red);text-shadow:0 0 18px rgba(255,77,109,.4)}
+.action.watch{color:var(--cyan);text-shadow:0 0 18px rgba(47,217,242,.4)}
+.action.sell,.action.ready{color:var(--red);text-shadow:0 0 18px rgba(255,77,109,.4)}
 .action.buy{color:var(--green);text-shadow:0 0 18px rgba(56,226,176,.4)}
+.decision-reason{font-family:var(--hud-font);font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
 .muted{font-size:12px;color:var(--muted);margin-top:4px}
 .confidence{text-align:right}
 .confidence #confidence{

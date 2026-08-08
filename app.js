@@ -35,6 +35,25 @@ function renderGreeting(){
 function events(items){
   $('events').innerHTML=items.map(x=>`<div class="event"><time>${x.t}</time><div><strong>${x.title}</strong><span>${x.desc}</span></div></div>`).join('');
 }
+
+// DG OS entscheidet nie durch Raten: jedes Kriterium ist explizit, das Ergebnis
+// ist immer WAIT/WATCH/READY mit Begründung. Sobald echte Marktdaten und Daniels
+// Regelwerk (rules/strategy.md) angebunden sind, ersetzen echte Kriterien diese
+// Platzhalter-Checks 1:1, ohne die Tier-Logik selbst zu ändern.
+function computeDecision(){
+  const checks=[
+    {label:'Preis im Premium',met:true},
+    {label:'Bearisher POI (H1 OB + M5 FVG)',met:true},
+    {label:'Asia High gesweept',met:state.sweep},
+    {label:'Bearish Engulfing (M5)',met:state.engulf},
+    {label:'Displacement',met:state.engulf}
+  ];
+  const metCount=checks.filter(c=>c.met).length;
+  const total=checks.length;
+  const tier=metCount===total?'ready':(state.sweep?'watch':'wait');
+  return {checks,metCount,total,tier};
+}
+
 function render(){
   $('asiaHigh').textContent=state.asia?'4302.00':'—';
   $('asiaLow').textContent=state.asia?'4290.00':'—';
@@ -47,20 +66,25 @@ function render(){
   $('cDisp').className=state.engulf?'sell':'';
   $('dispTxt').textContent=state.engulf?'Stark':'Fehlt';
 
-  if(state.sweep && state.engulf){
-    $('action').className='action sell';
-    $('action').textContent='🔴 SELL MÖGLICH';
+  const {checks,metCount,total,tier}=computeDecision();
+  const unmet=checks.filter(c=>!c.met).map(c=>c.label);
+
+  if(tier==='ready'){
+    $('action').className='action ready';
+    $('action').textContent='🔴 SELL READY';
     $('confidence').textContent='94%';
     $('tradeType').textContent='Countertrend Scalp';
     $('opportunity').textContent='Countertrend Sell';
     $('intradayTarget').textContent='Asia Low';
-  } else if(state.sweep){
-    $('action').className='action wait';
-    $('action').textContent='🟡 WAIT';
+    $('decisionReason').textContent=`${metCount}/${total} Kriterien erfüllt · Deshalb: READY`;
+  } else if(tier==='watch'){
+    $('action').className='action watch';
+    $('action').textContent='🟠 SELL WATCH';
     $('confidence').textContent='76%';
     $('tradeType').textContent='Bearishe Confirmation fehlt';
     $('opportunity').textContent='Sell beobachten';
     $('intradayTarget').textContent='Asia Low';
+    $('decisionReason').textContent=`${metCount}/${total} Kriterien erfüllt · Fehlt: ${unmet.join(', ')} · Deshalb: WAIT`;
   } else {
     $('action').className='action wait';
     $('action').textContent='🟡 WAIT';
@@ -68,6 +92,7 @@ function render(){
     $('tradeType').textContent='Noch keine Trade-Freigabe';
     $('opportunity').textContent='Keine';
     $('intradayTarget').textContent='—';
+    $('decisionReason').textContent=`${metCount}/${total} Kriterien erfüllt · Fehlt: ${unmet.join(', ')} · Deshalb: WAIT`;
   }
 
   const ev=[];
@@ -75,7 +100,7 @@ function render(){
   if(state.sweep) ev.push({t:'08:47',title:'💧 Asia High gesweept',desc:'Signifikanter Wick + Gegenreaktion · POI aktiv'});
   if(state.engulf) {
     ev.push({t:'08:49',title:'⚡ Bearish Engulfing',desc:'M5 Confirmation + Displacement'});
-    ev.push({t:'08:49',title:'🔴 SELL MÖGLICH',desc:'Countertrend Scalp · Ziel Asia Low · HTF bleibt bullish'});
+    ev.push({t:'08:49',title:'🔴 SELL READY',desc:'Countertrend Scalp · Ziel Asia Low · HTF bleibt bullish'});
   }
   if(!ev.length) ev.push({t:'—',title:'Noch kein Event',desc:'DG OS wartet auf Marktdaten.'});
   events(ev);
@@ -92,9 +117,12 @@ document.querySelectorAll('[data-step]').forEach(btn=>{
   })
 });
 function briefingText(){
+  const {tier}=computeDecision();
+  const headline=tier==='ready'?'🔴 SELL READY':tier==='watch'?'🟠 SELL WATCH':'🟡 WAIT';
   return `🧠 DG OS
 
-${state.sweep&&state.engulf?'🔴 SELL MÖGLICH':'🟡 WAIT'}
+${headline}
+${$('decisionReason').textContent}
 Confidence: ${$('confidence').textContent}
 
 🌍 Market Plan

@@ -8,6 +8,18 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.14.1] — Dauerhafte Projektregel: DG-Methodik statt ICT/Standard-SMC
+
+### Sonstiges
+- Neue dauerhafte Projektregel dokumentiert (`CLAUDE.md`, `docs/MARKET_BRAIN.md`): DG OS digitalisiert Daniel Gomes' eigene Handelsweise — nicht ICT, nicht generische Smart-Money-Concepts, kein Standard-Indikator. Künftige Module heißen und werden definiert als DG Order Block, DG Valid FVG, DG Liquidity, DG HTF Bias, DG Confirmation, DG Decision Engine
+- Alle bisherigen Module (Liquidity Engine, Fair-Value-Gap-Detector, Order-Block-Detector, HTF Bias) sind ab sofort explizit als technische Basis gekennzeichnet — generische/strukturelle Umsetzung, noch nicht Daniels DG-spezifisches Regelwerk. Anpassung erfolgt schrittweise, sobald die exakten DG-Regeln definiert sind
+- Regel verankert: niemals generische Tradinglogik erfinden oder annähern, solange die exakte DG-Regel dafür noch nicht in `rules/strategy.md` steht — stattdessen Architektur vorbereiten und warten
+
+### Geänderte Dateien
+`app.js`, `CLAUDE.md`, `docs/MARKET_BRAIN.md`, `CHANGELOG.md`
+
+---
+
 ## [0.14.0] — Market Brain Modul 7: POI Engine Stage 2/4 — Order Block Detector
 
 ### Neu

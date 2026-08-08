@@ -30,10 +30,40 @@ input. The system must never invent or silently change trading rules; only Danie
 edits that file. Code may get smarter at *applying* the rules (statistics, pattern
 recognition) — never at redefining them.
 
+## DG methodology — not ICT, not generic Smart Money
+
+DG OS digitizes **Daniel Gomes' own way of reading the market** — it is not an ICT
+implementation, not a generic Smart Money Concepts indicator, not a TradingView-style
+tool. Every concept is named, and will eventually be *defined*, as Daniel's own
+version of it, not the textbook one:
+
+- **DG Order Block**, not "an Order Block"
+- **DG Valid FVG**, not "a Fair Value Gap"
+- **DG Liquidity**, not "generic liquidity"
+- **DG HTF Bias**, not "an HTF Bias"
+- **DG Confirmation**, not "a Confirmation"
+- **DG Decision Engine**, not "an Entry Engine"
+
+The modules already built (Liquidity Engine, Fair Value Gap detector, Order Block
+detector, HTF Bias, ...) are the **technical foundation only** — real, working
+detection/computation infrastructure, deliberately built so it can be adapted step
+by step once Daniel's exact DG rules exist for each concept. They are not the
+finished DG version of anything, and should not be presented or discussed as such.
+
+Never invent or approximate generic trading logic (ICT-style thresholds, textbook
+SMC heuristics, standard-indicator formulas) as a stand-in for a DG rule that hasn't
+been defined yet. If the exact DG rule for something isn't in
+[`rules/strategy.md`](rules/strategy.md) yet, prepare the architecture and wait for
+Daniel's definition — never guess at what he'd want. This generalizes the "Strategy
+rules" principle above (only Daniel edits trading rules) to every module in the
+system, not just the Decision Engine. Quality over speed, always — this rule is
+permanent and applies to every future build.
+
 ## Current status
 
 - Frontend: static PWA (`index.html`, `app.js`, `styles.css`), Jarvis-style dark HUD theme, self-hosted fonts (Chakra Petch for display/chrome, JetBrains Mono for data — see `fonts/`).
 - Decision engine: WAIT/WATCH/READY with explainable checklist, still driven by the simulated Alpha buttons — the checks in `computeDecision()` are placeholders until `rules/strategy.md` is filled in. Do not wire real market data into the decision checks until then.
+- Market Brain modules (Liquidity Engine, Fair Value Gap detector, Order Block detector, HTF Bias, Premium/Discount): real, working technical infrastructure on real data — but generic/structural definitions, not yet Daniel's DG-specific rules. Per the "DG methodology" section above, these are the foundation to be adapted into DG Liquidity / DG Valid FVG / DG Order Block / DG HTF Bias once he defines the exact rules — not a finished DG version of any of these concepts yet.
 - Live market data: XAUUSD price/Daily Open/High/Low is real, via `.github/workflows/market-data.yml` (TwelveData free tier, cron every 15 min, deploys `data/market.json` straight to Pages without git commits). Needs a `TWELVEDATA_API_KEY` repo secret to run — see README. Frontend (`loadMarketData()` in `app.js`) only shows "LIVE" and real numbers when that file is fresh (<45 min old); otherwise it honestly falls back to "OFFLINE DEMO", never fabricated numbers. `data/` is gitignored — it's a generated artifact, not a source file.
 - True real-time price: on top of the 15-min baseline, the browser can open a direct TwelveData WebSocket stream (`openTdSocket()` in `app.js`) once Daniel enters his API key client-side in the "XAUUSD Live" card. This is a deliberate, explicitly-approved trade-off (his call, asked and confirmed) — the key is then visible in frontend code, in exchange for real sub-minute updates instead of the 5-minute ceiling GitHub Actions cron allows. Key lives only in `localStorage`, never committed. Has reconnect-with-backoff and falls back to the 15-min JSON baseline if the stream can't stay connected.
 - Telegram: client-side manual send/auto-send works; server-side heartbeat workflow (`.github/workflows/telegram-heartbeat.yml`) is ready but needs `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` repo secrets to run.

@@ -96,6 +96,13 @@
             <div class="row"><span>Daily Low</span><strong id="liveLow">—</strong></div>
             <div class="row"><span>Aktualisiert</span><strong id="liveUpdated">—</strong></div>
           </div>
+          <div class="field-settings">
+            <input id="tdKey" type="password" placeholder="TwelveData API Key (für Live-Stream)" autocomplete="off" />
+            <div class="buttons">
+              <button id="tdConnect" class="secondary">Live-Stream verbinden</button>
+            </div>
+            <div class="muted" id="tdStatus">Kein Live-Stream verbunden · Preis kommt alle 15 Min. aus dem Marktdaten-Workflow.</div>
+          </div>
           <p class="hint" id="liveHint">Noch keine Live-Daten verbunden. DG OS zeigt hier XAUUSD-Kurse, sobald der Marktdaten-Workflow läuft.</p>
         </section>
 
@@ -161,7 +168,7 @@
             <div class="row"><span>Bot</span><strong>DG OS Alpha</strong></div>
             <div class="row"><span>Status</span><strong id="telegramStatus">Nicht verbunden</strong></div>
           </div>
-          <div class="tg-settings">
+          <div class="field-settings">
             <input id="tgToken" type="password" placeholder="Bot Token (von @BotFather)" autocomplete="off" />
             <input id="tgChatId" type="text" placeholder="Chat-ID" autocomplete="off" />
             <label class="tg-auto"><input id="tgAutoSend" type="checkbox" /> Auto-Senden bei SELL-Signal</label>

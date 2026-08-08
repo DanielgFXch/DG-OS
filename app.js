@@ -1,7 +1,7 @@
 
 // Semantic Versioning (siehe CHANGELOG.md für die vollständige Historie).
 // Bei jedem abgeschlossenen Build hier + in CHANGELOG.md aktualisieren.
-const DG_OS_VERSION='0.13.0';
+const DG_OS_VERSION='0.14.0';
 
 const state={asia:false,sweep:false,engulf:false};
 const $=id=>document.getElementById(id);
@@ -267,7 +267,7 @@ function renderLiquidityEngine(levels){
 // createPOI() is still the single place that assembles a POI object, so
 // every field is guaranteed present (or explicitly null) regardless of
 // which detector — or the enrichment step — produced it.
-function createPOI({type,direction,priceHigh,priceLow,timeframe,createdAt,status,strength,confidence,reason,sourceCandle,relatedLiquidity,relatedSession,relatedHTFBias,premiumDiscountZone}){
+function createPOI({type,direction,priceHigh,priceLow,timeframe,createdAt,status,strength,confidence,reason,sourceCandle,impulseSize,displacement,structureReference,mitigationDetail,relatedLiquidity,relatedSession,relatedHTFBias,premiumDiscountZone}){
   return{
     id:`${type}-${timeframe}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
     type,                                            // one of POI_TYPE_DEFS ids
@@ -281,15 +281,35 @@ function createPOI({type,direction,priceHigh,priceLow,timeframe,createdAt,status
     confidence:typeof confidence==='number'?confidence:null,  // 0-100, intrinsic to the detector's own pattern
     reason:reason||null,                                        // why this POI was created
     sourceCandle:sourceCandle||null,                             // Entstehungskerze — the raw OHLC candle that formed it
-    relatedLiquidity:relatedLiquidity||[],                        // ids into MarketBrain.liquidity, filled by enrichment
-    relatedSession:relatedSession||null,                           // filled by enrichment
-    relatedHTFBias:relatedHTFBias||null,                            // filled by enrichment
-    premiumDiscountZone:premiumDiscountZone||null                    // filled by enrichment
+    impulseSize:typeof impulseSize==='number'?impulseSize:null,   // Impulsgröße — price distance the move traveled away from the zone
+    displacement:displacement||null,                                // the displacement candle + its range/ratio evidence, where applicable
+    structureReference:structureReference||null,                    // reserved for a future BOS/CHOCH Structure Engine
+    mitigationDetail:mitigationDetail||null,                         // reserved for a future nuanced mitigation flag (body-close vs. wick, % filled, ...)
+    relatedLiquidity:relatedLiquidity||[],                            // ids into MarketBrain.liquidity, filled by enrichment
+    relatedSession:relatedSession||null,                               // filled by enrichment
+    relatedHTFBias:relatedHTFBias||null,                                // filled by enrichment
+    premiumDiscountZone:premiumDiscountZone||null                        // filled by enrichment
   };
 }
 
 function candleTimeToIso(datetime){
   return datetime?new Date(datetime.replace(' ','T')+'Z').toISOString():null;
+}
+
+// Small candle-math utilities shared by any detector that needs them. These
+// are plain functions over a candle array — not a module, not state, not a
+// dependency on MarketBrain — so sharing them between detectors doesn't
+// violate the "no detector may know about another module" rule. They stay
+// in the POI Engine's own detection layer.
+const POI_ATR_WINDOW=14; // how many preceding candles define "a normal range here"
+
+function localAverageRange(candles,index,window){
+  const slice=candles.slice(Math.max(0,index-window),index+1);
+  return slice.reduce((sum,c)=>sum+(c.high-c.low),0)/slice.length;
+}
+
+function isZoneMitigatedAfter(candles,fromIndex,priceLow,priceHigh){
+  return candles.slice(fromIndex).some(c=>c.low<=priceHigh&&c.high>=priceLow);
 }
 
 // Fair Value Gap detector — the first real Stage 2 detector.
@@ -301,15 +321,13 @@ function candleTimeToIso(datetime){
 // is stored as the POI's Entstehungskerze.
 //
 // Confidence is intrinsic only — gap size relative to the average candle
-// range of the preceding FVG_ATR_WINDOW candles (a simple local ATR). A gap
+// range of the preceding POI_ATR_WINDOW candles (a simple local ATR). A gap
 // as wide as the recent average range scores ~100; a sliver of a gap scores
 // low. This says nothing about liquidity/session/bias confluence yet — that
 // kind of cross-module weighting is explicitly Stage 3's job.
 //
 // Status is decided purely from the same candle array: `mitigated` once any
 // later candle's range trades back into the gap, `fresh` otherwise.
-const FVG_ATR_WINDOW=14;
-
 function detectFairValueGaps(candles){
   if(!Array.isArray(candles)||candles.length<3) return[];
   const zones=[];
@@ -321,11 +339,9 @@ function detectFairValueGaps(candles){
     else if(c0.low>c2.high){ direction='bearish'; priceLow=c2.high; priceHigh=c0.low; }
     if(!direction) continue;
 
-    const windowCandles=candles.slice(Math.max(0,i-FVG_ATR_WINDOW),i+1);
-    const avgRange=windowCandles.reduce((sum,c)=>sum+(c.high-c.low),0)/windowCandles.length;
+    const avgRange=localAverageRange(candles,i,POI_ATR_WINDOW);
     const confidence=avgRange>0?Math.max(0,Math.min(100,Math.round(((priceHigh-priceLow)/avgRange)*100))):0;
-
-    const status=candles.slice(i+1).some(c=>c.low<=priceHigh&&c.high>=priceLow)?'mitigated':'fresh';
+    const status=isZoneMitigatedAfter(candles,i+1,priceLow,priceHigh)?'mitigated':'fresh';
 
     const reason=direction==='bullish'
       ? `Bullische Preislücke: Low der Kerze ${c2.datetime} UTC liegt über dem High der Kerze ${c0.datetime} UTC`
@@ -340,15 +356,94 @@ function detectFairValueGaps(candles){
   return zones;
 }
 
-// Seven detector stubs still, one per not-yet-built POI type. Every one of
+// Order Block detector — Stage 2's second detector, and deliberately the
+// *architecture* for the future "Daniel Order Block", not a fully tuned SMC
+// implementation. It only identifies the zone structurally and fills every
+// field a later stage will need; it makes no final trading judgement.
+// `structureReference` (BOS/CHOCH) and `mitigationDetail` (a more nuanced
+// mitigation flag than plain fresh/mitigated) stay explicitly null here —
+// reserved for modules that don't exist yet, never faked.
+//
+// Definition: for chronological candles obCandle = c[i-1], displacementCandle
+// = c[i] — obCandle is a bullish Order Block if it is itself a down-close
+// candle immediately followed by a genuine bullish displacement candle
+// (range >= OB_DISPLACEMENT_RATIO x the local average, closing in the top
+// third of its own range). Bearish is the mirror case. obCandle's own
+// high/low becomes the zone — the same "last opposite candle before the
+// move" definition every SMC trader starts from, kept intentionally simple
+// at this stage: no swing-point or BOS confirmation yet, that belongs to
+// Stage 3+ once a real Structure Engine exists.
+const OB_DISPLACEMENT_RATIO=1.5;   // displacement candle's range must be >= this x the local average
+const OB_CLOSE_STRENGTH_MIN=0.66;  // displacement candle must close in the outer third of its own range
+
+function candleDirection(candle){
+  if(candle.close>candle.open) return'bullish';
+  if(candle.close<candle.open) return'bearish';
+  return null;
+}
+
+function closeStrength(candle,direction){
+  const range=candle.high-candle.low;
+  if(range<=0) return 0;
+  return direction==='bullish'
+    ? (candle.close-candle.low)/range
+    : (candle.high-candle.close)/range;
+}
+
+function detectOrderBlocks(candles){
+  if(!Array.isArray(candles)||candles.length<2) return[];
+  const zones=[];
+
+  for(let i=1;i<candles.length;i++){
+    const displacementCandle=candles[i];
+    const obCandle=candles[i-1];
+
+    const avgRange=localAverageRange(candles,i,POI_ATR_WINDOW);
+    if(avgRange<=0) continue;
+    const range=displacementCandle.high-displacementCandle.low;
+    const ratio=range/avgRange;
+    if(ratio<OB_DISPLACEMENT_RATIO) continue;
+
+    const dispDirection=candleDirection(displacementCandle);
+    if(!dispDirection) continue;
+    const strength=closeStrength(displacementCandle,dispDirection);
+    if(strength<OB_CLOSE_STRENGTH_MIN) continue;
+
+    const obDirection=candleDirection(obCandle);
+    let direction=null;
+    if(dispDirection==='bullish'&&obDirection==='bearish') direction='bullish';
+    else if(dispDirection==='bearish'&&obDirection==='bullish') direction='bearish';
+    if(!direction) continue;
+
+    const priceLow=obCandle.low,priceHigh=obCandle.high;
+    const impulseSize=direction==='bullish'
+      ? displacementCandle.high-priceLow
+      : priceHigh-displacementCandle.low;
+
+    const rangeScore=Math.min(ratio/3,1);
+    const confidence=Math.round(((rangeScore+strength)/2)*100);
+    const status=isZoneMitigatedAfter(candles,i+1,priceLow,priceHigh)?'mitigated':'fresh';
+
+    const reason=direction==='bullish'
+      ? `Bullischer Order Block: Kerze ${obCandle.datetime} UTC (bearish) vor Displacement-Kerze ${displacementCandle.datetime} UTC (${ratio.toFixed(1)}x Ø-Range, Close bei ${Math.round(strength*100)}% der Kerze)`
+      : `Bearischer Order Block: Kerze ${obCandle.datetime} UTC (bullish) vor Displacement-Kerze ${displacementCandle.datetime} UTC (${ratio.toFixed(1)}x Ø-Range, Close bei ${Math.round(strength*100)}% der Kerze)`;
+
+    zones.push(createPOI({
+      type:'orderBlock',direction,priceHigh,priceLow,timeframe:'H1',
+      createdAt:candleTimeToIso(obCandle.datetime),
+      status,confidence,reason,sourceCandle:obCandle,
+      impulseSize,displacement:{candle:displacementCandle,range,avgRange,ratio}
+    }));
+  }
+  return zones;
+}
+
+// Six detector stubs still, one per not-yet-built POI type. Every one of
 // them returns [] today. They exist as named, individually documented
 // functions rather than one TODO so each later build replaces a single
 // function body in isolation, without touching the registry, the
-// aggregator, or the UI — exactly how detectFairValueGaps was just added.
-function detectOrderBlocks(candles){
-  // Needs: structure/swing detection on top of the same H1 candle series.
-  return[];
-}
+// aggregator, or the UI — exactly how detectFairValueGaps and
+// detectOrderBlocks were added.
 function detectBreakers(candles){
   // Needs: an invalidated Order Block that price has broken back through.
   return[];
@@ -380,7 +475,7 @@ function detectDemandZones(candles){
 // `implemented` to true is the only registry change a finished detector
 // needs.
 const POI_TYPE_DEFS=[
-  {id:'orderBlock',label:'Order Block',category:'Struktur',implemented:false,detect:detectOrderBlocks,input:brain=>(brain.candles&&brain.candles.h1)||[]},
+  {id:'orderBlock',label:'Order Block',category:'Struktur',implemented:true,detect:detectOrderBlocks,input:brain=>(brain.candles&&brain.candles.h1)||[]},
   {id:'breaker',label:'Breaker',category:'Struktur',implemented:false,detect:detectBreakers,input:()=>null},
   {id:'fvg',label:'Fair Value Gap',category:'Imbalance',implemented:true,detect:detectFairValueGaps,input:brain=>(brain.candles&&brain.candles.h1)||[]},
   {id:'ifvg',label:'Inverse Fair Value Gap',category:'Imbalance',implemented:false,detect:detectInverseFairValueGaps,input:()=>null},
@@ -452,6 +547,8 @@ function renderPOIEngine(poiEngine){
     if(poi.relatedHTFBias) context.push(`Bias ${BIAS_LABEL[poi.relatedHTFBias]||poi.relatedHTFBias}`);
     if(poi.premiumDiscountZone) context.push(PD_ZONE_LABEL[poi.premiumDiscountZone]||poi.premiumDiscountZone);
     if(poi.relatedLiquidity.length) context.push(`${poi.relatedLiquidity.length}x Liquidity`);
+    if(poi.displacement) context.push(`${poi.displacement.ratio.toFixed(1)}x Displacement`);
+    if(poi.impulseSize!==null) context.push(`Impuls ${poi.impulseSize.toFixed(2)}`);
     return`
     <div class="poi-row">
       <span class="poi-label">${typeLabel}<span class="poi-meta">${poi.timeframe||'—'}${poi.direction?' · '+poi.direction:''}${context.length?' · '+context.join(' · '):''}</span></span>

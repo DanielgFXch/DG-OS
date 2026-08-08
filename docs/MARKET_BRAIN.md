@@ -18,7 +18,7 @@ Market Brain              (data layer — this document)
 ├── Premium / Discount     done   — Module 4
 ├── HTF Bias               done   — Module 5 (structural proxy only)
 ├── Liquidity              done   — Module 6 (level status, no decision/alert)
-├── POIs                   in progress — Module 7, Stage 2/4 (Fair Value Gap detection; 7 types still planned)
+├── POIs                   in progress — Module 7, Stage 2/4 (Fair Value Gap + Order Block detection; 6 types still planned)
 ├── Order Blocks           planned
 ├── FVG                    planned
 └── Confirmation           planned
@@ -204,12 +204,12 @@ close price must get to a level to count as `touched` rather than merely
 London session hasn't started yet this run) — an honest gap, not a
 trading-invalidation concept, which would require rules not yet available.
 
-## POI Engine (Module 7) — Stage 2/4: Erkennung (Fair Value Gap)
+## POI Engine (Module 7) — Stage 2/4: Erkennung (Fair Value Gap + Order Block)
 
 Four explicit stages, one build at a time: **1. Architecture** (v0.12.0,
-done) → **2. Erkennung** (detection — this build, v0.13.0: Fair Value Gap
-only) → **3. Bewertung** (cross-module scoring) → **4. Verbindung mit der
-Daniel Decision Engine**.
+done) → **2. Erkennung** (detection — Fair Value Gap in v0.13.0, Order Block
+in v0.14.0, six types still to go) → **3. Bewertung** (cross-module scoring)
+→ **4. Verbindung mit der Daniel Decision Engine**.
 
 Unlike Modules 4-6, POIs are meant to become DG OS's **memory**, not a
 disposable UI drawing — the future Daniel Decision Engine, Alert Engine,
@@ -222,7 +222,7 @@ factory so no detector improvises its own shape:
 
 ```js
 {
-  id, type,                    // e.g. 'fvg' — one of POI_TYPE_DEFS ids
+  id, type,                    // e.g. 'fvg' | 'orderBlock' — one of POI_TYPE_DEFS ids
   direction,                    // 'bullish' | 'bearish' | null
   priceHigh, priceLow,           // the POI's price range
   timeframe,                      // e.g. 'H1' — whichever the detector used
@@ -232,12 +232,21 @@ factory so no detector improvises its own shape:
   confidence,                          // 0-100, intrinsic to the detector's own pattern (see below)
   reason,                               // why this POI was created
   sourceCandle,                          // Entstehungskerze — the raw OHLC candle that formed it
-  relatedLiquidity,                       // ids into MarketBrain.liquidity, filled by enrichment
-  relatedSession,                          // 'asia' | 'london' | 'ny' | null, filled by enrichment
-  relatedHTFBias,                           // MarketBrain.htfBias.bias snapshot, filled by enrichment
-  premiumDiscountZone                        // zone snapshot, filled by enrichment
+  impulseSize,                            // Impulsgröße — price distance the move traveled away from the zone (null if n/a)
+  displacement,                            // { candle, range, avgRange, ratio } — the displacement evidence (null if n/a)
+  structureReference,                       // reserved for a future BOS/CHOCH Structure Engine — always null right now
+  mitigationDetail,                          // reserved for a future nuanced mitigation flag (body-close vs. wick, % filled) — always null right now
+  relatedLiquidity,                           // ids into MarketBrain.liquidity, filled by enrichment
+  relatedSession,                              // 'asia' | 'london' | 'ny' | null, filled by enrichment
+  relatedHTFBias,                               // MarketBrain.htfBias.bias snapshot, filled by enrichment
+  premiumDiscountZone                            // zone snapshot, filled by enrichment
 }
 ```
+
+`impulseSize`/`displacement` are populated by the Order Block detector
+today; any future detector that has its own genuine notion of impulse or
+displacement can populate them too, following the same meaning. FVGs leave
+them `null` — honest absence, not a fabricated value.
 
 ### Hard modularity rule: detectors know nothing about other modules
 
@@ -251,11 +260,17 @@ by convention:
   `input` selector. Only `input` (which runs in the aggregator) is allowed
   to know `MarketBrain`'s shape — it picks out the one raw slice (e.g. the
   H1 candle array) a detector needs.
-- **A detector** (`detectFairValueGaps(candles)`, and eventually
-  `detectOrderBlocks(candles)`, etc.) receives *only* that slice as its
-  argument. It cannot reach `MarketBrain.liquidity`, `sessions`, or
-  `htfBias` because it never has a reference to `MarketBrain` at all — not
-  a discipline, a language-level guarantee.
+- **A detector** (`detectFairValueGaps(candles)`, `detectOrderBlocks(candles)`,
+  etc.) receives *only* that slice as its argument. It cannot reach
+  `MarketBrain.liquidity`, `sessions`, or `htfBias` because it never has a
+  reference to `MarketBrain` at all — not a discipline, a language-level
+  guarantee.
+- **Shared candle-math helpers** (`localAverageRange`, `isZoneMitigatedAfter`)
+  are plain functions over a candle array, used by both detectors to avoid
+  duplicating identical logic. This is ordinary code reuse *within* the POI
+  Engine's own detection layer, not a dependency on another module — the
+  rule is about MarketBrain/Liquidity/Sessions/HTF Bias, not about detectors
+  sharing candle arithmetic with each other.
 - **`enrichPOIContext(poi, brain)`** is the single place, in the
   aggregator, where a detected zone is correlated with the rest of the
   Market Brain — filling in `relatedLiquidity`, `relatedSession`,
@@ -277,33 +292,61 @@ case, `c0.low > c2.high`. `c1`, the middle "displacement" candle whose range
 actually created the imbalance, is stored as the POI's `sourceCandle`.
 
 - **Confidence is intrinsic only** — gap size relative to the average
-  candle range of the preceding 14 candles (a simple local ATR). A gap as
-  wide as the recent average range scores close to 100; a sliver scores
-  low. This says nothing about liquidity/session/bias confluence — that
-  kind of cross-module weighting is explicitly Stage 3's job, not this
-  detector's.
+  candle range of the preceding 14 candles (`POI_ATR_WINDOW`, a simple
+  local ATR). A gap as wide as the recent average range scores close to
+  100; a sliver scores low. This says nothing about liquidity/session/bias
+  confluence — that kind of cross-module weighting is explicitly Stage 3's
+  job, not this detector's.
 - **Status** is decided purely from the same candle array: `mitigated` once
   any later candle's range trades back into the gap, `fresh` otherwise. No
   external state, no other module consulted.
-- Because the detector only ever sees a flat candle array, it has no way to
-  even attempt reading another module — the modularity rule is structural.
+
+### Order Block detector (`detectOrderBlocks`)
+
+Deliberately the *architecture* for the future "Daniel Order Block", not a
+fully tuned SMC implementation — it identifies the zone structurally and
+fills every field a later stage will need, without making a final trading
+judgement. Definition: for chronological candles `obCandle = c[i-1]`,
+`displacementCandle = c[i]` — `obCandle` is a **bullish** Order Block if it
+is itself a down-close candle immediately followed by a genuine bullish
+displacement candle: range ≥ `OB_DISPLACEMENT_RATIO` (1.5x) the local
+average, closing in the outer third of its own range
+(`OB_CLOSE_STRENGTH_MIN`, 0.66). **Bearish** is the mirror case.
+`obCandle`'s own high/low becomes the zone — the standard "last opposite
+candle before the move" starting definition, with no swing-point or BOS
+confirmation yet; that belongs to a real Structure Engine, not this build.
+
+- `sourceCandle` = the Order Block candle itself (`obCandle`).
+- `displacement` = `{ candle: displacementCandle, range, avgRange, ratio }`
+  — the structural evidence that justified calling it a displacement.
+- `impulseSize` = how far price actually traveled away from the zone (the
+  displacement candle's far edge minus the zone's near edge).
+- `confidence` blends two intrinsic, bounded components: how many multiples
+  of the local average range the displacement candle was (capped at 3x),
+  and how strongly it closed toward its extreme — again nothing about
+  liquidity/session/bias.
+- `structureReference` and `mitigationDetail` stay explicitly `null` — they
+  need a Structure Engine (BOS/CHOCH) and a more nuanced mitigation model
+  that don't exist yet, so they are left honestly empty rather than faked.
 
 ### Where the candles come from
 
-`data/market.json` now carries `candles.h1`: the same 72-hour hourly fetch
-the Session Engine (Module 3) already pulls, reused as-is with **no extra
-API call** — sorted chronologically ascending (oldest first) server-side so
-no detector has to trust or re-derive TwelveData's own ordering. See
-`market-data.yml`'s `CANDLE_FILTER`.
+`data/market.json` carries `candles.h1`: the same 72-hour hourly fetch the
+Session Engine (Module 3) already pulls, reused as-is with **no extra API
+call** — sorted chronologically ascending (oldest first) server-side so no
+detector has to trust or re-derive TwelveData's own ordering. See
+`market-data.yml`'s `CANDLE_FILTER`. Both the FVG and Order Block detectors
+read this same array.
 
 ### UI
 
-The registry still always renders — "Aktiv" for Fair Value Gap now,
-"Erkennung folgt" for the other seven — plus every detected zone with its
-range, confidence, status, and enrichment context (session/bias/zone/
-liquidity count) inline. "Noch keine POIs erkannt." only appears when the
-list is genuinely empty (e.g. stale/missing candle data) — never fabricated
-example zones, same non-negotiable rule as every other module.
+The registry still always renders — "Aktiv" for Fair Value Gap and Order
+Block now, "Erkennung folgt" for the other six — plus every detected zone
+with its range, confidence, status, and enrichment context (session/bias/
+zone/liquidity count, plus displacement ratio/impulse size where
+applicable) inline. "Noch keine POIs erkannt." only appears when the list is
+genuinely empty (e.g. stale/missing candle data) — never fabricated example
+zones, same non-negotiable rule as every other module.
 
 ## MarketBrain aggregator (`app.js`)
 
@@ -329,7 +372,7 @@ Stage 2 POI detectors) should add their own key here and a `computeX(data)`
 | 4 — Premium/Discount | done | *(client-derived, not in market.json — see above)* |
 | 5 — HTF Bias | done | *(client-derived, not in market.json — see above)* |
 | 6 — Liquidity | done | *(client-derived, not in market.json — see above)* |
-| 7 — POI Engine | Stage 2/4 (Fair Value Gap detection) | `candles.h1` (array of `{datetime, open, high, low, close}`, reused from the Session Engine fetch) |
+| 7 — POI Engine | Stage 2/4 (Fair Value Gap + Order Block detection) | `candles.h1` (array of `{datetime, open, high, low, close}`, reused from the Session Engine fetch) |
 
 Every field is either real (fetched, with a freshness check) or absent —
 never fabricated. The frontend must keep showing "OFFLINE DEMO" / `—` for
@@ -341,7 +384,7 @@ build rule (see `CLAUDE.md`).
 Once the Market Brain is complete and stable, later engines will be built
 **on top of it**, never bypassing it to fetch data on their own:
 
-- **POI Engine**: remaining Stage 2 detectors (Order Block next, then Breaker, iFVG, Mitigation Block, Rejection Block, Supply/Demand Zone), then Stage 3 (Bewertung) and Stage 4 (Verbindung mit der Daniel Decision Engine) — see the Module 7 section above
+- **POI Engine**: remaining Stage 2 detectors (Breaker, iFVG, Mitigation Block, Rejection Block, Supply/Demand Zone), then Stage 3 (Bewertung) and Stage 4 (Verbindung mit der Daniel Decision Engine) — see the Module 7 section above
 - **Confirmation Engine** — entry-trigger detection (engulfing, displacement, CHOCH, …)
 - **Alert Engine** — decides *when* something is worth a Telegram push (not just "sends messages")
 - **Learning Engine** — statistics/pattern recognition over historical performance, never redefines rules

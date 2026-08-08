@@ -8,6 +8,20 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.15.0] — DG Confidence Engine (Modul 8) — Architektur
+
+### Neu
+- **DG Confidence Engine** (Modul 8): erstes Modul des künftigen Daniel Brain, direkt über dem Market Brain. Sammelt einen einheitlichen "Contribution Score" von jedem bestehenden Modul (Sessions, Liquidity Engine, Premium/Discount, HTF Bias, Fair Value Gap, Order Block) und berechnet daraus Confidence, Positive Faktoren, Negative Faktoren und Fehlende Faktoren
+- Vollständig konfigurationsgetrieben (`CONFIDENCE_CONTRIBUTORS`), wie schon `POI_TYPE_DEFS`: ein neues Modul liefert künftig nur einen Registry-Eintrag mit eigenem Score — der Rest (Aggregation, Gruppierung, Darstellung) passiert automatisch
+- Confidence ist bewusst nur ein transparenter Durchschnitt der verfügbaren Scores — keine erfundene DG-Gewichtung, da Daniels exakte Regeln noch nicht definiert sind. Genau diese Formel wird ersetzt, sobald sie es sind
+- Bewusst noch **keine** finale Tradingentscheidung, keine Alerts, keine Entries
+- Neue Karte „DG Confidence Engine" im Dashboard
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `docs/MARKET_BRAIN.md`, `CHANGELOG.md`
+
+---
+
 ## [0.14.1] — Dauerhafte Projektregel: DG-Methodik statt ICT/Standard-SMC
 
 ### Sonstiges

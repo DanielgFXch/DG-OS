@@ -26,6 +26,7 @@
       <symbol id="ic-trend-down" viewBox="0 0 24 24"><path d="M3 6.5 9.5 13l4-4L21 16.5"/><path d="M21 10v6.5h-6.5"/></symbol>
       <symbol id="ic-check" viewBox="0 0 24 24"><path d="M4 12.5 9.5 18 20 6"/></symbol>
       <symbol id="ic-x" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></symbol>
+      <symbol id="ic-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M6.5 16 11 10.5l3.2 3 5.3-7"/></symbol>
     </defs>
   </svg>
 
@@ -48,7 +49,7 @@
       <span class="ticker-sep">·</span>
       <span class="ticker-item" id="tickerClock">--:--:--</span>
       <span class="ticker-sep">·</span>
-      <span class="ticker-item ticker-warn">LIVE DATA: OFFLINE (DEMO)</span>
+      <span class="ticker-item ticker-warn" id="tickerStatus">LIVE DATA: OFFLINE (DEMO)</span>
     </div>
   </div>
 
@@ -83,6 +84,21 @@
 
     <div class="layout">
       <div class="col">
+        <section class="card">
+          <div class="section-title"><svg class="ic"><use href="#ic-chart"></use></svg>XAUUSD Live</div>
+          <div class="metrics">
+            <div><span>Preis</span><strong id="livePrice">—</strong></div>
+            <div><span>Daily Open</span><strong id="liveOpen">—</strong></div>
+            <div><span>Change</span><strong id="liveChange">—</strong></div>
+          </div>
+          <div class="rows">
+            <div class="row"><span>Daily High</span><strong id="liveHigh">—</strong></div>
+            <div class="row"><span>Daily Low</span><strong id="liveLow">—</strong></div>
+            <div class="row"><span>Aktualisiert</span><strong id="liveUpdated">—</strong></div>
+          </div>
+          <p class="hint" id="liveHint">Noch keine Live-Daten verbunden. DG OS zeigt hier XAUUSD-Kurse, sobald der Marktdaten-Workflow läuft.</p>
+        </section>
+
         <section class="grid two">
           <article class="card">
             <div class="section-title"><svg class="ic"><use href="#ic-target"></use></svg>Market Plan</div>

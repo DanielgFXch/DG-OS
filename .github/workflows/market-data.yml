@@ -1,0 +1,63 @@
+name: Update Market Data
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch XAUUSD quote from TwelveData
+        env:
+          TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
+        run: |
+          set -e
+          if [ -z "$TWELVEDATA_API_KEY" ]; then
+            echo "TWELVEDATA_API_KEY secret is not set. Add it under Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+          mkdir -p data
+          response=$(curl -sS "https://api.twelvedata.com/quote?symbol=XAU/USD&apikey=${TWELVEDATA_API_KEY}")
+          status=$(echo "$response" | jq -r '.status // empty')
+          if [ "$status" = "error" ]; then
+            echo "TwelveData returned an error:"
+            echo "$response" | jq -r '.message // .'
+            exit 1
+          fi
+          echo "$response" | jq \
+            --arg updatedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            '{
+              updatedAt: $updatedAt,
+              symbol: (.symbol // "XAU/USD"),
+              price: (.close | tonumber? // null),
+              dailyOpen: (.open | tonumber? // null),
+              dailyHigh: (.high | tonumber? // null),
+              dailyLow: (.low | tonumber? // null),
+              previousClose: (.previous_close | tonumber? // null),
+              changePercent: (.percent_change | tonumber? // null),
+              isMarketOpen: (.is_market_open // null)
+            }' > data/market.json
+          cat data/market.json
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - id: deployment
+        uses: actions/deploy-pages@v4

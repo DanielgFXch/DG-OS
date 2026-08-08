@@ -16,7 +16,22 @@
   --body-font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Arial,sans-serif;
 }
 *{box-sizing:border-box}
-html{background:var(--bg)}
+html{background:var(--bg);scrollbar-color:rgba(47,217,242,.35) transparent;scrollbar-width:thin}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(47,217,242,.28);border-radius:8px;border:2px solid var(--bg)}
+::-webkit-scrollbar-thumb:hover{background:rgba(47,217,242,.5)}
+
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(.75)}}
+@keyframes logo-breathe{0%,100%{box-shadow:0 0 16px rgba(47,217,242,.25),inset 0 0 10px rgba(47,217,242,.08)}50%{box-shadow:0 0 28px rgba(47,217,242,.55),inset 0 0 16px rgba(47,217,242,.2)}}
+@keyframes ring-rotate{to{transform:rotate(360deg)}}
+@keyframes fade-in-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+.live-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:currentColor;margin-right:6px;box-shadow:0 0 8px currentColor;animation:pulse-dot 2.2s ease-in-out infinite;vertical-align:middle}
+
+@media(prefers-reduced-motion:reduce){
+  .live-dot,.logo,.conf-ring-scan,.app>*{animation:none!important}
+}
 body{
   margin:0;color:var(--text);font-family:var(--body-font);min-height:100vh;padding-bottom:88px;
   background:
@@ -36,20 +51,33 @@ body{
 .logo{
   width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:900;
   font-family:var(--hud-font);color:var(--cyan);background:#0a121a;border:1px solid var(--line-strong);
-  box-shadow:0 0 16px rgba(47,217,242,.25),inset 0 0 10px rgba(47,217,242,.08);
+  animation:logo-breathe 3.4s ease-in-out infinite;
 }
 .brand h1{font-size:18px;margin:0;letter-spacing:.02em}
 .sub{font-family:var(--hud-font);font-size:10px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
 .badge{
   font-family:var(--hud-font);font-size:10px;letter-spacing:.08em;color:var(--gold);
   border:1px solid rgba(242,181,68,.4);border-radius:999px;padding:6px 10px;
-  box-shadow:0 0 10px rgba(242,181,68,.15);
+  box-shadow:0 0 10px rgba(242,181,68,.15);display:inline-flex;align-items:center;
 }
 
 .app{max-width:1050px;margin:auto;padding:14px;display:grid;gap:12px}
+.app>*{animation:fade-in-up .5s cubic-bezier(.2,.8,.2,1) both}
+.app>*:nth-child(1){animation-delay:.02s}
+.app>*:nth-child(2){animation-delay:.07s}
+.app>*:nth-child(3){animation-delay:.12s}
+.app>*:nth-child(4){animation-delay:.17s}
+.app>*:nth-child(5){animation-delay:.22s}
+.app>*:nth-child(6){animation-delay:.27s}
+.app>*:nth-child(7){animation-delay:.32s}
+.app>*:nth-child(8){animation-delay:.37s}
 .card{
   position:relative;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;
   box-shadow:0 12px 30px rgba(0,0,0,.35),inset 0 0 40px rgba(47,217,242,.02);
+  transition:box-shadow .25s ease,border-color .25s ease;
+}
+@media(hover:hover){
+  .card:hover{border-color:var(--line-strong);box-shadow:0 16px 36px rgba(0,0,0,.4),inset 0 0 40px rgba(47,217,242,.04)}
 }
 .card::before,.card::after{
   content:"";position:absolute;width:14px;height:14px;pointer-events:none;
@@ -65,17 +93,28 @@ body{
 }
 .section-title{display:flex;align-items:center;gap:6px}
 .section-title::before{content:"//";color:var(--cyan-dim)}
-.action{font-size:31px;font-weight:900;letter-spacing:-.02em;margin-top:6px;font-family:var(--hud-font)}
+.action{font-size:31px;font-weight:900;letter-spacing:-.02em;margin-top:6px;font-family:var(--hud-font);transition:color .4s ease,text-shadow .4s ease}
 .action.wait{color:var(--gold);text-shadow:0 0 18px rgba(242,181,68,.35)}
 .action.watch{color:var(--cyan);text-shadow:0 0 18px rgba(47,217,242,.4)}
 .action.sell,.action.ready{color:var(--red);text-shadow:0 0 18px rgba(255,77,109,.4)}
 .action.buy{color:var(--green);text-shadow:0 0 18px rgba(56,226,176,.4)}
 .decision-reason{font-family:var(--hud-font);font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5}
 .muted{font-size:12px;color:var(--muted);margin-top:4px}
-.confidence{text-align:right}
-.confidence #confidence{
-  font-size:30px;font-weight:900;margin-top:5px;font-family:var(--hud-font);color:var(--cyan);
-  text-shadow:0 0 16px rgba(47,217,242,.45);
+.confidence{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.confidence .eyebrow{white-space:nowrap}
+.conf-ring-wrap{position:relative;width:84px;height:84px}
+.conf-ring{transform:rotate(-90deg)}
+.conf-ring circle{fill:none}
+.conf-ring-scan{stroke:rgba(47,217,242,.3);stroke-width:1;stroke-dasharray:1 7;stroke-linecap:round;transform-origin:42px 42px;animation:ring-rotate 10s linear infinite}
+.conf-ring-bg{stroke:rgba(255,255,255,.07);stroke-width:6}
+.conf-ring-fg{
+  stroke:var(--cyan);stroke-width:6;stroke-linecap:round;
+  stroke-dasharray:213.63;stroke-dashoffset:213.63;
+  transition:stroke-dashoffset .7s cubic-bezier(.2,.8,.2,1),stroke .4s ease;
+}
+.conf-value{
+  position:absolute;inset:0;display:grid;place-items:center;
+  font-family:var(--hud-font);font-weight:900;font-size:17px;color:var(--text);
 }
 
 .grid.two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -112,6 +151,7 @@ button.secondary{color:var(--muted);border-color:var(--line)}
 button.primary{background:#08202c;border-color:var(--cyan);box-shadow:0 0 10px rgba(47,217,242,.15)}
 button.primary:hover:not(:disabled){box-shadow:0 0 16px rgba(47,217,242,.4)}
 button:disabled{opacity:.4}
+button:active:not(:disabled){transform:scale(.97)}
 .full{width:100%;margin-top:11px}
 .hint{font-size:12px;line-height:1.5;color:var(--muted);margin:11px 0 0}
 

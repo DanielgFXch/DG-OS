@@ -2,6 +2,36 @@
 const state={asia:false,sweep:false,engulf:false};
 const $=id=>document.getElementById(id);
 
+const TRADER_NAME='Daniel Gomes';
+
+function greetingWord(localHour){
+  if(localHour>=5 && localHour<11) return 'Guten Morgen';
+  if(localHour>=11 && localHour<17) return 'Guten Tag';
+  if(localHour>=17 && localHour<22) return 'Guten Abend';
+  return 'Gute Nacht';
+}
+
+// Grobe UTC-Fenster ohne DST-Anpassung – dient nur zur Orientierung, nicht als exakte Marktzeit.
+function currentSession(now){
+  const day=now.getUTCDay();
+  const h=now.getUTCHours();
+  const weekendClosed=day===6||(day===0&&h<22)||(day===5&&h>=21);
+  if(weekendClosed) return {name:'Markt geschlossen',sub:'Wochenende · nächste Session: Asia'};
+  if(h>=13&&h<16) return {name:'London / NY Overlap',sub:'Höchste Liquidität des Tages'};
+  if(h>=8&&h<16) return {name:'London Session',sub:'Europäische Session aktiv'};
+  if(h>=16&&h<21) return {name:'New York Session',sub:'US-Session aktiv'};
+  if(h>=0&&h<8) return {name:'Asia Session',sub:'Asiatische Range bildet sich'};
+  return {name:'Late NY / Asia Vorbereitung',sub:'Ruhige Phase vor Asia-Open'};
+}
+
+function renderGreeting(){
+  const now=new Date();
+  $('greetingText').textContent=`${greetingWord(now.getHours())}, ${TRADER_NAME}`;
+  const session=currentSession(now);
+  $('sessionName').textContent=session.name;
+  $('sessionSub').textContent=session.sub;
+}
+
 function events(items){
   $('events').innerHTML=items.map(x=>`<div class="event"><time>${x.t}</time><div><strong>${x.title}</strong><span>${x.desc}</span></div></div>`).join('');
 }
@@ -170,4 +200,6 @@ async function maybeAutoSend(){
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
 render();
+renderGreeting();
+setInterval(renderGreeting,60000);
 if(tg.token){testTelegramConnection(tg.token).then(bot=>setTelegramStatus(`Verbunden · @${bot.username}`)).catch(()=>setTelegramStatus('Nicht verbunden'))}

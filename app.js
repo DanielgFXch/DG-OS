@@ -32,8 +32,14 @@ function renderGreeting(){
   $('sessionSub').textContent=session.sub;
 }
 
+function renderTicker(){
+  const now=new Date();
+  $('tickerSession').textContent=`SESSION: ${currentSession(now).name.toUpperCase()}`;
+  $('tickerClock').textContent=now.toLocaleTimeString('de-DE');
+}
+
 function events(items){
-  $('events').innerHTML=items.map(x=>`<div class="event"><time>${x.t}</time><div><strong>${x.title}</strong><span>${x.desc}</span></div></div>`).join('');
+  $('events').innerHTML=items.map(x=>`<div class="event ev-${x.type||'default'}"><time>${x.t}</time><div><strong>${x.title}</strong><span>${x.desc}</span></div></div>`).join('');
 }
 
 // DG OS entscheidet nie durch Raten: jedes Kriterium ist explizit, das Ergebnis
@@ -54,13 +60,18 @@ function computeDecision(){
   return {checks,metCount,total,tier};
 }
 
-const CONF_RING_CIRCUMFERENCE=213.63;
+const CONF_RING_CIRCUMFERENCE=226.19;
 const TIER_COLOR={wait:'#f2b544',watch:'#2fd9f2',ready:'#ff4d6d'};
+const TIER_ICON={wait:'ic-clock',watch:'ic-eye',ready:'ic-trend-down'};
 function setConfidence(pct,tier){
   $('confidence').textContent=`${pct}%`;
   const ring=$('confRing');
   ring.style.stroke=TIER_COLOR[tier]||TIER_COLOR.wait;
   ring.style.strokeDashoffset=CONF_RING_CIRCUMFERENCE*(1-pct/100);
+}
+function setAction(tier,label){
+  $('action').className=`action ${tier}`;
+  $('action').innerHTML=`<svg class="ic ic-action"><use href="#${TIER_ICON[tier]}"></use></svg><span>${label}</span>`;
 }
 
 function render(){
@@ -79,24 +90,21 @@ function render(){
   const unmet=checks.filter(c=>!c.met).map(c=>c.label);
 
   if(tier==='ready'){
-    $('action').className='action ready';
-    $('action').textContent='🔴 SELL READY';
+    setAction('ready','SELL READY');
     setConfidence(94,'ready');
     $('tradeType').textContent='Countertrend Scalp';
     $('opportunity').textContent='Countertrend Sell';
     $('intradayTarget').textContent='Asia Low';
     $('decisionReason').textContent=`${metCount}/${total} Kriterien erfüllt · Deshalb: READY`;
   } else if(tier==='watch'){
-    $('action').className='action watch';
-    $('action').textContent='🟠 SELL WATCH';
+    setAction('watch','SELL WATCH');
     setConfidence(76,'watch');
     $('tradeType').textContent='Bearishe Confirmation fehlt';
     $('opportunity').textContent='Sell beobachten';
     $('intradayTarget').textContent='Asia Low';
     $('decisionReason').textContent=`${metCount}/${total} Kriterien erfüllt · Fehlt: ${unmet.join(', ')} · Deshalb: WAIT`;
   } else {
-    $('action').className='action wait';
-    $('action').textContent='🟡 WAIT';
+    setAction('wait','WAIT');
     setConfidence(state.asia?58:54,'wait');
     $('tradeType').textContent='Noch keine Trade-Freigabe';
     $('opportunity').textContent='Keine';
@@ -105,11 +113,11 @@ function render(){
   }
 
   const ev=[];
-  if(state.asia) ev.push({t:'06:00',title:'🌏 Asia Session beendet',desc:'High 4302.00 · Low 4290.00 · Range $12.00'});
-  if(state.sweep) ev.push({t:'08:47',title:'💧 Asia High gesweept',desc:'Signifikanter Wick + Gegenreaktion · POI aktiv'});
+  if(state.asia) ev.push({t:'06:00',type:'session',title:'Asia Session beendet',desc:'High 4302.00 · Low 4290.00 · Range $12.00'});
+  if(state.sweep) ev.push({t:'08:47',type:'liquidity',title:'Asia High gesweept',desc:'Signifikanter Wick + Gegenreaktion · POI aktiv'});
   if(state.engulf) {
-    ev.push({t:'08:49',title:'⚡ Bearish Engulfing',desc:'M5 Confirmation + Displacement'});
-    ev.push({t:'08:49',title:'🔴 SELL READY',desc:'Countertrend Scalp · Ziel Asia Low · HTF bleibt bullish'});
+    ev.push({t:'08:49',type:'confirmation',title:'Bearish Engulfing',desc:'M5 Confirmation + Displacement'});
+    ev.push({t:'08:49',type:'signal',title:'SELL READY',desc:'Countertrend Scalp · Ziel Asia Low · HTF bleibt bullish'});
   }
   if(!ev.length) ev.push({t:'—',title:'Noch kein Event',desc:'DG OS wartet auf Marktdaten.'});
   events(ev);
@@ -235,8 +243,12 @@ async function maybeAutoSend(){
   }
 }
 
+document.querySelectorAll('.card').forEach((el,i)=>{el.style.animationDelay=`${Math.min(i*0.05,0.4)}s`});
+
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
 render();
 renderGreeting();
+renderTicker();
 setInterval(renderGreeting,60000);
+setInterval(renderTicker,1000);
 if(tg.token){testTelegramConnection(tg.token).then(bot=>setTelegramStatus(`Verbunden · @${bot.username}`)).catch(()=>setTelegramStatus('Nicht verbunden'))}

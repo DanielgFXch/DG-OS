@@ -52,6 +52,19 @@ function setLiveStatus(isLive,label){
   tickerStatus.textContent=isLive?'LIVE DATA: CONNECTED':`LIVE DATA: ${label?label.toUpperCase():'OFFLINE (DEMO)'}`;
 }
 
+let lastPreviousClose=null;
+
+function setChange(pct){
+  const changeEl=$('liveChange');
+  if(typeof pct==='number'){
+    changeEl.textContent=`${pct>0?'+':''}${pct.toFixed(2)}%`;
+    changeEl.style.color=pct>0?'var(--green)':pct<0?'var(--red)':'var(--text)';
+  } else {
+    changeEl.textContent='—';
+    changeEl.style.color='';
+  }
+}
+
 async function loadMarketData(){
   try{
     const res=await fetch(`${MARKET_DATA_URL}?t=${Date.now()}`,{cache:'no-store'});
@@ -60,29 +73,121 @@ async function loadMarketData(){
     const updated=new Date(data.updatedAt);
     const isFresh=(Date.now()-updated.getTime())<MARKET_STALE_MS;
 
-    $('livePrice').textContent=fmtPrice(data.price);
+    if(typeof data.previousClose==='number') lastPreviousClose=data.previousClose;
+
+    // Ein aktiver WebSocket-Live-Stream aktualisiert Preis/Change selbst und ist genauer
+    // als die alle 15 Min. aktualisierte JSON-Baseline – die hier nicht überschreiben.
+    if(!tdStreaming){
+      $('livePrice').textContent=fmtPrice(data.price);
+      setChange(data.changePercent);
+    }
     $('liveOpen').textContent=fmtPrice(data.dailyOpen);
     $('liveHigh').textContent=fmtPrice(data.dailyHigh);
     $('liveLow').textContent=fmtPrice(data.dailyLow);
-    $('liveUpdated').textContent=updated.toLocaleTimeString('de-DE');
+    if(!tdStreaming) $('liveUpdated').textContent=updated.toLocaleTimeString('de-DE');
 
-    const changeEl=$('liveChange');
-    if(typeof data.changePercent==='number'){
-      changeEl.textContent=`${data.changePercent>0?'+':''}${data.changePercent.toFixed(2)}%`;
-      changeEl.style.color=data.changePercent>0?'var(--green)':data.changePercent<0?'var(--red)':'var(--text)';
-    } else {
-      changeEl.textContent='—';
-      changeEl.style.color='';
+    if(!tdStreaming){
+      $('liveHint').textContent=isFresh
+        ? 'Live-Daten von TwelveData, aktualisiert alle ~15 Minuten.'
+        : 'Daten sind veraltet – der Marktdaten-Workflow lief seit über 45 Minuten nicht.';
+      setLiveStatus(isFresh,isFresh?null:'Daten veraltet');
+    }
+  }catch(err){
+    if(!tdStreaming) setLiveStatus(false);
+  }
+}
+
+// TwelveData WebSocket-Streaming läuft komplett im Browser: der API-Key liegt dadurch
+// sichtbar im Frontend-Code. Bewusste Entscheidung von Daniel für echtes Live-Update
+// statt eines geheimen Server-seitigen Keys mit nur alle 5 Min. Aktualisierung.
+const TD_WS_URL='wss://ws.twelvedata.com/v1/quotes/price';
+const TD_HEARTBEAT_MS=10000;
+const TD_MAX_RECONNECTS=6;
+let tdSocket=null;
+let tdHeartbeatTimer=null;
+let tdReconnectAttempts=0;
+let tdStreaming=false;
+
+function setStreamStatus(text){$('tdStatus').textContent=text}
+
+function stopTdHeartbeat(){
+  if(tdHeartbeatTimer){clearInterval(tdHeartbeatTimer);tdHeartbeatTimer=null}
+}
+
+function openTdSocket(key){
+  setStreamStatus('Verbinde…');
+  const ws=new WebSocket(`${TD_WS_URL}?apikey=${encodeURIComponent(key)}`);
+  tdSocket=ws;
+
+  ws.addEventListener('open',()=>{
+    tdReconnectAttempts=0;
+    ws.send(JSON.stringify({action:'subscribe',params:{symbols:'XAU/USD'}}));
+    stopTdHeartbeat();
+    tdHeartbeatTimer=setInterval(()=>{
+      if(ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify({action:'heartbeat'}));
+    },TD_HEARTBEAT_MS);
+  });
+
+  ws.addEventListener('message',e=>{
+    let msg;
+    try{ msg=JSON.parse(e.data) }catch(err){ return }
+
+    if(msg.event==='subscribe-status'){
+      if(msg.status==='ok'){
+        tdStreaming=true;
+        setStreamStatus('Live-Stream verbunden · XAU/USD');
+        setLiveStatus(true);
+        $('liveHint').textContent='Live-Stream aktiv (TwelveData WebSocket) – Preis aktualisiert sich in Echtzeit.';
+      } else {
+        setStreamStatus(`Fehler: ${msg.status||'Subscribe fehlgeschlagen'}`);
+      }
+      return;
     }
 
-    $('liveHint').textContent=isFresh
-      ? 'Live-Daten von TwelveData, aktualisiert alle ~15 Minuten.'
-      : 'Daten sind veraltet – der Marktdaten-Workflow lief seit über 45 Minuten nicht.';
+    if(msg.event==='price' && typeof msg.price==='number'){
+      tdStreaming=true;
+      $('livePrice').textContent=fmtPrice(msg.price);
+      $('liveUpdated').textContent=new Date().toLocaleTimeString('de-DE');
+      if(typeof lastPreviousClose==='number' && lastPreviousClose>0){
+        setChange(((msg.price-lastPreviousClose)/lastPreviousClose)*100);
+      }
+      setLiveStatus(true);
+    }
+  });
 
-    setLiveStatus(isFresh,isFresh?null:'Daten veraltet');
-  }catch(err){
-    setLiveStatus(false);
-  }
+  ws.addEventListener('close',()=>{
+    stopTdHeartbeat();
+    if(tdSocket!==ws) return;
+    tdStreaming=false;
+    tdReconnectAttempts++;
+    if(tdReconnectAttempts<=TD_MAX_RECONNECTS){
+      setStreamStatus(`Getrennt – versuche erneut (${tdReconnectAttempts}/${TD_MAX_RECONNECTS})…`);
+      setTimeout(()=>{ if(tdSocket===ws) openTdSocket(key) },Math.min(3000*tdReconnectAttempts,30000));
+    } else {
+      setStreamStatus('Live-Stream getrennt. Bitte manuell erneut verbinden.');
+      loadMarketData();
+    }
+  });
+
+  ws.addEventListener('error',()=>{ try{ws.close()}catch(err){} });
+}
+
+function connectTwelveDataStream(key){
+  if(!key) return;
+  localStorage.setItem('dgos.tdKey',key);
+  tdReconnectAttempts=0;
+  if(tdSocket){ const old=tdSocket; tdSocket=null; try{old.close()}catch(err){} }
+  openTdSocket(key);
+}
+
+$('tdConnect').addEventListener('click',()=>{
+  connectTwelveDataStream($('tdKey').value.trim());
+});
+
+const savedTdKey=localStorage.getItem('dgos.tdKey')||'';
+if(savedTdKey){
+  $('tdKey').value=savedTdKey;
+  connectTwelveDataStream(savedTdKey);
 }
 
 function events(items){

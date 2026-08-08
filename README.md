@@ -35,3 +35,12 @@ Setup:
 3. Unter **Actions → "Update Market Data" → Run workflow** einmal manuell auslösen, um die Anbindung zu testen.
 
 Der Workflow (`.github/workflows/market-data.yml`) läuft danach automatisch alle 15 Minuten, holt den aktuellen XAUUSD-Kurs und deployed ihn direkt zu GitHub Pages (`data/market.json`) – ohne Git-Commits, damit die Historie sauber bleibt. Solange kein `TWELVEDATA_API_KEY` hinterlegt ist oder die Daten älter als 45 Minuten sind, bleibt die App ehrlich bei "OFFLINE DEMO" statt erfundene Zahlen zu zeigen.
+
+### Echtes Echtzeit-Update (WebSocket-Stream)
+
+Der 15-Minuten-Takt ist das technische Maximum für einen zuverlässigen GitHub-Actions-Cronjob. Für wirklich sekundengenaue Live-Preise gibt es zusätzlich einen WebSocket-Stream direkt im Browser:
+
+1. In der Karte "XAUUSD Live" deinen TwelveData-API-Key (denselben wie oben) in das Feld "TwelveData API Key" eintragen und auf "Live-Stream verbinden" klicken.
+2. Der Preis aktualisiert sich danach in Echtzeit, solange die Seite geöffnet ist.
+
+**Bewusster Trade-off:** Der Key liegt dabei sichtbar im Browser-Code (jeder mit Zugriff auf die Seite könnte ihn im DevTools-Netzwerktab sehen). Bei einem kostenlosen Account ohne Zahlungsdaten ist das Risiko gering – im schlimmsten Fall nutzt jemand das Kontingent mit. Der Key wird nur lokal im Browser (`localStorage`) gespeichert, nie committet. Bricht die Verbindung ab, versucht DG OS automatisch mehrfach neu zu verbinden und fällt danach ehrlich auf die 15-Minuten-JSON-Daten zurück.

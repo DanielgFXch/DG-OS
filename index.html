@@ -31,6 +31,7 @@
       <symbol id="ic-scale" viewBox="0 0 24 24"><path d="M2 12h20M2 12l4-4M2 12l4 4M22 12l-4-4M22 12l-4 4"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></symbol>
       <symbol id="ic-trend-up" viewBox="0 0 24 24"><path d="M3 17.5 9.5 11l4 4L21 7.5"/><path d="M21 13.5V7.5h-6"/></symbol>
       <symbol id="ic-layers" viewBox="0 0 24 24"><path d="M12 2.5 22 8l-10 5.5L2 8Z"/><path d="M2 13.2 12 18.7l10-5.5"/><path d="M2 18 12 23.5 22 18"/></symbol>
+      <symbol id="ic-gauge" viewBox="0 0 24 24"><path d="M3.5 18.5a8.5 8.5 0 0 1 17 0"/><path d="M12 18.5 16 11"/><circle cx="12" cy="18.5" r="1.4" fill="currentColor" stroke="none"/></symbol>
     </defs>
   </svg>
 
@@ -168,6 +169,15 @@
           <div class="eyebrow">Fair Value Gap + Order Block: Erkennung aktiv (H1) · Breaker · iFVG · Mitigation · Rejection · Supply · Demand — Architektur bereit, Erkennung folgt</div>
           <div id="poiRows" class="poi-table">
             <div class="poi-empty">Noch keine Daten.</div>
+          </div>
+        </section>
+
+        <section class="card">
+          <div class="section-title"><svg class="ic"><use href="#ic-gauge"></use></svg>DG Confidence Engine</div>
+          <div class="eyebrow">Contribution Scores aller Module · noch keine Tradingentscheidung, keine Alerts, keine Entries</div>
+          <div id="dgcScore" class="dgc-score">—</div>
+          <div id="dgcFactors" class="dgc-factors">
+            <div class="dgc-empty">Noch keine Daten.</div>
           </div>
         </section>
 

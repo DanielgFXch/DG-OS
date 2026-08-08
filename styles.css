@@ -218,6 +218,19 @@ body{
 .poi-type-status{font-family:var(--hud-font);font-size:9px;letter-spacing:.05em;padding:3px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);text-transform:uppercase;opacity:.6;text-align:center;min-width:98px}
 .poi-type-status.poi-type-implemented{color:var(--green);border-color:rgba(56,226,176,.4);opacity:1}
 
+.dgc-score{font-family:var(--display-font);font-weight:700;font-size:32px;letter-spacing:-.01em;margin:8px 0 4px;color:var(--text)}
+.dgc-empty{font-size:12.5px;color:var(--muted);padding:8px 0}
+.dgc-group{margin-top:10px}
+.dgc-group-title{font-family:var(--hud-font);font-size:10px;letter-spacing:.05em;text-transform:uppercase;padding:4px 0;border-bottom:1px solid var(--line)}
+.dgc-group-positive{color:var(--green)}
+.dgc-group-negative{color:var(--gold)}
+.dgc-group-missing{color:var(--muted);opacity:.7}
+.dgc-factor{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12px}
+.dgc-factor:last-child{border-bottom:none}
+.dgc-factor span:first-child{color:var(--text);white-space:nowrap}
+.dgc-reason{font-family:var(--hud-font);font-size:10.5px;color:var(--muted);text-align:right}
+.dgc-factor-missing .dgc-reason{opacity:.6}
+
 .app-footer{
   text-align:center;font-family:var(--hud-font);font-size:10.5px;color:var(--muted);
   letter-spacing:.06em;padding:18px 0 6px;

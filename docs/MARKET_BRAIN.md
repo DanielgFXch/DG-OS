@@ -35,13 +35,11 @@ Market Brain              (data layer — this document)
 ├── Premium / Discount     done   — Module 4
 ├── HTF Bias               done   — Module 5 (structural proxy only)
 ├── Liquidity              done   — Module 6 (level status, no decision/alert)
-├── POIs                   in progress — Module 7, Stage 2/4 (Fair Value Gap + Order Block detection; 6 types still planned)
-├── Order Blocks           planned
-├── FVG                    planned
-└── Confirmation           planned
+└── POIs                   in progress — Module 7, Stage 2/4 (Fair Value Gap + Order Block detection; 6 types still planned)
 
-Daniel Brain               (applies rules/strategy.md — not started)
-├── Decision Engine        planned — replaces the simulated computeDecision()
+Daniel Brain               (applies rules/strategy.md — in progress)
+├── DG Confidence Engine   in progress — Module 8 (contribution-score architecture; no decision/alerts/entries yet)
+├── Decision Engine        planned — replaces the simulated computeDecision(), will consume DG Confidence Engine output
 ├── Scenario Engine        planned
 └── Risk Engine            planned
 
@@ -365,19 +363,93 @@ applicable) inline. "Noch keine POIs erkannt." only appears when the list is
 genuinely empty (e.g. stale/missing candle data) — never fabricated example
 zones, same non-negotiable rule as every other module.
 
+## DG Confidence Engine (Module 8) — architecture only, the first piece of Daniel Brain
+
+Sits directly above the Market Brain, not inside it — the first module of
+the "Daniel Brain" tier from the system tree. Per the permanent [DG
+methodology rule](../CLAUDE.md#dg-methodology--not-ict-not-generic-smart-money),
+this is explicitly **not** a trading decision, **not** an alert, **not** an
+entry, and it does not invent a weighting scheme pretending to be Daniel's
+real rules — those don't exist yet. What it does today: give every Market
+Brain module one uniform way to report *"how much clear, usable structural
+signal do I currently have"* — nothing about a trade direction, nothing
+about buy/sell. That's honestly answerable with zero DG rules defined, and
+it's exactly the shape the later Daniel Decision Engine
+(WAIT/WATCH/READY/HIGH PROBABILITY) will consume once those rules exist.
+
+**Contribution shape** — every module's contribution, uniform regardless of
+source:
+
+```js
+{
+  id, label,     // which module this came from, e.g. 'htfBias' / 'HTF Bias'
+  score,          // 0-100, or null if the module has nothing usable yet
+  status,          // 'positive' | 'negative' | 'missing'
+  reason            // one honest, factual sentence — never a trading opinion
+}
+```
+
+- `'positive'` — this module currently has a clear, usable structural signal
+  (e.g. HTF Bias is bullish/bearish with high confidence, most Liquidity
+  levels are valid, a Premium/Discount zone is unambiguous, fresh
+  high-confidence FVGs/Order Blocks exist).
+- `'negative'` — the module has data, but it's weak, ambiguous, or
+  conflicting (e.g. HTF Bias is `mixed`, all detected FVGs are already
+  mitigated, Premium/Discount sits in equilibrium).
+- `'missing'` — the module has no usable data yet at all (e.g. candles
+  haven't loaded, no session has a real range yet).
+
+**Config-driven, same pattern as `POI_TYPE_DEFS`**: `CONFIDENCE_CONTRIBUTORS`
+is the entire surface a new module needs to touch to participate — one
+entry, an `input` selector (the *only* place allowed to know
+`MarketBrain`'s shape) and a `compute` function that only ever sees its own
+module's already-computed output (never another module's, never raw
+`data/market.json`). *"Neue Module müssen später nur ihren Score liefern.
+Der Rest passiert automatisch."* Today's six contributors: Sessions,
+Liquidity Engine, Premium/Discount, HTF Bias, Fair Value Gap, Order Block.
+
+`computeDGConfidenceEngine(brain)` is the single aggregator — same
+centralization pattern as `enrichPOIContext()` in Module 7:
+
+```js
+{
+  confidence,        // 0-100 or null — simple average of every non-missing score, no invented weighting
+  contributions,       // every contribution, in registry order
+  positiveFactors,       // contributions filtered to status 'positive'
+  negativeFactors,        // contributions filtered to status 'negative'
+  missingFactors            // contributions filtered to status 'missing'
+}
+```
+
+`confidence` is a plain, transparent average of whatever scores are
+currently available — deliberately the simplest defensible aggregation,
+not a fabricated DG-specific weighting. Once Daniel's real rules exist,
+this formula is exactly what gets replaced — the contribution interface
+around it does not need to change.
+
+### UI
+
+New "DG Confidence Engine" card: overall score, then three grouped lists
+(Positive/Negative/Fehlende Faktoren), each factor showing its source
+module and one-line reason. A group that's currently empty (e.g. no
+negative factors right now) simply doesn't render — no fabricated
+placeholder rows.
+
 ## MarketBrain aggregator (`app.js`)
 
 ```js
-const MarketBrain = { liveData, sessions, premiumDiscount, htfBias, liquidity, pois };
+const MarketBrain = { liveData, sessions, premiumDiscount, htfBias, liquidity, pois, dgConfidence };
 ```
 
 One shared object, populated by `loadMarketData()` and kept live-reactive by
 `refreshDerivedModules()` (called after every JSON refresh *and* every
 WebSocket tick). Every module in this document reads from and writes to this
 object — nothing reaches into `data/market.json` directly except
-`loadMarketData()` itself. Future modules (Confirmation, or the remaining
-Stage 2 POI detectors) should add their own key here and a `computeX(data)`
-+ `renderX(x)` pair, following the same shape as Modules 4-7.
+`loadMarketData()` itself. Future modules (Confirmation, the remaining
+Stage 2 POI detectors, or new DG Confidence Engine contributors) should add
+their own key here — and for a new Confidence contributor specifically,
+just one entry in `CONFIDENCE_CONTRIBUTORS`, nothing else — following the
+same shape as Modules 4-8.
 
 ## `data/market.json` schema (grows module by module)
 
@@ -390,6 +462,7 @@ Stage 2 POI detectors) should add their own key here and a `computeX(data)`
 | 5 — HTF Bias | done | *(client-derived, not in market.json — see above)* |
 | 6 — Liquidity | done | *(client-derived, not in market.json — see above)* |
 | 7 — POI Engine | Stage 2/4 (Fair Value Gap + Order Block detection) | `candles.h1` (array of `{datetime, open, high, low, close}`, reused from the Session Engine fetch) |
+| 8 — DG Confidence Engine | architecture only | *(client-derived, not in market.json — see above)* |
 
 Every field is either real (fetched, with a freshness check) or absent —
 never fabricated. The frontend must keep showing "OFFLINE DEMO" / `—` for
@@ -402,11 +475,13 @@ Once the Market Brain is complete and stable, later engines will be built
 **on top of it**, never bypassing it to fetch data on their own:
 
 - **POI Engine**: remaining Stage 2 detectors (Breaker, iFVG, Mitigation Block, Rejection Block, Supply/Demand Zone), then Stage 3 (Bewertung) and Stage 4 (Verbindung mit der Daniel Decision Engine) — see the Module 7 section above
+- **DG Confidence Engine**: more contributors as new Market Brain modules ship (each just adds one `CONFIDENCE_CONTRIBUTORS` entry) — see the Module 8 section above
 - **Confirmation Engine** — entry-trigger detection (engulfing, displacement, CHOCH, …)
 - **Alert Engine** — decides *when* something is worth a Telegram push (not just "sends messages")
 - **Learning Engine** — statistics/pattern recognition over historical performance, never redefines rules
 - **Performance Engine** — win-rate, RR, reports (daily/weekly/monthly/quarterly/yearly)
 
-The **Daniel Decision Engine** (WAIT/WATCH/READY, `computeDecision()` in
-`app.js`) sits above all of these — it applies `rules/strategy.md` to
-whatever the engines below it observe. It is being deliberately built last.
+The **Daniel Decision Engine** (WAIT/WATCH/READY/HIGH PROBABILITY,
+`computeDecision()` in `app.js`) sits above all of these — it will consume
+the DG Confidence Engine's output and apply `rules/strategy.md` to it. It
+is being deliberately built last, once Daniel's exact DG rules exist.

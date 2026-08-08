@@ -1,7 +1,7 @@
 
 // Semantic Versioning (siehe CHANGELOG.md für die vollständige Historie).
 // Bei jedem abgeschlossenen Build hier + in CHANGELOG.md aktualisieren.
-const DG_OS_VERSION='0.14.1';
+const DG_OS_VERSION='0.15.0';
 
 const state={asia:false,sweep:false,engulf:false};
 const $=id=>document.getElementById(id);
@@ -57,7 +57,7 @@ function fmtPrice(n){return typeof n==='number'?n.toFixed(2):'—'}
 // the full module tree. Nothing outside this file should reach into
 // data/market.json directly; go through MarketBrain instead.
 // ---------------------------------------------------------------------------
-const MarketBrain={liveData:null,sessions:null,candles:null,premiumDiscount:null,htfBias:null,liquidity:null,pois:null};
+const MarketBrain={liveData:null,sessions:null,candles:null,premiumDiscount:null,htfBias:null,liquidity:null,pois:null,dgConfidence:null};
 
 // Module 4: Premium / Discount Engine
 //
@@ -560,15 +560,142 @@ function renderPOIEngine(poiEngine){
   container.innerHTML=listHtml+registryHtml;
 }
 
+// Module 8: DG Confidence Engine — architecture only, v0.15.0
+//
+// The first piece of the future Daniel Brain, sitting directly above the
+// Market Brain. Per the permanent "DG methodology" rule (see CLAUDE.md),
+// this is explicitly NOT a trading decision, NOT an alert, NOT an entry —
+// and it does not invent a weighting scheme pretending to be Daniel's real
+// rules, since those aren't defined yet. What it does today: give every
+// Market Brain module a single, uniform way to report "how much clear,
+// usable signal do I currently have" — nothing about a trade direction,
+// nothing about buy/sell. That's structurally honest with zero DG rules
+// defined, and it's exactly what the later Daniel Decision Engine
+// (WAIT/WATCH/READY/HIGH PROBABILITY) will consume once those rules exist.
+//
+// Contribution shape — every module's contribution, uniform regardless of
+// source:
+// {
+//   id, label,        // which module this came from
+//   score,              // 0-100, or null if the module has nothing yet
+//   status,              // 'positive' | 'negative' | 'missing'
+//   reason                // one honest, factual sentence - never a trading opinion
+// }
+//
+// 'positive'  = this module currently has a clear, usable structural signal
+// 'negative'  = this module has data, but it's weak/ambiguous/conflicting
+// 'missing'   = this module has no usable data yet
+//
+// Exactly like POI_TYPE_DEFS, CONFIDENCE_CONTRIBUTORS is the whole surface
+// a new module needs to touch: one entry, an `input` selector (the only
+// place allowed to know MarketBrain's shape) and a `compute` function that
+// only ever sees its own module's already-computed output — never another
+// module's. The aggregator (computeDGConfidenceEngine) is the one place
+// that collects every contribution into confidence/positive/negative/
+// missing — same centralization pattern as enrichPOIContext() in Module 7.
+
+function contributeFromSessions(sessions){
+  if(!sessions) return{score:null,status:'missing',reason:'Noch keine Session-Daten.'};
+  const keys=Object.keys(sessions);
+  const known=keys.filter(k=>sessions[k]&&typeof sessions[k].high==='number'&&typeof sessions[k].low==='number');
+  if(!known.length) return{score:0,status:'missing',reason:'Noch keine Session mit echter Range verfügbar.'};
+  const score=Math.round((known.length/keys.length)*100);
+  return{score,status:known.length>=Math.ceil(keys.length/2)?'positive':'negative',reason:`${known.length}/${keys.length} Sessions mit echter Range verfügbar.`};
+}
+
+function contributeFromLiquidity(liquidity){
+  if(!Array.isArray(liquidity)||!liquidity.length) return{score:null,status:'missing',reason:'Noch keine Liquidity-Daten.'};
+  const valid=liquidity.filter(l=>l.status!=='invalid');
+  if(!valid.length) return{score:0,status:'missing',reason:'Keine validen Liquiditäts-Level verfügbar.'};
+  const notable=liquidity.filter(l=>l.status==='touched'||l.status==='sweeped');
+  const score=Math.round((valid.length/liquidity.length)*100);
+  return{score,status:notable.length>0||score>=50?'positive':'negative',reason:`${valid.length}/${liquidity.length} Level valide, ${notable.length} davon touched/sweeped.`};
+}
+
+function contributeFromPremiumDiscount(pd){
+  if(!pd) return{score:null,status:'missing',reason:'Noch keine Premium/Discount-Daten.'};
+  const zones=Object.values(pd).filter(Boolean);
+  if(!zones.length) return{score:0,status:'missing',reason:'Keine Range verfügbar.'};
+  const clear=zones.filter(z=>z.zone!=='equilibrium');
+  const score=Math.round((clear.length/zones.length)*100);
+  return{score,status:clear.length>=Math.ceil(zones.length/2)?'positive':'negative',reason:`${clear.length}/${zones.length} Timeframes zeigen eine klare Premium/Discount-Lage (nicht Equilibrium).`};
+}
+
+function contributeFromHTFBias(htfBias){
+  if(!htfBias) return{score:null,status:'missing',reason:'Noch keine HTF-Bias-Daten.'};
+  const score=htfBias.confidence;
+  const status=htfBias.bias==='mixed'?'negative':(score>=67?'positive':'negative');
+  return{score,status,reason:`Bias ${htfBias.bias.toUpperCase()} bei ${htfBias.confidence}% Confidence.`};
+}
+
+function contributeFromPoiType(poiList,type,label){
+  if(!poiList) return{score:null,status:'missing',reason:`Noch keine ${label}-Daten.`};
+  const zones=poiList.filter(p=>p.type===type);
+  if(!zones.length) return{score:0,status:'missing',reason:`Keine ${label}-Zonen erkannt.`};
+  const fresh=zones.filter(p=>p.status==='fresh');
+  const avgConfidence=fresh.length?Math.round(fresh.reduce((s,p)=>s+(p.confidence||0),0)/fresh.length):0;
+  return{score:avgConfidence,status:fresh.length>0?'positive':'negative',reason:`${fresh.length}/${zones.length} ${label}-Zonen noch frisch${fresh.length?`, Ø ${avgConfidence}% Confidence`:''}.`};
+}
+function contributeFromFVG(poiList){ return contributeFromPoiType(poiList,'fvg','Fair Value Gap') }
+function contributeFromOrderBlock(poiList){ return contributeFromPoiType(poiList,'orderBlock','Order Block') }
+
+const CONFIDENCE_CONTRIBUTORS=[
+  {id:'session',label:'Sessions',input:brain=>brain.sessions,compute:contributeFromSessions},
+  {id:'liquidity',label:'Liquidity Engine',input:brain=>brain.liquidity,compute:contributeFromLiquidity},
+  {id:'premiumDiscount',label:'Premium/Discount',input:brain=>brain.premiumDiscount,compute:contributeFromPremiumDiscount},
+  {id:'htfBias',label:'HTF Bias',input:brain=>brain.htfBias,compute:contributeFromHTFBias},
+  {id:'fvg',label:'Fair Value Gap',input:brain=>brain.pois&&brain.pois.list,compute:contributeFromFVG},
+  {id:'orderBlock',label:'Order Block',input:brain=>brain.pois&&brain.pois.list,compute:contributeFromOrderBlock}
+];
+
+function computeDGConfidenceEngine(brain){
+  const contributions=CONFIDENCE_CONTRIBUTORS.map(c=>Object.assign({id:c.id,label:c.label},c.compute(c.input(brain))));
+  const scored=contributions.filter(c=>typeof c.score==='number'&&c.status!=='missing');
+  const confidence=scored.length?Math.round(scored.reduce((s,c)=>s+c.score,0)/scored.length):null;
+  return{
+    confidence,
+    contributions,
+    positiveFactors:contributions.filter(c=>c.status==='positive'),
+    negativeFactors:contributions.filter(c=>c.status==='negative'),
+    missingFactors:contributions.filter(c=>c.status==='missing')
+  };
+}
+
+function renderDGConfidence(engine){
+  const scoreEl=$('dgcScore');
+  const container=$('dgcFactors');
+  if(!scoreEl||!container) return;
+  if(!engine){
+    scoreEl.textContent='—';
+    container.innerHTML='<div class="dgc-empty">Noch keine Daten.</div>';
+    return;
+  }
+  scoreEl.textContent=typeof engine.confidence==='number'?`${engine.confidence}%`:'—';
+
+  const group=(title,items,cls)=>!items.length?'':`
+    <div class="dgc-group">
+      <div class="dgc-group-title dgc-group-${cls}">${title} (${items.length})</div>
+      ${items.map(f=>`<div class="dgc-factor dgc-factor-${cls}"><span>${f.label}</span><span class="dgc-reason">${f.reason||''}</span></div>`).join('')}
+    </div>`;
+
+  const html=group('Positive Faktoren',engine.positiveFactors,'positive')
+    + group('Negative Faktoren',engine.negativeFactors,'negative')
+    + group('Fehlende Faktoren',engine.missingFactors,'missing');
+
+  container.innerHTML=html||'<div class="dgc-empty">Noch keine Daten.</div>';
+}
+
 function refreshDerivedModules(){
   MarketBrain.premiumDiscount=computePremiumDiscount(MarketBrain.liveData);
   MarketBrain.htfBias=computeHTFBias(MarketBrain.liveData);
   MarketBrain.liquidity=computeLiquidityEngine(MarketBrain.liveData);
   MarketBrain.pois=computePOIEngine(MarketBrain);
+  MarketBrain.dgConfidence=computeDGConfidenceEngine(MarketBrain);
   renderPremiumDiscount(MarketBrain.premiumDiscount);
   renderHTFBias(MarketBrain.htfBias);
   renderLiquidityEngine(MarketBrain.liquidity);
   renderPOIEngine(MarketBrain.pois);
+  renderDGConfidence(MarketBrain.dgConfidence);
 }
 
 function setLiveStatus(isLive,label){

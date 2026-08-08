@@ -1,6 +1,9 @@
 # DG-OS
 DG OS Alpha - AI Trading Assistant
 
+Projektvision & Leitplanken: [`docs/VISION.md`](docs/VISION.md).
+Daniels Trading-Regelwerk (Grundlage der Entscheidungslogik): [`rules/strategy.md`](rules/strategy.md).
+
 ## Live-Vorschau (Progress)
 
 **https://danielgfxch.github.io/DG-OS/**

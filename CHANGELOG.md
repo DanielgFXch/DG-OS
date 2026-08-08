@@ -8,6 +8,19 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.14.0] — Market Brain Modul 7: POI Engine Stage 2/4 — Order Block Detector
+
+### Neu
+- **Order Block Detector** (`detectOrderBlocks`): zweite echte Erkennung der POI Engine — Architektur für den späteren "Daniel Order Block", noch keine finale Tradingbewertung. Erkennt strukturell die letzte gegensätzliche Kerze vor einer echten Displacement-Kerze (Range ≥ 1,5x Ø-Range, starker Close im äußeren Drittel)
+- POI-Datenmodell um `impulseSize` (Impulsgröße), `displacement` (Displacement-Nachweis: Kerze, Range, Ø-Range, Ratio), `structureReference` (reserviert für künftige BOS/CHOCH Structure Engine) und `mitigationDetail` (reserviert für ein späteres, feineres Mitigation-Flag) erweitert — beide reservierten Felder bewusst `null`, nicht erfunden
+- Gemeinsame Kerzen-Hilfsfunktionen (`localAverageRange`, `isZoneMitigatedAfter`) zwischen FVG- und Order-Block-Detector geteilt, ohne die Modularitätsregel zu verletzen — beide Detectoren bleiben vollständig unabhängig von Liquidity/Session/HTF Bias und kennen nur ihre eigene Kerzenreihe
+- POI-Karte zeigt Order Blocks jetzt inklusive Displacement-Ratio und Impulsgröße im Kontext
+
+### Geänderte Dateien
+`app.js`, `index.html`, `docs/MARKET_BRAIN.md`, `CHANGELOG.md`
+
+---
+
 ## [0.13.0] — Market Brain Modul 7: POI Engine Stage 2/4 — Fair Value Gap Detector
 
 ### Neu

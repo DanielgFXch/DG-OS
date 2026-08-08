@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch XAUUSD quote from TwelveData
+      - name: Fetch XAUUSD quote + daily candle from TwelveData
         env:
           TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
         run: |
@@ -33,25 +33,42 @@ jobs:
             exit 1
           fi
           mkdir -p data
-          response=$(curl -sS "https://api.twelvedata.com/quote?symbol=XAU/USD&apikey=${TWELVEDATA_API_KEY}")
-          status=$(echo "$response" | jq -r '.status // empty')
-          if [ "$status" = "error" ]; then
-            echo "TwelveData returned an error:"
-            echo "$response" | jq -r '.message // .'
+
+          quote=$(curl -sS "https://api.twelvedata.com/quote?symbol=XAU/USD&apikey=${TWELVEDATA_API_KEY}")
+          qstatus=$(echo "$quote" | jq -r '.status // empty')
+          if [ "$qstatus" = "error" ]; then
+            echo "TwelveData quote error:"
+            echo "$quote" | jq -r '.message // .'
             exit 1
           fi
-          echo "$response" | jq \
+
+          # /quote's own open/high/low only cover "today" and go misleadingly flat
+          # around weekends/day-boundaries when no real session has traded yet. The
+          # most recent complete daily candle from time_series always matches what a
+          # chart's wick actually shows, on any day of the week.
+          series=$(curl -sS "https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=1day&outputsize=1&apikey=${TWELVEDATA_API_KEY}")
+          sstatus=$(echo "$series" | jq -r '.status // empty')
+          if [ "$sstatus" = "error" ]; then
+            echo "TwelveData time_series error:"
+            echo "$series" | jq -r '.message // .'
+            exit 1
+          fi
+
+          jq -n \
+            --argjson quote "$quote" \
+            --argjson bar "$(echo "$series" | jq -c '.values[0] // {}')" \
             --arg updatedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             '{
               updatedAt: $updatedAt,
-              symbol: (.symbol // "XAU/USD"),
-              price: (.close | tonumber? // null),
-              dailyOpen: (.open | tonumber? // null),
-              dailyHigh: (.high | tonumber? // null),
-              dailyLow: (.low | tonumber? // null),
-              previousClose: (.previous_close | tonumber? // null),
-              changePercent: (.percent_change | tonumber? // null),
-              isMarketOpen: (.is_market_open // null)
+              symbol: ($quote.symbol // "XAU/USD"),
+              price: ($quote.close | tonumber? // null),
+              dailyOpen: ($bar.open | tonumber? // null),
+              dailyHigh: ($bar.high | tonumber? // null),
+              dailyLow: ($bar.low | tonumber? // null),
+              barDate: ($bar.datetime // null),
+              previousClose: ($quote.previous_close | tonumber? // null),
+              changePercent: ($quote.percent_change | tonumber? // null),
+              isMarketOpen: ($quote.is_market_open // null)
             }' > data/market.json
           cat data/market.json
 

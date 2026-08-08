@@ -179,6 +179,22 @@ body{
 .session-status.status-active{color:var(--green);border-color:rgba(56,226,176,.4);box-shadow:0 0 8px rgba(56,226,176,.15)}
 .session-status.status-upcoming{color:var(--gold);border-color:rgba(242,181,68,.35)}
 .session-window{font-size:11px;color:var(--muted);margin-top:9px;font-family:var(--hud-font)}
+
+.pd-zone-premium{color:var(--red)}
+.pd-zone-discount{color:var(--green)}
+.pd-zone-equilibrium{color:var(--gold)}
+
+.bias-value{font-family:var(--display-font);font-weight:700;font-size:24px;letter-spacing:-.01em;margin-top:8px}
+.bias-bullish{color:var(--green);text-shadow:0 0 16px rgba(56,226,176,.35)}
+.bias-bearish{color:var(--red);text-shadow:0 0 16px rgba(255,77,109,.35)}
+.bias-mixed{color:var(--gold);text-shadow:0 0 16px rgba(242,181,68,.3)}
+
+.app-footer{
+  text-align:center;font-family:var(--hud-font);font-size:10.5px;color:var(--muted);
+  letter-spacing:.06em;padding:18px 0 6px;
+}
+.app-footer a{color:var(--muted);text-decoration:underline;text-underline-offset:2px}
+.app-footer a:hover{color:var(--cyan)}
 .rows{display:grid;gap:2px}
 .row{display:flex;justify-content:space-between;gap:15px;padding:10px 0;border-bottom:1px solid var(--line)}
 .row:last-child{border-bottom:none}

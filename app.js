@@ -1,4 +1,8 @@
 
+// Semantic Versioning (siehe CHANGELOG.md für die vollständige Historie).
+// Bei jedem abgeschlossenen Build hier + in CHANGELOG.md aktualisieren.
+const DG_OS_VERSION='0.10.0';
+
 const state={asia:false,sweep:false,engulf:false};
 const $=id=>document.getElementById(id);
 
@@ -42,6 +46,127 @@ const MARKET_DATA_URL='./data/market.json';
 const MARKET_STALE_MS=45*60*1000;
 
 function fmtPrice(n){return typeof n==='number'?n.toFixed(2):'—'}
+
+// ---------------------------------------------------------------------------
+// Market Brain aggregator
+//
+// One shared object every module reads from and writes to, instead of each
+// module keeping its own private state. This is the foundation the future
+// Daniel Brain (Decision/Scenario/Risk Engine) and System layer (Alerts/
+// Reports/Learning/Statistics) will read from — see docs/MARKET_BRAIN.md for
+// the full module tree. Nothing outside this file should reach into
+// data/market.json directly; go through MarketBrain instead.
+// ---------------------------------------------------------------------------
+const MarketBrain={liveData:null,sessions:null,premiumDiscount:null,htfBias:null};
+
+// Module 4: Premium / Discount Engine
+//
+// Returns a full object per timeframe range, never just a boolean, so any
+// future module (Liquidity, POI, Confirmation, ...) can read
+// {zone, equilibrium, distanceToEq, ...} directly instead of recomputing
+// range math itself. Computed purely client-side from ranges already in
+// market.json - no extra API call, and it re-evaluates instantly on every
+// WebSocket price tick (see openTdSocket()'s message handler).
+const EQUILIBRIUM_BAND_PERCENT=3; // +/-3% of range width around EQ counts as "equilibrium", not premium/discount
+
+function computeZoneForRange(price,high,low){
+  if(typeof price!=='number'||typeof high!=='number'||typeof low!=='number'||high<=low) return null;
+  const range=high-low;
+  const equilibrium=low+range/2;
+  const distanceToEq=price-equilibrium;
+  const distanceToEqPercent=(distanceToEq/range)*100;
+  const zone=Math.abs(distanceToEqPercent)<=EQUILIBRIUM_BAND_PERCENT
+    ? 'equilibrium'
+    : (distanceToEq>0?'premium':'discount');
+  return{
+    high,low,range,equilibrium,price,
+    distanceToEq,distanceToEqPercent,
+    zone,
+    isPremium:zone==='premium',
+    isDiscount:zone==='discount',
+    isEquilibrium:zone==='equilibrium'
+  };
+}
+
+function computePremiumDiscount(data){
+  if(!data||typeof data.price!=='number') return null;
+  return{
+    daily:computeZoneForRange(data.price,data.dailyHigh,data.dailyLow),
+    weekly:computeZoneForRange(data.price,data.weeklyHigh,data.weeklyLow),
+    monthly:computeZoneForRange(data.price,data.monthlyHigh,data.monthlyLow)
+  };
+}
+
+const PD_TIMEFRAMES=[{id:'daily',name:'Daily'},{id:'weekly',name:'Weekly'},{id:'monthly',name:'Monthly'}];
+const PD_ZONE_LABEL={premium:'Premium',discount:'Discount',equilibrium:'Equilibrium'};
+
+function renderPremiumDiscount(pd){
+  const container=$('pdRows');
+  if(!container) return;
+  container.innerHTML=PD_TIMEFRAMES.map(tf=>{
+    const z=pd&&pd[tf.id];
+    if(!z) return `<div class="row"><span>${tf.name}</span><strong>—</strong></div>`;
+    const sign=z.distanceToEqPercent>0?'+':'';
+    return `<div class="row"><span>${tf.name}</span><strong class="pd-zone-${z.zone}">${PD_ZONE_LABEL[z.zone]} · ${sign}${z.distanceToEqPercent.toFixed(1)}% zur EQ</strong></div>`;
+  }).join('');
+}
+
+// Module 5: HTF Bias Engine
+//
+// A structural proxy only — price vs. Daily/Weekly/Monthly Open — explicitly
+// NOT Daniel's real bias methodology. That will come from rules/strategy.md
+// and live in the Daniel Decision Engine once it exists. `lastBOS` and
+// `currentStructure` are reserved fields for a future Structure/Liquidity
+// Engine that can actually detect swing points and breaks of structure; they
+// stay null here rather than being faked, per the project's build rule.
+function computeHTFBias(data){
+  if(!data||typeof data.price!=='number') return null;
+  const timeframes=[
+    {id:'daily',name:'Daily',open:data.dailyOpen,high:data.dailyHigh,low:data.dailyLow},
+    {id:'weekly',name:'Weekly',open:data.weeklyOpen,high:data.weeklyHigh,low:data.weeklyLow},
+    {id:'monthly',name:'Monthly',open:data.monthlyOpen,high:data.monthlyHigh,low:data.monthlyLow}
+  ].filter(tf=>typeof tf.open==='number');
+  if(!timeframes.length) return null;
+
+  const above=timeframes.filter(tf=>data.price>tf.open);
+  const below=timeframes.filter(tf=>data.price<tf.open);
+  const bias=above.length===timeframes.length?'bullish':(below.length===timeframes.length?'bearish':'mixed');
+  const confidence=Math.round((Math.max(above.length,below.length)/timeframes.length)*100);
+
+  const strengths=timeframes.map(tf=>{
+    const range=(typeof tf.high==='number'&&typeof tf.low==='number')?tf.high-tf.low:null;
+    return range&&range>0?Math.min(Math.abs(data.price-tf.open)/range,1):0;
+  });
+  const trendStrength=Math.round((strengths.reduce((a,b)=>a+b,0)/strengths.length)*100);
+  const reason=timeframes.map(tf=>`${tf.name} ${data.price>tf.open?'>':'<'} Open`).join(' · ');
+
+  return{bias,confidence,trendStrength,reason,lastBOS:null,currentStructure:null};
+}
+
+const BIAS_LABEL={bullish:'BULLISH',bearish:'BEARISH',mixed:'MIXED'};
+function renderHTFBias(bias){
+  const valueEl=$('biasValue');
+  if(!valueEl) return;
+  const reasonEl=$('biasReason'),confEl=$('biasConfidence'),strengthEl=$('biasStrength');
+  if(!bias){
+    valueEl.textContent='—';valueEl.className='bias-value';
+    reasonEl.textContent='Noch keine Daten.';
+    confEl.textContent='—';strengthEl.textContent='—';
+    return;
+  }
+  valueEl.textContent=BIAS_LABEL[bias.bias];
+  valueEl.className=`bias-value bias-${bias.bias}`;
+  reasonEl.textContent=bias.reason;
+  confEl.textContent=`${bias.confidence}%`;
+  strengthEl.textContent=`${bias.trendStrength}%`;
+}
+
+function refreshDerivedModules(){
+  MarketBrain.premiumDiscount=computePremiumDiscount(MarketBrain.liveData);
+  MarketBrain.htfBias=computeHTFBias(MarketBrain.liveData);
+  renderPremiumDiscount(MarketBrain.premiumDiscount);
+  renderHTFBias(MarketBrain.htfBias);
+}
 
 function setLiveStatus(isLive,label){
   const badge=$('connectionBadge');
@@ -94,6 +219,10 @@ async function loadMarketData(){
     $('monthlyHigh').textContent=fmtPrice(data.monthlyHigh);
     $('monthlyLow').textContent=fmtPrice(data.monthlyLow);
     updateSessionData(data.sessions);
+
+    MarketBrain.liveData=data;
+    MarketBrain.sessions=data.sessions||null;
+    refreshDerivedModules();
 
     if(!tdStreaming){
       const marketClosed=currentSession(new Date()).name==='Markt geschlossen';
@@ -236,6 +365,12 @@ function openTdSocket(key){
         setChange(((msg.price-lastPreviousClose)/lastPreviousClose)*100);
       }
       setLiveStatus(true);
+      // Premium/Discount + HTF Bias re-evaluate instantly on every live tick,
+      // not just every 15 min - they only need MarketBrain.liveData.price.
+      if(MarketBrain.liveData){
+        MarketBrain.liveData=Object.assign({},MarketBrain.liveData,{price:msg.price});
+        refreshDerivedModules();
+      }
     }
   });
 
@@ -479,6 +614,7 @@ async function maybeAutoSend(){
   }
 }
 
+$('appVersion').textContent=`v${DG_OS_VERSION}`;
 renderSessionCards();
 document.querySelectorAll('.card').forEach((el,i)=>{el.style.animationDelay=`${Math.min(i*0.05,0.4)}s`});
 

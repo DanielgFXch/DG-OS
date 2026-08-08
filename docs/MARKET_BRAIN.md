@@ -9,6 +9,36 @@ directly, and the Market Brain never invents a trading opinion.
 
 Full vision context: [`VISION.md`](VISION.md).
 
+## System tree (target architecture)
+
+```
+Market Brain              (data layer — this document)
+├── Live Data             done   — Module 1
+├── Sessions               done   — Module 3
+├── Premium / Discount     done   — Module 4
+├── HTF Bias               done   — Module 5 (structural proxy only)
+├── Liquidity              planned
+├── POIs                   planned
+├── Order Blocks           planned
+├── FVG                    planned
+└── Confirmation           planned
+
+Daniel Brain               (applies rules/strategy.md — not started)
+├── Decision Engine        planned — replaces the simulated computeDecision()
+├── Scenario Engine        planned
+└── Risk Engine            planned
+
+System                     (not started)
+├── Alerts                 planned — server-side push, beyond the manual Telegram button
+├── Reports                planned
+├── Learning                planned
+└── Statistics              planned
+```
+
+Every module in Market Brain is built to be **read by**, never **bypassed
+by**, everything above it. Daniel Brain and System never fetch data or talk
+to TwelveData directly — they read `MarketBrain.*` (see `app.js`).
+
 ## Data flow
 
 ```
@@ -76,6 +106,68 @@ never as three copy-pasted Asia/London/NY blocks:
   belong to the Liquidity Engine once it exists and will attach to the same
   per-session object rather than inventing a parallel structure.
 
+## Premium / Discount Engine (Module 4) — reusable zone model
+
+Client-side only, no new API call — recomputed from ranges already in
+`MarketBrain.liveData` (and re-evaluated instantly on every WebSocket price
+tick, not just every 15 min). Returns a **full object per timeframe**, never
+just a boolean, via `computeZoneForRange(price, high, low)`:
+
+```js
+{
+  high, low, range, equilibrium,       // the reference range itself
+  price,                                // current price at evaluation time
+  distanceToEq, distanceToEqPercent,    // signed — negative means below EQ
+  zone,                                  // 'premium' | 'discount' | 'equilibrium'
+  isPremium, isDiscount, isEquilibrium   // convenience booleans for consumers
+}
+```
+
+`computePremiumDiscount(data)` returns `{daily, weekly, monthly}` — one such
+object per range, since "premium/discount" is meaningless without saying
+*relative to which range*. A ±3% band around the midpoint (`EQUILIBRIUM_BAND_PERCENT`)
+counts as `'equilibrium'` rather than forcing every price into premium or
+discount. Once an Order Block/swing-based "dealing range" exists, add it as
+a fourth key (e.g. `dealingRange`) rather than replacing daily/weekly/monthly.
+
+## HTF Bias Engine (Module 5) — structural proxy, not Daniel's rules
+
+Also client-side, also re-evaluated on every price tick. `computeHTFBias(data)`
+returns:
+
+```js
+{
+  bias,              // 'bullish' | 'bearish' | 'mixed'
+  confidence,         // 0-100, % of timeframes (daily/weekly/monthly) agreeing
+  trendStrength,       // 0-100, avg. |price-open|/range across timeframes, capped
+  reason,              // e.g. "Daily > Open · Weekly > Open · Monthly < Open"
+  lastBOS,             // reserved, always null until a Structure Engine exists
+  currentStructure      // reserved, always null until a Structure Engine exists
+}
+```
+
+**Explicitly not** Daniel's real bias methodology — that depends on
+`rules/strategy.md` and belongs to the Daniel Decision Engine once it's
+built. This is a mechanical, fully transparent proxy (price vs. opens across
+timeframes) so the dashboard has *something real* to show instead of nothing,
+without ever pretending to be smarter than it is. `lastBOS`/`currentStructure`
+are intentionally left `null` rather than faked — no dummy features.
+
+## MarketBrain aggregator (`app.js`)
+
+```js
+const MarketBrain = { liveData, sessions, premiumDiscount, htfBias };
+```
+
+One shared object, populated by `loadMarketData()` and kept live-reactive by
+`refreshDerivedModules()` (called after every JSON refresh *and* every
+WebSocket tick). Every module in this document reads from and writes to this
+object — nothing reaches into `data/market.json` directly except
+`loadMarketData()` itself. Future modules (Liquidity, POIs, Order Blocks,
+FVG, Confirmation) should add their own key here (e.g. `MarketBrain.liquidity`)
+and a `computeX(data)` + `renderX(x)` pair, following the same shape as
+Modules 4-5.
+
 ## `data/market.json` schema (grows module by module)
 
 | Module | Status | Fields added |
@@ -83,8 +175,8 @@ never as three copy-pasted Asia/London/NY blocks:
 | 1 — Live price + daily range | done | `price`, `dailyOpen`, `dailyHigh`, `dailyLow`, `barDate`, `previousClose`, `changePercent`, `isMarketOpen` |
 | 2 — Weekly/monthly range | done | `weeklyOpen`, `weeklyHigh`, `weeklyLow`, `weekBarDate`, `monthlyOpen`, `monthlyHigh`, `monthlyLow`, `monthBarDate` |
 | 3 — Session ranges (Asia/London/NY) | done | `sessions.{asia,london,ny}.{high,low,date}` |
-| 4 — Premium/Discount | planned | derived client-side from existing ranges, no new API call |
-| 5 — HTF Bias (structural, not Daniel's rules yet) | planned | derived client-side from existing opens, no new API call |
+| 4 — Premium/Discount | done | *(client-derived, not in market.json — see above)* |
+| 5 — HTF Bias | done | *(client-derived, not in market.json — see above)* |
 
 Every field is either real (fetched, with a freshness check) or absent —
 never fabricated. The frontend must keep showing "OFFLINE DEMO" / `—` for

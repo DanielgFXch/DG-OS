@@ -1,0 +1,166 @@
+# Changelog
+
+Alle nennenswerten Änderungen an DG OS werden hier dokumentiert.
+Format angelehnt an [Keep a Changelog](https://keepachangelog.com/lang/de/),
+Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
+
+- **MAJOR** — große Meilensteine / grundlegende Architekturänderungen
+- **MINOR** — neue Module oder größere Funktionen
+- **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
+
+## [0.10.0] — Market Brain Modul 4 + 5: Premium/Discount & HTF Bias
+
+### Neu
+- **Premium/Discount Engine** (Modul 4): vollständiges Objekt pro Timeframe (Daily/Weekly/Monthly) statt nur true/false — Equilibrium, Distance to EQ, aktuelle Zone, `isPremium`/`isDiscount`/`isEquilibrium`
+- **HTF Bias Engine** (Modul 5): Bias, Confidence, Trend Strength, Reason — bewusst als struktureller Proxy (Preis vs. Daily/Weekly/Monthly Open) gekennzeichnet, noch nicht Daniels echtes Regelwerk. `lastBOS`/`currentStructure` sind reserviert, aber `null`, bis eine echte Struktur-Engine existiert
+- `MarketBrain`-Aggregator-Objekt: gemeinsame Datenbasis, auf der künftig Daniel Brain (Decision/Scenario/Risk Engine) und System-Layer (Alerts/Reports/Learning/Statistics) aufbauen
+- Semantic Versioning eingeführt (dieses Changelog, Versionsanzeige im Interface)
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `docs/MARKET_BRAIN.md`, `CHANGELOG.md` (neu)
+
+---
+
+## [0.9.0] — Market Brain Modul 3: Session Engine
+
+### Neu
+- Wiederverwendbare Session-Architektur (Asia/London/New York): Status (Bevorstehend/Aktiv/Geschlossen), High/Low/Range
+- Server-seitige Intraday-Datenabfrage mit robuster "echte Kerze finden"-Logik (72h Rückblick, überspringt Wochenend-Platzhalter)
+
+### Geänderte Dateien
+`.github/workflows/market-data.yml`, `app.js`, `index.html`, `styles.css`, `docs/MARKET_BRAIN.md` (neu)
+
+---
+
+## [0.8.1] — Doku: Kommunikationspräferenz
+
+### Sonstiges
+- `CLAUDE.md`: Regel für Abschluss-Signal + weiterleitbare Zusammenfassung nach jedem Build dokumentiert
+
+---
+
+## [0.8.0] — Market Brain Modul 2: Weekly/Monthly Range
+
+### Neu
+- Weekly & Monthly Open/High/Low, gleiche robuste Kerzen-Logik wie Modul 1
+
+### Geänderte Dateien
+`.github/workflows/market-data.yml`, `app.js`, `index.html`
+
+---
+
+## [0.7.1] – [0.7.5] — Daily-Range-Fixes (5 Iterationen)
+
+### Bugfixes
+- Daily High/Low zeigte am Wochenende/Periodenwechsel eine unrealistisch enge Range (z. B. $0.26 statt der echten ~$142 Tagesspanne)
+- Ursache: TwelveData liefert für jeden Kalendertag eine Kerze, auch für Tage ohne echten Handel (flacher Platzhalter statt Auslassung), und rollt Tagesgrenzen anders als reines UTC-Kalenderdatum
+- Finale Lösung: Kerzen nach Spannweite (nicht nach Datum) bewerten, vorwärts durch mehrere Tage scannen, bis eine Kerze mit echter (> 0,1 % vom Preis) Range gefunden wird
+- Zusätzlich: ehrlicher Hinweistext im Interface, wenn der Markt gerade geschlossen ist
+
+### Geänderte Dateien
+`.github/workflows/market-data.yml`, `app.js`
+
+---
+
+## [0.7.0] — Echtzeit-Preis-Stream
+
+### Neu
+- Optionaler TwelveData-WebSocket-Stream für sekundengenaue Live-Preise direkt im Browser (bewusste Entscheidung: API-Key liegt dafür sichtbar im Frontend-Code, im Gegenzug für echtes Live-Update statt 15-Minuten-Takt)
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`
+
+---
+
+## [0.6.0] — Echte Marktdaten angebunden
+
+### Neu
+- XAUUSD Live-Preis, Daily Open/High/Low über TwelveData (kostenloser Tarif), automatisiert per GitHub Actions alle 15 Minuten
+- Ehrlicher LIVE/OFFLINE-DEMO-Status statt erfundener Zahlen, wenn keine echten Daten verfügbar sind
+
+### Geänderte Dateien
+`.github/workflows/market-data.yml` (neu), `app.js`, `index.html`, `README.md`
+
+---
+
+## [0.5.1] — Eigene Schriftarten
+
+### Verbessert
+- Chakra Petch (Überschriften/Chrome) + JetBrains Mono (Daten) selbst gehostet statt Systemschriften, für ein konsistentes Erscheinungsbild auf jedem Gerät
+
+### Geänderte Dateien
+`styles.css`, `sw.js`, `fonts/` (neu)
+
+---
+
+## [0.5.0] — HUD-Terminal-Redesign
+
+### Verbessert
+- Emoji durch ein einheitliches SVG-Icon-System ersetzt
+- Status-Ticker-Leiste, größeres Hero-Panel mit Gauge-Tickmarks und Radar-Reticle
+- Responsives Multi-Panel-Layout ab 1080px Breite statt gestreckter Handy-Spalte
+- Market Events als farbcodiertes Log statt Emoji-Marker
+
+### Geänderte Dateien
+`index.html`, `app.js`, `styles.css`
+
+---
+
+## [0.4.1] — Jarvis-HUD-Politur
+
+### Verbessert
+- Animierter Confidence-Ring, pulsierende Live-Status-Punkte, atmendes Logo-Glühen, Boot-Sequenz-Animation der Cards
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`
+
+---
+
+## [0.4.0] — Entscheidungslogik & Projekt-Leitplanken
+
+### Neu
+- WAIT/WATCH/READY-System mit erklärbarer, itemisierter Begründung (`computeDecision()`) statt binärem WAIT/SELL
+- `docs/VISION.md` (Daniels vollständige Projektvision) und `CLAUDE.md` (verdichteter Leitfaden für künftige Sessions) als dauerhafte Referenz
+- `rules/strategy.md`-Gerüst für Daniels Trading-Regelwerk
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `docs/VISION.md` (neu), `CLAUDE.md` (neu), `rules/strategy.md` (neu)
+
+---
+
+## [0.3.0] — Zeitbewusstes Dashboard
+
+### Neu
+- Begrüßung ("Guten Morgen/Tag/Abend/Nacht, Daniel Gomes") und aktuelle Session nach Uhrzeit
+- Telegram-Heartbeat-Workflow (Server-seitiger Verbindungstest über GitHub Actions)
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `.github/workflows/telegram-heartbeat.yml` (neu)
+
+---
+
+## [0.2.1] — Live-Vorschau
+
+### Neu
+- GitHub Pages Auto-Deploy bei jedem Merge nach `main`, damit der aktuelle Stand jederzeit unter einem festen Link einsehbar ist
+
+### Geänderte Dateien
+`.github/workflows/deploy-pages.yml` (neu), `README.md`
+
+---
+
+## [0.2.0] — Telegram-Integration & erstes Jarvis-Theme
+
+### Neu
+- Client-seitige Telegram-Anbindung (manuelles/automatisches Senden des Briefings)
+- Erstes dunkles Jarvis-HUD-Farbschema (Cyan/Gold-Akzente)
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `README.md`
+
+---
+
+## [0.1.0] — Initial Alpha
+
+### Neu
+- Erste statische PWA mit simulierten Alpha-Buttons (Asia Session / Sweep / Bearish Engulfing) zur Demonstration des WAIT/SELL-Konzepts

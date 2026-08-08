@@ -9,6 +9,23 @@ directly, and the Market Brain never invents a trading opinion.
 
 Full vision context: [`VISION.md`](VISION.md).
 
+## DG methodology — technical foundation, not the finished DG version
+
+**Every module below is currently a generic/structural implementation, not
+Daniel's DG-specific version of that concept.** Per the permanent project
+rule in [`CLAUDE.md`](../CLAUDE.md#dg-methodology--not-ict-not-generic-smart-money):
+DG OS digitizes Daniel Gomes' own way of reading the market — not ICT, not
+generic Smart Money Concepts, not a TradingView-style indicator set. The
+Liquidity Engine, Fair Value Gap detector, Order Block detector, and HTF
+Bias documented here are real, working technical infrastructure — genuine
+detection on genuine data — built so each one can be adapted step by step
+into **DG Liquidity**, **DG Valid FVG**, **DG Order Block**, and **DG HTF
+Bias** once Daniel defines the exact rules for each in
+[`rules/strategy.md`](../rules/strategy.md). Until then: never invent or
+approximate a generic trading rule as a stand-in for an undefined DG rule —
+prepare the architecture and wait, same as the Decision Engine already
+does.
+
 ## System tree (target architecture)
 
 ```

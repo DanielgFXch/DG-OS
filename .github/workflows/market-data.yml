@@ -44,19 +44,24 @@ jobs:
 
           # /quote's own open/high/low only cover "today" and go misleadingly flat
           # around weekends/day-boundaries when no real session has traded yet. The
-          # most recent complete daily candle from time_series always matches what a
-          # chart's wick actually shows, on any day of the week.
-          series=$(curl -sS "https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=1day&outputsize=1&apikey=${TWELVEDATA_API_KEY}")
+          # most recent COMPLETE daily candle from time_series always matches what a
+          # chart's wick actually shows. outputsize=2 so we can skip values[0] when
+          # it's today's still-forming (thin/weekend) candle and fall back to
+          # values[1], the last real completed trading day.
+          series=$(curl -sS "https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=1day&outputsize=2&apikey=${TWELVEDATA_API_KEY}")
           sstatus=$(echo "$series" | jq -r '.status // empty')
           if [ "$sstatus" = "error" ]; then
             echo "TwelveData time_series error:"
             echo "$series" | jq -r '.message // .'
             exit 1
           fi
+          today=$(date -u +%Y-%m-%d)
+          bar=$(echo "$series" | jq -c --arg today "$today" \
+            '(.values // []) as $v | (if ($v[0].datetime // "") == $today and ($v[1] != null) then $v[1] else $v[0] end) // {}')
 
           jq -n \
             --argjson quote "$quote" \
-            --argjson bar "$(echo "$series" | jq -c '.values[0] // {}')" \
+            --argjson bar "$bar" \
             --arg updatedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             '{
               updatedAt: $updatedAt,

@@ -45,9 +45,16 @@ jobs:
           # /quote's own open/high/low only cover "today" and go misleadingly flat
           # around weekends/day-boundaries when no real session has traded yet. The
           # most recent COMPLETE daily candle from time_series always matches what a
-          # chart's wick actually shows. outputsize=2 so we can skip values[0] when
-          # it's today's still-forming (thin/weekend) candle and fall back to
-          # values[1], the last real completed trading day.
+          # chart's wick actually shows. outputsize=2 so we can fall back to
+          # values[1] (the last real completed trading day) when values[0] turns out
+          # to be a thin/still-forming candle.
+          #
+          # Comparing values[0]'s date string against today (UTC) is NOT reliable
+          # here: TwelveData appears to roll its daily candle over before UTC
+          # midnight (observed values[0].datetime one day ahead of the runner's own
+          # `date -u`), so an exact date match silently never fired. Instead, judge
+          # values[0] by its own range: if high-low is a tiny fraction of price
+          # (< 0.1%), it hasn't seen real trading yet - use values[1] instead.
           series=$(curl -sS "https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=1day&outputsize=2&apikey=${TWELVEDATA_API_KEY}")
           sstatus=$(echo "$series" | jq -r '.status // empty')
           if [ "$sstatus" = "error" ]; then
@@ -55,9 +62,18 @@ jobs:
             echo "$series" | jq -r '.message // .'
             exit 1
           fi
-          today=$(date -u +%Y-%m-%d)
-          bar=$(echo "$series" | jq -c --arg today "$today" \
-            '(.values // []) as $v | (if ($v[0].datetime // "") == $today and ($v[1] != null) then $v[1] else $v[0] end) // {}')
+          bar=$(echo "$series" | jq -c '
+            (.values // []) as $v
+            | ($v[0] // {}) as $b0
+            | ($v[1] // {}) as $b1
+            | ($b0.high | tonumber?) as $h0
+            | ($b0.low | tonumber?) as $l0
+            | ($b0.close | tonumber?) as $c0
+            | (if ($h0 != null and $l0 != null and $c0 != null and $c0 > 0 and (($h0 - $l0) / $c0) > 0.001)
+               then $b0
+               else ($b1 // $b0)
+               end)
+          ')
 
           jq -n \
             --argjson quote "$quote" \

@@ -8,6 +8,19 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.12.0] — Market Brain Modul 7: POI Engine (Stage 1/4 — Architektur)
+
+### Neu
+- **POI Engine** (Modul 7), erste von vier geplanten Stufen: Architektur. Vollständiges POI-Datenmodell (`createPOI()`) mit Typ, Preisbereich, Timeframe, Erstellungszeit, Status (Frisch/Mitigated), Stärke, Confidence, Grund, zugehöriger Liquidity, zugehörigem HTF Bias und Premium/Discount-Lage
+- Registry für alle 8 geplanten POI-Typen (Order Block, Breaker, Fair Value Gap, Inverse Fair Value Gap, Mitigation Block, Rejection Block, Supply Zone, Demand Zone) — jeder mit eigenem, einzeln dokumentiertem Detector-Stub und `implemented`-Flag, damit Stufe 2 (Erkennung) einzelne Funktionen ersetzt statt die Architektur neu zu bauen
+- Neue Karte „POI Engine" im Dashboard: zeigt ehrlich „Noch keine POIs erkannt" plus Typ-Registry mit Status („Aktiv" / „Erkennung folgt") — keine erfundenen Beispiel-Zonen
+- Bewusst noch **keine** echte Erkennung, keine Bewertung, keine Anbindung an die Daniel Decision Engine — folgt in den nächsten drei Builds
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `docs/MARKET_BRAIN.md`, `CHANGELOG.md`
+
+---
+
 ## [0.11.0] — Market Brain Modul 6: Liquidity Engine
 
 ### Neu

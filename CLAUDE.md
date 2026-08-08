@@ -40,6 +40,7 @@ recognition) — never at redefining them.
 - Deployment: GitHub Pages, deployed both by `.github/workflows/deploy-pages.yml` (on push to `main`) and by `market-data.yml` (on its schedule) — both share the `pages` concurrency group so they don't race.
 - Git workflow on this project: open a PR, then merge it directly — don't leave PRs sitting open waiting for manual approval, per explicit instruction from Daniel.
 - Communication: whenever a piece of work is finished (a module, a fix, a merged PR), give Daniel a clear completion signal plus a short summary of what changed and what's next — written so he can forward it as-is. Don't just merge silently and move on.
+- Versioning: DG OS uses Semantic Versioning (MAJOR.MINOR.PATCH — MAJOR for big milestones/architecture changes, MINOR for new modules or larger features, PATCH for bugfixes/small improvements). The current version lives in `DG_OS_VERSION` in `app.js` (shown in the UI footer) and must be bumped on every completed build, with a matching entry added to the top of `CHANGELOG.md` (New / Improved / Bugfixes / Changed files). Do this before committing, not as an afterthought.
 
 ## Roadmap — do not build ahead of need
 

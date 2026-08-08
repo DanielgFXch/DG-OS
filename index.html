@@ -28,6 +28,8 @@
       <symbol id="ic-x" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></symbol>
       <symbol id="ic-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M6.5 16 11 10.5l3.2 3 5.3-7"/></symbol>
       <symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></symbol>
+      <symbol id="ic-scale" viewBox="0 0 24 24"><path d="M2 12h20M2 12l4-4M2 12l4 4M22 12l-4-4M22 12l-4 4"/><circle cx="12" cy="12" r="2" fill="currentColor" stroke="none"/></symbol>
+      <symbol id="ic-trend-up" viewBox="0 0 24 24"><path d="M3 17.5 9.5 11l4 4L21 7.5"/><path d="M21 13.5V7.5h-6"/></symbol>
     </defs>
   </svg>
 
@@ -132,6 +134,28 @@
 
         <section class="grid two">
           <article class="card">
+            <div class="section-title"><svg class="ic"><use href="#ic-scale"></use></svg>Premium / Discount</div>
+            <div class="rows" id="pdRows">
+              <div class="row"><span>Daily</span><strong>—</strong></div>
+              <div class="row"><span>Weekly</span><strong>—</strong></div>
+              <div class="row"><span>Monthly</span><strong>—</strong></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="section-title"><svg class="ic"><use href="#ic-trend-up"></use></svg>HTF Bias</div>
+            <div class="eyebrow">Struktureller Proxy · noch nicht Daniels Regelwerk</div>
+            <div id="biasValue" class="bias-value">—</div>
+            <div id="biasReason" class="muted">Noch keine Daten.</div>
+            <div class="rows">
+              <div class="row"><span>Confidence</span><strong id="biasConfidence">—</strong></div>
+              <div class="row"><span>Trend Strength</span><strong id="biasStrength">—</strong></div>
+            </div>
+          </article>
+        </section>
+
+        <section class="grid two">
+          <article class="card">
             <div class="section-title"><svg class="ic"><use href="#ic-target"></use></svg>Market Plan</div>
             <div class="rows">
               <div class="row"><span>HTF Plan</span><strong id="htfPlan">Bullish</strong></div>
@@ -206,6 +230,8 @@
         </section>
       </div>
     </div>
+
+    <footer class="app-footer">DG OS <span id="appVersion">v0.0.0</span> · <a href="https://github.com/DanielgFXch/DG-OS/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
   </main>
 
   <nav class="bottom-nav">

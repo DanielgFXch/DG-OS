@@ -84,14 +84,15 @@ async function loadMarketData(){
     $('liveOpen').textContent=fmtPrice(data.dailyOpen);
     $('liveHigh').textContent=fmtPrice(data.dailyHigh);
     $('liveLow').textContent=fmtPrice(data.dailyLow);
+    $('liveBarDate').textContent=data.barDate||'—';
     if(!tdStreaming) $('liveUpdated').textContent=updated.toLocaleTimeString('de-DE');
 
     if(!tdStreaming){
       const marketClosed=currentSession(new Date()).name==='Markt geschlossen';
       let hint=isFresh
-        ? 'Live-Daten von TwelveData, aktualisiert alle ~15 Minuten.'
+        ? `Live-Preis von TwelveData · Daily High/Low von der letzten abgeschlossenen Tageskerze (${data.barDate||'—'}).`
         : 'Daten sind veraltet – der Marktdaten-Workflow lief seit über 45 Minuten nicht.';
-      if(isFresh&&marketClosed) hint+=' Markt aktuell geschlossen (Wochenende) – Daily High/Low sind daher untypisch eng, da heute kein aktiver Handel stattfand.';
+      if(isFresh&&marketClosed) hint+=' Markt aktuell geschlossen (Wochenende) – der Preis bewegt sich bis Handelsstart evtl. kaum.';
       $('liveHint').textContent=hint;
       setLiveStatus(isFresh,isFresh?null:'Daten veraltet');
     }

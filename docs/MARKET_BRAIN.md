@@ -17,7 +17,7 @@ Market Brain              (data layer — this document)
 ├── Sessions               done   — Module 3
 ├── Premium / Discount     done   — Module 4
 ├── HTF Bias               done   — Module 5 (structural proxy only)
-├── Liquidity              planned
+├── Liquidity              done   — Module 6 (level status, no decision/alert)
 ├── POIs                   planned
 ├── Order Blocks           planned
 ├── FVG                    planned
@@ -153,20 +153,70 @@ timeframes) so the dashboard has *something real* to show instead of nothing,
 without ever pretending to be smarter than it is. `lastBOS`/`currentStructure`
 are intentionally left `null` rather than faked — no dummy features.
 
+## Liquidity Engine (Module 6) — level status, not a trading decision
+
+Also client-side, also re-evaluated on every price tick — no new API call.
+This is one of the most important modules in DG OS: the Daniel Decision
+Engine, Alert Engine, Reports, and Learning Engine will all eventually read
+`MarketBrain.liquidity` rather than touching ranges directly. It deliberately
+stops at *status*, nothing more — **no sweep alerts, no confirmation, no
+trading opinion live here.**
+
+`computeLiquidityEngine(data)` returns a flat array of 12 level objects (not
+nested by category — a flat list is what every future consumer, from a
+table renderer to an alert loop, actually wants to iterate):
+
+```js
+{
+  id, label,               // e.g. 'dailyHigh', 'Daily High'
+  type,                     // 'high' | 'low'
+  timeframe,                 // 'Daily' | 'Weekly' | 'Monthly' | 'Asia Session' | 'London Session' | 'New York Session'
+  period,                    // reference date/period this level belongs to, or null
+  price,                      // the level's price, or null if unavailable
+  status                       // 'active' | 'touched' | 'sweeped' | 'invalid'
+}
+```
+
+**Config-driven**, exactly like `SESSIONS` (Module 3): `LIQUIDITY_LEVEL_DEFS`
+is a 12-entry array describing where each level's price/period come from
+(either a top-level `market.json` field, or a `MarketBrain.sessions.*`
+sub-object). Adding a 13th level later — Sydney High/Low, a prior-week's
+value area, whatever — means adding one entry, not a new function.
+
+**Status logic — the key insight**: comparing live price against a level
+works correctly *regardless* of whether the reference period is still
+forming or already closed, with no separate "is this period closed" check
+needed at all:
+
+- A level from a period **still forming** (today's daily high, right now)
+  mathematically can never be `sweeped` by construction — the level itself
+  keeps extending as price prints a new high/low, so it can only be
+  `active` or `touched`.
+- A level from a period **already closed** (yesterday's daily high, a
+  finished London session, or a weekend's carried-forward placeholder) is
+  where a genuine sweep becomes observable — price can trade through it.
+
+Both cases run through the exact same `computeLiquidityStatus(levelPrice,
+type, currentPrice)` comparison; no branch distinguishes "closed" from
+"forming". `LIQUIDITY_TOUCH_PERCENT` (0.05% of current price) defines how
+close price must get to a level to count as `touched` rather than merely
+`active`. `invalid` means the underlying price is genuinely missing (e.g.
+London session hasn't started yet this run) — an honest gap, not a
+trading-invalidation concept, which would require rules not yet available.
+
 ## MarketBrain aggregator (`app.js`)
 
 ```js
-const MarketBrain = { liveData, sessions, premiumDiscount, htfBias };
+const MarketBrain = { liveData, sessions, premiumDiscount, htfBias, liquidity };
 ```
 
 One shared object, populated by `loadMarketData()` and kept live-reactive by
 `refreshDerivedModules()` (called after every JSON refresh *and* every
 WebSocket tick). Every module in this document reads from and writes to this
 object — nothing reaches into `data/market.json` directly except
-`loadMarketData()` itself. Future modules (Liquidity, POIs, Order Blocks,
-FVG, Confirmation) should add their own key here (e.g. `MarketBrain.liquidity`)
-and a `computeX(data)` + `renderX(x)` pair, following the same shape as
-Modules 4-5.
+`loadMarketData()` itself. Future modules (POIs, Order Blocks, FVG,
+Confirmation) should add their own key here and a `computeX(data)` +
+`renderX(x)` pair, following the same shape as Modules 4-6.
 
 ## `data/market.json` schema (grows module by module)
 
@@ -177,6 +227,7 @@ Modules 4-5.
 | 3 — Session ranges (Asia/London/NY) | done | `sessions.{asia,london,ny}.{high,low,date}` |
 | 4 — Premium/Discount | done | *(client-derived, not in market.json — see above)* |
 | 5 — HTF Bias | done | *(client-derived, not in market.json — see above)* |
+| 6 — Liquidity | done | *(client-derived, not in market.json — see above)* |
 
 Every field is either real (fetched, with a freshness check) or absent —
 never fabricated. The frontend must keep showing "OFFLINE DEMO" / `—` for
@@ -188,7 +239,6 @@ build rule (see `CLAUDE.md`).
 Once the Market Brain is complete and stable, later engines will be built
 **on top of it**, never bypassing it to fetch data on their own:
 
-- **Liquidity Engine** — sweep detection off Market Brain's session/daily/weekly highs & lows
 - **POI Engine** / **Order Block Engine** / **FVG Engine** — structural analysis modules
 - **Confirmation Engine** — entry-trigger detection (engulfing, displacement, CHOCH, …)
 - **Alert Engine** — decides *when* something is worth a Telegram push (not just "sends messages")

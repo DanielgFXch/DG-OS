@@ -27,6 +27,7 @@
       <symbol id="ic-check" viewBox="0 0 24 24"><path d="M4 12.5 9.5 18 20 6"/></symbol>
       <symbol id="ic-x" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5 5 19"/></symbol>
       <symbol id="ic-chart" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M6.5 16 11 10.5l3.2 3 5.3-7"/></symbol>
+      <symbol id="ic-calendar" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></symbol>
     </defs>
   </svg>
 
@@ -105,6 +106,26 @@
             <div class="muted" id="tdStatus">Kein Live-Stream verbunden · Preis kommt alle 15 Min. aus dem Marktdaten-Workflow.</div>
           </div>
           <p class="hint" id="liveHint">Noch keine Live-Daten verbunden. DG OS zeigt hier XAUUSD-Kurse, sobald der Marktdaten-Workflow läuft.</p>
+        </section>
+
+        <section class="grid two">
+          <article class="card">
+            <div class="section-title"><svg class="ic"><use href="#ic-calendar"></use></svg>Weekly Range</div>
+            <div class="rows">
+              <div class="row"><span>Open</span><strong id="weeklyOpen">—</strong></div>
+              <div class="row"><span>High</span><strong id="weeklyHigh">—</strong></div>
+              <div class="row"><span>Low</span><strong id="weeklyLow">—</strong></div>
+            </div>
+          </article>
+
+          <article class="card">
+            <div class="section-title"><svg class="ic"><use href="#ic-calendar"></use></svg>Monthly Range</div>
+            <div class="rows">
+              <div class="row"><span>Open</span><strong id="monthlyOpen">—</strong></div>
+              <div class="row"><span>High</span><strong id="monthlyHigh">—</strong></div>
+              <div class="row"><span>Low</span><strong id="monthlyLow">—</strong></div>
+            </div>
+          </article>
         </section>
 
         <section class="grid two">

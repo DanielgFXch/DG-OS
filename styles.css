@@ -206,7 +206,8 @@ body{
 .poi-row{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line)}
 .poi-label{font-size:12.5px;color:var(--text);display:flex;flex-direction:column;gap:2px}
 .poi-meta{font-family:var(--hud-font);font-size:9.5px;color:var(--muted);letter-spacing:.03em}
-.poi-price{font-family:var(--hud-font);font-size:12.5px;color:var(--muted)}
+.poi-price{font-family:var(--hud-font);font-size:12.5px;color:var(--muted);display:flex;flex-direction:column;align-items:flex-end;gap:2px}
+.poi-confidence{font-size:9px;color:var(--muted);opacity:.7}
 .poi-status{font-family:var(--hud-font);font-size:9px;letter-spacing:.05em;padding:3px 7px;border-radius:999px;border:1px solid var(--line);text-transform:uppercase;text-align:center;min-width:78px}
 .poi-status-fresh{color:var(--cyan);border-color:rgba(56,189,248,.35)}
 .poi-status-mitigated{color:var(--muted);opacity:.6}

@@ -18,7 +18,7 @@ Market Brain              (data layer — this document)
 ├── Premium / Discount     done   — Module 4
 ├── HTF Bias               done   — Module 5 (structural proxy only)
 ├── Liquidity              done   — Module 6 (level status, no decision/alert)
-├── POIs                   in progress — Module 7, Stage 1/4 (architecture only)
+├── POIs                   in progress — Module 7, Stage 2/4 (Fair Value Gap detection; 7 types still planned)
 ├── Order Blocks           planned
 ├── FVG                    planned
 └── Confirmation           planned
@@ -204,67 +204,106 @@ close price must get to a level to count as `touched` rather than merely
 London session hasn't started yet this run) — an honest gap, not a
 trading-invalidation concept, which would require rules not yet available.
 
-## POI Engine (Module 7) — Stage 1/4: architecture only
+## POI Engine (Module 7) — Stage 2/4: Erkennung (Fair Value Gap)
 
-The POI Engine is built in four explicit stages, in this order, one build at
-a time: **1. Architecture** (this build, v0.12.0) → **2. Erkennung**
-(detection) → **3. Bewertung** (scoring/strength/confidence) → **4.
-Verbindung mit der Daniel Decision Engine**. This section covers Stage 1
-only — no detector produces a real POI yet, by design.
+Four explicit stages, one build at a time: **1. Architecture** (v0.12.0,
+done) → **2. Erkennung** (detection — this build, v0.13.0: Fair Value Gap
+only) → **3. Bewertung** (cross-module scoring) → **4. Verbindung mit der
+Daniel Decision Engine**.
 
 Unlike Modules 4-6, POIs are meant to become DG OS's **memory**, not a
 disposable UI drawing — the future Daniel Decision Engine, Alert Engine,
 Reports, and Learning Engine will all read `MarketBrain.pois` the same way
-they'll read `MarketBrain.liquidity`. That's why the object shape, the type
-registry, and the aggregator wiring exist now, on day one, even though eight
-of eight detectors currently return `[]`.
+they'll read `MarketBrain.liquidity`.
 
 **POI object shape** — every field below is guaranteed present (or
 explicitly `null`) on every POI, assembled by a single `createPOI()`
-factory so no future detector improvises its own shape:
+factory so no detector improvises its own shape:
 
 ```js
 {
-  id, type,                    // e.g. 'orderBlock' — one of POI_TYPE_DEFS ids
+  id, type,                    // e.g. 'fvg' — one of POI_TYPE_DEFS ids
   direction,                    // 'bullish' | 'bearish' | null
   priceHigh, priceLow,           // the POI's price range
-  timeframe,                      // e.g. 'H1', 'Daily' — whichever the detector used
-  createdAt,                       // ISO timestamp
+  timeframe,                      // e.g. 'H1' — whichever the detector used
+  createdAt,                       // ISO timestamp — market time of formation if known, else detection time
   status,                            // 'fresh' | 'mitigated'
-  strength,                           // 0-100, reserved for Stage 3
-  confidence,                          // 0-100, reserved for Stage 3
+  strength,                           // 0-100, reserved for Stage 3 (cross-module scoring)
+  confidence,                          // 0-100, intrinsic to the detector's own pattern (see below)
   reason,                               // why this POI was created
-  relatedLiquidity,                      // ids into MarketBrain.liquidity
-  relatedHTFBias,                         // MarketBrain.htfBias.bias snapshot at creation
-  premiumDiscountZone                      // zone snapshot at creation
+  sourceCandle,                          // Entstehungskerze — the raw OHLC candle that formed it
+  relatedLiquidity,                       // ids into MarketBrain.liquidity, filled by enrichment
+  relatedSession,                          // 'asia' | 'london' | 'ny' | null, filled by enrichment
+  relatedHTFBias,                           // MarketBrain.htfBias.bias snapshot, filled by enrichment
+  premiumDiscountZone                        // zone snapshot, filled by enrichment
 }
 ```
 
-**Type registry** — `POI_TYPE_DEFS`, eight entries, each pairing a type with
-its own named detector function and an `implemented` flag (`false` for all
-eight right now). This is the literal answer to "prepare the architecture
-for types you haven't built yet": Order Block, Breaker, Fair Value Gap,
-Inverse Fair Value Gap, Mitigation Block, Rejection Block, Supply Zone,
-Demand Zone. Stage 2 replaces one detector function body at a time and
-flips its `implemented` flag — the registry, the aggregator wiring, and the
-UI never need to change to add real detection later.
+### Hard modularity rule: detectors know nothing about other modules
 
-Every detector (`detectOrderBlocks`, `detectBreakers`, …) is a separately
-documented stub returning `[]` today, with a one-line comment on exactly
-what data it's still missing (e.g. Order Block needs a per-candle OHLC
-series with swing/structure detection, which the Market Brain doesn't fetch
-at any timeframe below session/daily ranges yet). `computePOIEngine(brain)`
-takes the *full* `MarketBrain` object, not just `liveData` — real detectors
-will need `MarketBrain.liquidity`/`htfBias`/`premiumDiscount` already
-computed, to fill in a POI's `relatedLiquidity`/`relatedHTFBias`/
-`premiumDiscountZone`. It returns `{list, types}`: `list` is the flat array
-of real POIs (empty until Stage 2), `types` is the registry's current
-implemented/planned status for the UI's transparency table.
+Daniel's explicit instruction for this stage: *"Keine Detector-Funktion darf
+Wissen über andere Module besitzen. Jeder Detector arbeitet unabhängig und
+liefert nur seine Erkenntnisse an das Market Brain. Das Market Brain
+bewertet später alles gemeinsam."* This is enforced structurally, not just
+by convention:
 
-The UI card is honest about this being an empty architecture, not a broken
-feature: it always shows the 8-type registry with an "Erkennung folgt" /
-"Aktiv" status pill per type, and "Noch keine POIs erkannt." instead of
-fabricating example zones — same non-negotiable rule as every other module.
+- **`POI_TYPE_DEFS`** pairs each type with a `detect` function *and* an
+  `input` selector. Only `input` (which runs in the aggregator) is allowed
+  to know `MarketBrain`'s shape — it picks out the one raw slice (e.g. the
+  H1 candle array) a detector needs.
+- **A detector** (`detectFairValueGaps(candles)`, and eventually
+  `detectOrderBlocks(candles)`, etc.) receives *only* that slice as its
+  argument. It cannot reach `MarketBrain.liquidity`, `sessions`, or
+  `htfBias` because it never has a reference to `MarketBrain` at all — not
+  a discipline, a language-level guarantee.
+- **`enrichPOIContext(poi, brain)`** is the single place, in the
+  aggregator, where a detected zone is correlated with the rest of the
+  Market Brain — filling in `relatedLiquidity`, `relatedSession`,
+  `relatedHTFBias`, `premiumDiscountZone`. It runs once per POI, after
+  detection, regardless of which detector produced it, so every future
+  detector gets this enrichment for free without writing a line of
+  cross-module code itself.
+- **`computePOIEngine(brain)`** ties it together: `rawList =
+  POI_TYPE_DEFS.flatMap(def => def.detect(def.input(brain)))`, then
+  `rawList.map(poi => enrichPOIContext(poi, brain))`.
+
+### Fair Value Gap detector (`detectFairValueGaps`)
+
+The first real Stage 2 detector, and the template for every one after it.
+Classic 3-candle ICT imbalance on the H1 series: for chronological candles
+`c0, c1, c2`, a **bullish** FVG exists when `c0.high < c2.low` — the
+untraded space between them is the gap. A **bearish** FVG is the mirror
+case, `c0.low > c2.high`. `c1`, the middle "displacement" candle whose range
+actually created the imbalance, is stored as the POI's `sourceCandle`.
+
+- **Confidence is intrinsic only** — gap size relative to the average
+  candle range of the preceding 14 candles (a simple local ATR). A gap as
+  wide as the recent average range scores close to 100; a sliver scores
+  low. This says nothing about liquidity/session/bias confluence — that
+  kind of cross-module weighting is explicitly Stage 3's job, not this
+  detector's.
+- **Status** is decided purely from the same candle array: `mitigated` once
+  any later candle's range trades back into the gap, `fresh` otherwise. No
+  external state, no other module consulted.
+- Because the detector only ever sees a flat candle array, it has no way to
+  even attempt reading another module — the modularity rule is structural.
+
+### Where the candles come from
+
+`data/market.json` now carries `candles.h1`: the same 72-hour hourly fetch
+the Session Engine (Module 3) already pulls, reused as-is with **no extra
+API call** — sorted chronologically ascending (oldest first) server-side so
+no detector has to trust or re-derive TwelveData's own ordering. See
+`market-data.yml`'s `CANDLE_FILTER`.
+
+### UI
+
+The registry still always renders — "Aktiv" for Fair Value Gap now,
+"Erkennung folgt" for the other seven — plus every detected zone with its
+range, confidence, status, and enrichment context (session/bias/zone/
+liquidity count) inline. "Noch keine POIs erkannt." only appears when the
+list is genuinely empty (e.g. stale/missing candle data) — never fabricated
+example zones, same non-negotiable rule as every other module.
 
 ## MarketBrain aggregator (`app.js`)
 
@@ -276,10 +315,9 @@ One shared object, populated by `loadMarketData()` and kept live-reactive by
 `refreshDerivedModules()` (called after every JSON refresh *and* every
 WebSocket tick). Every module in this document reads from and writes to this
 object — nothing reaches into `data/market.json` directly except
-`loadMarketData()` itself. Future modules (Order Blocks, FVG, Confirmation —
-or Stage 2+ of the POI Engine itself) should add their own key here and a
-`computeX(data)` + `renderX(x)` pair, following the same shape as
-Modules 4-7.
+`loadMarketData()` itself. Future modules (Confirmation, or the remaining
+Stage 2 POI detectors) should add their own key here and a `computeX(data)`
++ `renderX(x)` pair, following the same shape as Modules 4-7.
 
 ## `data/market.json` schema (grows module by module)
 
@@ -291,7 +329,7 @@ Modules 4-7.
 | 4 — Premium/Discount | done | *(client-derived, not in market.json — see above)* |
 | 5 — HTF Bias | done | *(client-derived, not in market.json — see above)* |
 | 6 — Liquidity | done | *(client-derived, not in market.json — see above)* |
-| 7 — POI Engine | Stage 1/4 (architecture) | *(client-derived, not in market.json — see above)* |
+| 7 — POI Engine | Stage 2/4 (Fair Value Gap detection) | `candles.h1` (array of `{datetime, open, high, low, close}`, reused from the Session Engine fetch) |
 
 Every field is either real (fetched, with a freshness check) or absent —
 never fabricated. The frontend must keep showing "OFFLINE DEMO" / `—` for
@@ -303,7 +341,7 @@ build rule (see `CLAUDE.md`).
 Once the Market Brain is complete and stable, later engines will be built
 **on top of it**, never bypassing it to fetch data on their own:
 
-- **POI Engine Stage 2-4** (Erkennung / Bewertung / Verbindung mit der Daniel Decision Engine) — see the Module 7 section above
+- **POI Engine**: remaining Stage 2 detectors (Order Block next, then Breaker, iFVG, Mitigation Block, Rejection Block, Supply/Demand Zone), then Stage 3 (Bewertung) and Stage 4 (Verbindung mit der Daniel Decision Engine) — see the Module 7 section above
 - **Confirmation Engine** — entry-trigger detection (engulfing, displacement, CHOCH, …)
 - **Alert Engine** — decides *when* something is worth a Telegram push (not just "sends messages")
 - **Learning Engine** — statistics/pattern recognition over historical performance, never redefines rules

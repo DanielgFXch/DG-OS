@@ -8,6 +8,20 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.13.0] — Market Brain Modul 7: POI Engine Stage 2/4 — Fair Value Gap Detector
+
+### Neu
+- **Fair Value Gap Detector** (`detectFairValueGaps`): erste echte Erkennung der POI Engine. Klassische 3-Kerzen-ICT-Imbalance auf H1, mit intrinsischer Confidence (Gap-Größe relativ zum lokalen ATR), Fresh/Mitigated-Status (per Preisverlauf-Scan) und Entstehungskerze
+- **Strikte Modularität**: Detector-Funktionen erhalten ausschließlich ihre eigenen Rohdaten (z. B. die H1-Kerzenreihe) und besitzen keinerlei Wissen über andere Module. Die Verknüpfung mit Liquidity, Session und HTF Bias passiert an genau einer Stelle im Market Brain (`enrichPOIContext()`), zentral für alle aktuellen und künftigen Detectoren
+- POI-Datenmodell um `sourceCandle` (Entstehungskerze) und `relatedSession` erweitert
+- `data/market.json` liefert jetzt `candles.h1` (72h-Stundenkerzen, wiederverwendet aus dem bestehenden Session-Engine-Fetch, kein zusätzlicher API-Call)
+- POI-Karte im Dashboard zeigt erkannte Fair-Value-Gaps mit Preisbereich, Confidence, Status und Kontext (Session/Bias/Zone/Liquidity)
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `.github/workflows/market-data.yml`, `docs/MARKET_BRAIN.md`, `CHANGELOG.md`
+
+---
+
 ## [0.12.0] — Market Brain Modul 7: POI Engine (Stage 1/4 — Architektur)
 
 ### Neu

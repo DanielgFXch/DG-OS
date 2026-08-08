@@ -1,7 +1,7 @@
 
 // Semantic Versioning (siehe CHANGELOG.md für die vollständige Historie).
 // Bei jedem abgeschlossenen Build hier + in CHANGELOG.md aktualisieren.
-const DG_OS_VERSION='0.10.0';
+const DG_OS_VERSION='0.11.0';
 
 const state={asia:false,sweep:false,engulf:false};
 const $=id=>document.getElementById(id);
@@ -57,7 +57,7 @@ function fmtPrice(n){return typeof n==='number'?n.toFixed(2):'—'}
 // the full module tree. Nothing outside this file should reach into
 // data/market.json directly; go through MarketBrain instead.
 // ---------------------------------------------------------------------------
-const MarketBrain={liveData:null,sessions:null,premiumDiscount:null,htfBias:null};
+const MarketBrain={liveData:null,sessions:null,premiumDiscount:null,htfBias:null,liquidity:null};
 
 // Module 4: Premium / Discount Engine
 //
@@ -161,11 +161,99 @@ function renderHTFBias(bias){
   strengthEl.textContent=`${bias.trendStrength}%`;
 }
 
+// Module 6: Liquidity Engine
+//
+// Tracks the 12 liquidity levels that matter most for XAUUSD (Daily/Weekly/
+// Monthly High & Low, Asia/London/New York High & Low) with a real, explicit
+// status per level — never just a price. Config-driven, like SESSIONS above:
+// adding a 13th level later means adding one entry to LIQUIDITY_LEVEL_DEFS,
+// not a new function. Still purely client-side, derived from data already in
+// MarketBrain.liveData/sessions - no new API call, re-evaluated on every
+// WebSocket price tick via refreshDerivedModules(). No trading decision, no
+// alert, no confirmation logic lives here - that belongs to later engines
+// that will read MarketBrain.liquidity, per docs/MARKET_BRAIN.md.
+const LIQUIDITY_LEVEL_DEFS=[
+  {id:'dailyHigh',label:'Daily High',type:'high',timeframe:'Daily',priceKey:'dailyHigh',periodKey:'barDate'},
+  {id:'dailyLow',label:'Daily Low',type:'low',timeframe:'Daily',priceKey:'dailyLow',periodKey:'barDate'},
+  {id:'weeklyHigh',label:'Weekly High',type:'high',timeframe:'Weekly',priceKey:'weeklyHigh',periodKey:'weekBarDate'},
+  {id:'weeklyLow',label:'Weekly Low',type:'low',timeframe:'Weekly',priceKey:'weeklyLow',periodKey:'weekBarDate'},
+  {id:'monthlyHigh',label:'Monthly High',type:'high',timeframe:'Monthly',priceKey:'monthlyHigh',periodKey:'monthBarDate'},
+  {id:'monthlyLow',label:'Monthly Low',type:'low',timeframe:'Monthly',priceKey:'monthlyLow',periodKey:'monthBarDate'},
+  {id:'asiaHigh',label:'Asia High',type:'high',timeframe:'Asia Session',session:'asia',field:'high'},
+  {id:'asiaLow',label:'Asia Low',type:'low',timeframe:'Asia Session',session:'asia',field:'low'},
+  {id:'londonHigh',label:'London High',type:'high',timeframe:'London Session',session:'london',field:'high'},
+  {id:'londonLow',label:'London Low',type:'low',timeframe:'London Session',session:'london',field:'low'},
+  {id:'nyHigh',label:'New York High',type:'high',timeframe:'New York Session',session:'ny',field:'high'},
+  {id:'nyLow',label:'New York Low',type:'low',timeframe:'New York Session',session:'ny',field:'low'}
+];
+
+function extractLevelRaw(def,data){
+  if(def.session){
+    const sd=(data.sessions||{})[def.session];
+    return{price:sd?sd[def.field]:null,period:sd?sd.date:null};
+  }
+  return{price:data[def.priceKey],period:data[def.periodKey]};
+}
+
+// "Touched" zone width, as a % of current price - close enough to the level
+// to matter, without price having actually traded through it yet.
+const LIQUIDITY_TOUCH_PERCENT=0.05;
+
+// Works correctly whether the reference period is still forming (can never
+// be "sweeped" by construction - the level itself keeps extending with
+// price) or already closed, e.g. a finished session or the prior day's
+// range - where a genuine sweep can be observed. No separate "is this period
+// closed" check is needed; the price/level comparison alone is honest either
+// way.
+function computeLiquidityStatus(levelPrice,type,currentPrice){
+  if(typeof levelPrice!=='number'||typeof currentPrice!=='number') return'invalid';
+  const toleranceAbs=currentPrice*(LIQUIDITY_TOUCH_PERCENT/100);
+  if(type==='high'){
+    if(currentPrice>levelPrice) return'sweeped';
+    if(levelPrice-currentPrice<=toleranceAbs) return'touched';
+    return'active';
+  }else{
+    if(currentPrice<levelPrice) return'sweeped';
+    if(currentPrice-levelPrice<=toleranceAbs) return'touched';
+    return'active';
+  }
+}
+
+function computeLiquidityEngine(data){
+  if(!data||typeof data.price!=='number') return null;
+  const currentPrice=data.price;
+  return LIQUIDITY_LEVEL_DEFS.map(def=>{
+    const raw=extractLevelRaw(def,data);
+    const price=typeof raw.price==='number'?raw.price:null;
+    const status=price===null?'invalid':computeLiquidityStatus(price,def.type,currentPrice);
+    return{id:def.id,label:def.label,type:def.type,timeframe:def.timeframe,period:raw.period,price,status};
+  });
+}
+
+const LIQUIDITY_STATUS_LABEL={active:'ACTIVE',touched:'TOUCHED',sweeped:'SWEEPED',invalid:'INVALID'};
+function renderLiquidityEngine(levels){
+  const container=$('liquidityRows');
+  if(!container) return;
+  if(!levels){
+    container.innerHTML='<div class="liq-row"><span class="liq-label">Noch keine Daten.</span></div>';
+    return;
+  }
+  container.innerHTML=levels.map(lv=>`
+    <div class="liq-row">
+      <span class="liq-label">${lv.label}<span class="liq-timeframe">${lv.timeframe}${lv.period?' · '+lv.period:''}</span></span>
+      <span class="liq-price">${fmtPrice(lv.price)}</span>
+      <span class="liq-status liq-status-${lv.status}">${LIQUIDITY_STATUS_LABEL[lv.status]}</span>
+    </div>
+  `).join('');
+}
+
 function refreshDerivedModules(){
   MarketBrain.premiumDiscount=computePremiumDiscount(MarketBrain.liveData);
   MarketBrain.htfBias=computeHTFBias(MarketBrain.liveData);
+  MarketBrain.liquidity=computeLiquidityEngine(MarketBrain.liveData);
   renderPremiumDiscount(MarketBrain.premiumDiscount);
   renderHTFBias(MarketBrain.htfBias);
+  renderLiquidityEngine(MarketBrain.liquidity);
 }
 
 function setLiveStatus(isLive,label){

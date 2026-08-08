@@ -8,6 +8,20 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.11.0] — Market Brain Modul 6: Liquidity Engine
+
+### Neu
+- **Liquidity Engine** (Modul 6): 12 Liquiditäts-Level (Daily/Weekly/Monthly High & Low, Asia/London/New York High & Low), jedes mit Preis, Typ, Session/Zeitraum und Status — `ACTIVE`, `TOUCHED`, `SWEEPED`, `INVALID`
+- Konfigurationsgetriebenes Modell (`LIQUIDITY_LEVEL_DEFS`), wie schon bei der Session Engine — ein 13. Level bedeutet einen neuen Eintrag, keine neue Funktion
+- Status-Logik funktioniert identisch für noch laufende Zeiträume (können per Konstruktion nie „sweeped" sein) und bereits abgeschlossene (echte Sweeps erkennbar) — ohne separate „ist der Zeitraum geschlossen"-Prüfung
+- Noch bewusst **keine** Tradingentscheidung, kein Alert, keine Confirmation — reine Status-Engine als Grundlage für die spätere Daniel Decision Engine, Alerts, Reports und Learning Engine
+- Neue Karte „Liquidity Engine" im Dashboard, unterhalb von Premium/Discount & HTF Bias
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `docs/MARKET_BRAIN.md`, `CHANGELOG.md`
+
+---
+
 ## [0.10.0] — Market Brain Modul 4 + 5: Premium/Discount & HTF Bias
 
 ### Neu

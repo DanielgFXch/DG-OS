@@ -18,7 +18,7 @@ Market Brain              (data layer — this document)
 ├── Premium / Discount     done   — Module 4
 ├── HTF Bias               done   — Module 5 (structural proxy only)
 ├── Liquidity              done   — Module 6 (level status, no decision/alert)
-├── POIs                   planned
+├── POIs                   in progress — Module 7, Stage 1/4 (architecture only)
 ├── Order Blocks           planned
 ├── FVG                    planned
 └── Confirmation           planned
@@ -204,19 +204,82 @@ close price must get to a level to count as `touched` rather than merely
 London session hasn't started yet this run) — an honest gap, not a
 trading-invalidation concept, which would require rules not yet available.
 
+## POI Engine (Module 7) — Stage 1/4: architecture only
+
+The POI Engine is built in four explicit stages, in this order, one build at
+a time: **1. Architecture** (this build, v0.12.0) → **2. Erkennung**
+(detection) → **3. Bewertung** (scoring/strength/confidence) → **4.
+Verbindung mit der Daniel Decision Engine**. This section covers Stage 1
+only — no detector produces a real POI yet, by design.
+
+Unlike Modules 4-6, POIs are meant to become DG OS's **memory**, not a
+disposable UI drawing — the future Daniel Decision Engine, Alert Engine,
+Reports, and Learning Engine will all read `MarketBrain.pois` the same way
+they'll read `MarketBrain.liquidity`. That's why the object shape, the type
+registry, and the aggregator wiring exist now, on day one, even though eight
+of eight detectors currently return `[]`.
+
+**POI object shape** — every field below is guaranteed present (or
+explicitly `null`) on every POI, assembled by a single `createPOI()`
+factory so no future detector improvises its own shape:
+
+```js
+{
+  id, type,                    // e.g. 'orderBlock' — one of POI_TYPE_DEFS ids
+  direction,                    // 'bullish' | 'bearish' | null
+  priceHigh, priceLow,           // the POI's price range
+  timeframe,                      // e.g. 'H1', 'Daily' — whichever the detector used
+  createdAt,                       // ISO timestamp
+  status,                            // 'fresh' | 'mitigated'
+  strength,                           // 0-100, reserved for Stage 3
+  confidence,                          // 0-100, reserved for Stage 3
+  reason,                               // why this POI was created
+  relatedLiquidity,                      // ids into MarketBrain.liquidity
+  relatedHTFBias,                         // MarketBrain.htfBias.bias snapshot at creation
+  premiumDiscountZone                      // zone snapshot at creation
+}
+```
+
+**Type registry** — `POI_TYPE_DEFS`, eight entries, each pairing a type with
+its own named detector function and an `implemented` flag (`false` for all
+eight right now). This is the literal answer to "prepare the architecture
+for types you haven't built yet": Order Block, Breaker, Fair Value Gap,
+Inverse Fair Value Gap, Mitigation Block, Rejection Block, Supply Zone,
+Demand Zone. Stage 2 replaces one detector function body at a time and
+flips its `implemented` flag — the registry, the aggregator wiring, and the
+UI never need to change to add real detection later.
+
+Every detector (`detectOrderBlocks`, `detectBreakers`, …) is a separately
+documented stub returning `[]` today, with a one-line comment on exactly
+what data it's still missing (e.g. Order Block needs a per-candle OHLC
+series with swing/structure detection, which the Market Brain doesn't fetch
+at any timeframe below session/daily ranges yet). `computePOIEngine(brain)`
+takes the *full* `MarketBrain` object, not just `liveData` — real detectors
+will need `MarketBrain.liquidity`/`htfBias`/`premiumDiscount` already
+computed, to fill in a POI's `relatedLiquidity`/`relatedHTFBias`/
+`premiumDiscountZone`. It returns `{list, types}`: `list` is the flat array
+of real POIs (empty until Stage 2), `types` is the registry's current
+implemented/planned status for the UI's transparency table.
+
+The UI card is honest about this being an empty architecture, not a broken
+feature: it always shows the 8-type registry with an "Erkennung folgt" /
+"Aktiv" status pill per type, and "Noch keine POIs erkannt." instead of
+fabricating example zones — same non-negotiable rule as every other module.
+
 ## MarketBrain aggregator (`app.js`)
 
 ```js
-const MarketBrain = { liveData, sessions, premiumDiscount, htfBias, liquidity };
+const MarketBrain = { liveData, sessions, premiumDiscount, htfBias, liquidity, pois };
 ```
 
 One shared object, populated by `loadMarketData()` and kept live-reactive by
 `refreshDerivedModules()` (called after every JSON refresh *and* every
 WebSocket tick). Every module in this document reads from and writes to this
 object — nothing reaches into `data/market.json` directly except
-`loadMarketData()` itself. Future modules (POIs, Order Blocks, FVG,
-Confirmation) should add their own key here and a `computeX(data)` +
-`renderX(x)` pair, following the same shape as Modules 4-6.
+`loadMarketData()` itself. Future modules (Order Blocks, FVG, Confirmation —
+or Stage 2+ of the POI Engine itself) should add their own key here and a
+`computeX(data)` + `renderX(x)` pair, following the same shape as
+Modules 4-7.
 
 ## `data/market.json` schema (grows module by module)
 
@@ -228,6 +291,7 @@ Confirmation) should add their own key here and a `computeX(data)` +
 | 4 — Premium/Discount | done | *(client-derived, not in market.json — see above)* |
 | 5 — HTF Bias | done | *(client-derived, not in market.json — see above)* |
 | 6 — Liquidity | done | *(client-derived, not in market.json — see above)* |
+| 7 — POI Engine | Stage 1/4 (architecture) | *(client-derived, not in market.json — see above)* |
 
 Every field is either real (fetched, with a freshness check) or absent —
 never fabricated. The frontend must keep showing "OFFLINE DEMO" / `—` for
@@ -239,7 +303,7 @@ build rule (see `CLAUDE.md`).
 Once the Market Brain is complete and stable, later engines will be built
 **on top of it**, never bypassing it to fetch data on their own:
 
-- **POI Engine** / **Order Block Engine** / **FVG Engine** — structural analysis modules
+- **POI Engine Stage 2-4** (Erkennung / Bewertung / Verbindung mit der Daniel Decision Engine) — see the Module 7 section above
 - **Confirmation Engine** — entry-trigger detection (engulfing, displacement, CHOCH, …)
 - **Alert Engine** — decides *when* something is worth a Telegram push (not just "sends messages")
 - **Learning Engine** — statistics/pattern recognition over historical performance, never redefines rules

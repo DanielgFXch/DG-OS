@@ -1,7 +1,7 @@
 
 // Semantic Versioning (siehe CHANGELOG.md für die vollständige Historie).
 // Bei jedem abgeschlossenen Build hier + in CHANGELOG.md aktualisieren.
-const DG_OS_VERSION='0.11.0';
+const DG_OS_VERSION='0.12.0';
 
 const state={asia:false,sweep:false,engulf:false};
 const $=id=>document.getElementById(id);
@@ -57,7 +57,7 @@ function fmtPrice(n){return typeof n==='number'?n.toFixed(2):'—'}
 // the full module tree. Nothing outside this file should reach into
 // data/market.json directly; go through MarketBrain instead.
 // ---------------------------------------------------------------------------
-const MarketBrain={liveData:null,sessions:null,premiumDiscount:null,htfBias:null,liquidity:null};
+const MarketBrain={liveData:null,sessions:null,premiumDiscount:null,htfBias:null,liquidity:null,pois:null};
 
 // Module 4: Premium / Discount Engine
 //
@@ -247,13 +247,148 @@ function renderLiquidityEngine(levels){
   `).join('');
 }
 
+// Module 7: POI Engine — architecture only (v0.12.0)
+//
+// This is the first of four build stages Daniel asked for, in order:
+// 1. Architecture (this build)  2. Detection  3. Bewertung/Scoring
+// 4. Connection to the Daniel Decision Engine.
+//
+// POIs are meant to become DG OS's *memory* — not disposable drawings, but
+// objects other modules (Daniel Decision Engine, Alert Engine, Reports,
+// Learning Engine) will read the same way they already read
+// MarketBrain.liquidity. So the object shape, the type registry, and the
+// aggregator wiring all go in now, on day one, even though most detectors
+// don't run yet — exactly like LIQUIDITY_LEVEL_DEFS did for Module 6.
+//
+// createPOI() is the single place that assembles a POI object, so every
+// field listed below is guaranteed present (or explicitly null) no matter
+// which detector produced it — no detector improvises its own shape.
+function createPOI({type,direction,priceHigh,priceLow,timeframe,status,strength,confidence,reason,relatedLiquidity,relatedHTFBias,premiumDiscountZone}){
+  return{
+    id:`${type}-${timeframe}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+    type,                                            // one of POI_TYPE_DEFS ids
+    direction:direction||null,                        // 'bullish' | 'bearish' | null
+    priceHigh:typeof priceHigh==='number'?priceHigh:null,
+    priceLow:typeof priceLow==='number'?priceLow:null,
+    timeframe:timeframe||null,
+    createdAt:new Date().toISOString(),
+    status:status||'fresh',                            // 'fresh' | 'mitigated'
+    strength:typeof strength==='number'?strength:null,   // 0-100, reserved for Stage 3 (Bewertung)
+    confidence:typeof confidence==='number'?confidence:null, // 0-100, reserved for Stage 3
+    reason:reason||null,                                  // why this POI was created
+    relatedLiquidity:relatedLiquidity||[],                  // ids into MarketBrain.liquidity
+    relatedHTFBias:relatedHTFBias||null,                     // MarketBrain.htfBias.bias snapshot
+    premiumDiscountZone:premiumDiscountZone||null             // zone snapshot at creation
+  };
+}
+
+// Eight detector stubs, one per prepared POI type. Every one of them returns
+// [] today — none has the underlying data it needs yet (real per-candle OHLC
+// series with swing/structure detection, which the Market Brain doesn't
+// fetch at any timeframe below Daily/session ranges). They exist as named,
+// individually documented functions rather than one TODO so Stage 2
+// (Erkennung) replaces a single function body at a time, in isolation,
+// without touching the registry, the aggregator, or the UI.
+function detectOrderBlocks(brain){
+  // Needs: per-candle OHLC series (H1/M5) + structure/swing detection.
+  return[];
+}
+function detectBreakers(brain){
+  // Needs: an invalidated Order Block that price has broken back through.
+  return[];
+}
+function detectFairValueGaps(brain){
+  // Needs: 3-candle imbalance detection on a chosen entry timeframe.
+  return[];
+}
+function detectInverseFairValueGaps(brain){
+  // Needs: a Fair Value Gap that has been fully closed/inverted.
+  return[];
+}
+function detectMitigationBlocks(brain){
+  // Needs: the last down/up-close candle before a displacement move.
+  return[];
+}
+function detectRejectionBlocks(brain){
+  // Needs: wick-dominant candle detection at a swing high/low.
+  return[];
+}
+function detectSupplyZones(brain){
+  // Needs: base-before-drop candle clustering.
+  return[];
+}
+function detectDemandZones(brain){
+  // Needs: base-before-rally candle clustering.
+  return[];
+}
+
+// The type registry — the actual "architecture prepared for 8 types"
+// requirement. `implemented:false` for all eight until each one's detector
+// (above) is built out in Stage 2; flipping it to true is the only registry
+// change that stage needs to make.
+const POI_TYPE_DEFS=[
+  {id:'orderBlock',label:'Order Block',category:'Struktur',implemented:false,detect:detectOrderBlocks},
+  {id:'breaker',label:'Breaker',category:'Struktur',implemented:false,detect:detectBreakers},
+  {id:'fvg',label:'Fair Value Gap',category:'Imbalance',implemented:false,detect:detectFairValueGaps},
+  {id:'ifvg',label:'Inverse Fair Value Gap',category:'Imbalance',implemented:false,detect:detectInverseFairValueGaps},
+  {id:'mitigationBlock',label:'Mitigation Block',category:'Struktur',implemented:false,detect:detectMitigationBlocks},
+  {id:'rejectionBlock',label:'Rejection Block',category:'Struktur',implemented:false,detect:detectRejectionBlocks},
+  {id:'supply',label:'Supply Zone',category:'Zone',implemented:false,detect:detectSupplyZones},
+  {id:'demand',label:'Demand Zone',category:'Zone',implemented:false,detect:detectDemandZones}
+];
+
+// brain is the full MarketBrain object (not just liveData) because real
+// detectors will need MarketBrain.liquidity/htfBias/premiumDiscount to fill
+// in a POI's relatedLiquidity/relatedHTFBias/premiumDiscountZone fields.
+function computePOIEngine(brain){
+  return{
+    list:POI_TYPE_DEFS.flatMap(def=>def.detect(brain)),
+    types:POI_TYPE_DEFS.map(def=>({id:def.id,label:def.label,category:def.category,implemented:def.implemented}))
+  };
+}
+
+const POI_STATUS_LABEL={fresh:'FRISCH',mitigated:'MITIGATED'};
+function renderPOIEngine(poiEngine){
+  const container=$('poiRows');
+  if(!container) return;
+  const list=(poiEngine&&poiEngine.list)||[];
+  const types=(poiEngine&&poiEngine.types)||POI_TYPE_DEFS;
+
+  const registryHtml=types.map(t=>`
+    <div class="poi-type-row">
+      <span class="poi-type-label">${t.label}<span class="poi-type-category">${t.category}</span></span>
+      <span class="poi-type-status ${t.implemented?'poi-type-implemented':''}">${t.implemented?'Aktiv':'Erkennung folgt'}</span>
+    </div>
+  `).join('');
+
+  if(!list.length){
+    container.innerHTML=`<div class="poi-empty">Noch keine POIs erkannt.</div>${registryHtml}`;
+    return;
+  }
+
+  const listHtml=list.map(poi=>{
+    const typeLabel=(POI_TYPE_DEFS.find(d=>d.id===poi.type)||{}).label||poi.type;
+    const range=(poi.priceHigh!==null&&poi.priceLow!==null)?`${fmtPrice(poi.priceLow)} – ${fmtPrice(poi.priceHigh)}`:'—';
+    return`
+    <div class="poi-row">
+      <span class="poi-label">${typeLabel}<span class="poi-meta">${poi.timeframe||'—'}${poi.direction?' · '+poi.direction:''}</span></span>
+      <span class="poi-price">${range}</span>
+      <span class="poi-status poi-status-${poi.status}">${POI_STATUS_LABEL[poi.status]||poi.status}</span>
+    </div>`;
+  }).join('');
+
+  container.innerHTML=listHtml+registryHtml;
+}
+
 function refreshDerivedModules(){
   MarketBrain.premiumDiscount=computePremiumDiscount(MarketBrain.liveData);
   MarketBrain.htfBias=computeHTFBias(MarketBrain.liveData);
   MarketBrain.liquidity=computeLiquidityEngine(MarketBrain.liveData);
+  MarketBrain.pois=computePOIEngine(MarketBrain);
   renderPremiumDiscount(MarketBrain.premiumDiscount);
   renderHTFBias(MarketBrain.htfBias);
   renderLiquidityEngine(MarketBrain.liquidity);
+  renderPOIEngine(MarketBrain.pois);
 }
 
 function setLiveStatus(isLive,label){

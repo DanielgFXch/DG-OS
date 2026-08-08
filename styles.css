@@ -1,4 +1,29 @@
 
+@font-face{
+  font-family:'Chakra Petch';font-style:normal;font-weight:500;font-display:swap;
+  src:url('./fonts/chakra-petch-500.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Chakra Petch';font-style:normal;font-weight:600;font-display:swap;
+  src:url('./fonts/chakra-petch-600.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Chakra Petch';font-style:normal;font-weight:700;font-display:swap;
+  src:url('./fonts/chakra-petch-700.woff2') format('woff2');
+}
+@font-face{
+  font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;
+  src:url('./fonts/jetbrains-mono-400.woff2') format('woff2');
+}
+@font-face{
+  font-family:'JetBrains Mono';font-style:normal;font-weight:500;font-display:swap;
+  src:url('./fonts/jetbrains-mono-500.woff2') format('woff2');
+}
+@font-face{
+  font-family:'JetBrains Mono';font-style:normal;font-weight:700;font-display:swap;
+  src:url('./fonts/jetbrains-mono-700.woff2') format('woff2');
+}
+
 :root{
   --bg:#04070a;
   --panel:rgba(10,17,24,.92);
@@ -12,7 +37,8 @@
   --gold:#f2b544;
   --green:#38e2b0;
   --red:#ff4d6d;
-  --hud-font:ui-monospace,"SF Mono","Cascadia Code","Roboto Mono","JetBrains Mono",Menlo,Consolas,monospace;
+  --display-font:'Chakra Petch',ui-sans-serif,"Segoe UI",Arial,sans-serif;
+  --hud-font:'JetBrains Mono',ui-monospace,"SF Mono","Cascadia Code","Roboto Mono",Menlo,Consolas,monospace;
   --body-font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Arial,sans-serif;
 }
 *{box-sizing:border-box}
@@ -55,14 +81,14 @@ body{
 }
 .brand{display:flex;align-items:center;gap:10px}
 .logo{
-  width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:900;
-  font-family:var(--hud-font);color:var(--cyan);background:#0a121a;border:1px solid var(--line-strong);
+  width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-weight:700;
+  font-family:var(--display-font);color:var(--cyan);background:#0a121a;border:1px solid var(--line-strong);
   animation:logo-breathe 3.4s ease-in-out infinite;
 }
-.brand h1{font-size:18px;margin:0;letter-spacing:.02em}
+.brand h1{font-family:var(--display-font);font-weight:600;font-size:18px;margin:0;letter-spacing:.02em}
 .sub{font-family:var(--hud-font);font-size:10px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
 .badge{
-  font-family:var(--hud-font);font-size:10px;letter-spacing:.08em;color:var(--gold);
+  font-family:var(--display-font);font-weight:600;font-size:10px;letter-spacing:.08em;color:var(--gold);
   border:1px solid rgba(242,181,68,.4);border-radius:999px;padding:6px 10px;
   box-shadow:0 0 10px rgba(242,181,68,.15);display:inline-flex;align-items:center;
 }
@@ -102,7 +128,7 @@ body{
 .card::before{top:-1px;left:-1px;border-width:1.5px 0 0 1.5px;border-top-left-radius:6px}
 .card::after{bottom:-1px;right:-1px;border-width:0 1.5px 1.5px 0;border-bottom-right-radius:6px}
 
-.greetingText{font-size:22px;font-weight:800;margin-top:6px;letter-spacing:-.01em}
+.greetingText{font-family:var(--display-font);font-size:23px;font-weight:600;margin-top:6px;letter-spacing:-.005em}
 
 .hero{display:flex;justify-content:space-between;align-items:center;gap:15px;padding:22px;overflow:hidden}
 .hero-reticle{
@@ -114,12 +140,12 @@ body{
 .hero-main{position:relative;z-index:1}
 
 .eyebrow,.section-title{
-  font-family:var(--hud-font);font-size:10.5px;color:var(--cyan);letter-spacing:.16em;text-transform:uppercase;
+  font-family:var(--display-font);font-weight:600;font-size:11px;color:var(--cyan);letter-spacing:.14em;text-transform:uppercase;
 }
 .section-title{display:flex;align-items:center;gap:7px;margin-bottom:12px}
 .section-title::before{content:"//";color:var(--cyan-dim)}
 
-.action{display:flex;align-items:center;gap:10px;font-size:30px;font-weight:900;letter-spacing:-.02em;margin-top:8px;font-family:var(--hud-font);transition:color .4s ease,text-shadow .4s ease}
+.action{display:flex;align-items:center;gap:10px;font-size:30px;font-weight:700;letter-spacing:-.01em;margin-top:8px;font-family:var(--display-font);transition:color .4s ease,text-shadow .4s ease}
 .action.wait{color:var(--gold);text-shadow:0 0 18px rgba(242,181,68,.35)}
 .action.watch{color:var(--cyan);text-shadow:0 0 18px rgba(47,217,242,.4)}
 .action.sell,.action.ready{color:var(--red);text-shadow:0 0 18px rgba(255,77,109,.4)}
@@ -167,7 +193,7 @@ body{
 
 .buttons{display:flex;flex-wrap:wrap;gap:8px}
 button{
-  font:inherit;font-family:var(--hud-font);font-weight:600;font-size:12.5px;letter-spacing:.03em;
+  font:inherit;font-family:var(--display-font);font-weight:600;font-size:13px;letter-spacing:.02em;
   color:var(--text);background:#0a141c;border:1px solid var(--line-strong);border-radius:10px;padding:11px 13px;
   transition:box-shadow .15s ease,border-color .15s ease;
 }
@@ -212,7 +238,7 @@ button:active:not(:disabled){transform:scale(.97)}
   background:rgba(4,7,10,.9);backdrop-filter:blur(18px);border-top:1px solid var(--line);
 }
 .bottom-nav button{
-  background:transparent;border:0;color:var(--muted);font-size:10.5px;padding:8px;letter-spacing:.06em;
+  background:transparent;border:0;color:var(--muted);font-family:var(--display-font);font-weight:600;font-size:11px;padding:8px;letter-spacing:.05em;
 }
 .bottom-nav button:hover{box-shadow:none;border-color:transparent}
 .bottom-nav button.active{color:var(--cyan);text-shadow:0 0 10px rgba(47,217,242,.5)}

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0f14" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="DG OS" />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="stylesheet" href="./styles.css" />
+  <title>DG OS Alpha</title>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">DG</div>
+      <div>
+        <h1>DG OS Alpha</h1>
+        <div class="sub">XAUUSD Market Assistant</div>
+      </div>
+    </div>
+    <div id="connectionBadge" class="badge">OFFLINE DEMO</div>
+  </header>
+
+  <main class="app">
+    <section class="hero card">
+      <div>
+        <div class="eyebrow">AKTUELLE HANDLUNG</div>
+        <div id="action" class="action wait">🟡 WAIT</div>
+        <div id="tradeType" class="muted">Noch keine Trade-Freigabe</div>
+      </div>
+      <div class="confidence">
+        <div class="eyebrow">DG CONFIDENCE</div>
+        <div id="confidence">54%</div>
+      </div>
+    </section>
+
+    <section class="grid two">
+      <article class="card">
+        <div class="section-title">🌍 Market Plan</div>
+        <div class="rows">
+          <div class="row"><span>HTF Plan</span><strong id="htfPlan">Bullish</strong></div>
+          <div class="row"><span>Primary Target</span><strong id="primaryTarget">Daily Buyside</strong></div>
+          <div class="row"><span>Current Opportunity</span><strong id="opportunity">Keine</strong></div>
+          <div class="row"><span>Intraday Target</span><strong id="intradayTarget">—</strong></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="section-title">🌏 Asia Session</div>
+        <div class="metrics">
+          <div><span>High</span><strong id="asiaHigh">—</strong></div>
+          <div><span>Low</span><strong id="asiaLow">—</strong></div>
+          <div><span>Range</span><strong id="asiaRange">—</strong></div>
+        </div>
+      </article>
+    </section>
+
+    <section class="grid two">
+      <article class="card">
+        <div class="section-title">💧 Liquidity</div>
+        <div class="check"><i id="cSweep"></i><span>Asia High Sweep</span><b id="sweepTxt">Fehlt</b></div>
+        <div class="check"><i class="on"></i><span>Preis im Premium</span><b>Ja</b></div>
+        <div class="check"><i class="on"></i><span>Bearisher POI</span><b>H1 OB + M5 FVG</b></div>
+      </article>
+
+      <article class="card">
+        <div class="section-title">⚡ Confirmation</div>
+        <div class="check"><i id="cEngulf"></i><span>Bearish Engulfing</span><b id="engulfTxt">Fehlt</b></div>
+        <div class="check"><i id="cDisp"></i><span>Displacement</span><b id="dispTxt">Fehlt</b></div>
+      </article>
+    </section>
+
+    <section class="card">
+      <div class="section-title">🧪 Alpha Simulation</div>
+      <div class="buttons">
+        <button data-step="asia">1 · Asia beenden</button>
+        <button data-step="sweep" class="danger">2 · Asia High sweep</button>
+        <button data-step="engulf" class="danger">3 · Bearish Engulfing</button>
+        <button data-step="reset" class="secondary">Reset</button>
+      </div>
+      <p class="hint">Dieser Alpha-Screen ist bereits als PWA gebaut. Sobald wir Live-XAUUSD anschließen, ersetzen echte Events diese Test-Buttons.</p>
+    </section>
+
+    <section class="card">
+      <div class="section-title">📡 Market Events</div>
+      <div id="events" class="events">
+        <div class="event"><time>—</time><div><strong>Noch kein Event</strong><span>DG OS wartet auf Marktdaten.</span></div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="section-title">🤖 Telegram</div>
+      <div class="rows">
+        <div class="row"><span>Bot</span><strong>DG OS Alpha</strong></div>
+        <div class="row"><span>Status</span><strong id="telegramStatus">Backend noch nicht verbunden</strong></div>
+      </div>
+      <button id="previewBriefing" class="primary full">DG Briefing anzeigen</button>
+      <pre id="briefing" class="briefing hidden"></pre>
+    </section>
+  </main>
+
+  <nav class="bottom-nav">
+    <button class="active">Dashboard</button>
+    <button>Market Plan</button>
+    <button>Events</button>
+    <button>Learning</button>
+  </nav>
+
+  <script src="./app.js"></script>
+</body>
+</html>

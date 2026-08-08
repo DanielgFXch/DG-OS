@@ -95,9 +95,18 @@
       <div class="section-title">🤖 Telegram</div>
       <div class="rows">
         <div class="row"><span>Bot</span><strong>DG OS Alpha</strong></div>
-        <div class="row"><span>Status</span><strong id="telegramStatus">Backend noch nicht verbunden</strong></div>
+        <div class="row"><span>Status</span><strong id="telegramStatus">Nicht verbunden</strong></div>
+      </div>
+      <div class="tg-settings">
+        <input id="tgToken" type="password" placeholder="Bot Token (von @BotFather)" autocomplete="off" />
+        <input id="tgChatId" type="text" placeholder="Chat-ID" autocomplete="off" />
+        <label class="tg-auto"><input id="tgAutoSend" type="checkbox" /> Auto-Senden bei SELL-Signal</label>
+        <div class="buttons">
+          <button id="tgSave" class="secondary">Speichern &amp; testen</button>
+        </div>
       </div>
       <button id="previewBriefing" class="primary full">DG Briefing anzeigen</button>
+      <button id="tgSend" class="full" disabled>An Telegram senden</button>
       <pre id="briefing" class="briefing hidden"></pre>
     </section>
   </main>

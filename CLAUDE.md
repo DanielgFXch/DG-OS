@@ -32,11 +32,11 @@ recognition) — never at redefining them.
 
 ## Current status
 
-- Frontend: static PWA (`index.html`, `app.js`, `styles.css`), Jarvis-style dark HUD theme.
-- Decision engine: WAIT/WATCH/READY with explainable checklist, currently driven by the simulated Alpha buttons (no live feed yet).
-- Live market data: not connected yet (needs a data API key — TwelveData free tier was the plan).
+- Frontend: static PWA (`index.html`, `app.js`, `styles.css`), Jarvis-style dark HUD theme, self-hosted fonts (Chakra Petch for display/chrome, JetBrains Mono for data — see `fonts/`).
+- Decision engine: WAIT/WATCH/READY with explainable checklist, still driven by the simulated Alpha buttons — the checks in `computeDecision()` are placeholders until `rules/strategy.md` is filled in. Do not wire real market data into the decision checks until then.
+- Live market data: XAUUSD price/Daily Open/High/Low is real, via `.github/workflows/market-data.yml` (TwelveData free tier, cron every 15 min, deploys `data/market.json` straight to Pages without git commits). Needs a `TWELVEDATA_API_KEY` repo secret to run — see README. Frontend (`loadMarketData()` in `app.js`) only shows "LIVE" and real numbers when that file is fresh (<45 min old); otherwise it honestly falls back to "OFFLINE DEMO", never fabricated numbers. `data/` is gitignored — it's a generated artifact, not a source file.
 - Telegram: client-side manual send/auto-send works; server-side heartbeat workflow (`.github/workflows/telegram-heartbeat.yml`) is ready but needs `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` repo secrets to run.
-- Deployment: GitHub Pages via `.github/workflows/deploy-pages.yml`, auto-deploys on every push to `main`.
+- Deployment: GitHub Pages, deployed both by `.github/workflows/deploy-pages.yml` (on push to `main`) and by `market-data.yml` (on its schedule) — both share the `pages` concurrency group so they don't race.
 - Git workflow on this project: open a PR, then merge it directly — don't leave PRs sitting open waiting for manual approval, per explicit instruction from Daniel.
 
 ## Roadmap — do not build ahead of need

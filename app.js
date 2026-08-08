@@ -38,6 +38,53 @@ function renderTicker(){
   $('tickerClock').textContent=now.toLocaleTimeString('de-DE');
 }
 
+const MARKET_DATA_URL='./data/market.json';
+const MARKET_STALE_MS=45*60*1000;
+
+function fmtPrice(n){return typeof n==='number'?n.toFixed(2):'—'}
+
+function setLiveStatus(isLive,label){
+  const badge=$('connectionBadge');
+  badge.classList.toggle('live',isLive);
+  badge.innerHTML=`<span class="live-dot"></span>${isLive?'LIVE':(label||'OFFLINE DEMO')}`;
+  const tickerStatus=$('tickerStatus');
+  tickerStatus.classList.toggle('live',isLive);
+  tickerStatus.textContent=isLive?'LIVE DATA: CONNECTED':`LIVE DATA: ${label?label.toUpperCase():'OFFLINE (DEMO)'}`;
+}
+
+async function loadMarketData(){
+  try{
+    const res=await fetch(`${MARKET_DATA_URL}?t=${Date.now()}`,{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const updated=new Date(data.updatedAt);
+    const isFresh=(Date.now()-updated.getTime())<MARKET_STALE_MS;
+
+    $('livePrice').textContent=fmtPrice(data.price);
+    $('liveOpen').textContent=fmtPrice(data.dailyOpen);
+    $('liveHigh').textContent=fmtPrice(data.dailyHigh);
+    $('liveLow').textContent=fmtPrice(data.dailyLow);
+    $('liveUpdated').textContent=updated.toLocaleTimeString('de-DE');
+
+    const changeEl=$('liveChange');
+    if(typeof data.changePercent==='number'){
+      changeEl.textContent=`${data.changePercent>0?'+':''}${data.changePercent.toFixed(2)}%`;
+      changeEl.style.color=data.changePercent>0?'var(--green)':data.changePercent<0?'var(--red)':'var(--text)';
+    } else {
+      changeEl.textContent='—';
+      changeEl.style.color='';
+    }
+
+    $('liveHint').textContent=isFresh
+      ? 'Live-Daten von TwelveData, aktualisiert alle ~15 Minuten.'
+      : 'Daten sind veraltet – der Marktdaten-Workflow lief seit über 45 Minuten nicht.';
+
+    setLiveStatus(isFresh,isFresh?null:'Daten veraltet');
+  }catch(err){
+    setLiveStatus(false);
+  }
+}
+
 function events(items){
   $('events').innerHTML=items.map(x=>`<div class="event ev-${x.type||'default'}"><time>${x.t}</time><div><strong>${x.title}</strong><span>${x.desc}</span></div></div>`).join('');
 }
@@ -249,6 +296,8 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').cat
 render();
 renderGreeting();
 renderTicker();
+loadMarketData();
 setInterval(renderGreeting,60000);
 setInterval(renderTicker,1000);
+setInterval(loadMarketData,60000);
 if(tg.token){testTelegramConnection(tg.token).then(bot=>setTelegramStatus(`Verbunden · @${bot.username}`)).catch(()=>setTelegramStatus('Nicht verbunden'))}

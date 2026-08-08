@@ -107,12 +107,28 @@ jobs:
           '
           sessions=$(echo "$intraday" | jq -c --argjson price "$price" "$SESSION_FILTER")
 
+          # Module 7 (POI Engine, Fair Value Gap detector): reuse the same 72h
+          # hourly fetch already pulled for the Session Engine above - no extra
+          # API call. Sorted chronologically ascending (oldest first) so
+          # detectors can scan forward through candles without assuming
+          # TwelveData's own ordering; never trust it blindly, same reasoning
+          # as the "scan forward for a real candle" pattern elsewhere in this
+          # file.
+          CANDLE_FILTER='
+            [(.values // [])[]
+              | select((.open|tonumber?) != null and (.high|tonumber?) != null and (.low|tonumber?) != null and (.close|tonumber?) != null)
+              | {datetime, open: (.open|tonumber), high: (.high|tonumber), low: (.low|tonumber), close: (.close|tonumber)}]
+            | sort_by(.datetime)
+          '
+          candlesH1=$(echo "$intraday" | jq -c "$CANDLE_FILTER")
+
           jq -n \
             --argjson quote "$quote" \
             --argjson daily "$daily" \
             --argjson weekly "$weekly" \
             --argjson monthly "$monthly" \
             --argjson sessions "$sessions" \
+            --argjson candlesH1 "$candlesH1" \
             --arg updatedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             '{
               updatedAt: $updatedAt,
@@ -141,6 +157,10 @@ jobs:
                 asia:   { high: ($sessions.asia.high // null),   low: ($sessions.asia.low // null),   date: ($sessions.asia.day // null) },
                 london: { high: ($sessions.london.high // null), low: ($sessions.london.low // null), date: ($sessions.london.day // null) },
                 ny:     { high: ($sessions.ny.high // null),     low: ($sessions.ny.low // null),     date: ($sessions.ny.day // null) }
+              },
+
+              candles: {
+                h1: $candlesH1
               }
             }' > data/market.json
           cat data/market.json

@@ -87,6 +87,13 @@ async function loadMarketData(){
     $('liveBarDate').textContent=data.barDate||'—';
     if(!tdStreaming) $('liveUpdated').textContent=updated.toLocaleTimeString('de-DE');
 
+    $('weeklyOpen').textContent=fmtPrice(data.weeklyOpen);
+    $('weeklyHigh').textContent=fmtPrice(data.weeklyHigh);
+    $('weeklyLow').textContent=fmtPrice(data.weeklyLow);
+    $('monthlyOpen').textContent=fmtPrice(data.monthlyOpen);
+    $('monthlyHigh').textContent=fmtPrice(data.monthlyHigh);
+    $('monthlyLow').textContent=fmtPrice(data.monthlyLow);
+
     if(!tdStreaming){
       const marketClosed=currentSession(new Date()).name==='Markt geschlossen';
       let hint=isFresh

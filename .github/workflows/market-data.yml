@@ -23,7 +23,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch XAUUSD quote + daily candle from TwelveData
+      - name: Fetch XAUUSD Market Brain data from TwelveData
         env:
           TWELVEDATA_API_KEY: ${{ secrets.TWELVEDATA_API_KEY }}
         run: |
@@ -34,6 +34,32 @@ jobs:
           fi
           mkdir -p data
 
+          # Shared jq filter (see docs/MARKET_BRAIN.md - "scan forward for a real
+          # candle"): TwelveData emits a bar for every calendar period, including
+          # ones with no real trading (a flat, carried-forward placeholder). Never
+          # trust values[0] blindly - scan forward for the first bar whose range is
+          # a meaningful fraction of price (> 0.1%). Reused for daily/weekly/monthly.
+          REAL_BAR_FILTER='
+            (.values // []) as $v
+            | ([$v[] | select(
+                 ((.high|tonumber?) as $h | (.low|tonumber?) as $l | (.close|tonumber?) as $c
+                  | ($h != null and $l != null and $c != null and $c > 0 and (($h - $l) / $c) > 0.001))
+               )] | .[0]) // ($v[0] // {})
+          '
+
+          fetch_series() {
+            local interval="$1" outputsize="$2"
+            local resp status
+            resp=$(curl -sS "https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=${interval}&outputsize=${outputsize}&apikey=${TWELVEDATA_API_KEY}")
+            status=$(echo "$resp" | jq -r '.status // empty')
+            if [ "$status" = "error" ]; then
+              echo "TwelveData time_series ($interval) error:" >&2
+              echo "$resp" | jq -r '.message // .' >&2
+              exit 1
+            fi
+            echo "$resp" | jq -c "$REAL_BAR_FILTER"
+          }
+
           quote=$(curl -sS "https://api.twelvedata.com/quote?symbol=XAU/USD&apikey=${TWELVEDATA_API_KEY}")
           qstatus=$(echo "$quote" | jq -r '.status // empty')
           if [ "$qstatus" = "error" ]; then
@@ -43,46 +69,40 @@ jobs:
           fi
 
           # /quote's own open/high/low only cover "today" and go misleadingly flat
-          # around weekends/day-boundaries when no real session has traded yet. The
-          # most recent COMPLETE daily candle from time_series always matches what a
-          # chart's wick actually shows.
-          #
-          # TwelveData emits a daily bar for every calendar day, including weekend
-          # days with no real trading (just a flat carried-forward price) - so on a
-          # Sunday, values[0] AND values[1] can both be thin (Sun + Sat placeholders)
-          # before reaching Friday's real session at values[2]. outputsize=5 gives
-          # enough room, and we scan forward for the first bar whose range is a
-          # meaningful fraction of price (> 0.1%) rather than assuming a fixed index.
-          series=$(curl -sS "https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=1day&outputsize=5&apikey=${TWELVEDATA_API_KEY}")
-          sstatus=$(echo "$series" | jq -r '.status // empty')
-          if [ "$sstatus" = "error" ]; then
-            echo "TwelveData time_series error:"
-            echo "$series" | jq -r '.message // .'
-            exit 1
-          fi
-          bar=$(echo "$series" | jq -c '
-            (.values // []) as $v
-            | ([$v[] | select(
-                 ((.high|tonumber?) as $h | (.low|tonumber?) as $l | (.close|tonumber?) as $c
-                  | ($h != null and $l != null and $c != null and $c > 0 and (($h - $l) / $c) > 0.001))
-               )] | .[0]) // ($v[0] // {})
-          ')
+          # around weekends/day-boundaries - the daily candle from time_series is
+          # the reliable source, same reasoning for weekly/monthly.
+          daily=$(fetch_series 1day 5)
+          weekly=$(fetch_series 1week 3)
+          monthly=$(fetch_series 1month 3)
 
           jq -n \
             --argjson quote "$quote" \
-            --argjson bar "$bar" \
+            --argjson daily "$daily" \
+            --argjson weekly "$weekly" \
+            --argjson monthly "$monthly" \
             --arg updatedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             '{
               updatedAt: $updatedAt,
               symbol: ($quote.symbol // "XAU/USD"),
               price: ($quote.close | tonumber? // null),
-              dailyOpen: ($bar.open | tonumber? // null),
-              dailyHigh: ($bar.high | tonumber? // null),
-              dailyLow: ($bar.low | tonumber? // null),
-              barDate: ($bar.datetime // null),
               previousClose: ($quote.previous_close | tonumber? // null),
               changePercent: ($quote.percent_change | tonumber? // null),
-              isMarketOpen: ($quote.is_market_open // null)
+              isMarketOpen: ($quote.is_market_open // null),
+
+              dailyOpen: ($daily.open | tonumber? // null),
+              dailyHigh: ($daily.high | tonumber? // null),
+              dailyLow: ($daily.low | tonumber? // null),
+              barDate: ($daily.datetime // null),
+
+              weeklyOpen: ($weekly.open | tonumber? // null),
+              weeklyHigh: ($weekly.high | tonumber? // null),
+              weeklyLow: ($weekly.low | tonumber? // null),
+              weekBarDate: ($weekly.datetime // null),
+
+              monthlyOpen: ($monthly.open | tonumber? // null),
+              monthlyHigh: ($monthly.high | tonumber? // null),
+              monthlyLow: ($monthly.low | tonumber? // null),
+              monthBarDate: ($monthly.datetime // null)
             }' > data/market.json
           cat data/market.json
 

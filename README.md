@@ -1,6 +1,14 @@
 # DG-OS
 DG OS Alpha - AI Trading Assistant
 
+## Live-Vorschau (Progress)
+
+**https://danielgfxch.github.io/DG-OS/**
+
+Jeder Merge nach `main` wird automatisch über GitHub Actions (`.github/workflows/deploy-pages.yml`) auf GitHub Pages veröffentlicht. Unter dem Link siehst du also jederzeit den aktuellen Entwicklungsstand des Interfaces.
+
+Einmaliger Setup-Schritt (nur bei der ersten Einrichtung nötig): In den Repo-Settings unter **Settings → Pages → Build and deployment → Source** auf **"GitHub Actions"** stellen. Danach läuft alles automatisch bei jedem Merge.
+
 ## Telegram-Anbindung
 
 Im Bereich "🤖 Telegram" der App kannst du deinen eigenen Bot verbinden:

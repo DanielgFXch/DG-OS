@@ -93,6 +93,7 @@ async function loadMarketData(){
     $('monthlyOpen').textContent=fmtPrice(data.monthlyOpen);
     $('monthlyHigh').textContent=fmtPrice(data.monthlyHigh);
     $('monthlyLow').textContent=fmtPrice(data.monthlyLow);
+    updateSessionData(data.sessions);
 
     if(!tdStreaming){
       const marketClosed=currentSession(new Date()).name==='Markt geschlossen';
@@ -106,6 +107,78 @@ async function loadMarketData(){
   }catch(err){
     if(!tdStreaming) setLiveStatus(false);
   }
+}
+
+// Session Engine (Market Brain Module 3) — a reusable model, not three
+// copy-pasted card handlers. Every session is just {id, name, startHour,
+// endHour}; status/window are pure functions of the clock, High/Low come
+// from data/market.json. Future engines (Liquidity, POI, ...) should read
+// from this same SESSIONS list/DOM pattern rather than inventing their own.
+const SESSIONS=[
+  {id:'asia',name:'Asia',startHour:0,endHour:8},
+  {id:'london',name:'London',startHour:8,endHour:16},
+  {id:'ny',name:'New York',startHour:13,endHour:21}
+];
+
+function sessionWindowToday(session,now){
+  const y=now.getUTCFullYear(),m=now.getUTCMonth(),d=now.getUTCDate();
+  return{
+    start:new Date(Date.UTC(y,m,d,session.startHour,0,0)),
+    end:new Date(Date.UTC(y,m,d,session.endHour,0,0))
+  };
+}
+
+function sessionStatus(session,now){
+  const{start,end}=sessionWindowToday(session,now);
+  if(now<start) return'upcoming';
+  if(now<end) return'active';
+  return'closed';
+}
+
+function fmtHour(h){return String(h).padStart(2,'0')+':00'}
+
+function renderSessionCards(){
+  const grid=$('sessionGrid');
+  if(!grid) return;
+  grid.innerHTML=SESSIONS.map(s=>`
+    <article class="card">
+      <div class="section-title"><svg class="ic"><use href="#ic-clock"></use></svg>${s.name}<span class="session-status" id="sessionStatus-${s.id}">—</span></div>
+      <div class="metrics">
+        <div><span>High</span><strong id="session-${s.id}-high">—</strong></div>
+        <div><span>Low</span><strong id="session-${s.id}-low">—</strong></div>
+        <div><span>Range</span><strong id="session-${s.id}-range">—</strong></div>
+      </div>
+      <div class="session-window">${fmtHour(s.startHour)}–${fmtHour(s.endHour)} UTC</div>
+    </article>
+  `).join('');
+}
+
+const SESSION_STATUS_LABEL={upcoming:'Bevorstehend',active:'Aktiv',closed:'Geschlossen'};
+function updateSessionStatuses(){
+  const now=new Date();
+  SESSIONS.forEach(s=>{
+    const el=$(`sessionStatus-${s.id}`);
+    if(!el) return;
+    const status=sessionStatus(s,now);
+    el.textContent=SESSION_STATUS_LABEL[status];
+    el.className=`session-status status-${status}`;
+  });
+}
+
+function updateSessionData(sessions){
+  SESSIONS.forEach(s=>{
+    const sd=(sessions||{})[s.id];
+    const highEl=$(`session-${s.id}-high`);
+    if(!highEl) return;
+    const lowEl=$(`session-${s.id}-low`),rangeEl=$(`session-${s.id}-range`);
+    if(sd&&typeof sd.high==='number'&&typeof sd.low==='number'){
+      highEl.textContent=fmtPrice(sd.high);
+      lowEl.textContent=fmtPrice(sd.low);
+      rangeEl.textContent=`$${(sd.high-sd.low).toFixed(2)}`;
+    }else{
+      highEl.textContent='—';lowEl.textContent='—';rangeEl.textContent='—';
+    }
+  });
 }
 
 // TwelveData WebSocket-Streaming läuft komplett im Browser: der API-Key liegt dadurch
@@ -406,14 +479,17 @@ async function maybeAutoSend(){
   }
 }
 
+renderSessionCards();
 document.querySelectorAll('.card').forEach((el,i)=>{el.style.animationDelay=`${Math.min(i*0.05,0.4)}s`});
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
 render();
 renderGreeting();
 renderTicker();
+updateSessionStatuses();
 loadMarketData();
 setInterval(renderGreeting,60000);
 setInterval(renderTicker,1000);
+setInterval(updateSessionStatuses,30000);
 setInterval(loadMarketData,60000);
 if(tg.token){testTelegramConnection(tg.token).then(bot=>setTelegramStatus(`Verbunden · @${bot.username}`)).catch(()=>setTelegramStatus('Nicht verbunden'))}

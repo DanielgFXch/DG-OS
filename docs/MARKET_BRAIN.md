@@ -45,13 +45,44 @@ filter is reused for daily, weekly, and monthly candles (see
 `market-data.yml`). Any future module that fetches a new OHLC period should
 reuse this exact pattern rather than assuming index 0 is always valid.
 
+## Session Engine (Module 3) — reusable session model
+
+Sessions are modeled once, generically, both server-side and client-side —
+never as three copy-pasted Asia/London/NY blocks:
+
+- **Server-side** (`market-data.yml`): one shared hourly fetch
+  (`interval=1h&outputsize=72&timezone=UTC`, 72h so a Sunday/Monday run can
+  still reach back to Friday's sessions across the weekend) feeds a single jq
+  `session_range(startHour; endHour; price)` function, called once per
+  session with its own UTC hour window. It groups candles by calendar day,
+  then applies the *same* "scan forward for a real candle" pattern as
+  daily/weekly/monthly — but per session-occurrence instead of per calendar
+  day, using a smaller 0.05%-of-price threshold (session ranges are
+  naturally smaller than daily ranges, so the daily 0.1% cutoff would risk
+  rejecting a real-but-quiet session). Known limitation: a genuinely real
+  but very quiet session start could in theory still fall under the
+  threshold and get skipped in favor of the prior day — acceptable given
+  gold's typical intra-session volatility, but worth remembering if a
+  session ever shows a suspiciously old date.
+- **Client-side** (`app.js`): a single `SESSIONS` config
+  (`[{id, name, startHour, endHour}, ...]`) drives everything — window
+  math (`sessionWindowToday`), live status (`sessionStatus`: upcoming /
+  active / closed, pure function of the current UTC clock, no data
+  dependency), card rendering (`renderSessionCards`), and data binding
+  (`updateSessionData`). Adding a fourth session (e.g. Sydney) means adding
+  one entry to `SESSIONS` — no new functions.
+- Fields reserved for later, deliberately **not** in the UI yet (no dummy
+  features): each session's sweep/manipulation/expansion flags. Those
+  belong to the Liquidity Engine once it exists and will attach to the same
+  per-session object rather than inventing a parallel structure.
+
 ## `data/market.json` schema (grows module by module)
 
 | Module | Status | Fields added |
 |---|---|---|
 | 1 — Live price + daily range | done | `price`, `dailyOpen`, `dailyHigh`, `dailyLow`, `barDate`, `previousClose`, `changePercent`, `isMarketOpen` |
 | 2 — Weekly/monthly range | done | `weeklyOpen`, `weeklyHigh`, `weeklyLow`, `weekBarDate`, `monthlyOpen`, `monthlyHigh`, `monthlyLow`, `monthBarDate` |
-| 3 — Session ranges (Asia/London/NY) | planned | `asiaHigh`, `asiaLow`, `londonHigh`, `londonLow`, `nyHigh`, `nyLow` |
+| 3 — Session ranges (Asia/London/NY) | done | `sessions.{asia,london,ny}.{high,low,date}` |
 | 4 — Premium/Discount | planned | derived client-side from existing ranges, no new API call |
 | 5 — HTF Bias (structural, not Daniel's rules yet) | planned | derived client-side from existing opens, no new API call |
 

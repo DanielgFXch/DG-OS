@@ -244,6 +244,15 @@ body{
 .structure-status-broken{color:var(--muted);opacity:.6}
 .structure-status-confirmed{color:var(--green);border-color:rgba(56,226,176,.4)}
 
+.decision-state{
+  font-family:var(--display-font);font-weight:700;font-size:24px;letter-spacing:.02em;
+  margin-top:8px;color:var(--text)
+}
+.decision-state-WAIT{color:var(--gold);text-shadow:0 0 16px rgba(242,181,68,.3)}
+.decision-state-WATCH{color:var(--cyan);text-shadow:0 0 16px rgba(47,217,242,.3)}
+.decision-state-READY{color:var(--green);text-shadow:0 0 16px rgba(56,226,176,.35)}
+.decision-state-INVALID{color:var(--red);text-shadow:0 0 16px rgba(255,77,109,.35)}
+
 .app-footer{
   text-align:center;font-family:var(--hud-font);font-size:10.5px;color:var(--muted);
   letter-spacing:.06em;padding:18px 0 6px;

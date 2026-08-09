@@ -8,6 +8,21 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.18.0] — Daniel Decision Engine (Modul 10): vollständige Architektur
+
+### Neu
+- **Daniel Decision Engine** (Modul 10): vollständige Architektur für WAIT/WATCH/READY/INVALID — liest HTF Bias, Structure Engine, Liquidity Engine, POI Engine, Premium/Discount und die DG Confidence Engine. Noch **keine** Tradingentscheidung, keine DG-Regeln, keine Entries, keine Alerts
+- Vollständiges `DecisionState`-Datenmodell (Status, Confidence, Begründung, verfügbare/fehlende Module, Konflikte zwischen Modulen, erfüllte/fehlende Bedingungen, Regel-Status-Snapshot, vollständiger Modul-Snapshot) — bereit für künftige Konsumenten: Telegram Alerts, Reports, Replay, Learning Engine, Auto Trading
+- `DG_RULES_DEFINED`: von Hand gepflegte Kopie der Status-Übersicht aus `rules/strategy.md` — solange kein Kapitel definiert ist, liefert die Engine ehrlich immer `WAIT` mit expliziter Begründung, nie eine erfundene Bewertung
+- Konflikterkennung zwischen Modulen (z. B. HTF Bias vs. Structure Engine vs. POI-Mehrheitsrichtung) — rein mechanischer Abgleich, keine DG-Bewertung
+- Gleiche Modularität wie POI/DG Confidence Engine: `DECISION_INPUT_MODULES`-Registry, jedes Modul liefert nur eine `input`/`describe`-Paarung
+- Neue Karte „Daniel Decision Engine" im Dashboard
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `docs/MARKET_BRAIN.md`, `rules/strategy.md`, `CHANGELOG.md`
+
+---
+
 ## [0.17.0] — Structure Engine (Modul 9): reine Marktstruktur-Erkennung
 
 ### Neu

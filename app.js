@@ -1,7 +1,7 @@
 
 // Semantic Versioning (siehe CHANGELOG.md für die vollständige Historie).
 // Bei jedem abgeschlossenen Build hier + in CHANGELOG.md aktualisieren.
-const DG_OS_VERSION='0.16.1';
+const DG_OS_VERSION='0.17.0';
 
 const state={asia:false,sweep:false,engulf:false};
 const $=id=>document.getElementById(id);
@@ -57,7 +57,7 @@ function fmtPrice(n){return typeof n==='number'?n.toFixed(2):'—'}
 // the full module tree. Nothing outside this file should reach into
 // data/market.json directly; go through MarketBrain instead.
 // ---------------------------------------------------------------------------
-const MarketBrain={liveData:null,sessions:null,candles:null,premiumDiscount:null,htfBias:null,liquidity:null,pois:null,dgConfidence:null};
+const MarketBrain={liveData:null,sessions:null,candles:null,premiumDiscount:null,htfBias:null,liquidity:null,pois:null,structure:null,dgConfidence:null};
 
 // Module 4: Premium / Discount Engine
 //
@@ -560,6 +560,236 @@ function renderPOIEngine(poiEngine){
   container.innerHTML=listHtml+registryHtml;
 }
 
+// Module 9: Structure Engine — pure market structure, v0.17.0
+//
+// Built after Module 8 (DG Confidence Engine) chronologically, but placed
+// here in the file next to Liquidity/POI because it's a Market Brain data
+// module, not part of Daniel Brain — module numbers in this codebase track
+// build order, not architectural layer (see docs/MARKET_BRAIN.md).
+//
+// Foundation for DG HTF Bias, the Daniel Decision Engine, the Learning
+// Engine, Reports, and Alerts — but this build is exclusively structure
+// *detection*. No trading decision, no alert, no DG rule (rules/strategy.md
+// chapters are still TODO). Same modularity discipline as the POI Engine:
+// the detector only ever sees a plain candle array, never MarketBrain;
+// correlating a structure element with Session/HTF Bias happens once,
+// centrally, in enrichStructureContext().
+//
+// Structure object shape — every element, uniform regardless of type:
+// {
+//   id, type,        // 'swingHigh' | 'swingLow' | 'BOS' | 'CHOCH'
+//   label,             // 'HH' | 'LH' (swingHigh) | 'HL' | 'LL' (swingLow) | null (BOS/CHOCH, or a swing with no prior point to compare against)
+//   price, createdAt, timeframe,
+//   direction,          // 'bullish' | 'bearish' | null — HH/HL and bullish breaks are 'bullish', LH/LL and bearish breaks are 'bearish'
+//   structureType,       // 'internal' | 'external' — which fractal window produced it, see below
+//   status,               // 'active' | 'broken' (swing points) | 'confirmed' (BOS/CHOCH)
+//   confidence,            // 0-100, intrinsic (prominence vs. local ATR for swings, breakout strength vs. local ATR for BOS/CHOCH)
+//   reason, sourceCandle, brokenLevel,
+//   relatedSession, relatedHTFBias   // filled by enrichment, like the POI Engine
+// }
+//
+// "Internal" vs "external" structure: rather than fetching a second
+// timeframe, both are computed from the same H1 candle series with two
+// different fractal window sizes — a narrow window (STRUCTURE_INTERNAL_WINDOW)
+// catches minor/frequent swings, a wider one (STRUCTURE_EXTERNAL_WINDOW)
+// catches only major swings. A standard, well-known technique — not a DG
+// rule, and documented as such.
+const STRUCTURE_INTERNAL_WINDOW=1; // 3-candle fractal — minor/internal swings
+const STRUCTURE_EXTERNAL_WINDOW=3; // 7-candle fractal — major/external swings
+
+function createStructureElement({type,label,price,createdAt,timeframe,direction,structureType,status,confidence,reason,sourceCandle,brokenLevel,relatedSession,relatedHTFBias}){
+  return{
+    id:`${type}-${structureType}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
+    type,
+    label:label||null,
+    price:typeof price==='number'?price:null,
+    createdAt:createdAt||new Date().toISOString(),
+    timeframe:timeframe||null,
+    direction:direction||null,
+    structureType:structureType||null,
+    status:status||null,
+    confidence:typeof confidence==='number'?confidence:null,
+    reason:reason||null,
+    sourceCandle:sourceCandle||null,
+    brokenLevel:brokenLevel||null,
+    relatedSession:relatedSession||null,
+    relatedHTFBias:relatedHTFBias||null
+  };
+}
+
+function directionForStructureLabel(label){
+  if(label==='HH'||label==='HL') return'bullish';
+  if(label==='LH'||label==='LL') return'bearish';
+  return null;
+}
+
+// Classic 3-(or more)-candle fractal pivot: a candle is a swing high if its
+// high exceeds every candle in a `window`-sized neighborhood on both sides,
+// and a swing low mirrors that on the low. Ties don't count (strict `<`),
+// so a genuinely flat pivot is conservatively skipped rather than guessed at.
+function detectRawSwingPoints(candles,window){
+  const highs=[],lows=[];
+  for(let i=window;i<candles.length-window;i++){
+    const c=candles[i];
+    const left=candles.slice(i-window,i),right=candles.slice(i+1,i+1+window);
+    if(left.every(l=>l.high<c.high)&&right.every(r=>r.high<c.high)) highs.push({index:i,type:'swingHigh',price:c.high,candle:c});
+    if(left.every(l=>l.low>c.low)&&right.every(r=>r.low>c.low)) lows.push({index:i,type:'swingLow',price:c.low,candle:c});
+  }
+  return{highs,lows};
+}
+
+// Labels each swing point relative to the immediately preceding swing point
+// of the same type — HH/LH for highs, HL/LL for lows. The first point of a
+// type has no prior to compare against, so its label stays null (honest
+// absence, not a guess).
+function classifyStructureSequence(points){
+  let prev=null;
+  return points.map(p=>{
+    let label=null;
+    if(prev) label = p.type==='swingHigh' ? (p.price>prev.price?'HH':'LH') : (p.price<prev.price?'LL':'HL');
+    prev=p;
+    return Object.assign({},p,{label,status:'active'});
+  });
+}
+
+function structureProminenceConfidence(candles,point,window){
+  const avgRange=localAverageRange(candles,point.index,window);
+  if(avgRange<=0) return 0;
+  const neighbourhood=candles.slice(Math.max(0,point.index-window),Math.min(candles.length,point.index+window+1)).filter(c=>c!==point.candle);
+  if(!neighbourhood.length) return 0;
+  const diff=point.type==='swingHigh'
+    ? point.price-Math.max(...neighbourhood.map(c=>c.high))
+    : Math.min(...neighbourhood.map(c=>c.low))-point.price;
+  return Math.max(0,Math.min(100,Math.round((diff/avgRange)*100)));
+}
+
+function createSwingElement(point,structureType,candles,window){
+  const direction=directionForStructureLabel(point.label);
+  const confidence=structureProminenceConfidence(candles,point,window);
+  const pivotLabel=point.type==='swingHigh'?'Swing High':'Swing Low';
+  const structureLabel=structureType==='internal'?'interne':'externe';
+  const labelText={HH:'Higher High',LH:'Lower High',HL:'Higher Low',LL:'Lower Low'}[point.label];
+  const reason=point.label
+    ? `${labelText}: ${pivotLabel} bei ${point.price} (${point.candle.datetime} UTC, ${structureLabel} Struktur)`
+    : `Erster erkannter ${pivotLabel} bei ${point.price} (${point.candle.datetime} UTC, ${structureLabel} Struktur) — noch kein Vergleichspunkt`;
+  return createStructureElement({
+    type:point.type,label:point.label,price:point.price,
+    createdAt:candleTimeToIso(point.candle.datetime),
+    timeframe:'H1',direction,structureType,status:point.status,confidence,reason,sourceCandle:point.candle
+  });
+}
+
+function createBreakEvent(type,direction,candle,brokenLevel,candles,index,window,structureType){
+  const avgRange=localAverageRange(candles,index,window);
+  const confidence=avgRange>0?Math.max(0,Math.min(100,Math.round((Math.abs(candle.close-brokenLevel.price)/avgRange)*100))):0;
+  const levelLabel=brokenLevel.type==='swingHigh'?'Swing High':'Swing Low';
+  const typeLabel=type==='BOS'?'Break of Structure':'Change of Character';
+  const structureLabel=structureType==='internal'?'interne':'externe';
+  const reason=`${typeLabel} (${direction}): Close ${candle.close} bei ${candle.datetime} UTC ${direction==='bullish'?'über':'unter'} vorherigem ${levelLabel} ${brokenLevel.price} (${structureLabel} Struktur)`;
+  return createStructureElement({
+    type,label:null,price:candle.close,
+    createdAt:candleTimeToIso(candle.datetime),
+    timeframe:'H1',direction,structureType,status:'confirmed',confidence,reason,sourceCandle:candle,
+    brokenLevel:{type:brokenLevel.type,price:brokenLevel.price,createdAt:candleTimeToIso(brokenLevel.candle.datetime)}
+  });
+}
+
+// Walks the candles in order tracking the most recent unbroken swing high/low
+// ("key levels") and the currently established bias. A close beyond the key
+// level in the direction of the existing (or not-yet-established) bias is a
+// BOS (continuation); a close beyond the key level *against* the established
+// bias is a CHOCH (character change) and flips the bias. Once a key level is
+// broken it's marked 'broken' and never refires — the next swing point of
+// that type (whenever confirmed) becomes the new key level.
+function detectStructure(candles,window,structureType){
+  if(!Array.isArray(candles)||candles.length<window*2+3) return{elements:[],finalBias:null};
+
+  const{highs:rawHighs,lows:rawLows}=detectRawSwingPoints(candles,window);
+  const highs=classifyStructureSequence(rawHighs);
+  const lows=classifyStructureSequence(rawLows);
+  const highByIndex=new Map(highs.map(p=>[p.index,p]));
+  const lowByIndex=new Map(lows.map(p=>[p.index,p]));
+
+  const events=[];
+  let bias=null,keyHigh=null,keyLow=null;
+  for(let i=0;i<candles.length;i++){
+    if(highByIndex.has(i)) keyHigh=highByIndex.get(i);
+    if(lowByIndex.has(i)) keyLow=lowByIndex.get(i);
+    const c=candles[i];
+    if(keyHigh&&keyHigh.status==='active'&&c.close>keyHigh.price){
+      events.push(createBreakEvent(bias==='bearish'?'CHOCH':'BOS','bullish',c,keyHigh,candles,i,window,structureType));
+      keyHigh.status='broken';
+      bias='bullish';
+    }
+    if(keyLow&&keyLow.status==='active'&&c.close<keyLow.price){
+      events.push(createBreakEvent(bias==='bullish'?'CHOCH':'BOS','bearish',c,keyLow,candles,i,window,structureType));
+      keyLow.status='broken';
+      bias='bearish';
+    }
+  }
+
+  const swingElements=[...highs,...lows].map(p=>createSwingElement(p,structureType,candles,window));
+  return{elements:[...swingElements,...events],finalBias:bias};
+}
+
+function enrichStructureContext(el,brain){
+  return Object.assign({},el,{
+    relatedSession:el.createdAt?sessionForTimestamp(new Date(el.createdAt)):null,
+    relatedHTFBias:(brain.htfBias&&brain.htfBias.bias)||null
+  });
+}
+
+function computeStructureEngine(brain){
+  const candles=(brain.candles&&brain.candles.h1)||[];
+  const internal=detectStructure(candles,STRUCTURE_INTERNAL_WINDOW,'internal');
+  const external=detectStructure(candles,STRUCTURE_EXTERNAL_WINDOW,'external');
+  return{
+    list:[...internal.elements,...external.elements].map(el=>enrichStructureContext(el,brain)),
+    internalBias:internal.finalBias,
+    externalBias:external.finalBias
+  };
+}
+
+const STRUCTURE_TYPE_LABEL={swingHigh:'Swing High',swingLow:'Swing Low',BOS:'BOS',CHOCH:'CHOCH'};
+const STRUCTURE_STATUS_LABEL={active:'ACTIVE',broken:'BROKEN',confirmed:'CONFIRMED'};
+
+function renderStructureEngine(engine){
+  const internalEl=$('structureInternalBias'),externalEl=$('structureExternalBias');
+  const container=$('structureRows');
+  if(!container) return;
+
+  if(internalEl){
+    const b=engine&&engine.internalBias;
+    internalEl.textContent=b?BIAS_LABEL[b]:'—';
+    internalEl.className=b?`bias-${b}`:'';
+  }
+  if(externalEl){
+    const b=engine&&engine.externalBias;
+    externalEl.textContent=b?BIAS_LABEL[b]:'—';
+    externalEl.className=b?`bias-${b}`:'';
+  }
+
+  const list=(engine&&engine.list)||[];
+  if(!list.length){
+    container.innerHTML='<div class="structure-empty">Noch keine Struktur erkannt.</div>';
+    return;
+  }
+
+  const sorted=[...list].sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  container.innerHTML=sorted.map(el=>{
+    const label=el.label||STRUCTURE_TYPE_LABEL[el.type];
+    const context=[el.structureType==='internal'?'Intern':'Extern'];
+    if(el.relatedSession) context.push(SESSION_LABEL_BY_ID[el.relatedSession]||el.relatedSession);
+    if(el.relatedHTFBias) context.push(`Bias ${BIAS_LABEL[el.relatedHTFBias]||el.relatedHTFBias}`);
+    return`
+    <div class="structure-row">
+      <span class="structure-label">${label}<span class="structure-meta">${el.timeframe||'—'}${el.direction?' · '+el.direction:''} · ${context.join(' · ')}</span></span>
+      <span class="structure-price">${fmtPrice(el.price)}${el.confidence!==null?`<span class="structure-confidence">${el.confidence}% Confidence</span>`:''}</span>
+      <span class="structure-status structure-status-${el.status}">${STRUCTURE_STATUS_LABEL[el.status]||el.status}</span>
+    </div>`;
+  }).join('');
+}
+
 // Module 8: DG Confidence Engine — architecture only, v0.15.0
 //
 // The first piece of the future Daniel Brain, sitting directly above the
@@ -690,11 +920,13 @@ function refreshDerivedModules(){
   MarketBrain.htfBias=computeHTFBias(MarketBrain.liveData);
   MarketBrain.liquidity=computeLiquidityEngine(MarketBrain.liveData);
   MarketBrain.pois=computePOIEngine(MarketBrain);
+  MarketBrain.structure=computeStructureEngine(MarketBrain);
   MarketBrain.dgConfidence=computeDGConfidenceEngine(MarketBrain);
   renderPremiumDiscount(MarketBrain.premiumDiscount);
   renderHTFBias(MarketBrain.htfBias);
   renderLiquidityEngine(MarketBrain.liquidity);
   renderPOIEngine(MarketBrain.pois);
+  renderStructureEngine(MarketBrain.structure);
   renderDGConfidence(MarketBrain.dgConfidence);
 }
 

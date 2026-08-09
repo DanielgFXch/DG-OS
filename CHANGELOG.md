@@ -8,6 +8,21 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.18.1] — Dauerhafte Projektregel: DG Learning Philosophy
+
+### Neu
+- Neue dauerhafte Projektregel dokumentiert (`CLAUDE.md`, `ROADMAP.md`, `docs/MARKET_BRAIN.md`): DG OS ist **keine Trading-KI**, sondern eine digitale Erweiterung von Daniel Gomes. Oberstes Ziel: „DG OS soll im Laufe der Zeit immer besser verstehen, wie Daniel Gomes denkt."
+- Erlaubt: kontinuierliches Lernen aus echten Markt-/historischen Daten und Trading-Ergebnissen, Statistiken, Mustererkennung, Performance-Analyse, Verbesserungsvorschläge, alternative Szenarien, Wahrscheinlichkeitsvergleiche
+- Niemals erlaubt: DG OS darf Tradingregeln niemals eigenständig ändern, überschreiben oder neue Regeln aktivieren. Jede Verbesserung muss explizit als Empfehlung gekennzeichnet werden — nur Daniel entscheidet über Übernahme, indem er selbst `rules/strategy.md` bearbeitet
+- Gilt automatisch für alle künftigen Module, insbesondere Learning Engine, Reports, Statistics und jede künftige Auto-Trading-Arbeit
+- **`ROADMAP.md`** neu angelegt: vollständige Modul-Roadmap (Ist-Stand, aktuelle Phase „Wissensmodus", nächste Phasen bis v1.0 Alpha) plus die neue Lern-Philosophie
+- Reine Dokumentations-/Governance-Änderung, keine funktionalen Code-Änderungen
+
+### Geänderte Dateien
+`app.js`, `CLAUDE.md`, `ROADMAP.md` (neu), `docs/MARKET_BRAIN.md`, `CHANGELOG.md`
+
+---
+
 ## [0.18.0] — Daniel Decision Engine (Modul 10): vollständige Architektur
 
 ### Neu

@@ -69,6 +69,37 @@ rules" principle above (only Daniel edits trading rules) to every module in the
 system, not just the Decision Engine. Quality over speed, always — this rule is
 permanent and applies to every future build.
 
+## DG Learning Philosophy — not a trading AI
+
+DG OS is **not a trading AI** — it is a digital extension of Daniel Gomes. Its
+highest-level goal is permanent: *"DG OS soll im Laufe der Zeit immer besser
+verstehen, wie Daniel Gomes denkt."* Everything the system is ever allowed to
+learn serves that one goal — never a goal of its own.
+
+**Allowed**, once the relevant modules exist:
+- Learn continuously from real market data, historical data, and trading results.
+- Build statistics.
+- Recognize patterns.
+- Analyze performance.
+- Propose improvements.
+- Calculate alternative scenarios.
+- Compare probabilities.
+
+**Never allowed, under any circumstance:**
+- DG OS may never change a trading rule on its own.
+- DG OS may never overwrite a rule.
+- DG OS may never activate a new rule on its own.
+
+Every improvement DG OS ever produces must be explicitly labeled a
+**recommendation** ("Empfehlung") — never applied automatically. Only Daniel
+decides whether a recommendation is adopted, and adoption always means *he*
+edits [`rules/strategy.md`](rules/strategy.md) himself — the system never
+edits it for him, no matter how confident a pattern looks. This is a
+permanent rule and applies automatically to every future module — especially
+the Learning Engine, Reports, Statistics, and any future Auto Trading work.
+See also [`ROADMAP.md`](ROADMAP.md) and the matching section in
+[`docs/MARKET_BRAIN.md`](docs/MARKET_BRAIN.md).
+
 ## Current status
 
 - Frontend: static PWA (`index.html`, `app.js`, `styles.css`), Jarvis-style dark HUD theme, self-hosted fonts (Chakra Petch for display/chrome, JetBrains Mono for data — see `fonts/`).
@@ -84,8 +115,7 @@ permanent and applies to every future build.
 
 ## Roadmap — do not build ahead of need
 
-Order Blocks, FVG/iFVG, Equal Highs/Lows, Premium/Discount/OTE, BOS/CHOCH,
-Mitigation, Breaker, session/day/week/month opens & highs/lows, daily/weekly/
-monthly/quarterly/yearly reports, win-rate & RR statistics. Build each of these
-only once it can run on real data and/or Daniel's exact rules make it meaningful —
-a module fed with fake data is a dummy feature, even if the code is "real."
+Full module-by-module roadmap and current phase: [`ROADMAP.md`](ROADMAP.md).
+Build each future module only once it can run on real data and/or Daniel's
+exact rules make it meaningful — a module fed with fake data is a dummy
+feature, even if the code is "real."

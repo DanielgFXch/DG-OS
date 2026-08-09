@@ -8,6 +8,20 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.16.0] — `rules/strategy.md`: vollständige Architektur der Wissensbasis
+
+### Neu
+- **`rules/strategy.md`** von einem 7-Punkte-Platzhalter zur vollständigen, zentralen Wissensbasis von DG OS ausgebaut: 16 Kapitel (DG HTF Bias, DG Liquidity, DG Premium/Discount, DG Order Block, DG Valid FVG, DG Inverse FVG, DG Breaker, DG Confirmation, Entry, Exit, Risk Management, No Trades, Session-Regeln, News, Beispiele, Edge Cases)
+- Jedes Kapitel mit Status-Marker (🔴 TODO / 🟢 DEFINIERT), Leitfragen als Orientierung und explizitem Platzhalter — noch **keine** erfundenen Regeln
+- Status-Übersichtstabelle am Anfang des Dokuments für schnellen Fortschrittsüberblick
+- Neue Zuordnungstabelle: welches Kapitel später von welchem Code-Modul gelesen wird (Market Brain, POI Engine, DG Confidence Engine, künftige Confirmation/Entry/Exit/Risk-Module)
+- `CLAUDE.md` aktualisiert: verweist jetzt auf die vollständige Kapitelstruktur statt auf den alten 7-Punkte-Platzhalter
+
+### Geänderte Dateien
+`app.js`, `CLAUDE.md`, `rules/strategy.md`, `CHANGELOG.md`
+
+---
+
 ## [0.15.0] — DG Confidence Engine (Modul 8) — Architektur
 
 ### Neu

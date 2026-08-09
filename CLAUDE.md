@@ -23,12 +23,16 @@ with an explicit, itemized reason (which criteria are met/unmet) — see
 
 ## Strategy rules
 
-Daniel's exact trading rules (HTF bias criteria, liquidity/POI criteria,
-confirmation criteria, invalidation, risk management) live in
-[`rules/strategy.md`](rules/strategy.md) — currently a placeholder awaiting his
-input. The system must never invent or silently change trading rules; only Daniel
-edits that file. Code may get smarter at *applying* the rules (statistics, pattern
-recognition) — never at redefining them.
+Daniel's exact trading rules live in [`rules/strategy.md`](rules/strategy.md) —
+the central knowledge base of DG OS, structured into 16 chapters (DG HTF Bias, DG
+Liquidity, DG Premium/Discount, DG Order Block, DG Valid FVG, DG Inverse FVG, DG
+Breaker, DG Confirmation, Entry, Exit, Risk Management, No Trades, Session-Regeln,
+News, Beispiele, Edge Cases), each with a status marker and guiding questions but
+currently no actual rules — awaiting his input, chapter by chapter. The system
+must never invent or silently change trading rules; only Daniel edits that file.
+A chapter still marked TODO means DG OS applies no rule for it and waits — see
+the "DG methodology" section below. Code may get smarter at *applying* the rules
+(statistics, pattern recognition) — never at redefining them.
 
 ## DG methodology — not ICT, not generic Smart Money
 

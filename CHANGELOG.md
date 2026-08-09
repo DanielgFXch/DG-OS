@@ -8,6 +8,20 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.17.0] — Structure Engine (Modul 9): reine Marktstruktur-Erkennung
+
+### Neu
+- **Structure Engine** (Modul 9): erkennt Swing High/Low, Higher High/Higher Low/Lower High/Lower Low, Break of Structure (BOS) und Change of Character (CHOCH) — sowohl interne als auch externe Struktur (zwei Fraktal-Fenstergrößen auf derselben H1-Kerzenreihe, keine zusätzliche API-Abfrage)
+- Jedes erkannte Element als einheitliches Objekt: Typ, Label (HH/HL/LH/LL), Preis, Zeit, Timeframe, Bullish/Bearish, interne/externe Struktur, Status (Active/Broken/Confirmed), Confidence, zugehörige Session, HTF-Kontext
+- Gleiche Modularität wie die POI Engine: der Detector kennt ausschließlich die eigene Kerzenreihe, keine Kopplung an andere Module — Anreicherung mit Session/HTF Bias passiert zentral in `enrichStructureContext()`
+- Grundlage für DG HTF Bias, die Daniel Decision Engine, die Learning Engine, Reports und Alerts — noch bewusst **keine** Tradingentscheidung, keine Alerts, keine DG-Regeln
+- Neue Karte „Structure Engine" im Dashboard mit interner/externer Bias-Anzeige und vollständiger Element-Liste
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `docs/MARKET_BRAIN.md`, `rules/strategy.md`, `CHANGELOG.md`
+
+---
+
 ## [0.16.1] — `rules/strategy.md`: Kapitel 0 „DG Philosophy" ergänzt
 
 ### Neu

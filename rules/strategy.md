@@ -65,7 +65,7 @@ Kapitel hier ausgefüllt ist — nicht neu gebaut.
 | Kapitel | Zuständiges Modul (Stand heute) |
 |---|---|
 | DG Philosophy | kein einzelnes Modul — Leitbild/Kontext für die Auslegung aller anderen Kapitel, kein direkt ausführbarer Code |
-| DG HTF Bias | `computeHTFBias()` in `app.js` — aktuell struktureller Proxy (Preis vs. Opens) |
+| DG HTF Bias | `computeHTFBias()` in `app.js` — aktuell struktureller Proxy (Preis vs. Opens); `computeStructureEngine()` (Modul 9) liefert zusätzlich `internalBias`/`externalBias` aus echter Swing-Struktur (BOS/CHOCH) als möglicher künftiger Baustein |
 | DG Liquidity | `computeLiquidityEngine()` in `app.js` — Level-Status bereits real, Bewertung noch generisch |
 | DG Premium / Discount | `computePremiumDiscount()` in `app.js` — Zonenberechnung bereits real, Grenzen noch generisch |
 | DG Order Block | `detectOrderBlocks()` (POI Engine, Modul 7) — Struktur-Erkennung bereits real, noch keine DG-Kriterien |

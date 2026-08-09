@@ -35,7 +35,8 @@ Market Brain              (data layer — this document)
 ├── Premium / Discount     done   — Module 4
 ├── HTF Bias               done   — Module 5 (structural proxy only)
 ├── Liquidity              done   — Module 6 (level status, no decision/alert)
-└── POIs                   in progress — Module 7, Stage 2/4 (Fair Value Gap + Order Block detection; 6 types still planned)
+├── POIs                   in progress — Module 7, Stage 2/4 (Fair Value Gap + Order Block detection; 6 types still planned)
+└── Structure              in progress — Module 9 (Swing High/Low, HH/HL/LH/LL, BOS/CHOCH, internal + external; pure detection, no decision)
 
 Daniel Brain               (applies rules/strategy.md — in progress)
 ├── DG Confidence Engine   in progress — Module 8 (contribution-score architecture; no decision/alerts/entries yet)
@@ -53,6 +54,13 @@ System                     (not started)
 Every module in Market Brain is built to be **read by**, never **bypassed
 by**, everything above it. Daniel Brain and System never fetch data or talk
 to TwelveData directly — they read `MarketBrain.*` (see `app.js`).
+
+Module numbers (Module 1, 6, 8, 9, ...) track **build order**, not
+architectural layer — Module 9 (Structure Engine) is Market Brain data,
+built chronologically after Module 8 (DG Confidence Engine, Daniel Brain),
+because that's the order Daniel asked for them. `app.js` places the code
+next to the other Market Brain modules regardless of build order, for
+readability.
 
 ## Data flow
 
@@ -363,6 +371,86 @@ applicable) inline. "Noch keine POIs erkannt." only appears when the list is
 genuinely empty (e.g. stale/missing candle data) — never fabricated example
 zones, same non-negotiable rule as every other module.
 
+## Structure Engine (Module 9) — pure market structure
+
+A Market Brain data module, built after Module 8 chronologically (see the
+build-order note above the system tree) but a peer of Liquidity/POIs, not
+part of Daniel Brain. Foundation for DG HTF Bias, the Daniel Decision
+Engine, the Learning Engine, Reports, and Alerts — but this build is
+**exclusively structure detection**. No trading decision, no alert, no DG
+rule (every `rules/strategy.md` chapter is still TODO).
+
+**Structure object shape** — every element, uniform regardless of type,
+assembled by `createStructureElement()`:
+
+```js
+{
+  id, type,           // 'swingHigh' | 'swingLow' | 'BOS' | 'CHOCH'
+  label,                // 'HH' | 'LH' (swingHigh) | 'HL' | 'LL' (swingLow) | null
+  price, createdAt, timeframe,
+  direction,             // 'bullish' | 'bearish' | null
+  structureType,          // 'internal' | 'external'
+  status,                  // 'active' | 'broken' (swing points) | 'confirmed' (BOS/CHOCH)
+  confidence,               // 0-100, intrinsic
+  reason, sourceCandle, brokenLevel,
+  relatedSession, relatedHTFBias   // filled by enrichment
+}
+```
+
+Same modularity discipline as the POI Engine: `detectStructure(candles,
+window, structureType)` only ever sees a plain candle array — never
+`MarketBrain`, never Session/Liquidity/HTF Bias directly. `enrichStructureContext(el,
+brain)` is the one place a structure element is correlated with the rest of
+the Market Brain (session + current HTF Bias snapshot), run once per
+element after detection, mirroring `enrichPOIContext()` exactly.
+
+### Swing detection (the fractal pivot)
+
+A candle is a **swing high** if its high exceeds every candle in a
+`window`-sized neighborhood on both sides; a **swing low** mirrors that on
+the low. Ties don't count (strict `<`) — a genuinely flat pivot is
+conservatively skipped rather than guessed at. Each swing point is labeled
+relative to the immediately preceding swing point of the *same* type: `HH`/`LH`
+for highs, `HL`/`LL` for lows. The first point of a type has no prior to
+compare against, so its label stays `null` — honest absence, not a guess.
+
+### Internal vs. external structure
+
+Rather than fetching a second timeframe, both are computed from the same H1
+candle series with two different fractal window sizes:
+`STRUCTURE_INTERNAL_WINDOW = 1` (3-candle fractal, minor/frequent swings)
+and `STRUCTURE_EXTERNAL_WINDOW = 3` (7-candle fractal, major swings). A
+standard, well-known technique for approximating multi-timeframe structure
+from one series — not a DG rule, documented as such per the DG methodology.
+
+### BOS / CHOCH
+
+Walks the candles in chronological order tracking the most recent unbroken
+swing high/low ("key levels") and the currently established bias. A close
+beyond the key level *in the direction of* the existing (or not-yet-
+established) bias is a **BOS** (continuation); a close beyond the key level
+*against* the established bias is a **CHOCH** (character change) and flips
+the bias. Once a key level is broken it's marked `'broken'` and never
+refires — the next confirmed swing point of that type becomes the new key
+level. `computeStructureEngine(brain)` exposes the resulting `internalBias`/
+`externalBias` (`'bullish' | 'bearish' | null`) as a convenience summary —
+the same mechanical signal a future DG HTF Bias could read directly, once
+its chapter in `rules/strategy.md` is filled in.
+
+Confidence is intrinsic only, reusing the same local-ATR pattern as the POI
+Engine's `localAverageRange()`: for swing points, how far the pivot stands
+out from its neighborhood relative to typical range; for BOS/CHOCH, how
+decisively the close broke through the level relative to typical range.
+Nothing about liquidity/session/bias confluence — that's later work.
+
+### UI
+
+New "Structure Engine" card: current internal/external bias at the top
+(reusing the HTF Bias card's bullish/bearish color language), then every
+detected element — label, price, confidence, session/bias context, status
+pill — most recent first. "Noch keine Struktur erkannt." only appears when
+genuinely empty.
+
 ## DG Confidence Engine (Module 8) — architecture only, the first piece of Daniel Brain
 
 Sits directly above the Market Brain, not inside it — the first module of
@@ -438,7 +526,7 @@ placeholder rows.
 ## MarketBrain aggregator (`app.js`)
 
 ```js
-const MarketBrain = { liveData, sessions, premiumDiscount, htfBias, liquidity, pois, dgConfidence };
+const MarketBrain = { liveData, sessions, premiumDiscount, htfBias, liquidity, pois, structure, dgConfidence };
 ```
 
 One shared object, populated by `loadMarketData()` and kept live-reactive by
@@ -449,7 +537,7 @@ object — nothing reaches into `data/market.json` directly except
 Stage 2 POI detectors, or new DG Confidence Engine contributors) should add
 their own key here — and for a new Confidence contributor specifically,
 just one entry in `CONFIDENCE_CONTRIBUTORS`, nothing else — following the
-same shape as Modules 4-8.
+same shape as Modules 4-9.
 
 ## `data/market.json` schema (grows module by module)
 
@@ -463,6 +551,7 @@ same shape as Modules 4-8.
 | 6 — Liquidity | done | *(client-derived, not in market.json — see above)* |
 | 7 — POI Engine | Stage 2/4 (Fair Value Gap + Order Block detection) | `candles.h1` (array of `{datetime, open, high, low, close}`, reused from the Session Engine fetch) |
 | 8 — DG Confidence Engine | architecture only | *(client-derived, not in market.json — see above)* |
+| 9 — Structure Engine | pure structure detection | *(client-derived from `candles.h1`, not in market.json — see above)* |
 
 Every field is either real (fetched, with a freshness check) or absent —
 never fabricated. The frontend must keep showing "OFFLINE DEMO" / `—` for
@@ -475,8 +564,9 @@ Once the Market Brain is complete and stable, later engines will be built
 **on top of it**, never bypassing it to fetch data on their own:
 
 - **POI Engine**: remaining Stage 2 detectors (Breaker, iFVG, Mitigation Block, Rejection Block, Supply/Demand Zone), then Stage 3 (Bewertung) and Stage 4 (Verbindung mit der Daniel Decision Engine) — see the Module 7 section above
-- **DG Confidence Engine**: more contributors as new Market Brain modules ship (each just adds one `CONFIDENCE_CONTRIBUTORS` entry) — see the Module 8 section above
-- **Confirmation Engine** — entry-trigger detection (engulfing, displacement, CHOCH, …)
+- **DG Confidence Engine**: more contributors as new Market Brain modules ship (each just adds one `CONFIDENCE_CONTRIBUTORS` entry) — Structure Engine is a natural next contributor, not wired in yet — see the Module 8 section above
+- **Structure Engine**: DG HTF Bias will eventually be able to read `MarketBrain.structure.internalBias`/`externalBias` directly once its `rules/strategy.md` chapter is defined — see the Module 9 section above
+- **Confirmation Engine** — entry-trigger detection (engulfing, displacement, structure breaks from Module 9, …)
 - **Alert Engine** — decides *when* something is worth a Telegram push (not just "sends messages")
 - **Learning Engine** — statistics/pattern recognition over historical performance, never redefines rules
 - **Performance Engine** — win-rate, RR, reports (daily/weekly/monthly/quarterly/yearly)

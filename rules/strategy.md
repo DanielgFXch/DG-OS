@@ -9,6 +9,11 @@ diese Regeln niemals erfinden, erraten, annähern oder eigenständig verändern.
 Nur Daniel bearbeitet diese Datei (direkt oder indem er hier einen
 aktualisierten Text einfügt).
 
+Kapitel 0 (DG Philosophy) ist ein Sonderfall: es beschreibt keine anwendbaren
+Regeln, sondern Daniels grundlegende Sicht auf den Markt — das Leitbild, an
+dem sich die Auslegung aller folgenden Kapitel orientiert. Kapitel 1-16
+enthalten die eigentlichen, direkt anwendbaren DG-Regeln.
+
 **Wenn ein Kapitel unten `TODO` ist, wartet DG OS.** Das System baut in diesem
 Fall keine Ersatzregel, keine Annäherung an eine bekannte Strategie (ICT,
 generische Smart-Money-Concepts, Standardindikatoren) und keine Platzhalterzahl
@@ -24,6 +29,7 @@ manuell aktualisiert, sobald ein Kapitel ausgefüllt wird.
 
 | # | Kapitel | Status |
 |---|---|---|
+| 0 | [DG Philosophy](#0-dg-philosophy) | 🔴 TODO |
 | 1 | [DG HTF Bias](#1-dg-htf-bias) | 🔴 TODO |
 | 2 | [DG Liquidity](#2-dg-liquidity) | 🔴 TODO |
 | 3 | [DG Premium / Discount](#3-dg-premium--discount) | 🔴 TODO |
@@ -58,6 +64,7 @@ Kapitel hier ausgefüllt ist — nicht neu gebaut.
 
 | Kapitel | Zuständiges Modul (Stand heute) |
 |---|---|
+| DG Philosophy | kein einzelnes Modul — Leitbild/Kontext für die Auslegung aller anderen Kapitel, kein direkt ausführbarer Code |
 | DG HTF Bias | `computeHTFBias()` in `app.js` — aktuell struktureller Proxy (Preis vs. Opens) |
 | DG Liquidity | `computeLiquidityEngine()` in `app.js` — Level-Status bereits real, Bewertung noch generisch |
 | DG Premium / Discount | `computePremiumDiscount()` in `app.js` — Zonenberechnung bereits real, Grenzen noch generisch |
@@ -78,6 +85,27 @@ Sobald ein Kapitel ausgefüllt ist, liest die **DG Confidence Engine** (Modul 8,
 diese Regeln direkt aus diesem Dokument — nie aus eigenen Annahmen.
 
 ---
+
+## 0. DG Philosophy
+
+**Status:** 🔴 TODO — noch nicht definiert
+
+Dieses Kapitel beschreibt **keine Regeln**, sondern Daniels grundlegende Sicht
+auf den Markt — das Leitbild, vor dessen Hintergrund alle Regeln in den
+folgenden Kapiteln zu lesen sind. Wo ein späteres Kapitel unklar oder
+mehrdeutig ist, ist dieses Kapitel der Maßstab dafür, im Sinne welcher
+Grundhaltung die Regel gemeint war.
+
+Leitfragen:
+- Warum bewegt sich der Markt?
+- Was ist Liquidität?
+- Warum entstehen Sweeps?
+- Warum existieren Order Blocks?
+- Warum existieren Fair Value Gaps?
+- Was ist das eigentliche Ziel des Marktes?
+- Wann wird grundsätzlich NICHT gehandelt?
+
+*(Platzhalter — hier folgt Daniels grundlegende Sicht auf den Markt.)*
 
 ## 1. DG HTF Bias
 

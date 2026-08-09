@@ -81,8 +81,12 @@ Kapitel hier ausgefüllt ist — nicht neu gebaut.
 | Beispiele / Edge Cases | Referenz für die spätere Learning Engine und für Tests der Daniel Decision Engine |
 
 Sobald ein Kapitel ausgefüllt ist, liest die **DG Confidence Engine** (Modul 8,
-`CONFIDENCE_CONTRIBUTORS` in `app.js`) und später die **Daniel Decision Engine**
-diese Regeln direkt aus diesem Dokument — nie aus eigenen Annahmen.
+`CONFIDENCE_CONTRIBUTORS` in `app.js`) und die **Daniel Decision Engine**
+(Modul 10, `DG_RULES_DEFINED` in `app.js`) diese Regeln direkt aus diesem
+Dokument — nie aus eigenen Annahmen. `DG_RULES_DEFINED` ist eine von Hand
+gepflegte Kopie der Status-Übersicht oben; ein Kapitel-Flag wird dort erst
+auf `true` gesetzt, wenn dieses Kapitel hier wirklich ausgefüllt wurde —
+niemals vorher.
 
 ---
 

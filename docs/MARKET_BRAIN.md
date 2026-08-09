@@ -40,7 +40,7 @@ Market Brain              (data layer — this document)
 
 Daniel Brain               (applies rules/strategy.md — in progress)
 ├── DG Confidence Engine   in progress — Module 8 (contribution-score architecture; no decision/alerts/entries yet)
-├── Decision Engine        planned — replaces the simulated computeDecision(), will consume DG Confidence Engine output
+├── Decision Engine        in progress — Module 10, "Daniel Decision Engine" (WAIT/WATCH/READY/INVALID architecture; always WAIT today, zero DG rules defined)
 ├── Scenario Engine        planned
 └── Risk Engine            planned
 
@@ -523,10 +523,106 @@ module and one-line reason. A group that's currently empty (e.g. no
 negative factors right now) simply doesn't render — no fabricated
 placeholder rows.
 
+## Daniel Decision Engine (Module 10) — architecture only
+
+Sits at the very top of Daniel Brain, above the DG Confidence Engine — the
+module every future consumer (Telegram Alerts, Reports, Replay, the
+Learning Engine, eventually Auto Trading) is meant to read instead of
+touching Market Brain modules directly. This build is **exclusively the
+architecture**: the full `DecisionState` data shape and an orchestration
+layer that reads HTF Bias, Structure Engine, Liquidity Engine, POI Engine,
+Premium/Discount, and the DG Confidence Engine — with no DG rules, no
+entries, no alerts, and no invented trading logic.
+
+**DecisionState shape** — the single object every future downstream module
+will consume:
+
+```js
+{
+  id, timestamp,
+  state,                  // 'WAIT' | 'WATCH' | 'READY' | 'INVALID'
+  confidence,               // pulled from MarketBrain.dgConfidence, never recomputed here
+  reason,                    // one honest sentence explaining the state
+  supportingModules,          // ids of modules with available data consistent with the current state
+  missingModules,              // ids of modules with no data yet
+  conflictingModules,           // pairs of available directional modules whose signals disagree
+  metConditions,                 // DG rule conditions currently satisfied (empty until rules exist)
+  unmetConditions,                // DG rule conditions currently unsatisfied, with why
+  rulesStatus,                     // snapshot of DG_RULES_DEFINED at evaluation time
+  moduleSnapshot                    // per-module {available, direction, summary} — full context for downstream consumers
+}
+```
+
+`DECISION_STATES` documents what each of the four states *means* — WAIT (no
+clearance / rules missing), WATCH (setup forming), READY (all defined DG
+conditions met), INVALID (a previously-tracked setup the rules ruled out) —
+without ever computing WATCH/READY/INVALID today, since no chapter of
+`rules/strategy.md` is defined yet to justify them.
+
+### Why the state is always WAIT right now
+
+The Decision Engine must never own a trading rule — it only reads
+`rules/strategy.md` (via `DG_RULES_DEFINED`, a hand-maintained mirror of
+that file's Status-Übersicht — flip a chapter to `true` only when Daniel
+has actually filled it in, exactly like `POI_TYPE_DEFS.implemented`) and
+the mechanical output of the other modules. Since every chapter is still
+`TODO`, there is currently no rule to apply — so the engine can only ever
+honestly output `WAIT`, with `unmetConditions` explicitly naming
+`rules/strategy.md` as the reason. That is not a placeholder shortcut; with
+zero DG rules defined, `WAIT` is the only truthful answer.
+
+### Module orchestration
+
+Same modularity discipline as the POI Engine and DG Confidence Engine:
+`DECISION_INPUT_MODULES` pairs each of the six source modules with an
+`input` selector (the only place allowed to know `MarketBrain`'s shape) and
+a `describe` function that reduces that module's current output to a
+uniform `{available, direction, summary}` snapshot. A future seventh input
+(e.g. once a Confirmation Engine exists) means one new registry entry,
+nothing else.
+
+`computeDecisionEngine(brain)` derives everything else mechanically from
+those snapshots — no DG opinion involved:
+- **`supportingModules`** / **`missingModules`** — which of the six modules
+  currently have usable data.
+- **`conflictingModules`** — pairwise comparison of the modules that *do*
+  carry a directional signal (HTF Bias, Structure Engine's external bias,
+  POI Engine's fresh-POI majority direction; Liquidity/Premium-Discount/DG
+  Confidence Engine don't have a clean single direction and are excluded
+  from conflict detection on purpose). Two modules disagreeing is a
+  mechanical fact, not a DG rule — flagging it is honest, computing what to
+  *do* about it is not this build's job.
+
+### UI
+
+New "Daniel Decision Engine" card: the state badge (color-coded per
+`DECISION_STATES`), the reason sentence, then the same grouped-list
+presentation as the DG Confidence Engine card — Verfügbare Module /
+Fehlende Module / Konflikte zwischen Modulen / Erfüllte Bedingungen /
+Fehlende Bedingungen. Empty groups simply don't render.
+
+### Future consumers (not built yet)
+
+The reason this module exists now, ahead of any DG rule: so these can be
+built against a stable, real data shape later, instead of each reaching
+into six different Market Brain modules on its own —
+
+- **Telegram Alerts** — would watch `state` transitions (e.g. WAIT → READY)
+  to decide when to notify.
+- **Reports** — would aggregate historical `DecisionState` snapshots over
+  time (needs a persistence/history layer, not built yet).
+- **Replay** — would need `DecisionState` snapshots indexed by timestamp to
+  replay a past session (same persistence need as Reports).
+- **Learning Engine** — would analyze patterns in `metConditions`/
+  `unmetConditions` against actual market outcomes (needs outcome tracking,
+  not built yet).
+- **Auto Trading** — would read `state === 'READY'` plus `moduleSnapshot`
+  for execution parameters (far future, needs broker integration).
+
 ## MarketBrain aggregator (`app.js`)
 
 ```js
-const MarketBrain = { liveData, sessions, premiumDiscount, htfBias, liquidity, pois, structure, dgConfidence };
+const MarketBrain = { liveData, sessions, premiumDiscount, htfBias, liquidity, pois, structure, dgConfidence, decision };
 ```
 
 One shared object, populated by `loadMarketData()` and kept live-reactive by
@@ -534,10 +630,11 @@ One shared object, populated by `loadMarketData()` and kept live-reactive by
 WebSocket tick). Every module in this document reads from and writes to this
 object — nothing reaches into `data/market.json` directly except
 `loadMarketData()` itself. Future modules (Confirmation, the remaining
-Stage 2 POI detectors, or new DG Confidence Engine contributors) should add
-their own key here — and for a new Confidence contributor specifically,
-just one entry in `CONFIDENCE_CONTRIBUTORS`, nothing else — following the
-same shape as Modules 4-9.
+Stage 2 POI detectors, or new DG Confidence Engine / Decision Engine
+contributors) should add their own key here — and for a new Confidence
+contributor specifically, just one entry in `CONFIDENCE_CONTRIBUTORS`; for a
+new Decision Engine input, one entry in `DECISION_INPUT_MODULES` — nothing
+else — following the same shape as Modules 4-10.
 
 ## `data/market.json` schema (grows module by module)
 
@@ -552,6 +649,7 @@ same shape as Modules 4-9.
 | 7 — POI Engine | Stage 2/4 (Fair Value Gap + Order Block detection) | `candles.h1` (array of `{datetime, open, high, low, close}`, reused from the Session Engine fetch) |
 | 8 — DG Confidence Engine | architecture only | *(client-derived, not in market.json — see above)* |
 | 9 — Structure Engine | pure structure detection | *(client-derived from `candles.h1`, not in market.json — see above)* |
+| 10 — Daniel Decision Engine | architecture only, always WAIT | *(client-derived, not in market.json — see above)* |
 
 Every field is either real (fetched, with a freshness check) or absent —
 never fabricated. The frontend must keep showing "OFFLINE DEMO" / `—` for
@@ -566,12 +664,13 @@ Once the Market Brain is complete and stable, later engines will be built
 - **POI Engine**: remaining Stage 2 detectors (Breaker, iFVG, Mitigation Block, Rejection Block, Supply/Demand Zone), then Stage 3 (Bewertung) and Stage 4 (Verbindung mit der Daniel Decision Engine) — see the Module 7 section above
 - **DG Confidence Engine**: more contributors as new Market Brain modules ship (each just adds one `CONFIDENCE_CONTRIBUTORS` entry) — Structure Engine is a natural next contributor, not wired in yet — see the Module 8 section above
 - **Structure Engine**: DG HTF Bias will eventually be able to read `MarketBrain.structure.internalBias`/`externalBias` directly once its `rules/strategy.md` chapter is defined — see the Module 9 section above
+- **Daniel Decision Engine**: the actual rule-application logic — once a `rules/strategy.md` chapter flips to defined, `DG_RULES_DEFINED` is updated and `computeDecisionEngine()` gains real `metConditions`/`unmetConditions` evaluation for that chapter, moving the state beyond permanent WAIT for the first time — see the Module 10 section above
 - **Confirmation Engine** — entry-trigger detection (engulfing, displacement, structure breaks from Module 9, …)
-- **Alert Engine** — decides *when* something is worth a Telegram push (not just "sends messages")
-- **Learning Engine** — statistics/pattern recognition over historical performance, never redefines rules
+- **Alert Engine** — decides *when* something is worth a Telegram push (not just "sends messages") — a future consumer of `MarketBrain.decision`
+- **Learning Engine** — statistics/pattern recognition over historical performance, never redefines rules — a future consumer of `MarketBrain.decision`
 - **Performance Engine** — win-rate, RR, reports (daily/weekly/monthly/quarterly/yearly)
 
-The **Daniel Decision Engine** (WAIT/WATCH/READY/HIGH PROBABILITY,
-`computeDecision()` in `app.js`) sits above all of these — it will consume
-the DG Confidence Engine's output and apply `rules/strategy.md` to it. It
-is being deliberately built last, once Daniel's exact DG rules exist.
+The old simulated `computeDecision()`/`render()` (Alpha Simulation card) is
+untouched by any of this — it's still the manual demo buttons, kept
+separate on purpose until the real Daniel Decision Engine's state is ready
+to replace it in the UI.

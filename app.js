@@ -1,7 +1,7 @@
 
 // Semantic Versioning (siehe CHANGELOG.md für die vollständige Historie).
 // Bei jedem abgeschlossenen Build hier + in CHANGELOG.md aktualisieren.
-const DG_OS_VERSION='0.17.0';
+const DG_OS_VERSION='0.18.0';
 
 const state={asia:false,sweep:false,engulf:false};
 const $=id=>document.getElementById(id);
@@ -57,7 +57,7 @@ function fmtPrice(n){return typeof n==='number'?n.toFixed(2):'—'}
 // the full module tree. Nothing outside this file should reach into
 // data/market.json directly; go through MarketBrain instead.
 // ---------------------------------------------------------------------------
-const MarketBrain={liveData:null,sessions:null,candles:null,premiumDiscount:null,htfBias:null,liquidity:null,pois:null,structure:null,dgConfidence:null};
+const MarketBrain={liveData:null,sessions:null,candles:null,premiumDiscount:null,htfBias:null,liquidity:null,pois:null,structure:null,dgConfidence:null,decision:null};
 
 // Module 4: Premium / Discount Engine
 //
@@ -915,6 +915,204 @@ function renderDGConfidence(engine){
   container.innerHTML=html||'<div class="dgc-empty">Noch keine Daten.</div>';
 }
 
+// Module 10: Daniel Decision Engine — architecture only, v0.18.0
+//
+// Sits at the very top of Daniel Brain, above the DG Confidence Engine —
+// the module every future consumer (Telegram Alerts, Reports, Replay, the
+// Learning Engine, eventually Auto Trading) will read instead of touching
+// Market Brain modules directly. This build is exclusively the
+// architecture: the full DecisionState data shape, and an orchestration
+// layer that reads HTF Bias, Structure Engine, Liquidity Engine, POI
+// Engine, Premium/Discount, and the DG Confidence Engine — with **no DG
+// rules, no entries, no alerts, and no invented trading logic**.
+//
+// The Decision Engine must never own a trading rule. It only reads
+// rules/strategy.md (via DG_RULES_DEFINED below, a hand-maintained mirror
+// of that file's Status-Übersicht — flip a chapter to true only when
+// Daniel has actually filled it in, exactly like POI_TYPE_DEFS.implemented)
+// and the mechanical output of the other modules. Since every chapter is
+// still TODO, there is currently no rule to apply — so the engine can only
+// ever honestly output WAIT, with a reason that says exactly why, never a
+// fabricated WATCH/READY/INVALID. That is not a placeholder shortcut; it's
+// the correct, honest answer with zero DG rules defined.
+//
+// DecisionState shape — the single object every future downstream module
+// will consume:
+// {
+//   id, timestamp,
+//   state,                  // 'WAIT' | 'WATCH' | 'READY' | 'INVALID'
+//   confidence,               // pulled from MarketBrain.dgConfidence, never recomputed here
+//   reason,                    // one honest sentence explaining the state
+//   supportingModules,          // ids of modules with available data consistent with the current state
+//   missingModules,              // ids of modules with no data yet
+//   conflictingModules,           // pairs of available directional modules whose signals disagree
+//   metConditions,                 // DG rule conditions currently satisfied (empty until rules exist)
+//   unmetConditions,                // DG rule conditions currently unsatisfied, with why
+//   rulesStatus,                     // snapshot of DG_RULES_DEFINED at evaluation time
+//   moduleSnapshot                    // per-module {available, direction, summary} - full context for downstream consumers
+// }
+const DECISION_STATES={
+  WAIT:{label:'WAIT',description:'Keine Trade-Freigabe — Bedingungen fehlen oder Regeln sind nicht definiert.'},
+  WATCH:{label:'WATCH',description:'Setup formt sich — noch nicht alle Bedingungen erfüllt.'},
+  READY:{label:'READY',description:'Alle definierten DG-Bedingungen erfüllt — Setup ist laut Regelwerk tradebar.'},
+  INVALID:{label:'INVALID',description:'Ein zuvor beobachtetes Setup wurde durch die DG-Regeln als ungültig markiert.'}
+};
+
+// Hand-maintained mirror of rules/strategy.md's Status-Übersicht. Update
+// this the moment - and only the moment - Daniel actually fills in a
+// chapter there. Never flip a value ahead of the real file.
+const DG_RULES_DEFINED={
+  philosophy:false,htfBias:false,liquidity:false,premiumDiscount:false,
+  orderBlock:false,validFvg:false,inverseFvg:false,breaker:false,
+  confirmation:false,entry:false,exit:false,riskManagement:false,
+  noTrades:false,sessionRules:false,news:false,examples:false,edgeCases:false
+};
+
+function createModuleSnapshot({available,direction,summary}){
+  return{available:!!available,direction:direction||null,summary:summary||null};
+}
+
+function describeHTFBiasInput(htfBias){
+  if(!htfBias) return createModuleSnapshot({available:false,summary:'Noch keine HTF-Bias-Daten.'});
+  return createModuleSnapshot({
+    available:true,
+    direction:htfBias.bias==='mixed'?null:htfBias.bias,
+    summary:`Bias ${htfBias.bias.toUpperCase()} (${htfBias.confidence}% Confidence).`
+  });
+}
+
+function describeStructureInput(structure){
+  if(!structure||!structure.list.length) return createModuleSnapshot({available:false,summary:'Noch keine Struktur erkannt.'});
+  return createModuleSnapshot({
+    available:true,
+    direction:structure.externalBias,
+    summary:`Externe Struktur: ${structure.externalBias?structure.externalBias.toUpperCase():'—'} · Interne Struktur: ${structure.internalBias?structure.internalBias.toUpperCase():'—'}.`
+  });
+}
+
+function describeLiquidityInput(liquidity){
+  if(!Array.isArray(liquidity)||!liquidity.length) return createModuleSnapshot({available:false,summary:'Noch keine Liquidity-Daten.'});
+  const notable=liquidity.filter(l=>l.status==='touched'||l.status==='sweeped');
+  return createModuleSnapshot({available:true,summary:`${liquidity.length} Level erfasst, ${notable.length} touched/sweeped.`});
+}
+
+function describePOIInput(pois){
+  if(!pois||!pois.list.length) return createModuleSnapshot({available:false,summary:'Noch keine POIs erkannt.'});
+  const fresh=pois.list.filter(p=>p.status==='fresh');
+  const bullish=fresh.filter(p=>p.direction==='bullish').length;
+  const bearish=fresh.filter(p=>p.direction==='bearish').length;
+  const direction=bullish===bearish?null:(bullish>bearish?'bullish':'bearish');
+  return createModuleSnapshot({available:true,direction,summary:`${fresh.length}/${pois.list.length} POIs frisch (${bullish} bullish, ${bearish} bearish).`});
+}
+
+function describePremiumDiscountInput(pd){
+  if(!pd) return createModuleSnapshot({available:false,summary:'Noch keine Premium/Discount-Daten.'});
+  const zones=Object.entries(pd).filter(([,z])=>z);
+  if(!zones.length) return createModuleSnapshot({available:false,summary:'Keine Range verfügbar.'});
+  return createModuleSnapshot({available:true,summary:zones.map(([tf,z])=>`${tf}: ${z.zone}`).join(' · ')});
+}
+
+function describeDGConfidenceInput(dgConfidence){
+  if(!dgConfidence||typeof dgConfidence.confidence!=='number') return createModuleSnapshot({available:false,summary:'Noch keine Confidence-Daten.'});
+  return createModuleSnapshot({
+    available:true,
+    summary:`${dgConfidence.confidence}% Confidence · ${dgConfidence.positiveFactors.length} positiv, ${dgConfidence.negativeFactors.length} negativ, ${dgConfidence.missingFactors.length} fehlend.`
+  });
+}
+
+// The registry. `input` is the only thing here allowed to know
+// MarketBrain's shape. A future seventh input module (e.g. once
+// Confirmation exists) means one new entry here, nothing else.
+const DECISION_INPUT_MODULES=[
+  {id:'htfBias',label:'HTF Bias',input:brain=>brain.htfBias,describe:describeHTFBiasInput},
+  {id:'structure',label:'Structure Engine',input:brain=>brain.structure,describe:describeStructureInput},
+  {id:'liquidity',label:'Liquidity Engine',input:brain=>brain.liquidity,describe:describeLiquidityInput},
+  {id:'pois',label:'POI Engine',input:brain=>brain.pois,describe:describePOIInput},
+  {id:'premiumDiscount',label:'Premium/Discount',input:brain=>brain.premiumDiscount,describe:describePremiumDiscountInput},
+  {id:'dgConfidence',label:'DG Confidence Engine',input:brain=>brain.dgConfidence,describe:describeDGConfidenceInput}
+];
+
+function computeDecisionEngine(brain){
+  const moduleSnapshot={};
+  DECISION_INPUT_MODULES.forEach(def=>{
+    moduleSnapshot[def.id]=Object.assign({label:def.label},def.describe(def.input(brain)));
+  });
+
+  const supportingModules=Object.keys(moduleSnapshot).filter(id=>moduleSnapshot[id].available);
+  const missingModules=Object.keys(moduleSnapshot).filter(id=>!moduleSnapshot[id].available);
+
+  const directional=Object.keys(moduleSnapshot).filter(id=>moduleSnapshot[id].available&&moduleSnapshot[id].direction);
+  const conflictingModules=[];
+  for(let i=0;i<directional.length;i++){
+    for(let j=i+1;j<directional.length;j++){
+      const a=directional[i],b=directional[j];
+      if(moduleSnapshot[a].direction!==moduleSnapshot[b].direction){
+        conflictingModules.push({
+          modules:[a,b],
+          reason:`${moduleSnapshot[a].label} (${moduleSnapshot[a].direction}) vs. ${moduleSnapshot[b].label} (${moduleSnapshot[b].direction})`
+        });
+      }
+    }
+  }
+
+  const definedChapters=Object.entries(DG_RULES_DEFINED).filter(([,defined])=>defined);
+  const metConditions=[]; // no DG rules defined yet -> nothing to evaluate against
+  const unmetConditions=definedChapters.length
+    ? []
+    : [{condition:'DG-Regeln (rules/strategy.md)',reason:'Noch kein Kapitel definiert — keine Bewertung möglich.'}];
+
+  const state='WAIT'; // the only honest state while zero DG rule chapters are defined
+  const reason=definedChapters.length
+    ? 'DG-Regeln teilweise definiert, aber die Regelanwendung ist noch nicht implementiert (nächste Ausbaustufe der Decision Engine).'
+    : 'Keine DG-Regeln definiert — rules/strategy.md ist noch vollständig TODO. Die Decision Engine wartet, bis mindestens ein Kapitel ausgefüllt und die Regelanwendung dafür gebaut ist.';
+
+  return{
+    id:`decision-${Date.now()}`,
+    timestamp:new Date().toISOString(),
+    state,confidence:(brain.dgConfidence&&typeof brain.dgConfidence.confidence==='number')?brain.dgConfidence.confidence:null,
+    reason,supportingModules,missingModules,conflictingModules,
+    metConditions,unmetConditions,
+    rulesStatus:Object.assign({},DG_RULES_DEFINED),
+    moduleSnapshot
+  };
+}
+
+function renderDecisionEngine(decision){
+  const stateEl=$('decisionState');
+  const reasonEl=$('decisionReasonText');
+  const container=$('decisionFactors');
+  if(!stateEl||!container) return;
+
+  if(!decision){
+    stateEl.textContent='—';
+    stateEl.className='decision-state';
+    if(reasonEl) reasonEl.textContent='Noch keine Daten.';
+    container.innerHTML='<div class="dgc-empty">Noch keine Daten.</div>';
+    return;
+  }
+
+  stateEl.textContent=(DECISION_STATES[decision.state]&&DECISION_STATES[decision.state].label)||decision.state;
+  stateEl.className=`decision-state decision-state-${decision.state}`;
+  if(reasonEl) reasonEl.textContent=decision.reason;
+
+  const group=(title,items,cls)=>!items.length?'':`
+    <div class="dgc-group">
+      <div class="dgc-group-title dgc-group-${cls}">${title} (${items.length})</div>
+      ${items.map(item=>`<div class="dgc-factor dgc-factor-${cls}"><span>${item.label||item.condition||(item.modules?item.modules.join(' / '):'')}</span><span class="dgc-reason">${item.reason||item.summary||''}</span></div>`).join('')}
+    </div>`;
+
+  const supportingItems=decision.supportingModules.map(id=>Object.assign({label:decision.moduleSnapshot[id].label},decision.moduleSnapshot[id]));
+  const missingItems=decision.missingModules.map(id=>Object.assign({label:decision.moduleSnapshot[id].label},decision.moduleSnapshot[id]));
+
+  const html=group('Verfügbare Module',supportingItems,'positive')
+    + group('Fehlende Module',missingItems,'missing')
+    + group('Konflikte zwischen Modulen',decision.conflictingModules,'negative')
+    + group('Erfüllte Bedingungen',decision.metConditions,'positive')
+    + group('Fehlende Bedingungen',decision.unmetConditions,'missing');
+
+  container.innerHTML=html||'<div class="dgc-empty">Noch keine Daten.</div>';
+}
+
 function refreshDerivedModules(){
   MarketBrain.premiumDiscount=computePremiumDiscount(MarketBrain.liveData);
   MarketBrain.htfBias=computeHTFBias(MarketBrain.liveData);
@@ -922,12 +1120,14 @@ function refreshDerivedModules(){
   MarketBrain.pois=computePOIEngine(MarketBrain);
   MarketBrain.structure=computeStructureEngine(MarketBrain);
   MarketBrain.dgConfidence=computeDGConfidenceEngine(MarketBrain);
+  MarketBrain.decision=computeDecisionEngine(MarketBrain);
   renderPremiumDiscount(MarketBrain.premiumDiscount);
   renderHTFBias(MarketBrain.htfBias);
   renderLiquidityEngine(MarketBrain.liquidity);
   renderPOIEngine(MarketBrain.pois);
   renderStructureEngine(MarketBrain.structure);
   renderDGConfidence(MarketBrain.dgConfidence);
+  renderDecisionEngine(MarketBrain.decision);
 }
 
 function setLiveStatus(isLive,label){

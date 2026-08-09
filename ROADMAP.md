@@ -64,15 +64,39 @@ automatically to every module below, and is documented identically in
 (Module numbers track build order, not architectural layer — see the note
 above the system tree in `docs/MARKET_BRAIN.md`.)
 
-## Current phase: Wissensmodus
+## Current phase: Knowledge Mode
 
-DG OS is in "Wissensmodus": no new Market Brain/Daniel Brain modules are
-built until Daniel fills in a chapter of `rules/strategy.md`. Per chapter,
-strictly: **Regel → Implementierung → Tests → Deploy → BUILD FERTIG.** See
-`rules/strategy.md`'s Status-Übersicht for exactly which of its 17 chapters
-(0-16) are still `TODO`.
+DG OS's technical infrastructure (Market Brain Modules 1-9, Daniel Brain
+Modules 8 and 10) is now largely complete. As of this build, the project has
+permanently entered **Phase 2: Knowledge Mode** — the formal name for what
+was previously called "Wissensmodus." **The focus is no longer new modules.
+The focus is digitizing Daniel's trading knowledge.**
 
-## Next phases
+New modules are only built from now on when they are directly required to
+implement a DG rule Daniel has actually defined — not proactively, not
+because an architecture "would be nice to have ahead of time." **No further
+architecture-only modules will be built until Daniel defines new
+requirements.** The "Next phases" list below still describes the intended
+future shape of the system, but every item on it is on hold under this
+gate — it happens only as a direct consequence of rule-by-rule activation,
+never as a standalone build.
+
+Permanent priority order for this phase, every session:
+
+1. Document Daniel's thinking (`rules/strategy.md`, starting with Chapter 0 — DG Philosophy).
+2. Digitize his rules (fill in the remaining chapters).
+3. Implement his rules (adapt the corresponding module — see "Rule-by-rule activation" below).
+4. Test against real market data.
+5. Measure performance.
+6. Generate improvement recommendations (per the DG Learning Philosophy above — recommendations only).
+7. Never change a rule on DG OS's own initiative.
+
+The goal: DG OS gets more intelligent every week — not because new features
+appear, but because its understanding of how Daniel actually trades gets
+more precise. See `rules/strategy.md`'s Status-Übersicht for exactly which
+of its 17 chapters (0-16) are still `TODO`.
+
+## Next phases (gated behind Knowledge Mode — see above)
 
 1. **Rule-by-rule activation** — as each `rules/strategy.md` chapter is
    filled in, the corresponding Market Brain module is adapted from its
@@ -82,7 +106,8 @@ strictly: **Regel → Implementierung → Tests → Deploy → BUILD FERTIG.** S
    can evaluate that chapter's conditions for the first time.
 2. **Remaining POI Engine detectors** — Breaker, Inverse FVG, Mitigation
    Block, Rejection Block, Supply/Demand Zone (Stage 2), then Stage 3
-   (Bewertung) and Stage 4 (wiring into the Decision Engine).
+   (Bewertung) and Stage 4 (wiring into the Decision Engine) — built only
+   once the corresponding DG rule needs them, per Knowledge Mode.
 3. **Confirmation Engine** — entry-trigger detection, once its
    `rules/strategy.md` chapter exists.
 4. **System layer**, once the Decision Engine can reach a real (non-WAIT)

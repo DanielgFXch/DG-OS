@@ -30,15 +30,16 @@ read through) plus 16 rule chapters (DG HTF Bias, DG Liquidity, DG
 Premium/Discount, DG Order Block, DG Valid FVG, DG Inverse FVG, DG Breaker, DG
 Confirmation, Entry, Exit, Risk Management, No Trades, Session-Regeln, News,
 Beispiele, Edge Cases), each with a status marker and guiding questions but
-currently no actual content — awaiting his input, chapter by chapter. As of this
-build DG OS is in "Wissensmodus": no new features are built until a chapter is
-filled in — strictly Regel → Implementierung → Tests → Deploy → BUILD FERTIG,
-one chapter at a time, and a module is only switched to DG rules once its
-chapter is complete. The system must never invent or silently change trading
-rules; only Daniel edits that file. A chapter still marked TODO means DG OS
-applies no rule for it and waits — see
-the "DG methodology" section below. Code may get smarter at *applying* the rules
-(statistics, pattern recognition) — never at redefining them.
+currently no actual content — awaiting his input, chapter by chapter. DG OS is
+permanently in **Knowledge Mode** (see the section below) for this reason: no
+new features are built until a chapter is filled in — strictly Regel →
+Implementierung → Tests → Deploy → BUILD FERTIG, one chapter at a time, and a
+module is only switched to DG rules once its chapter is complete. The system
+must never invent or silently change trading rules; only Daniel edits that
+file. A chapter still marked TODO means DG OS applies no rule for it and
+waits — see the "DG methodology" section below. Code may get smarter at
+*applying* the rules (statistics, pattern recognition) — never at redefining
+them.
 
 ## DG methodology — not ICT, not generic Smart Money
 
@@ -99,6 +100,35 @@ permanent rule and applies automatically to every future module — especially
 the Learning Engine, Reports, Statistics, and any future Auto Trading work.
 See also [`ROADMAP.md`](ROADMAP.md) and the matching section in
 [`docs/MARKET_BRAIN.md`](docs/MARKET_BRAIN.md).
+
+## Knowledge Mode (current project phase)
+
+DG OS's technical infrastructure (Market Brain Modules 1-9, Daniel Brain
+Modules 8 and 10) is now largely complete. As of this build, the project is
+permanently in **Knowledge Mode** — the formal name for what "Wissensmodus"
+above already meant, now the explicit current phase, not just a rule for
+`rules/strategy.md` chapters specifically.
+
+**The focus is no longer new modules. The focus is digitizing Daniel's
+trading knowledge.** New modules are only built from now on when they are
+directly required to implement a DG rule Daniel has actually defined — not
+proactively, not because an architecture "would be nice to have ahead of
+time." No further architecture-only modules will be built until Daniel
+defines new requirements.
+
+Priority order, permanent, applies to every session from here on:
+
+1. Document Daniel's thinking (`rules/strategy.md`, starting with Chapter 0 — DG Philosophy).
+2. Digitize his rules (fill in the remaining chapters).
+3. Implement his rules (adapt the corresponding Market Brain / Daniel Brain module — see the "rule-by-rule activation" phase in [`ROADMAP.md`](ROADMAP.md)).
+4. Test against real market data.
+5. Measure performance.
+6. Generate improvement recommendations (per the "DG Learning Philosophy" section above — recommendations only).
+7. Never change a rule on DG OS's own initiative.
+
+The goal: DG OS gets more intelligent every week — not because new features
+appear, but because its understanding of how Daniel actually trades gets
+more precise. Full phase details and status: [`ROADMAP.md`](ROADMAP.md).
 
 ## Current status
 

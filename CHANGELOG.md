@@ -8,6 +8,20 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.18.2] — Neue Projektphase: Knowledge Mode
+
+### Neu
+- Neue dauerhafte Projektphase „Knowledge Mode" in `ROADMAP.md` und `CLAUDE.md` verankert (formaler Name für das bisherige „Wissensmodus"-Prinzip, jetzt vollständig als Phase 2 dokumentiert): Fokus liegt nicht mehr auf neuen Modulen, sondern auf der Digitalisierung von Daniels Trading-Wissen
+- Neue Module werden ab sofort nur noch gebaut, wenn sie direkt zur Umsetzung einer definierten DG-Regel benötigt werden — keine weiteren Architektur-Module auf Vorrat, bis Daniel neue Anforderungen definiert
+- Permanente Prioritätsreihenfolge dokumentiert: Denkweise dokumentieren → Regeln digitalisieren → Regeln implementieren → gegen echte Marktdaten testen → Performance messen → Verbesserungsvorschläge erzeugen → niemals eigenständig Regeln verändern
+- `ROADMAP.md`s „Next phases"-Liste als abhängig von Knowledge Mode gekennzeichnet, statt als eigenständige Bauvorhaben
+- Reine Dokumentations-/Governance-Änderung, keine funktionalen Code-Änderungen
+
+### Geänderte Dateien
+`app.js`, `CLAUDE.md`, `ROADMAP.md`, `CHANGELOG.md`
+
+---
+
 ## [0.18.1] — Dauerhafte Projektregel: DG Learning Philosophy
 
 ### Neu

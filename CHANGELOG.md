@@ -8,6 +8,18 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.16.1] — `rules/strategy.md`: Kapitel 0 „DG Philosophy" ergänzt
+
+### Neu
+- Neues Kapitel **0. DG Philosophy** vor Kapitel 1 eingefügt — bewusst keine Regeln, sondern Daniels grundlegende Sicht auf den Markt (Warum bewegt sich der Markt? Was ist Liquidität? Warum entstehen Sweeps/Order Blocks/Fair Value Gaps? Was ist das Ziel des Marktes? Wann wird grundsätzlich nicht gehandelt?) als künftiges Leitbild für die Auslegung aller anderen Kapitel
+- Status-Übersicht und Kapitel-Modul-Zuordnung in `rules/strategy.md` entsprechend erweitert
+- `CLAUDE.md` aktualisiert: „Wissensmodus"-Workflow dauerhaft dokumentiert — Regel → Implementierung → Tests → Deploy → BUILD FERTIG, ein Kapitel nach dem anderen, kein neues Feature ohne ausgefülltes Kapitel
+
+### Geänderte Dateien
+`app.js`, `CLAUDE.md`, `rules/strategy.md`, `CHANGELOG.md`
+
+---
+
 ## [0.16.0] — `rules/strategy.md`: vollständige Architektur der Wissensbasis
 
 ### Neu

@@ -26,6 +26,37 @@ approximate a generic trading rule as a stand-in for an undefined DG rule —
 prepare the architecture and wait, same as the Decision Engine already
 does.
 
+## DG Learning Philosophy — not a trading AI
+
+DG OS is **not a trading AI** — it is a digital extension of Daniel Gomes.
+Its highest-level goal is permanent: *"DG OS soll im Laufe der Zeit immer
+besser verstehen, wie Daniel Gomes denkt."* This governs every module in
+the system tree below, especially the future **Learning**, **Reports**, and
+**Statistics** modules in the System tier.
+
+**Allowed**, once those modules exist:
+- Learn continuously from real market data, historical data, and trading results.
+- Build statistics.
+- Recognize patterns.
+- Analyze performance.
+- Propose improvements.
+- Calculate alternative scenarios.
+- Compare probabilities.
+
+**Never allowed, under any circumstance:**
+- DG OS may never change a trading rule on its own.
+- DG OS may never overwrite a rule.
+- DG OS may never activate a new rule on its own.
+
+Every improvement DG OS ever produces must be explicitly labeled a
+**recommendation** ("Empfehlung") — never applied automatically. Only Daniel
+decides whether a recommendation is adopted, and adoption always means *he*
+edits [`rules/strategy.md`](../rules/strategy.md) himself — no module in
+this document, including the future Learning Engine, ever edits it on his
+behalf. Documented identically in
+[`CLAUDE.md`](../CLAUDE.md#dg-learning-philosophy--not-a-trading-ai) and
+[`ROADMAP.md`](../ROADMAP.md).
+
 ## System tree (target architecture)
 
 ```
@@ -667,7 +698,7 @@ Once the Market Brain is complete and stable, later engines will be built
 - **Daniel Decision Engine**: the actual rule-application logic — once a `rules/strategy.md` chapter flips to defined, `DG_RULES_DEFINED` is updated and `computeDecisionEngine()` gains real `metConditions`/`unmetConditions` evaluation for that chapter, moving the state beyond permanent WAIT for the first time — see the Module 10 section above
 - **Confirmation Engine** — entry-trigger detection (engulfing, displacement, structure breaks from Module 9, …)
 - **Alert Engine** — decides *when* something is worth a Telegram push (not just "sends messages") — a future consumer of `MarketBrain.decision`
-- **Learning Engine** — statistics/pattern recognition over historical performance, never redefines rules — a future consumer of `MarketBrain.decision`
+- **Learning Engine** — statistics/pattern recognition over historical performance, recommendations only, never redefines rules itself — a future consumer of `MarketBrain.decision`, governed by the "DG Learning Philosophy" section above
 - **Performance Engine** — win-rate, RR, reports (daily/weekly/monthly/quarterly/yearly)
 
 The old simulated `computeDecision()`/`render()` (Alpha Simulation card) is

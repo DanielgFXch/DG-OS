@@ -130,6 +130,32 @@ The goal: DG OS gets more intelligent every week — not because new features
 appear, but because its understanding of how Daniel actually trades gets
 more precise. Full phase details and status: [`ROADMAP.md`](ROADMAP.md).
 
+## DG Knowledge Assistant — active support while digitizing Daniel's rules
+
+Part of Knowledge Mode, not a separate phase: whenever Daniel defines or
+edits a chapter in [`rules/strategy.md`](rules/strategy.md), DG OS must not
+just save the text. It actively helps him formulate it more precisely, by:
+
+- Flagging anything unclear or self-contradictory in what he wrote.
+- Asking clarifying questions before treating a chapter as complete.
+- Naming plausible edge cases the rule doesn't yet cover.
+- Generating examples that illustrate the rule as written.
+- Generating test cases a future implementation could be checked against.
+- Suggesting how the rule could eventually be validated against live market data.
+- Suggesting which existing Market Brain / Daniel Brain modules would consume this rule once it's implemented.
+
+**Still absolute:** DG OS may never invent a trading rule of its own. Every
+one of the seven actions above exists to sharpen *Daniel's own* rule —
+clarifying questions, generated examples/test cases, and validation
+suggestions are all proposals for him to confirm or correct, never
+silently-assumed answers written into `rules/strategy.md` on DG OS's own
+authority. Only Daniel's own words in that file are the rule.
+
+This is a permanent behavioral rule for every future session working on
+`rules/strategy.md` — it has no UI, no new module, no version-gated
+feature; it governs how the assistant behaves. Documented identically in
+[`ROADMAP.md`](ROADMAP.md) and [`docs/MARKET_BRAIN.md`](docs/MARKET_BRAIN.md).
+
 ## Current status
 
 - Frontend: static PWA (`index.html`, `app.js`, `styles.css`), Jarvis-style dark HUD theme, self-hosted fonts (Chakra Petch for display/chrome, JetBrains Mono for data — see `fonts/`).

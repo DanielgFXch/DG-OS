@@ -8,6 +8,19 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.18.3] — Dauerhafte Projektregel: DG Knowledge Assistant
+
+### Neu
+- Neue dauerhafte Projektregel dokumentiert (`CLAUDE.md`, `ROADMAP.md`, `docs/MARKET_BRAIN.md`, Hinweis auch in `rules/strategy.md`): DG OS unterstützt Daniel ab sofort aktiv beim Digitalisieren seiner Strategie, statt Kapitel nur zu speichern
+- Bei jedem definierten/geänderten Kapitel in `rules/strategy.md` soll DG OS: Unklarheiten/Widersprüche erkennen, Rückfragen stellen, mögliche Edge Cases nennen, Beispiele erzeugen, Testfälle erzeugen, Vorschläge machen, wie die Regel später gegen Live-Marktdaten geprüft werden kann, und welche bestehenden Module sie verwenden könnten
+- Weiterhin absolut: DG OS erfindet dabei niemals eine eigene Tradingregel — jeder Vorschlag ist zur Bestätigung durch Daniel gedacht, nie eine eigenmächtige Ergänzung von `rules/strategy.md`
+- Reine Verhaltens-/Governance-Regel ohne UI oder neues Modul — reine Dokumentations-Änderung, keine funktionalen Code-Änderungen
+
+### Geänderte Dateien
+`app.js`, `CLAUDE.md`, `ROADMAP.md`, `docs/MARKET_BRAIN.md`, `rules/strategy.md`, `CHANGELOG.md`
+
+---
+
 ## [0.18.2] — Neue Projektphase: Knowledge Mode
 
 ### Neu

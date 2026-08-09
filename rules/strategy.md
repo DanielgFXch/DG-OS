@@ -55,6 +55,15 @@ Orientierung, keine Pflichtfelder — beantworte, was für dich relevant ist, un
 ergänze, was fehlt. Wenn du ein Kapitel ausgefüllt hast, setze den Status oben in
 der Tabelle von 🔴 TODO auf 🟢 DEFINIERT.
 
+Wenn du ein Kapitel definierst oder änderst, unterstützt DG OS aktiv statt nur
+zu speichern — erkennt Unklarheiten/Widersprüche, stellt Rückfragen, nennt
+mögliche Edge Cases, erzeugt Beispiele und Testfälle, schlägt vor, wie die
+Regel später gegen Live-Marktdaten geprüft werden kann, und welche
+bestehenden Module sie verwenden könnten. Siehe die dauerhafte Projektregel
+„DG Knowledge Assistant" in [`CLAUDE.md`](../CLAUDE.md#dg-knowledge-assistant--active-support-while-digitizing-daniels-rules).
+DG OS erfindet dabei niemals eine eigene Regel — jeder Vorschlag ist ein
+Vorschlag zur Bestätigung, nie eine eigenmächtige Ergänzung.
+
 ## Wie dieses Dokument von DG OS verwendet wird
 
 Jedes Kapitel ist einem oder mehreren Code-Modulen zugeordnet. Bereits gebaute

@@ -1,7 +1,13 @@
 
 // Semantic Versioning (siehe CHANGELOG.md für die vollständige Historie).
-// Bei jedem abgeschlossenen Build hier + in CHANGELOG.md aktualisieren.
-const DG_OS_VERSION='0.20.0';
+// Bei jedem abgeschlossenen Build in package.json + CHANGELOG.md aktualisieren.
+//
+// package.json ist seit v0.21.0 die einzige Quelle der Versionsnummer — sie
+// wird hier per fetch() geladen (loadVersion(), siehe unten), nicht mehr als
+// String im Code dupliziert. Die Node-Seite (scripts/ingest.js) liest
+// dieselbe Datei per require(), damit Browser und Server nie unterschiedliche
+// Versionen zeigen können.
+let DG_OS_VERSION=null;
 
 // ---------------------------------------------------------------------------
 // This file is DOM/rendering + app-only logic (greeting, sessions clock,
@@ -57,7 +63,6 @@ function renderTicker(){
 }
 
 const MARKET_DATA_URL='./data/market.json';
-const MARKET_STALE_MS=45*60*1000;
 
 // ---------------------------------------------------------------------------
 // Market Brain aggregator
@@ -303,16 +308,76 @@ function refreshDerivedModules(){
   renderOverview(MarketBrain.overview);
 }
 
-function setLiveStatus(isLive,label){
+// Every "is this live" indicator in the app — the header badge, the ticker
+// line, and the System Status card below — is driven by this one function,
+// fed by the SAME computeDataFreshness() result (marketBrain.js). Before
+// v0.21.0 the header badge used its own 45-minute binary check, separate
+// from any age-aware logic; that could show "LIVE" on data that was, say,
+// 40 minutes old. Daniel's explicit instruction: never show LIVE off a
+// stale timestamp. One status, computed once per tick, drives every badge.
+const FRESHNESS_BADGE_LABEL={LIVE:'LIVE',DELAYED:'DELAYED',STALE:'STALE',NO_DATA:'OFFLINE DEMO'};
+function setLiveStatus(status){
   const badge=$('connectionBadge');
-  badge.classList.toggle('live',isLive);
-  badge.innerHTML=`<span class="live-dot"></span>${isLive?'LIVE':(label||'OFFLINE DEMO')}`;
+  const isLive=status==='LIVE';
+  badge.className=`badge status-${status}`;
+  badge.innerHTML=`<span class="live-dot"></span>${FRESHNESS_BADGE_LABEL[status]||status}`;
   const tickerStatus=$('tickerStatus');
-  tickerStatus.classList.toggle('live',isLive);
-  tickerStatus.textContent=isLive?'LIVE DATA: CONNECTED':`LIVE DATA: ${label?label.toUpperCase():'OFFLINE (DEMO)'}`;
+  tickerStatus.className=`ticker-item ticker-warn status-${status}`;
+  tickerStatus.textContent=isLive?'LIVE DATA: CONNECTED':`LIVE DATA: ${(FRESHNESS_BADGE_LABEL[status]||status)}`;
 }
 
 let lastPreviousClose=null;
+let lastMarketUpdateAt=null; // Date|string|null — set from data/market.json's updatedAt (baseline) or WS tick receipt time (streaming), never fabricated
+
+// The timezone label is the browser's OWN resolved timezone, not a
+// hardcoded "Europe/Zurich" — correct on Daniel's own device (which
+// resolves to Europe/Zurich), and still honest if DG OS is ever opened
+// from a device in a different timezone, rather than silently mislabeling.
+const DISPLAY_TIMEZONE=(function(){
+  try{ return Intl.DateTimeFormat().resolvedOptions().timeZone||'—' }catch(err){ return'—' }
+})();
+
+// Data Freshness + Version + Market Source — Phase "Version & Freshness"
+// (v0.21.0). Ticks every second (see setInterval below) so "Data Age"
+// counts up live, not just on each 15-min/WS refresh. Reuses
+// computeDataFreshness()/formatDataAge() from marketBrain.js — the same
+// thresholds also drive setLiveStatus() above, so the header badge and this
+// card can never disagree.
+function renderFreshness(){
+  const fresh=computeDataFreshness(lastMarketUpdateAt,tdStreaming);
+  setLiveStatus(fresh.status);
+
+  const lastUpdateEl=$('statusLastUpdate'),tzEl=$('statusTimezone'),ageEl=$('statusDataAge'),stateEl=$('statusDataState'),sourceEl=$('statusSource');
+  if(!lastUpdateEl) return;
+
+  lastUpdateEl.textContent=lastMarketUpdateAt?new Date(lastMarketUpdateAt).toLocaleTimeString('de-DE'):'—';
+  tzEl.textContent=DISPLAY_TIMEZONE;
+  ageEl.textContent=formatDataAge(fresh.ageSeconds);
+  stateEl.textContent=fresh.status.replace('_',' ');
+  stateEl.className=`status-pill status-pill-${fresh.status}`;
+  sourceEl.textContent=lastMarketUpdateAt?(tdStreaming?'TwelveData (WebSocket)':'TwelveData (15-Min-Feed)'):'—';
+}
+
+function renderVersion(version){
+  DG_OS_VERSION=version;
+  const label=`v${version}`;
+  $('appVersion').textContent=label;
+  const statusVersionEl=$('statusVersion');
+  if(statusVersionEl) statusVersionEl.textContent=label;
+}
+
+// package.json is the single source of truth for the version (see the file
+// header comment) — fetched once at startup, never duplicated as a string
+// literal elsewhere in this file.
+async function loadVersion(){
+  try{
+    const res=await fetch('./package.json',{cache:'no-store'});
+    const pkg=await res.json();
+    renderVersion(pkg.version||'0.0.0');
+  }catch(err){
+    renderVersion('0.0.0');
+  }
+}
 
 function setChange(pct){
   const changeEl=$('liveChange');
@@ -331,7 +396,6 @@ async function loadMarketData(){
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json();
     const updated=new Date(data.updatedAt);
-    const isFresh=(Date.now()-updated.getTime())<MARKET_STALE_MS;
 
     if(typeof data.previousClose==='number') lastPreviousClose=data.previousClose;
 
@@ -361,16 +425,23 @@ async function loadMarketData(){
     refreshDerivedModules();
 
     if(!tdStreaming){
+      lastMarketUpdateAt=data.updatedAt;
+      const fresh=computeDataFreshness(lastMarketUpdateAt,false);
       const marketClosed=currentSession(new Date()).name==='Markt geschlossen';
-      let hint=isFresh
-        ? `Live-Preis von TwelveData · Daily High/Low von der letzten abgeschlossenen Tageskerze (${data.barDate||'—'}).`
-        : 'Daten sind veraltet – der Marktdaten-Workflow lief seit über 45 Minuten nicht.';
-      if(isFresh&&marketClosed) hint+=' Markt aktuell geschlossen (Wochenende) – der Preis bewegt sich bis Handelsstart evtl. kaum.';
+      let hint;
+      if(fresh.status==='LIVE'){
+        hint=`Live-Preis von TwelveData · Daily High/Low von der letzten abgeschlossenen Tageskerze (${data.barDate||'—'}).`;
+      } else if(fresh.status==='DELAYED'){
+        hint=`Daten ${formatDataAge(fresh.ageSeconds)} alt – der 15-Minuten-Marktdaten-Workflow aktualisiert bald erneut.`;
+      } else {
+        hint='Daten sind veraltet – der Marktdaten-Workflow lief seit längerem nicht mehr.';
+      }
+      if(fresh.status!=='STALE'&&marketClosed) hint+=' Markt aktuell geschlossen (Wochenende) – der Preis bewegt sich bis Handelsstart evtl. kaum.';
       $('liveHint').textContent=hint;
-      setLiveStatus(isFresh,isFresh?null:'Daten veraltet');
     }
+    renderFreshness();
   }catch(err){
-    if(!tdStreaming) setLiveStatus(false);
+    renderFreshness();
   }
 }
 
@@ -466,7 +537,7 @@ function openTdSocket(key){
       if(msg.status==='ok'){
         tdStreaming=true;
         setStreamStatus('Live-Stream verbunden · XAU/USD');
-        setLiveStatus(true);
+        renderFreshness(); // subscribed, not necessarily "live" yet — honest until the first tick actually arrives
         $('liveHint').textContent='Live-Stream aktiv (TwelveData WebSocket) – Preis aktualisiert sich in Echtzeit.';
       } else {
         setStreamStatus(`Fehler: ${msg.status||'Subscribe fehlgeschlagen'}`);
@@ -476,12 +547,13 @@ function openTdSocket(key){
 
     if(msg.event==='price' && typeof msg.price==='number'){
       tdStreaming=true;
+      lastMarketUpdateAt=new Date(); // TD's WS price message carries no usable timestamp of its own — receipt time is the honest proxy, same as liveUpdated below
       $('livePrice').textContent=fmtPrice(msg.price);
-      $('liveUpdated').textContent=new Date().toLocaleTimeString('de-DE');
+      $('liveUpdated').textContent=lastMarketUpdateAt.toLocaleTimeString('de-DE');
       if(typeof lastPreviousClose==='number' && lastPreviousClose>0){
         setChange(((msg.price-lastPreviousClose)/lastPreviousClose)*100);
       }
-      setLiveStatus(true);
+      renderFreshness();
       // Premium/Discount + HTF Bias re-evaluate instantly on every live tick,
       // not just every 15 min - they only need MarketBrain.liveData.price.
       if(MarketBrain.liveData){
@@ -495,6 +567,7 @@ function openTdSocket(key){
     stopTdHeartbeat();
     if(tdSocket!==ws) return;
     tdStreaming=false;
+    renderFreshness(); // threshold set changes back to 'baseline' the moment streaming stops
     tdReconnectAttempts++;
     if(tdReconnectAttempts<=TD_MAX_RECONNECTS){
       setStreamStatus(`Getrennt – versuche erneut (${tdReconnectAttempts}/${TD_MAX_RECONNECTS})…`);
@@ -731,7 +804,7 @@ async function maybeAutoSend(){
   }
 }
 
-$('appVersion').textContent=`v${DG_OS_VERSION}`;
+loadVersion();
 renderSessionCards();
 document.querySelectorAll('.card').forEach((el,i)=>{el.style.animationDelay=`${Math.min(i*0.05,0.4)}s`});
 
@@ -739,10 +812,12 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').cat
 render();
 renderGreeting();
 renderTicker();
+renderFreshness();
 updateSessionStatuses();
 loadMarketData();
 setInterval(renderGreeting,60000);
 setInterval(renderTicker,1000);
+setInterval(renderFreshness,1000);
 setInterval(updateSessionStatuses,30000);
 setInterval(loadMarketData,60000);
 if(tg.token){testTelegramConnection(tg.token).then(bot=>setTelegramStatus(`Verbunden · @${bot.username}`)).catch(()=>setTelegramStatus('Nicht verbunden'))}

@@ -32,6 +32,7 @@ const fs=require('fs');
 const path=require('path');
 const MB=require('../marketBrain.js');
 const{classifyMarketEvents}=require('../events.js');
+const pkg=require('../package.json'); // same single-source-of-truth version.js/app.js reads client-side
 
 const ROOT=path.join(__dirname,'..');
 const MARKET_DATA_PATH=path.join(ROOT,'data','market.json');
@@ -67,6 +68,7 @@ function readEventLines(filePath){
 function toPersistedState(brain){
   return{
     updatedAt:new Date().toISOString(),
+    dgOsVersion:pkg.version,
     liveData:brain.liveData?{
       price:brain.liveData.price,dailyOpen:brain.liveData.dailyOpen,dailyHigh:brain.liveData.dailyHigh,dailyLow:brain.liveData.dailyLow,barDate:brain.liveData.barDate,
       weeklyOpen:brain.liveData.weeklyOpen,weeklyHigh:brain.liveData.weeklyHigh,weeklyLow:brain.liveData.weeklyLow,weekBarDate:brain.liveData.weekBarDate,

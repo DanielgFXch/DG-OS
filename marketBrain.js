@@ -944,6 +944,38 @@ function computeOverview(brain){
   };
 }
 
+// Data Freshness — Phase 1 addition. A purely technical display
+// computation, NOT a trading rule: these thresholds describe how current
+// the data is relative to DG OS's own known feed intervals, nothing about
+// whether the market itself is currently tradeable. Two threshold sets
+// because "fresh" means something different depending on which feed is
+// active: the WebSocket stream (~10s heartbeat, sub-minute ticks) versus
+// the 15-minute GitHub Actions cron baseline (data/market.json). Deriving
+// status from the *actual* last-update timestamp — never just "is a stream
+// connected" — is the whole point: a dashboard must never claim LIVE off a
+// stale timestamp, per Daniel's explicit instruction.
+const FRESHNESS_THRESHOLDS={
+  streaming:{live:20,delayed:90},     // seconds — WS heartbeat is 10s (TD_HEARTBEAT_MS in app.js), so LIVE tolerates ~2 missed beats before downgrading
+  baseline:{live:300,delayed:1200}    // seconds — 5 min / 20 min, against a 15-min cron: LIVE = freshly refreshed, DELAYED = aging within/just past one cycle, STALE = the cron has likely stopped running
+};
+
+function computeDataFreshness(lastUpdateAt,isStreaming){
+  if(!lastUpdateAt) return{status:'NO_DATA',ageSeconds:null};
+  const ageSeconds=Math.max(0,Math.round((Date.now()-new Date(lastUpdateAt).getTime())/1000));
+  const t=isStreaming?FRESHNESS_THRESHOLDS.streaming:FRESHNESS_THRESHOLDS.baseline;
+  const status=ageSeconds<=t.live?'LIVE':(ageSeconds<=t.delayed?'DELAYED':'STALE');
+  return{status,ageSeconds};
+}
+
+function formatDataAge(ageSeconds){
+  if(typeof ageSeconds!=='number') return'—';
+  if(ageSeconds<60) return`${ageSeconds}s`;
+  const m=Math.floor(ageSeconds/60),s=ageSeconds%60;
+  if(m<60) return s?`${m}m ${s}s`:`${m}m`;
+  const h=Math.floor(m/60),rm=m%60;
+  return rm?`${h}h ${rm}m`:`${h}h`;
+}
+
 // Runs every derived module in dependency order over {liveData, sessions,
 // candles} and returns a brand-new, fully-computed brain snapshot. This is
 // the ONE function both the browser (app.js's refreshDerivedModules) and
@@ -965,6 +997,7 @@ function computeAllDerivedModules(brain){
 
 return{
   fmtPrice,createMarketBrainState,
+  FRESHNESS_THRESHOLDS,computeDataFreshness,formatDataAge,
   SESSIONS,sessionWindowToday,sessionForTimestamp,
   EQUILIBRIUM_BAND_PERCENT,computeZoneForRange,computePremiumDiscount,PD_ZONE_LABEL,
   computeHTFBias,BIAS_LABEL,

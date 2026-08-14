@@ -61,6 +61,19 @@
   </div>
 
   <main class="app">
+    <section class="card status-card">
+      <div class="section-title"><svg class="ic"><use href="#ic-broadcast"></use></svg>System Status</div>
+      <div class="eyebrow">Version, Daten-Aktualität &amp; Quelle · aus dem tatsächlichen Zeitstempel des letzten Marktupdates berechnet, nie fest verdrahtet</div>
+      <div class="status-grid">
+        <div class="status-item"><span>Version</span><strong id="statusVersion">—</strong></div>
+        <div class="status-item"><span>Last Market Update</span><strong id="statusLastUpdate">—</strong></div>
+        <div class="status-item"><span>Timezone</span><strong id="statusTimezone">—</strong></div>
+        <div class="status-item"><span>Data Age</span><strong id="statusDataAge">—</strong></div>
+        <div class="status-item"><span>Data Status</span><strong><span id="statusDataState" class="status-pill">—</span></strong></div>
+        <div class="status-item"><span>Market Source</span><strong id="statusSource">—</strong></div>
+      </div>
+    </section>
+
     <section class="greeting card">
       <div class="eyebrow"><span class="live-dot"></span><span id="sessionName">—</span></div>
       <div id="greetingText" class="greetingText">Guten Morgen, Daniel Gomes</div>

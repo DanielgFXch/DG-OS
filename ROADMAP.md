@@ -65,6 +65,8 @@ automatically to every module below, and is documented identically in
 |---|---|
 | DG Overview (dashboard aggregation) | done — at-a-glance session/day/week levels, structure bias, open H1 zones, text feed for sweeps + zone reactions; reads existing modules only, no new detection |
 | Event Store & Ingest Pipeline | done — Phase 1 "Core Foundation" (v0.20.0): `marketBrain.js`/`events.js`/`scripts/ingest.js`, git-committed `state/latest.json` + `state/events.jsonl`, Market-Context-vs-Trading-Event classification. Still on the 15-min cron, not a truly continuous always-on watcher — see `docs/MARKET_BRAIN.md`'s "Event Store & Ingest Pipeline" section |
+| System Status (Version/Freshness/Source) | done (v0.21.0) — `package.json` as version single source of truth, four-state Data Freshness (LIVE/DELAYED/STALE/NO_DATA) computed from the real last-update timestamp against DG OS's own known feed intervals, Market Source display. See `docs/MARKET_BRAIN.md`'s "System Status" section |
+| TradingView Integration | plan only (v0.21.0) — hybrid architecture (TwelveData = continuous OHLC, TradingView = strategic events via webhook) designed and documented, no webhook infrastructure built yet: blocked on the same always-on-host decision as continuous ingestion. Full plan: [`docs/TRADINGVIEW_INTEGRATION_PLAN.md`](docs/TRADINGVIEW_INTEGRATION_PLAN.md) |
 | Alerts, Reports, Learning, Statistics | not started — Alerts is the first natural consumer of the Event Store above |
 
 (Module numbers track build order, not architectural layer — see the note

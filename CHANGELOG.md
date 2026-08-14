@@ -8,6 +8,19 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.19.2] — Audit-Korrektur: Event-Klassifikation Market Context vs. Trading Event
+
+### Neu
+- `docs/DG_OS_V2_AUDIT.md` ergänzt um Daniels Korrektur zur Event-Logik: Session-Level-Entstehung (`ASIA_HIGH_CREATED`, `ASIA_LOW_CREATED`, `LONDON_HIGH_CREATED`, `LONDON_LOW_CREATED`, `NY_HIGH_CREATED`, `NY_LOW_CREATED`) ist reiner „Market Context" — intern berechnet/gespeichert, aber niemals Notification, niemals Trading-Event-Stream, niemals Setup-Signal
+- Erst Touch/Sweep/Reaktion/Confirmation (`*_TOUCHED`, `*_SWEPT`, `LIQUIDITY_SWEPT`, `POI_REACHED`, `FVG_REACHED`, `ORDERBLOCK_REACHED`, `REACTION_DETECTED`, `ENGULFING_CONFIRMED`, `DISPLACEMENT_DETECTED`, `BOS_CONFIRMED`, `CHOCH_CONFIRMED`, `SETUP_FORMING`, `SETUP_CONFIRMED`, `SETUP_INVALIDATED`, `TARGET_REACHED`) zählen als „Trading Event" — persistiert und benachrichtigungsfähig
+- Als Architekturentscheidung festgehalten: jedes Event trägt im Event Store ein Kategorie-Feld (Market Context / Trading Event), das Alert Layer und Event-Stream-Abfragen filtert — statt einer manuell gepflegten Ausschlussliste, damit auch künftige Event-Typen automatisch korrekt behandelt werden
+- Reine Dokumentations-Korrektur — keine funktionalen Code-Änderungen
+
+### Geänderte Dateien
+`app.js`, `docs/DG_OS_V2_AUDIT.md`, `CHANGELOG.md`
+
+---
+
 ## [0.19.1] — DG OS V2 Audit
 
 ### Neu

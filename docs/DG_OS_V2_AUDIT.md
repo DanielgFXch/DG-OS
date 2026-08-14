@@ -2,7 +2,7 @@
 
 **Purpose:** a complete, honest technical inventory of DG OS as it exists today (v0.19.0), done *before* any V2 work starts, so the move toward the **DG OS – Personal AI Trading Brain** vision (see below) is a deliberate architectural decision, not an accidental one. Nothing in this document has been implemented. No code was changed while writing it.
 
-**Target vision this audit is measured against** (as given): DG OS becomes a permanently-running personal trading assistant that understands Daniel's strategy, watches the market continuously, and can answer a question like *"Gomez, wie ist die Lage?"* using real current data — price, sessions, liquidity, POIs, structure, confirmations, targets, news, and what the strategy says should happen next — plus a persisted stream of typed market events (`ASIA_HIGH_SWEPT`, `POI_REACHED`, `BOS_CONFIRMED`, …) that can drive alerts. The system itself never invents trading rules; a separate **DG Trading Brain** (Daniel's rules) stays the only source of strategic decisions.
+**Target vision this audit is measured against** (as given): DG OS becomes a permanently-running personal trading assistant that understands Daniel's strategy, watches the market continuously, and can answer a question like *"Gomez, wie ist die Lage?"* using real current data — price, sessions, liquidity, POIs, structure, confirmations, targets, news, and what the strategy says should happen next — plus a persisted stream of typed market events (`ASIA_HIGH_SWEPT`, `POI_REACHED`, `BOS_CONFIRMED`, …) that can drive alerts. Not every event is notify-worthy, though — a level simply forming (e.g. `ASIA_HIGH_CREATED`) is silent market context, while something happening *to* a level (touched/swept/reacted to) is a real trading event; see "Event classification" under RECOMMENDED V2 ARCHITECTURE for the full rule. The system itself never invents trading rules; a separate **DG Trading Brain** (Daniel's rules) stays the only source of strategic decisions.
 
 ---
 
@@ -235,6 +235,25 @@ A layered architecture, deliberately **not** committing to a specific tech stack
 ```
 
 **Hosting:** the frontend can very likely stay on GitHub Pages; layers 1–5 need somewhere that can run *continuously* — GitHub Actions cron cannot do this (scheduled batch only, no always-on process, no inbound queries). A small always-on host (a persistent Node/Deno/Python process, or serverless functions backed by a real database) is the concrete infra decision to make in a follow-up conversation, deliberately not decided here.
+
+### Event classification — Market Context vs. Trading Events (Daniel's correction)
+
+Not every detected market change should reach Daniel. He drew an explicit line, and it applies to Layers 1, 2, and 5 above:
+
+> DG OS soll nicht jede Marktveränderung melden. Es soll mich nur informieren, wenn etwas passiert, das für meine Trading-Entscheidung relevant sein könnte.
+
+This is a schema decision, not just a filtering rule tacked onto the Alert Layer: every event the Ingestion Layer (1) emits into the Event Store (2) must carry a **category**, and that category — not a hand-maintained exclusion list — is what the Alert Layer (5) and any "relevant event stream" query use to decide what surfaces to Daniel. Two categories today:
+
+- **Market Context** — a level simply came into existence. Persisted (so the current state, e.g. "Asia High: 4392.50 / Asia Low: 4371.20", is always queryable — this is exactly `MarketBrain.liquidity`/`DG Overview`'s "Levels" block today), but **silent**: no notification, does not appear in the trading event stream, is never treated as a setup signal.
+  - `ASIA_HIGH_CREATED`, `ASIA_LOW_CREATED`, `LONDON_HIGH_CREATED`, `LONDON_LOW_CREATED`, `NY_HIGH_CREATED`, `NY_LOW_CREATED`
+- **Trading Event** — something happened *to* a level or a zone that could matter for a decision. Persisted **and** notify-worthy (subject to the Alert Layer's own rules-layer-driven filtering — see Layer 5 above — but eligible, unlike Market Context).
+  - Session levels: `ASIA_HIGH_TOUCHED`, `ASIA_LOW_TOUCHED`, `ASIA_HIGH_SWEPT`, `ASIA_LOW_SWEPT`, `LONDON_HIGH_TOUCHED`, `LONDON_LOW_TOUCHED`, `LONDON_HIGH_SWEPT`, `LONDON_LOW_SWEPT`, `NY_HIGH_TOUCHED`, `NY_LOW_TOUCHED`, `NY_HIGH_SWEPT`, `NY_LOW_SWEPT`
+  - Liquidity/POI/structure: `LIQUIDITY_SWEPT`, `POI_REACHED`, `FVG_REACHED`, `ORDERBLOCK_REACHED`, `REACTION_DETECTED`, `ENGULFING_CONFIRMED`, `DISPLACEMENT_DETECTED`, `BOS_CONFIRMED`, `CHOCH_CONFIRMED`
+  - Setup lifecycle: `SETUP_FORMING`, `SETUP_CONFIRMED`, `SETUP_INVALIDATED`, `TARGET_REACHED`
+
+Rule of thumb baked into the schema: **a level being created is market context; something happening *to* that level (touched, swept, reacted to, confirmed) is a trading event.** `*_CREATED` events are allowed to exist technically (useful for persistence/debugging — e.g. reconstructing exactly when a session range was established), but the Event Store's category field is what keeps them out of Daniel's notifications and out of the trading event stream by construction, rather than by remembering to filter them out in every consumer. This also means a *future* event type only needs its category set correctly once, at the point it's emitted, to inherit the right notify/silent behavior everywhere — consistent with the config-driven-registry pattern already used elsewhere in this codebase (see WHAT WE KEEP).
+
+**Why this changes previous parts of this document:** the "Target vision" intro's example event list and Layer 1/2/5's descriptions above were written before this correction and don't yet show the category distinction explicitly — this subsection is the authoritative version; the earlier text is superseded by it, not contradicted by it (the same 17-ish event names are still correct, just now split into the two categories above).
 
 **Why this shape specifically:**
 - Layer 1 reuses, rather than replaces, the one part of the current system that's already correct (the Market Brain math) — least risk, fastest path to value.

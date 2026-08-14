@@ -1,7 +1,7 @@
 
 // Semantic Versioning (siehe CHANGELOG.md für die vollständige Historie).
 // Bei jedem abgeschlossenen Build hier + in CHANGELOG.md aktualisieren.
-const DG_OS_VERSION='0.19.1';
+const DG_OS_VERSION='0.19.2';
 
 const state={asia:false,sweep:false,engulf:false};
 const $=id=>document.getElementById(id);

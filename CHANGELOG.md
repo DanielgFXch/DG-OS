@@ -8,6 +8,25 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.21.0] — TradingView-Integrationsplan, Version- & Daten-Aktualitäts-Anzeige
+
+### Neu
+- **`docs/TRADINGVIEW_INTEGRATION_PLAN.md`** (neu): vollständiger Architektur-Plan für eine Hybrid-Lösung (TwelveData liefert kontinuierliche OHLC/Preis-Daten, TradingView liefert strategische Events über Webhook/Alerts, beide laufen im selben Event Store zusammen) — Webhook Flow, Payload Schema, Secret-Validierung, Duplicate Protection, Timestamp Handling, Event Mapping (identisches Vokabular wie `events.js`), Fehlerbehandlung, welche Events besser aus TradingView vs. direkt aus Market Data kommen. Bewusst nur der Plan — noch keine Webhook-Infrastruktur gebaut, da GitHub Pages keine POST-Requests annehmen kann und GitHub Actions kein dauerhaft lauschender Server ist; das braucht erst die noch offene Always-on-Host-Entscheidung
+- **Version als Single Source of Truth**: neue `package.json` mit `version`-Feld — einzige Stelle, an der die Versionsnummer als String steht. Browser lädt sie per `fetch()` (`loadVersion()` in `app.js`), Node-Ingest-Skript per `require()` (stempelt `dgOsVersion` in `state/latest.json`). `package.json` bewusst NICHT im Service-Worker-Precache, damit eine installierte PWA nie eine veraltete Versionsanzeige zeigt
+- **Neue Karte „System Status"** ganz oben im Dashboard: Version, Last Market Update (Uhrzeit + tatsächliche Browser-Zeitzone, nicht hartkodiert), Data Age (live hochzählend), Data Status (LIVE/DELAYED/STALE/NO DATA), Market Source
+- **Vier-Stufen-Datenaktualität** (`computeDataFreshness()` in `marketBrain.js`): Schwellenwerte technisch aus den tatsächlichen Feed-Intervallen abgeleitet (WebSocket-Heartbeat 10s → LIVE ≤20s/DELAYED ≤90s; 15-Min-Cron-Baseline → LIVE ≤5min/DELAYED ≤20min), reine technische Darstellung, keine Tradingregel
+- Der bisherige Header-Badge („LIVE"/„OFFLINE DEMO") nutzt jetzt denselben Freshness-Status wie die neue Karte — vorher eigene, lockerere 45-Minuten-Schwelle (`MARKET_STALE_MS`, jetzt entfernt), die theoretisch 40 Minuten alte Daten noch als „LIVE" zeigen konnte. Header, Ticker und Status-Karte können jetzt nicht mehr widersprüchliche Aussagen zeigen
+
+### Geändert
+- `app.js`: `DG_OS_VERSION`-Konstante entfernt (durch `loadVersion()` ersetzt), `setLiveStatus()` arbeitet jetzt mit dem 4-Stufen-Status statt einem Boolean
+- `marketBrain.js`: `computeDataFreshness()`/`formatDataAge()` ergänzt
+- `scripts/ingest.js`: liest `package.json`, stempelt `dgOsVersion` in den persistierten Zustand
+
+### Geänderte Dateien
+`app.js`, `marketBrain.js`, `scripts/ingest.js`, `index.html`, `styles.css`, `package.json` (neu), `docs/TRADINGVIEW_INTEGRATION_PLAN.md` (neu), `docs/MARKET_BRAIN.md`, `CLAUDE.md`, `ROADMAP.md`, `CHANGELOG.md`
+
+---
+
 ## [0.20.0] — Phase 1: Core Foundation — Event Store & Ingest Pipeline
 
 ### Neu

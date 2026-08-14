@@ -851,6 +851,87 @@ first thing visible — four blocks: Levels, Struktur, Offene Zonen,
 Meldungen. `renderOverview()` populates `#overviewLevels`,
 `#overviewStructure`, `#overviewZones`, `#overviewEvents`.
 
+## System Status: Version, Data Freshness & Market Source (v0.21.0)
+
+New "System Status" card, placed at the very top of the dashboard —
+Daniel's explicit ask, before starting the DG Trading Brain phase: always
+be able to see which version is running and how current the data actually
+is, without guessing from a binary LIVE/OFFLINE badge.
+
+**Version — single source of truth.** `package.json`'s `version` field is
+now the *only* place the version number is written as a literal string.
+`app.js`'s `loadVersion()` fetches `./package.json` once at startup
+(`{cache:'no-store'}`, deliberately **not** in `sw.js`'s precache list —
+see below) and populates both the footer (`#appVersion`) and the new status
+card (`#statusVersion`) from the same fetched value. `scripts/ingest.js`
+reads the identical file via `require('../package.json')` and stamps
+`dgOsVersion` into `state/latest.json` — browser and server can never
+disagree about which version produced a given snapshot. The old
+`DG_OS_VERSION` string constant in `app.js` is gone; bump `package.json`'s
+`version` field on every completed build instead (still paired with a
+`CHANGELOG.md` entry, same discipline as before).
+
+*Why `package.json` is excluded from `sw.js`'s precache list:* the service
+worker's fetch handler is cache-first
+(`caches.match(e.request).then(r=>r||fetch(e.request))`) — if
+`package.json` were precached, a PWA-installed client would keep showing
+whatever version was cached at install time indefinitely, defeating the
+entire point of a live version indicator. Leaving it out of `ASSETS` means
+`caches.match()` never finds an entry for it, so every load falls through
+to a real network fetch.
+
+**Data Freshness — never claim LIVE off a stale timestamp.** Daniel's
+explicit constraint: the dashboard must never show LIVE when the last data
+point is old (his example: 15 minutes). `computeDataFreshness(lastUpdateAt,
+isStreaming)` (`marketBrain.js`) is the one function that decides this,
+using two threshold sets — because "fresh" means something different
+depending on which of DG OS's two real feeds is active:
+
+| | LIVE | DELAYED | STALE |
+|---|---|---|---|
+| WebSocket streaming (`tdStreaming`) | ≤ 20s | ≤ 90s | > 90s |
+| 15-min JSON baseline | ≤ 5 min | ≤ 20 min | > 20 min |
+
+Thresholds are derived from DG OS's own known intervals, not arbitrary: the
+WebSocket heartbeat (`TD_HEARTBEAT_MS`) is 10s, so LIVE tolerates roughly
+two missed beats before downgrading; the JSON baseline refreshes every 15
+minutes via `market-data.yml`'s cron, so LIVE means "freshly refreshed,"
+DELAYED means "aging within/just past one cycle," and STALE means "the cron
+has likely stopped running." A fourth state, `NO_DATA`, covers the
+pre-first-successful-fetch case (`lastUpdateAt` is still `null`) —
+distinct from STALE, since "never received anything" and "received
+something a while ago" are different, both-honest facts. This is a
+technical display computation only, explicitly not a trading rule — same
+category as `LIQUIDITY_TOUCH_PERCENT` or the "scan forward for a real
+candle" heuristic, describing DG OS's own data pipeline, not the market.
+
+**One status, every badge.** Before this build, the header badge
+(`#connectionBadge`) used its own separate 45-minute binary check
+(`MARKET_STALE_MS`, now deleted) — which could show "LIVE" on data up to 45
+minutes old. `setLiveStatus(status)` now takes the same four-value status
+`computeDataFreshness()` produces and drives the header badge, the ticker
+line, *and* the status card's `Data Status` pill from one shared value
+(`renderFreshness()`, called every second so `Data Age` counts up live, and
+after every JSON refresh / WebSocket tick). The header badge and the status
+card can no longer disagree.
+
+**Market Source.** Today this can only honestly say `TwelveData
+(WebSocket)` or `TwelveData (15-Min-Feed)` — DG OS has exactly one data
+source until the TradingView integration
+([`docs/TRADINGVIEW_INTEGRATION_PLAN.md`](TRADINGVIEW_INTEGRATION_PLAN.md))
+is actually built. The display is derived from the live `tdStreaming`
+boolean, not a hardcoded string, so it's structurally ready to show
+`Price: TwelveData / Events: TradingView` later without needing to be
+rebuilt — but it does not claim a hybrid source today, because there isn't
+one yet.
+
+**Timezone.** Shown next to `Last Market Update` using the browser's own
+resolved timezone (`Intl.DateTimeFormat().resolvedOptions().timeZone`), not
+a hardcoded `"Europe/Zurich"` literal — correct on Daniel's own device
+(which resolves to Europe/Zurich), and still honest if DG OS is ever opened
+from a device in a different timezone rather than silently mislabeling the
+displayed time.
+
 ## MarketBrain aggregator (`marketBrain.js` shape, `app.js` instance)
 
 ```js

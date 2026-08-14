@@ -8,6 +8,33 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.23.1] — DG Trading Brain V1: Interpretation-Ebene ehrlich gegated
+
+Korrektur an v0.23.0, noch vor Produktionsverifikation: die POI-Score-,
+HTF-Bias- und Report-Status-Logik aus dem ersten V1-Build war generische
+SMC/ICT-artige Interpretation — genau das, was die dauerhafte Projektregel
+„DG-Methodik" verbietet, solange die zugehörigen Kapitel in
+`rules/strategy.md` TODO sind. Auf Daniels explizite Anweisung umgebaut:
+Market Facts bleiben vollständig echt, aber jedes Interpretation-Ergebnis
+ist jetzt ehrlich `AWAITING_DG_RULE`, solange die passende Regel fehlt.
+
+### Geändert
+- `marketBrain.js`: `computeOverallBias()` liefert `overallBias: 'AWAITING_DG_RULE'`, `confidence: null`, solange `DG_RULES_DEFINED.htfBias` `false` ist (aktuell immer) — `reasoning` listet weiterhin die rohen Fakten (Struktur/Premium-Discount/Sweeps je Timeframe) als Kontext, ohne sie zu einem Bias zu verdichten.
+- `rankPOI()` liefert `score: null, quality: 'AWAITING_DG_RULE'`, solange Kapitel 4 (DG Order Block) bzw. 5 (DG Valid FVG) TODO sind — `reasons` bleibt die gleiche Fakten-Liste wie vorher, nur ohne Punktevergabe.
+- `computeTargets()`: `priority` ist jetzt `'AWAITING_DG_RULE'` statt einer erfundenen Timeframe-Gewichtung; die Kandidatenliste selbst (welches Level über/unter dem Preis liegt) bleibt ein reiner, geometrischer Fakt.
+- `generateMarketReport()`: `status` ist immer `'AWAITING_DG_RULE'` (nie mehr WAIT/WATCH BUY/WATCH SELL/BULLISH/BEARISH SCENARIO, solange kein Kapitel definiert ist); `bestBuyPOIs`/`bestSellPOIs`/`keyLiquidity` umbenannt zu `freshBullishPOIs`/`freshBearishPOIs`/`notableLiquidity` — ungewichtete Fakten-Listen statt einer impliziten "beste/wichtigste"-Bewertung.
+- Neues Feld `awaitingDgRule` im `/api/brain/XAUUSD`-Output — maschinenlesbare Liste, welche `rules/strategy.md`-Kapitel aktuell gaten.
+- `rules/strategy.md`: die in v0.23.0 hinzugefügten 🟡 V1-DRAFT-Inhalte (Kapitel 1-5) vollständig zurückgenommen — diese Datei bleibt ausschließlich Daniels eigener Text, nie aus einem Build-Prompt übernommener Inhalt. Alle 17 Kapitel wieder 🔴 TODO. Die Modul-Zuordnungstabelle beschreibt weiterhin akkurat, welche Fakten-Engine existiert, ohne eine Regel zu behaupten.
+- Dashboard-Karte „DG Trading Brain V1": zeigt `AWAITING_DG_RULE`-Felder jetzt im gleichen gedämpften Stil wie die bestehende DG-Confidence-Karte für „fehlend" — keine bullish/bearish-Einfärbung mehr ohne echte Regel dahinter.
+
+### Getestet
+Alle Assertions aus dem v0.23.0-Testlauf auf die neue Gating-Logik umgeschrieben und erneut grün: `overallBias`/`score`/`priority`/`status` sind durchgängig `AWAITING_DG_RULE`/`null`, nirgends ein fabriziertes bullish/bearish/neutral im JSON-Output; Market Facts (Struktur, Liquidity, Premium/Discount, FVG/OB-Erkennung) unverändert real; Regressionstests (Sweep/Reversal, Initial-Fetch-Retry) weiterhin grün; Dashboard-Karte per Playwright im verbundenen Zustand geprüft.
+
+### Geänderte Dateien
+`marketBrain.js`, `app.js`, `index.html`, `styles.css`, `rules/strategy.md`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.23.0] — DG Trading Brain V1
 
 Erster Ausbau der eigentlichen Trading-Logik, direkt aus Daniels "DG TRADING

@@ -1119,111 +1119,81 @@ function computePremiumDiscountForRange(range,currentPrice,label){
   return zone?Object.assign({timeframe:label},zone):null;
 }
 
-// V1 HTF Bias — a simple, explainable score, NOT a weighting-AI. Inputs per
-// Daniel's §4: external structure per timeframe (weighted by timeframe
-// rank), Premium/Discount lean on Daily+Weekly, and recent liquidity
-// sweeps (Market Fact) as a reversal-lean input. "Nächstes relevantes HTF
-// Target" is surfaced in `reasoning` as context, not scored — there's no
-// principled, non-arbitrary way to turn "nearest resting liquidity" into a
-// directional vote without inventing a rule Daniel hasn't defined.
+// DG HTF Bias — reads every timeframe's Market Facts (Structure Engine's
+// externalBias — BOS/CHOCH is explicitly a Market Fact, see Daniel's own
+// Market-Facts-vs-DG-Interpretation split), but does NOT synthesize them
+// into a bullish/bearish verdict. Turning "these facts" into "therefore
+// bullish" is exactly the DG Interpretation that only rules/strategy.md's
+// Chapter 1 (DG HTF Bias) may define — and it's still 🔴 TODO. Same
+// pattern as the existing computeDecisionEngine() below: honestly wait
+// instead of guessing. `reasoning` lists the raw facts as context only,
+// never framed as "contributing to bullish/bearish".
 function computeOverallBias(tfBrainsByOutputKey,premiumDiscountByOutputKey,liquidity){
-  let bullishScore=0,bearishScore=0;
-  const reasoning=[];
+  const facts=[];
 
   HTF_TIMEFRAME_DEFS.forEach(def=>{
     const tf=tfBrainsByOutputKey[def.outputKey];
     const vote=tf&&(tf.structure.externalBias||tf.structure.internalBias);
-    if(vote==='bullish'){ bullishScore+=def.rank; reasoning.push(`${def.label}: externe Struktur bullish (Gewicht ${def.rank})`); }
-    else if(vote==='bearish'){ bearishScore+=def.rank; reasoning.push(`${def.label}: externe Struktur bearish (Gewicht ${def.rank})`); }
-    else reasoning.push(`${def.label}: noch keine klare Struktur-Richtung`);
+    facts.push(`${def.label}: externe Struktur ${vote?vote.toUpperCase():'noch unklar'}`);
   });
 
   ['weekly','daily'].forEach(key=>{
     const pd=premiumDiscountByOutputKey[key];
-    if(!pd) return;
-    if(pd.zone==='discount'){ bullishScore+=1; reasoning.push(`${pd.timeframe}: Preis im Discount (${pd.distanceToEqPercent.toFixed(1)}% zur EQ)`); }
-    else if(pd.zone==='premium'){ bearishScore+=1; reasoning.push(`${pd.timeframe}: Preis im Premium (${pd.distanceToEqPercent.toFixed(1)}% zur EQ)`); }
-    else reasoning.push(`${pd.timeframe}: Preis nahe Equilibrium`);
+    if(pd) facts.push(`${pd.timeframe}: Preis im ${PD_ZONE_LABEL[pd.zone]}`);
   });
 
   const sweptLows=(liquidity||[]).filter(l=>l.type==='low'&&l.status==='sweeped');
   const sweptHighs=(liquidity||[]).filter(l=>l.type==='high'&&l.status==='sweeped');
-  if(sweptLows.length){ bullishScore+=1; reasoning.push(`${sweptLows.length} Low-Liquidity-Level gesweept (${sweptLows.map(l=>l.label).join(', ')}) — möglicher Reversal-Impuls nach oben`); }
-  if(sweptHighs.length){ bearishScore+=1; reasoning.push(`${sweptHighs.length} High-Liquidity-Level gesweept (${sweptHighs.map(l=>l.label).join(', ')}) — möglicher Reversal-Impuls nach unten`); }
+  if(sweptLows.length) facts.push(`${sweptLows.length} Low-Liquidity-Level gesweept (${sweptLows.map(l=>l.label).join(', ')})`);
+  if(sweptHighs.length) facts.push(`${sweptHighs.length} High-Liquidity-Level gesweept (${sweptHighs.map(l=>l.label).join(', ')})`);
 
-  const nearestAbove=(liquidity||[]).filter(l=>l.type==='high'&&l.status==='active'&&typeof l.price==='number').sort((a,b)=>a.price-b.price)[0];
-  const nearestBelow=(liquidity||[]).filter(l=>l.type==='low'&&l.status==='active'&&typeof l.price==='number').sort((a,b)=>b.price-a.price)[0];
-  if(nearestAbove) reasoning.push(`Nächstes relevantes HTF-Target oberhalb: ${nearestAbove.label} bei ${fmtPrice(nearestAbove.price)}`);
-  if(nearestBelow) reasoning.push(`Nächstes relevantes HTF-Target unterhalb: ${nearestBelow.label} bei ${fmtPrice(nearestBelow.price)}`);
-
-  let overallBias='neutral';
-  if(bullishScore>bearishScore) overallBias='bullish';
-  else if(bearishScore>bullishScore) overallBias='bearish';
-
-  const total=bullishScore+bearishScore;
-  const confidence=total>0?Math.round((Math.abs(bullishScore-bearishScore)/total)*100):0;
-
-  return{overallBias,confidence,bullishScore,bearishScore,reasoning};
+  if(!DG_RULES_DEFINED.htfBias){
+    return{
+      overallBias:'AWAITING_DG_RULE',confidence:null,
+      reasoning:['DG HTF Bias (Kapitel 1 in rules/strategy.md) ist noch nicht definiert — DG OS wertet die folgenden Fakten bewusst nicht zu einem Bias-Verdikt aus:',...facts]
+    };
+  }
+  // No chapter is defined yet, so there is no rule-application branch to
+  // build here — adding one now would mean guessing at a rule Daniel
+  // hasn't written. This mirrors computeDecisionEngine()'s own honesty.
+  return{
+    overallBias:'AWAITING_DG_RULE',confidence:null,
+    reasoning:['DG HTF Bias ist als definiert markiert, aber die Regelanwendung ist noch nicht implementiert.',...facts]
+  };
 }
 
-// V1 POI Ranking — regelbasiert, nachvollziehbar, exakt die in Daniels §10
-// genannten Faktoren, jeder gelesen aus einem bereits vom POI/Structure/
-// Liquidity Engine berechneten Feld. "Schwache Reaktion" aus §10 ist
-// bewusst NICHT umgesetzt — detectZoneReaction() liefert nur ja/nein, keine
-// Stärke, und eine Stärke zu erfinden wäre genau die Art Regel, die dieses
-// V1 nicht selbst erfinden soll.
-const POI_RANK_WEIGHT=HTF_TIMEFRAME_DEFS.reduce((m,d)=>{ m[d.label]=d.rank; return m; },{});
+// DG POI Ranking (Order Block / Valid FVG quality) — same reasoning as
+// computeOverallBias() above: "hoher/niedriger Quality POI" is explicitly
+// DG Interpretation in Daniel's own Market-Facts-vs-Interpretation split,
+// and Chapters 4 (DG Order Block) / 5 (DG Valid FVG) are still 🔴 TODO.
+// `reasons` lists the same Market Facts the old V1 score used to weight —
+// they're still useful context — but no score/quality verdict is derived
+// from them until the relevant chapter is filled in.
+function rankPOI(poi){
+  const chapterKey=poi.type==='orderBlock'?'orderBlock':'validFvg';
+  const chapterLabel=poi.type==='orderBlock'?'DG Order Block (Kapitel 4)':'DG Valid FVG (Kapitel 5)';
 
-function rankPOI(poi,overallBias,currentPrice){
-  let score=40; // neutral baseline
-  const reasons=[];
+  const facts=[`Timeframe ${poi.timeframe}`,poi.status==='fresh'?'Frisch / unmitigiert':'Bereits mitigiert'];
+  if(poi.displacement) facts.push('Mit Displacement entstanden');
+  if(poi.relatedStructure) facts.push(`Verbunden mit ${poi.relatedStructure.type} (${poi.relatedStructure.direction})`);
+  if(Array.isArray(poi.relatedLiquidity)&&poi.relatedLiquidity.length) facts.push(`Nahe ${poi.relatedLiquidity.length} Liquidity-Level`);
+  if(poi.premiumDiscountZone) facts.push(`Liegt im ${PD_ZONE_LABEL[poi.premiumDiscountZone]}`);
 
-  const tfWeight=POI_RANK_WEIGHT[poi.timeframe]||1;
-  score+=tfWeight*5;
-  reasons.push(`Timeframe ${poi.timeframe} (Gewicht ${tfWeight})`);
-
-  if(poi.status==='fresh'){ score+=15; reasons.push('Frisch / unmitigiert'); }
-  else{ score-=15; reasons.push('Bereits mitigiert'); }
-
-  if(poi.displacement){ score+=15; reasons.push('Mit Displacement entstanden'); }
-  if(poi.relatedStructure){ score+=10; reasons.push(`Verbunden mit ${poi.relatedStructure.type} (${poi.relatedStructure.direction})`); }
-  if(Array.isArray(poi.relatedLiquidity)&&poi.relatedLiquidity.length){ score+=10; reasons.push(`Nahe relevanter Liquidity (${poi.relatedLiquidity.length})`); }
-
-  if(overallBias&&overallBias!=='neutral'){
-    if(poi.direction===overallBias){ score+=15; reasons.push(`Passt zum HTF Bias (${overallBias})`); }
-    else{ score-=15; reasons.push(`Gegen HTF Bias (${overallBias})`); }
+  if(!DG_RULES_DEFINED[chapterKey]){
+    return{score:null,quality:'AWAITING_DG_RULE',reasons:[`${chapterLabel} ist noch nicht definiert — kein Ranking möglich.`,...facts]};
   }
-
-  if(poi.premiumDiscountZone&&poi.premiumDiscountZone!=='equilibrium'){
-    const favorable=(poi.direction==='bullish'&&poi.premiumDiscountZone==='discount')||(poi.direction==='bearish'&&poi.premiumDiscountZone==='premium');
-    if(favorable){ score+=10; reasons.push(`Liegt sinnvoll im ${PD_ZONE_LABEL[poi.premiumDiscountZone]}`); }
-    else{ score-=5; reasons.push(`Liegt ungünstig im ${PD_ZONE_LABEL[poi.premiumDiscountZone]}`); }
-  }
-
-  const confluenceCount=[poi.displacement,poi.relatedStructure,(poi.relatedLiquidity||[]).length>0].filter(Boolean).length;
-  if(confluenceCount>=3){ score+=10; reasons.push('Mehrere Confluences'); }
-
-  if(!poi.relatedStructure&&!(poi.relatedLiquidity||[]).length){ score-=10; reasons.push('Liegt strukturell isoliert ("mitten im Nirgendwo")'); }
-
-  if(typeof poi.distanceToPrice==='number'&&typeof currentPrice==='number'&&currentPrice>0){
-    const distancePercent=(poi.distanceToPrice/currentPrice)*100;
-    if(distancePercent>5){ score-=10; reasons.push(`Sehr weit vom aktuellen Preis entfernt (${distancePercent.toFixed(1)}%)`); }
-  }
-
-  score=Math.max(0,Math.min(100,Math.round(score)));
-  const quality=score>=70?'high':(score>=40?'medium':'low');
-  return{score,quality,reasons};
+  return{score:null,quality:'AWAITING_DG_RULE',reasons:[`${chapterLabel} ist als definiert markiert, aber die Bewertungslogik ist noch nicht implementiert.`,...facts]};
 }
 
-// V1 Targets — resting liquidity + high-score opposite/aligned POIs,
-// nearest-first per direction, capped so the list stays readable.
+// DG Targets — "möglicher Target" is DG Interpretation (which level
+// actually matters), so `priority` stays AWAITING_DG_RULE. The candidate
+// list itself (which liquidity/POI levels sit above/below price) is a
+// Market Fact — direction is pure geometry, not a judgement call. Sorted
+// nearest-first purely for readability (a neutral, non-judgemental order,
+// not a claim about relevance), capped so the list stays readable.
 const TARGET_MAX_PER_DIRECTION=4;
 
-function rankTargetList(list){
-  return list.map((c,i)=>{ const{_weight,...rest}=c; return Object.assign({},rest,{priority:i+1}); });
-}
-
-function computeTargets(liquidity,rankedPOIs,currentPrice){
+function computeTargets(liquidity,pois,currentPrice){
   if(typeof currentPrice!=='number') return[];
   const candidates=[];
 
@@ -1231,37 +1201,31 @@ function computeTargets(liquidity,rankedPOIs,currentPrice){
     if(typeof lv.price!=='number'||lv.status==='invalid'||lv.status==='sweeped') return; // sweeped = already taken, not a forward target
     candidates.push({
       direction:lv.price>currentPrice?'up':'down',price:lv.price,type:'liquidity',timeframe:lv.timeframe,
-      priority:null,reason:`${lv.label} (${lv.timeframe})`,_weight:2
+      reason:`${lv.label} (${lv.timeframe})`,priority:'AWAITING_DG_RULE',_dist:Math.abs(lv.price-currentPrice)
     });
   });
 
-  (rankedPOIs||[]).filter(p=>p.status==='fresh'&&p.score>=60).forEach(p=>{
+  (pois||[]).filter(p=>p.status==='fresh').forEach(p=>{
     const mid=(p.priceHigh+p.priceLow)/2;
     candidates.push({
       direction:mid>currentPrice?'up':'down',price:Math.round(mid*100)/100,type:`poi-${p.type}`,timeframe:p.timeframe,
-      priority:null,reason:`${p.type==='fvg'?'FVG':'Order Block'} ${p.direction} (${p.timeframe}, Score ${p.score})`,
-      _weight:POI_RANK_WEIGHT[p.timeframe]||1
+      reason:`${p.type==='fvg'?'FVG':'Order Block'} ${p.direction} (${p.timeframe})`,priority:'AWAITING_DG_RULE',_dist:Math.abs(mid-currentPrice)
     });
   });
 
-  const up=candidates.filter(c=>c.direction==='up').sort((a,b)=>(b._weight-a._weight)||(a.price-b.price)).slice(0,TARGET_MAX_PER_DIRECTION);
-  const down=candidates.filter(c=>c.direction==='down').sort((a,b)=>(b._weight-a._weight)||(b.price-a.price)).slice(0,TARGET_MAX_PER_DIRECTION);
-  return[...rankTargetList(up),...rankTargetList(down)];
+  const strip=c=>{ const{_dist,...rest}=c; return rest; };
+  const up=candidates.filter(c=>c.direction==='up').sort((a,b)=>a._dist-b._dist).slice(0,TARGET_MAX_PER_DIRECTION).map(strip);
+  const down=candidates.filter(c=>c.direction==='down').sort((a,b)=>a._dist-b._dist).slice(0,TARGET_MAX_PER_DIRECTION).map(strip);
+  return[...up,...down];
 }
 
-// V1 Market Report — assembled entirely from already-computed fields above,
-// nothing new invented here beyond formatting/selection. `status` is a
-// simple, deterministic derivation, not a trading signal — explicitly
-// never BUY/SELL READY, per Daniel's §12.
-const REPORT_STATUS={WAIT:'WAIT',WATCH_BUY:'WATCH BUY',WATCH_SELL:'WATCH SELL',BULLISH_SCENARIO:'BULLISH SCENARIO',BEARISH_SCENARIO:'BEARISH SCENARIO'};
-
-function computeReportStatus(overallBias,rankedPOIs){
-  if(overallBias==='neutral') return REPORT_STATUS.WAIT;
-  const aligned=(rankedPOIs||[]).filter(p=>p.status==='fresh'&&p.direction===overallBias&&p.score>=70);
-  if(aligned.length) return overallBias==='bullish'?REPORT_STATUS.WATCH_BUY:REPORT_STATUS.WATCH_SELL;
-  return overallBias==='bullish'?REPORT_STATUS.BULLISH_SCENARIO:REPORT_STATUS.BEARISH_SCENARIO;
-}
-
+// DG Market Report — assembled entirely from Market Facts + the honestly-
+// gated interpretation results above. `status` can never be WAIT/WATCH
+// BUY/.../BULLISH SCENARIO today — every one of those labels would itself
+// be a DG Interpretation verdict, and none of the underlying chapters are
+// defined yet. AWAITING_DG_RULE is the only honest value, exactly like
+// `overallBias` and POI `quality` above — never BUY/SELL READY, per
+// Daniel's explicit instruction.
 function summarizeTimeframeContext(tf,pd){
   if(!tf||!tf.range) return'Noch keine Daten.';
   const bias=tf.structure.externalBias?tf.structure.externalBias.toUpperCase():'NEUTRAL';
@@ -1270,40 +1234,40 @@ function summarizeTimeframeContext(tf,pd){
 }
 
 function generateMarketReport(input){
-  const{overallBias,confidence,reasoning,tfBrainsByOutputKey,premiumDiscountByOutputKey,liquidity,rankedPOIs,targets}=input;
+  const{overallBias,confidence,reasoning,tfBrainsByOutputKey,premiumDiscountByOutputKey,liquidity,pois,targets}=input;
 
-  const keyLiquidity=(liquidity||[])
+  const notableLiquidity=(liquidity||[])
     .filter(l=>l.status==='sweeped'||l.status==='touched')
-    .slice(0,5)
     .map(l=>`${l.label} (${l.timeframe}) — ${LIQUIDITY_STATUS_LABEL[l.status]||l.status} bei ${fmtPrice(l.price)}`);
 
-  const bestBuyPOIs=(rankedPOIs||[]).filter(p=>p.direction==='bullish'&&p.status==='fresh').sort((a,b)=>b.score-a.score).slice(0,3)
-    .map(p=>({timeframe:p.timeframe,type:p.type,range:`${fmtPrice(p.priceLow)}–${fmtPrice(p.priceHigh)}`,score:p.score,quality:p.quality}));
-  const bestSellPOIs=(rankedPOIs||[]).filter(p=>p.direction==='bearish'&&p.status==='fresh').sort((a,b)=>b.score-a.score).slice(0,3)
-    .map(p=>({timeframe:p.timeframe,type:p.type,range:`${fmtPrice(p.priceLow)}–${fmtPrice(p.priceHigh)}`,score:p.score,quality:p.quality}));
+  const poiFact=p=>({timeframe:p.timeframe,type:p.type,range:`${fmtPrice(p.priceLow)}–${fmtPrice(p.priceHigh)}`,status:p.status,quality:p.quality});
+  const freshBullishPOIs=(pois||[]).filter(p=>p.direction==='bullish'&&p.status==='fresh')
+    .sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5).map(poiFact);
+  const freshBearishPOIs=(pois||[]).filter(p=>p.direction==='bearish'&&p.status==='fresh')
+    .sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt)).slice(0,5).map(poiFact);
 
-  const status=computeReportStatus(overallBias,rankedPOIs);
+  const status='AWAITING_DG_RULE';
 
   const lines=[];
-  lines.push(`HTF Bias: ${overallBias.toUpperCase()} (${confidence}% Confidence)`);
+  lines.push(`HTF Bias: ${overallBias} — ${DG_RULES_DEFINED.htfBias?'Kapitel definiert, Regelanwendung noch nicht implementiert':'Kapitel 1 (DG HTF Bias) in rules/strategy.md ist noch TODO'}`);
   lines.push(`Weekly: ${summarizeTimeframeContext(tfBrainsByOutputKey.weekly,premiumDiscountByOutputKey.weekly)}`);
   lines.push(`Daily: ${summarizeTimeframeContext(tfBrainsByOutputKey.daily,premiumDiscountByOutputKey.daily)}`);
   lines.push(`4H: ${summarizeTimeframeContext(tfBrainsByOutputKey.h4,premiumDiscountByOutputKey.h4)}`);
-  lines.push(keyLiquidity.length?`Wichtigste Liquidity: ${keyLiquidity.join(' · ')}`:'Wichtigste Liquidity: aktuell keine auffälligen Level.');
-  lines.push(bestBuyPOIs.length?`Beste Buy-Zonen: ${bestBuyPOIs.map(p=>`${p.range} (${p.timeframe}, ${p.quality})`).join(', ')}`:'Beste Buy-Zonen: keine.');
-  lines.push(bestSellPOIs.length?`Beste Sell-Zonen: ${bestSellPOIs.map(p=>`${p.range} (${p.timeframe}, ${p.quality})`).join(', ')}`:'Beste Sell-Zonen: keine.');
+  lines.push(notableLiquidity.length?`Liquidity (touched/sweeped): ${notableLiquidity.join(' · ')}`:'Liquidity (touched/sweeped): aktuell keine.');
+  lines.push(`Fresh Bullish POIs: ${freshBullishPOIs.length?freshBullishPOIs.map(p=>`${p.range} (${p.timeframe})`).join(', '):'keine'} — Qualität: AWAITING_DG_RULE`);
+  lines.push(`Fresh Bearish POIs: ${freshBearishPOIs.length?freshBearishPOIs.map(p=>`${p.range} (${p.timeframe})`).join(', '):'keine'} — Qualität: AWAITING_DG_RULE`);
   const up=(targets||[]).find(t=>t.direction==='up');
   const down=(targets||[]).find(t=>t.direction==='down');
-  if(up) lines.push(`Nächstes Ziel aufwärts: ${fmtPrice(up.price)} (${up.reason})`);
-  if(down) lines.push(`Nächstes Ziel abwärts: ${fmtPrice(down.price)} (${down.reason})`);
-  lines.push(`Status: ${status}`);
+  if(up) lines.push(`Nächstes Level aufwärts (Fakt, keine Priorisierung): ${fmtPrice(up.price)} (${up.reason})`);
+  if(down) lines.push(`Nächstes Level abwärts (Fakt, keine Priorisierung): ${fmtPrice(down.price)} (${down.reason})`);
+  lines.push(`Status: ${status} — DG-Regeln für Bias/POI-Qualität/Targets sind noch nicht definiert (rules/strategy.md).`);
 
   return{
     htfBias:{overallBias,confidence,reasoning},
     weeklyContext:summarizeTimeframeContext(tfBrainsByOutputKey.weekly,premiumDiscountByOutputKey.weekly),
     dailyContext:summarizeTimeframeContext(tfBrainsByOutputKey.daily,premiumDiscountByOutputKey.daily),
     h4Context:summarizeTimeframeContext(tfBrainsByOutputKey.h4,premiumDiscountByOutputKey.h4),
-    keyLiquidity,bestBuyPOIs,bestSellPOIs,targets:targets||[],
+    notableLiquidity,freshBullishPOIs,freshBearishPOIs,targets:targets||[],
     status,summary:lines.join('\n')
   };
 }
@@ -1341,7 +1305,7 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice){
 
   const biasResult=computeOverallBias(tfBrainsByOutputKey,premiumDiscountByOutputKey,combinedLiquidity);
 
-  const rankedPOIs=[];
+  const pois=[];
   HTF_TIMEFRAME_DEFS.forEach(def=>{
     const entry=candlesByTimeframe[def.key];
     const series=(entry&&entry.series)||[];
@@ -1349,17 +1313,16 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice){
     const structureList=tfBrainsByOutputKey[def.outputKey].structure.list;
     const enriched=computeTimeframePOIs(series,def.label,{liquidity:combinedLiquidity,structureList,overallBias:biasResult.overallBias,price:currentPrice});
     enriched.forEach(poi=>{
-      const ranked=rankPOI(poi,biasResult.overallBias,currentPrice);
-      rankedPOIs.push(Object.assign({},poi,ranked));
+      const ranked=rankPOI(poi); // score/quality: AWAITING_DG_RULE until Chapter 4/5 is defined — see rankPOI()
+      pois.push(Object.assign({},poi,ranked));
     });
   });
-  rankedPOIs.sort((a,b)=>b.score-a.score);
 
-  const targets=computeTargets(combinedLiquidity,rankedPOIs,currentPrice);
+  const targets=computeTargets(combinedLiquidity,pois,currentPrice);
 
   const report=generateMarketReport({
     overallBias:biasResult.overallBias,confidence:biasResult.confidence,reasoning:biasResult.reasoning,
-    tfBrainsByOutputKey,premiumDiscountByOutputKey,liquidity:combinedLiquidity,rankedPOIs,targets
+    tfBrainsByOutputKey,premiumDiscountByOutputKey,liquidity:combinedLiquidity,pois,targets
   });
 
   const htfContext={
@@ -1374,7 +1337,10 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice){
     symbol:'XAUUSD',timestamp:new Date().toISOString(),htfContext,
     structure:{weekly:tfBrainsByOutputKey.weekly.structure,daily:tfBrainsByOutputKey.daily.structure,h4:tfBrainsByOutputKey.h4.structure,h1:tfBrainsByOutputKey.h1.structure},
     liquidity:combinedLiquidity,premiumDiscount:premiumDiscountByOutputKey,
-    pois:rankedPOIs,targets,report,status:report.status
+    pois,targets,report,status:report.status,
+    // Machine-readable pointer to exactly which rules/strategy.md chapters
+    // gate the interpretation fields above — cheap, honest, not a guess.
+    awaitingDgRule:['htfBias','orderBlock','validFvg'].filter(k=>!DG_RULES_DEFINED[k])
   };
 }
 
@@ -1422,7 +1388,7 @@ return{
   computeAllDerivedModules,
   HTF_TIMEFRAME_DEFS,seriesRange,computeTimeframeBrain,relatedStructureFor,computeTimeframePOIs,
   previousDayLiquidityFrom,swingLiquidityFrom,computePremiumDiscountForRange,computeOverallBias,
-  POI_RANK_WEIGHT,rankPOI,computeTargets,REPORT_STATUS,computeReportStatus,summarizeTimeframeContext,
+  rankPOI,TARGET_MAX_PER_DIRECTION,computeTargets,summarizeTimeframeContext,
   generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1
 };
 

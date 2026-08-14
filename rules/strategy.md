@@ -22,15 +22,6 @@ generische Smart-Money-Concepts, Standardindikatoren) und keine Platzhalterzahl
 Architektur wird vorbereitet; die Anwendung der Regel beginnt erst, sobald das
 jeweilige Kapitel ausgefüllt ist.
 
-**🟡 V1 DRAFT** ist ein dritter, zwischen 🔴 TODO und 🟢 DEFINIERT liegender
-Status — eingeführt für die Kapitel, deren Inhalt unten aus Daniels eigenem
-"DG TRADING BRAIN V1"-Prompt übernommen wurde. Das ist echter, von Daniel
-selbst diktierter Inhalt, keine von DG OS erfundene Regel — aber es ist eine
-Architektur-/Interpretations-Vorgabe für den ersten Ausbau, nicht zwangsläufig
-Daniels endgültige, ausformulierte DG-Regel. Ein Kapitel wechselt erst dann zu
-🟢 DEFINIERT, wenn Daniel es explizit als final bestätigt oder direkt
-überarbeitet.
-
 ## Status-Übersicht
 
 Ein schneller Überblick, welche Kapitel bereits Daniels Regeln enthalten. Wird
@@ -39,11 +30,11 @@ manuell aktualisiert, sobald ein Kapitel ausgefüllt wird.
 | # | Kapitel | Status |
 |---|---|---|
 | 0 | [DG Philosophy](#0-dg-philosophy) | 🔴 TODO |
-| 1 | [DG HTF Bias](#1-dg-htf-bias) | 🟡 V1 DRAFT |
-| 2 | [DG Liquidity](#2-dg-liquidity) | 🟡 V1 DRAFT |
-| 3 | [DG Premium / Discount](#3-dg-premium--discount) | 🟡 V1 DRAFT |
-| 4 | [DG Order Block](#4-dg-order-block) | 🟡 V1 DRAFT |
-| 5 | [DG Valid FVG](#5-dg-valid-fvg-fair-value-gap) | 🟡 V1 DRAFT |
+| 1 | [DG HTF Bias](#1-dg-htf-bias) | 🔴 TODO |
+| 2 | [DG Liquidity](#2-dg-liquidity) | 🔴 TODO |
+| 3 | [DG Premium / Discount](#3-dg-premium--discount) | 🔴 TODO |
+| 4 | [DG Order Block](#4-dg-order-block) | 🔴 TODO |
+| 5 | [DG Valid FVG](#5-dg-valid-fvg-fair-value-gap) | 🔴 TODO |
 | 6 | [DG Inverse FVG (iFVG)](#6-dg-inverse-fvg-ifvg) | 🔴 TODO |
 | 7 | [DG Breaker](#7-dg-breaker) | 🔴 TODO |
 | 8 | [DG Confirmation](#8-dg-confirmation) | 🔴 TODO |
@@ -83,11 +74,11 @@ Kapitel hier ausgefüllt ist — nicht neu gebaut.
 | Kapitel | Zuständiges Modul (Stand heute) |
 |---|---|
 | DG Philosophy | kein einzelnes Modul — Leitbild/Kontext für die Auslegung aller anderen Kapitel, kein direkt ausführbarer Code |
-| DG HTF Bias | `computeOverallBias()`/`computeTradingBrainV1()` in `marketBrain.js` (Modul 11, V1 DRAFT) — Score aus externer Struktur (Modul 9) + Premium/Discount + Liquidity-Sweeps über Weekly/Daily/4H/H1; legacy `computeHTFBias()` (struktureller Open-Proxy) bleibt für die alte Single-Timeframe-Pipeline unverändert bestehen |
-| DG Liquidity | `computeLiquidityEngine()` + neu `previousDayLiquidityFrom()`/`swingLiquidityFrom()` in `marketBrain.js` — Level-Status bereits real, DG-Bewertung (`VALID_DG_SWEEP`) noch offen |
-| DG Premium / Discount | `computePremiumDiscountForRange()` (Modul 11) für Weekly/Daily/4H — Zonenberechnung bereits real, Grenzen noch generisch |
-| DG Order Block | `detectOrderBlocks()` (POI Engine, Modul 7) + `rankPOI()` (Modul 11, V1 DRAFT) — Struktur-Erkennung bereits real, Score/Qualität jetzt vorhanden, noch keine DG-Kriterien im Detector selbst |
-| DG Valid FVG | `detectFairValueGaps()` (POI Engine, Modul 7) + `rankPOI()` (Modul 11, V1 DRAFT) — Struktur-Erkennung bereits real, Score/Qualität jetzt vorhanden, noch keine DG-Kriterien im Detector selbst |
+| DG HTF Bias | `computeOverallBias()` (Modul 11, `marketBrain.js`) liest Struktur (Modul 9) + Premium/Discount + Liquidity-Sweeps über Weekly/Daily/4H/H1 als reine Fakten aus, bildet daraus aber bewusst **keinen** Bias-Verdikt — `overallBias` bleibt `AWAITING_DG_RULE`, solange dieses Kapitel TODO ist |
+| DG Liquidity | `computeLiquidityEngine()` + `previousDayLiquidityFrom()`/`swingLiquidityFrom()` in `marketBrain.js` — Level-Status (touched/sweeped/active) bereits real; welches Level "relevant" ist bzw. was einen gültigen Sweep ausmacht (`VALID_DG_SWEEP`) ist noch offen |
+| DG Premium / Discount | `computePremiumDiscountForRange()` (Modul 11) für Weekly/Daily/4H — Zonenberechnung (Premium/Discount/Equilibrium) bereits real als Fakt, Grenzen noch generisch |
+| DG Order Block | `detectOrderBlocks()` (POI Engine, Modul 7) — Erkennung bereits real; `rankPOI()` (Modul 11) liefert bewusst `score:null, quality:'AWAITING_DG_RULE'`, solange dieses Kapitel TODO ist |
+| DG Valid FVG | `detectFairValueGaps()` (POI Engine, Modul 7) — Erkennung bereits real; `rankPOI()` (Modul 11) liefert bewusst `score:null, quality:'AWAITING_DG_RULE'`, solange dieses Kapitel TODO ist |
 | DG Inverse FVG | `detectInverseFairValueGaps()` (POI Engine, Modul 7) — noch nicht implementiert |
 | DG Breaker | `detectBreakers()` (POI Engine, Modul 7) — noch nicht implementiert |
 | DG Confirmation | noch nicht gebaut — Confirmation Engine |
@@ -131,67 +122,64 @@ Leitfragen:
 
 ## 1. DG HTF Bias
 
-**Status:** 🟡 V1 DRAFT — aus dem "DG TRADING BRAIN V1"-Prompt übernommen, noch nicht final bestätigt
+**Status:** 🔴 TODO — noch nicht definiert
 
 Leitfragen:
-- Welche Timeframes fließen ein (Monthly/Weekly/Daily/H4/H1/...)? → **V1:** Weekly, Daily, 4H, 1H. Denkfluss: Weekly Context → Daily Bias → 4H Structure/POIs → 1H Structure/Reaktion → 30M/15M Verfeinerung. Ein niedrigerer Timeframe darf den HTF-Kontext nie überschreiben. 5M/1M sind explizit kein Teil von V1 (später für Entry-Timing).
-- Wie wird der Bias auf jedem Timeframe bestimmt? → **V1:** externe Marktstruktur (BOS/CHOCH über die bestehende Structure Engine) pro Timeframe, gewichtet nach Timeframe-Rang (Weekly=4, Daily=3, 4H=2, H1=1); zusätzlich Premium/Discount-Lage auf Weekly+Daily und kürzlich gesweepte Liquidity als Reversal-Hinweis.
-- Wann gilt der Bias als bullish, bearish oder neutral/mixed? → **V1:** höherer gewichteter Score gewinnt (bullish/bearish); bei Gleichstand `neutral`. Einfache, nachvollziehbare Score-Logik, keine Gewichtungs-KI.
-- Wie werden widersprüchliche Timeframes gewichtet oder aufgelöst? → **V1:** über die Timeframe-Gewichtung oben, kein Sonderfall-Handling.
-- Wie oft/wann wird der Bias neu bewertet? → **V1:** bei jeder Anfrage an `GET /api/brain/XAUUSD` frisch berechnet, nicht zwischengespeichert.
-- **Noch offen, auch in V1:** was genau einen "relevanten" BOS/CHOCH ausmacht (aktuell zählt jeder erkannte), und ob die Gewichtung (4/3/2/1) so bleibt oder Daniels eigener Einschätzung angepasst wird.
+- Welche Timeframes fließen ein (Monthly/Weekly/Daily/H4/H1/...)?
+- Wie wird der Bias auf jedem Timeframe bestimmt (Struktur, Open-Lage, Range-Position, etwas anderes)?
+- Wann gilt der Bias als bullish, bearish oder neutral/mixed?
+- Wie werden widersprüchliche Timeframes gewichtet oder aufgelöst?
+- Wie oft/wann wird der Bias neu bewertet (z. B. bei jedem neuen Daily Open)?
 
-*(Dieses Kapitel ist noch kein von Daniel final geprüfter Text — siehe Status oben.)*
+*(Platzhalter — hier folgen Daniels exakte Regeln.)*
 
 ## 2. DG Liquidity
 
-**Status:** 🟡 V1 DRAFT — aus dem "DG TRADING BRAIN V1"-Prompt übernommen, noch nicht final bestätigt
+**Status:** 🔴 TODO — noch nicht definiert
 
 Leitfragen:
-- Welche Liquidity-Level zählen? → **V1:** Weekly High/Low, Daily High/Low, Vortages-High/Low (aus der echten Daily-Kerzenreihe), Session High/Low (Asia/London/NY), relevante externe (noch ungebrochene) Swing Highs/Lows. **Equal Highs/Equal Lows fehlen noch** — kein Detector dafür vorhanden, bewusst nicht erfunden.
-- Was macht einen Sweep gültig? → **Noch offen, auch in V1.** DG OS unterscheidet nur den reinen Market Fact (Level touched/breached/sweeped, mechanisch über Preis vs. Level) von einer DG-Bewertung. Ein `VALID_DG_SWEEP`-Konzept ist vorgesehen, aber die Gültigkeitskriterien (Wick vs. Close, Mindestgröße, erforderliche Reaktion) sind noch nicht definiert.
-- Wie werden mehrere gleichzeitig aktive Level priorisiert? → **Noch offen.** V1 listet alle Level gleichrangig, mit Timeframe als einzigem impliziten Gewicht (siehe POI Ranking V1, Kapitel-übergreifend in `marketBrain.js`).
-- Ab wann gilt ein Level als irrelevant/invalidiert? → **Noch offen.** V1 markiert ein Level nur als `sweeped` (Market Fact), entfernt es aber nicht aus der Liste.
+- Welche Liquidity-Level zählen (Asia/London/NY High-Low, Daily/Weekly/Monthly Open, Equal Highs/Lows, Vortagesrange, andere)?
+- Was macht einen Sweep gültig (Wick vs. Close, Mindestgröße, erforderliche Reaktion danach)?
+- Wie werden mehrere gleichzeitig aktive Level priorisiert?
+- Ab wann gilt ein Level als irrelevant/invalidiert?
 
-**Wichtig (unverändert, bestehende Projektregel):** Level-Entstehung ("wurde gebildet") ist **Market Context**, kein Signal. Erst Touch/Breach/Sweep/Reaktion ist ein **Trading Event**. Diese Trennung ist bereits im Event Store (`events.js`) umgesetzt und wird durch V1 nicht verändert.
-
-*(Dieses Kapitel ist noch kein von Daniel final geprüfter Text — siehe Status oben.)*
+*(Platzhalter — hier folgen Daniels exakte Regeln.)*
 
 ## 3. DG Premium / Discount
 
-**Status:** 🟡 V1 DRAFT — aus dem "DG TRADING BRAIN V1"-Prompt übernommen, noch nicht final bestätigt
+**Status:** 🔴 TODO — noch nicht definiert
 
 Leitfragen:
-- Welche Range definiert die Zone? → **V1:** primär Weekly, Daily und 4H, parallel berechnet (Priorität in dieser Reihenfolge) — jeweils High/Low der tatsächlich abgerufenen Kerzenreihe dieses Timeframes.
-- Wo genau verläuft die Grenze zwischen Premium, Discount und Equilibrium? → **V1 übernimmt die bereits bestehende, generische Grenze** (±3% der Range-Breite um die Equilibrium = "Equilibrium", sonst Premium/Discount) — noch keine DG-spezifische Grenze.
-- Muss der Preis in einer bestimmten Zone stehen, bevor ein Setup überhaupt gültig ist? → **Noch offen.** V1 nutzt die Zone nur als einen von mehreren Faktoren im HTF-Bias-Score und im POI Ranking, keine Pflichtbedingung.
-- Unterscheiden sich die Regeln je nach Timeframe? → **Noch offen**, keine OTE-Regeln in V1.
+- Welche Range definiert die Zone (Daily/Weekly/Monthly, oder eine Dealing Range aus Struktur)?
+- Wo genau verläuft die Grenze zwischen Premium, Discount und Equilibrium?
+- Muss der Preis in einer bestimmten Zone stehen, bevor ein Setup überhaupt gültig ist?
+- Unterscheiden sich die Regeln je nach Timeframe?
 
-*(Dieses Kapitel ist noch kein von Daniel final geprüfter Text — siehe Status oben.)*
+*(Platzhalter — hier folgen Daniels exakte Regeln.)*
 
 ## 4. DG Order Block
 
-**Status:** 🟡 V1 DRAFT — aus dem "DG TRADING BRAIN V1"-Prompt übernommen, noch nicht final bestätigt
+**Status:** 🔴 TODO — noch nicht definiert
 
 Leitfragen:
-- Was macht eine Kerze zu einem gültigen Order Block? → **V1 nutzt ausschließlich den bereits bestehenden technischen Detector** (letzte gegenläufige Kerze vor einer Displacement-Kerze mit ≥1,5× durchschnittlicher Range und Schlusskurs im äußeren Drittel) — keine zusätzlichen DG-Kriterien erfunden.
-- Auf welchen Timeframes zählt ein Order Block? → **V1:** Weekly, Daily, 4H, 1H.
-- Gibt es Qualitätskriterien? → **Ja, aber getrennt vom Detector**: die neue POI Ranking V1 (Score 0-100, siehe `rankPOI()` in `marketBrain.js`) bewertet Timeframe, Frische, Displacement, Struktur-/Liquidity-Nähe, HTF-Bias-Übereinstimmung und Premium/Discount-Lage. Der Order Block selbst bleibt ein reiner Market Fact.
-- Wann gilt ein Order Block als mitigiert/ungültig? → unverändert: Preis handelt zurück in die Zone (bestehende `isZoneMitigatedAfter()`-Logik).
+- Was macht eine Kerze zu einem gültigen Order Block (welche Bedingungen an die Kerze selbst und an die folgende Bewegung)?
+- Auf welchen Timeframes zählt ein Order Block?
+- Gibt es Qualitätskriterien (z. B. begleitende Imbalance, Displacement-Stärke, Wiederholung)?
+- Wann gilt ein Order Block als mitigiert/ungültig?
 
-*(Dieses Kapitel ist noch kein von Daniel final geprüfter Text — siehe Status oben.)*
+*(Platzhalter — hier folgen Daniels exakte Regeln.)*
 
 ## 5. DG Valid FVG (Fair Value Gap)
 
-**Status:** 🟡 V1 DRAFT — aus dem "DG TRADING BRAIN V1"-Prompt übernommen, noch nicht final bestätigt
+**Status:** 🔴 TODO — noch nicht definiert
 
 Leitfragen:
-- Wie wird eine gültige FVG definiert, und auf welchem Timeframe? → **V1 nutzt ausschließlich den bereits bestehenden technischen Detector** (klassische 3-Kerzen-Lücke) auf Weekly, Daily, 4H, 1H — keine zusätzlichen DG-Kriterien erfunden.
-- Muss sie mit einem Order Block, Liquidity-Event oder einer Session zusammenfallen? → **Noch offen.** Eine FVG ist in V1 explizit noch kein automatisch guter POI — die Qualitätsbewertung läuft über POI Ranking V1 (siehe Kapitel 4).
-- Ab welcher Mindestgröße gilt eine Lücke überhaupt als relevante FVG? → **Noch offen**, keine Mindestgröße definiert.
-- Wann gilt eine FVG als mitigiert? → unverändert: Preis handelt vollständig durch die Zone (bestehende `isZoneMitigatedAfter()`-Logik).
+- Wie wird eine gültige FVG definiert, und auf welchem Timeframe?
+- Muss sie mit einem Order Block, einem Liquidity-Event oder einer Session zusammenfallen, um zu zählen?
+- Ab welcher Mindestgröße gilt eine Lücke überhaupt als relevante FVG?
+- Wann gilt eine FVG als mitigiert (vollständig/teilweise gefüllt)?
 
-*(Dieses Kapitel ist noch kein von Daniel final geprüfter Text — siehe Status oben.)*
+*(Platzhalter — hier folgen Daniels exakte Regeln.)*
 
 ## 6. DG Inverse FVG (iFVG)
 

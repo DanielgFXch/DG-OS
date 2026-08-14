@@ -293,13 +293,16 @@ function renderOverview(overview){
   eventsEl.innerHTML=events.length?events.map(e=>`<div class="ov-event ov-event-${e.kind}">${e.text}</div>`).join(''):'<div class="ov-empty">Noch keine Meldungen.</div>';
 }
 
-const REPORT_STATUS_CLASS={'WAIT':'wait','WATCH BUY':'watch','WATCH SELL':'watch','BULLISH SCENARIO':'bullish','BEARISH SCENARIO':'bearish'};
-
 // DG Trading Brain V1 — only ever populated from a reachable Always-On
 // Server's real GET /api/brain/XAUUSD response (tradingBrainState, set in
 // pollMarketServer()). No local/offline computation, no fallback numbers —
 // if the server isn't connected, this card says so honestly instead of
-// showing anything.
+// showing anything. Interpretation fields (Bias, POI quality, target
+// priority, Status) are gated server-side behind DG_RULES_DEFINED and come
+// back as the literal string 'AWAITING_DG_RULE' until Daniel defines the
+// matching rules/strategy.md chapter — rendered here in the same muted
+// style the DG Confidence Engine card already uses for "missing", never
+// colored as if it were a real bullish/bearish verdict.
 function renderTradingBrain(brain){
   const statusEl=$('brainStatus'),biasEl=$('brainBias'),confEl=$('brainConfidence');
   const buyEl=$('brainBuyPOIs'),sellEl=$('brainSellPOIs'),liqEl=$('brainLiquidity'),targetsEl=$('brainTargets'),summaryEl=$('brainSummary');
@@ -313,27 +316,28 @@ function renderTradingBrain(brain){
     buyEl.innerHTML=emptyMsg;sellEl.innerHTML=emptyMsg;
     liqEl.innerHTML='<div class="liq-row"><span class="liq-label">Nicht verbunden.</span></div>';
     targetsEl.innerHTML='<div class="poi-empty">Nicht verbunden.</div>';
-    summaryEl.textContent='Verbinde einen Always-On Server (siehe „XAUUSD Live" Karte), um den DG Trading Brain V1 Report zu sehen.';
+    summaryEl.textContent='Verbinde einen Always-On Server (siehe „XAUUSD Live" Karte), um den DG Trading Brain Report zu sehen.';
     return;
   }
 
   const report=brain.report,htf=brain.htfContext;
-  statusEl.textContent=report.status;
-  statusEl.className=`brain-status brain-status-${REPORT_STATUS_CLASS[report.status]||''}`;
-  biasEl.textContent=htf.overallBias?htf.overallBias.toUpperCase():'—';
-  biasEl.className=`bias-value ${htf.overallBias?'bias-'+htf.overallBias:''}`;
+  const awaiting=report.status==='AWAITING_DG_RULE';
+  statusEl.textContent=awaiting?'AWAITING DG RULE':report.status;
+  statusEl.className=`brain-status ${awaiting?'brain-status-awaiting':''}`;
+  biasEl.textContent=awaiting?'AWAITING DG RULE':(htf.overallBias?htf.overallBias.toUpperCase():'—');
+  biasEl.className=`bias-value ${awaiting?'bias-awaiting':(htf.overallBias?'bias-'+htf.overallBias:'')}`;
   confEl.textContent=typeof htf.confidence==='number'?`${htf.confidence}%`:'—';
 
   const poiRow=p=>`
     <div class="poi-row">
-      <span class="poi-label">${p.type==='fvg'?'FVG':'Order Block'}<span class="poi-meta">${p.timeframe}</span></span>
-      <span class="poi-price">${p.range}<span class="poi-confidence">Score ${p.score} · ${p.quality}</span></span>
+      <span class="poi-label">${p.type==='fvg'?'FVG':'Order Block'}<span class="poi-meta">${p.timeframe} · ${p.status}</span></span>
+      <span class="poi-price">${p.range}<span class="poi-confidence">Qualität: AWAITING_DG_RULE</span></span>
     </div>`;
-  buyEl.innerHTML=(report.bestBuyPOIs&&report.bestBuyPOIs.length)?report.bestBuyPOIs.map(poiRow).join(''):'<div class="poi-empty">Keine Buy-POIs erkannt.</div>';
-  sellEl.innerHTML=(report.bestSellPOIs&&report.bestSellPOIs.length)?report.bestSellPOIs.map(poiRow).join(''):'<div class="poi-empty">Keine Sell-POIs erkannt.</div>';
+  buyEl.innerHTML=(report.freshBullishPOIs&&report.freshBullishPOIs.length)?report.freshBullishPOIs.map(poiRow).join(''):'<div class="poi-empty">Keine frischen Bullish-POIs erkannt.</div>';
+  sellEl.innerHTML=(report.freshBearishPOIs&&report.freshBearishPOIs.length)?report.freshBearishPOIs.map(poiRow).join(''):'<div class="poi-empty">Keine frischen Bearish-POIs erkannt.</div>';
 
-  liqEl.innerHTML=(report.keyLiquidity&&report.keyLiquidity.length)
-    ?report.keyLiquidity.map(text=>`<div class="liq-row"><span class="liq-label">${text}</span></div>`).join('')
+  liqEl.innerHTML=(report.notableLiquidity&&report.notableLiquidity.length)
+    ?report.notableLiquidity.map(text=>`<div class="liq-row"><span class="liq-label">${text}</span></div>`).join('')
     :'<div class="liq-row"><span class="liq-label">Aktuell keine auffälligen Level.</span></div>';
 
   const targets=(brain.targets||[]).slice(0,6);

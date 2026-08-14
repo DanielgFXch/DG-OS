@@ -147,6 +147,19 @@ server-side, once per workflow run).
 
 ## Event Store & Ingest Pipeline (Phase 1 — Core Foundation, v0.20.0)
 
+> **Update (v0.22.0):** the 15-minute GitHub Actions cron described below
+> is no longer the only path that writes to `state/`. A new Always-On
+> Market Server (`server/`) reuses the exact same `marketBrain.js`/
+> `events.js`/persistence logic, continuously, with real HTF-candle-close
+> alignment instead of an unreliable cron — see
+> [`docs/ALWAYS_ON_SERVER.md`](ALWAYS_ON_SERVER.md) for the full
+> architecture, and [`docs/DG_OS_V2_AUDIT.md`](DG_OS_V2_AUDIT.md)'s Market
+> Data Reality Check for why: GitHub Actions' `schedule` trigger, despite
+> being configured for 15 minutes, ran on a real median of ~66 minutes in
+> production. The GitHub Actions path described in this section remains a
+> periodic, git-committed fallback, independent of whether the always-on
+> server happens to be running — not replaced, not removed.
+
 Built in direct response to Daniel's Phase 1 instruction: DG OS needed to
 "den Markt dauerhaft beobachten, Zustände speichern und nach einem Neustart
 rekonstruieren" — persist state and detect events, not just recompute
@@ -852,6 +865,14 @@ Meldungen. `renderOverview()` populates `#overviewLevels`,
 `#overviewStructure`, `#overviewZones`, `#overviewEvents`.
 
 ## System Status: Version, Data Freshness & Market Source (v0.21.0)
+
+> **Update (v0.22.0):** Price and Candle freshness are now tracked and
+> displayed *separately* (Daniel's explicit correction — a WebSocket price
+> tick and a REST candle refresh are genuinely different events), and the
+> card can optionally connect to a deployed Always-On Market Server. Full
+> detail: [`docs/ALWAYS_ON_SERVER.md`](ALWAYS_ON_SERVER.md)'s "Phase D"
+> section. The description below still applies to the fallback path (no
+> server configured), which is what production actually runs today.
 
 New "System Status" card, placed at the very top of the dashboard —
 Daniel's explicit ask, before starting the DG Trading Brain phase: always

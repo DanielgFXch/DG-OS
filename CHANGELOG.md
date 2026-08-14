@@ -8,6 +8,36 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.22.0] — DG OS Always-On Market Server (gebaut, lokal getestet, nicht gehostet)
+
+### Neu
+- **Neuer `server/`-Ordner**: ein kleiner, abhängigkeitsfreier Node.js-Dienst (Node 22 `fetch`/`WebSocket`, keine npm-Pakete), der `marketBrain.js`/`events.js` unverändert wiederverwendet — keine zweite parallele Engine
+- **Phase A** — HTTP API (`server/api.js`, Node `http`, kein Express): `GET /api/health`, `GET /api/market/XAUUSD`, `GET /api/events/XAUUSD`, `POST /api/tradingview/webhook` (Architektur-Stub, `501`, siehe Phase G)
+- **Phase B** — REST-Kerzendaten auf 7 HTF-priorisierte Timeframes erweitert (`server/lib/timeframes.js`): Monthly (24×), Weekly (52×), Daily (120×), 4H (180×), 1H (168×), 30M (192×), 15M (192×) — 5M/1M bewusst noch nicht dabei, wie von Daniel angeordnet. Jeder Timeframe dokumentiert mit Intervall, Kerzenanzahl und historischer Reichweite
+- **Phase C** — TwelveData WebSocket serverseitig (`server/lib/twelveDataSocket.js`): Verbindung, Subscription, Heartbeat, Reconnect mit Backoff — Server-Portierung der bisherigen browserseitigen Logik, API-Key ausschließlich aus Environment Variable, nie geloggt, nie im Frontend
+- **Phase D** — Market Freshness zentral bereitgestellt und im Dashboard getrennt nach Preis und Kerzen angezeigt (Last Price / HTF Candles / Price Source / Candles) statt einer einzigen Kennzahl; neues optionales Feld „Always-On Market Server URL" im Dashboard mit automatischem, unterbrechungsfreiem Fallback auf den bisherigen 15-Min-Feed, solange kein Server konfiguriert ist (was heute der reale Produktionsstand ist)
+- **Phase E** — Kerzen-Refresh an tatsächlichen Candle-Close-Zeitpunkten ausgerichtet (`server/lib/candleRefreshScheduler.js`), nicht an einem festen Intervall — keine unnötigen Requests
+- **Phase F** — Live-Preis überwacht bestehende Level/POIs kontinuierlich auf Touch, über die unveränderte Event-Klassifizierung (Market Context/Trading Event bleibt exakt bestehen); jeder Preis-Tick wird sofort im Speicher klassifiziert, nur das Schreiben auf die Festplatte ist gebündelt (5s) — verifiziert per Test, dass ein Sweep-und-Reversal innerhalb eines Bündelungsfensters trotzdem als echtes Event erfasst wird
+- **Phase G** — TradingView-Webhook-Route architektonisch vorbereitet, funktional nicht implementiert (`501`)
+- **Phase H** — `docs/ALWAYS_ON_HOSTING.md`: Vergleich von Railway/Fly.io/Render, Empfehlung Railway — kein Hosting gebucht, kein Account erstellt, kein Secret übertragen
+- Neue Datei `docs/ALWAYS_ON_SERVER.md`: vollständige Architektur-Dokumentation, inkl. Testprotokoll
+
+### Bugfix (während des Testens gefunden und behoben)
+- Ursprüngliches Debounce-Design hätte Ereignisse verloren: wenn ein Sweep UND seine Reversal-Reaktion innerhalb desselben 5-Sekunden-Bündelungsfensters passierten, wäre der Netto-Vergleich „keine Änderung" gewesen und das Event verloren gegangen. Behoben durch zweistufiges Diffing: jede Preis-Änderung wird sofort im Speicher klassifiziert, nur die Festplatten-Schreibung ist gebündelt
+
+### Geändert
+- `scripts/ingest.js`: Persistenz-Logik nach `server/lib/marketStateStore.js` ausgelagert und von dort wiederverwendet (identisches Verhalten, keine doppelte Implementierung)
+- `app.js`/`index.html`/`styles.css`: System-Status-Karte erweitert (getrennte Preis-/Kerzen-Anzeige, optionale Server-Verbindung)
+- `.gitignore`: `.env` und `node_modules/` ergänzt
+
+### Getestet (lokal, gegen Mock-TwelveData-REST/WebSocket-Server — kein echter API-Key verwendet)
+REST-Modul, WebSocket-Modul (inkl. abruptem Verbindungsabbruch + Reconnect-Timing), Kerzen-Scheduler (alle 7 Timeframes inkl. Jahreswechsel), vollständiger End-to-End-Lauf des echten Servers, Event-Pipeline (inkl. des behobenen Bugs), Frontend in beiden Modi (Server konfiguriert/nicht konfiguriert), „LIVE nur bei echter WebSocket-Verbindung" unter simuliertem WS-Ausfall, vollständiger Regressionstest des bestehenden Dashboards
+
+### Geänderte Dateien
+`server/` (neu: `index.js`, `api.js`, `marketState.js`, `lib/timeframes.js`, `lib/twelveDataRest.js`, `lib/twelveDataSocket.js`, `lib/candleRefreshScheduler.js`, `lib/marketStateStore.js`), `scripts/ingest.js`, `app.js`, `index.html`, `styles.css`, `.env.example` (neu), `.gitignore`, `package.json`, `docs/ALWAYS_ON_SERVER.md` (neu), `docs/ALWAYS_ON_HOSTING.md` (neu), `docs/MARKET_BRAIN.md`, `CLAUDE.md`, `ROADMAP.md`, `CHANGELOG.md`
+
+---
+
 ## [0.21.0] — TradingView-Integrationsplan, Version- & Daten-Aktualitäts-Anzeige
 
 ### Neu

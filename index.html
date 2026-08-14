@@ -63,14 +63,26 @@
   <main class="app">
     <section class="card status-card">
       <div class="section-title"><svg class="ic"><use href="#ic-broadcast"></use></svg>System Status</div>
-      <div class="eyebrow">Version, Daten-Aktualität &amp; Quelle · aus dem tatsächlichen Zeitstempel des letzten Marktupdates berechnet, nie fest verdrahtet</div>
+      <div class="eyebrow">Preis &amp; Kerzen getrennt bewertet · aus echten Zeitstempeln berechnet, „LIVE" nur wenn der WebSocket wirklich verbunden ist</div>
+      <div class="status-price-row">
+        <div class="status-symbol">XAUUSD</div>
+        <div class="status-price" id="statusPrice">—</div>
+        <span class="status-pill" id="statusPriceState">—</span>
+      </div>
       <div class="status-grid">
         <div class="status-item"><span>Version</span><strong id="statusVersion">—</strong></div>
-        <div class="status-item"><span>Last Market Update</span><strong id="statusLastUpdate">—</strong></div>
         <div class="status-item"><span>Timezone</span><strong id="statusTimezone">—</strong></div>
-        <div class="status-item"><span>Data Age</span><strong id="statusDataAge">—</strong></div>
-        <div class="status-item"><span>Data Status</span><strong><span id="statusDataState" class="status-pill">—</span></strong></div>
-        <div class="status-item"><span>Market Source</span><strong id="statusSource">—</strong></div>
+        <div class="status-item"><span>Last Price</span><strong id="statusLastPrice">—</strong></div>
+        <div class="status-item"><span>HTF Candles</span><strong id="statusLastCandle">—</strong></div>
+        <div class="status-item"><span>Price Source</span><strong id="statusPriceSource">—</strong></div>
+        <div class="status-item"><span>Candles</span><strong id="statusCandleSource">—</strong></div>
+      </div>
+      <div class="field-settings">
+        <input id="marketServerUrl" type="text" placeholder="Always-On Market Server URL (optional)" autocomplete="off" />
+        <div class="buttons">
+          <button id="marketServerConnect" class="secondary">Verbinden</button>
+        </div>
+        <div class="muted" id="marketServerStatus">Kein Always-On Server konfiguriert · nutzt den 15-Min-Feed + optionalen Browser-WebSocket.</div>
       </div>
     </section>
 

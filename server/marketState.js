@@ -44,6 +44,12 @@ const DIFF_DEBOUNCE_MS = 5000;
 const LIVE_DATA_TIMEFRAMES = new Set(['daily', 'weekly', 'monthly']);
 const BRAIN_CANDLE_TIMEFRAME = '1h'; // the only series computeAllDerivedModules() actually consumes today
 
+// Daniel's explicit HTF core, per the priority correction: "Hauptanalyse
+// soll aus Weekly/Daily/4H/1H kommen." HTF_READY in getHealth() reflects
+// exactly these four — monthly/30min/15min are still fetched and reported,
+// just not required for HTF_READY.
+const HTF_CORE_TIMEFRAMES = ['weekly', 'daily', '4h', '1h'];
+
 class MarketState {
   constructor({ apiKey, restBaseUrl }) {
     this.apiKey = apiKey;
@@ -235,14 +241,39 @@ class MarketState {
     };
   }
 
+  // Which registered timeframes have no entry in candlesByTimeframe yet —
+  // either never fetched successfully, or not attempted yet at startup.
+  _missingTimeframeIds() {
+    return TIMEFRAME_DEFS.map(def => def.id).filter(id => !this.candlesByTimeframe[id]);
+  }
+
+  // An honest aggregate, not just "did the last REST call succeed" — a
+  // single successful quote refresh used to be enough to show restStatus
+  // 'ok' even while several HTF candle timeframes were silently missing
+  // (see docs/ALWAYS_ON_SERVER.md's "Initial fetch reliability" section).
+  // 'error' only when NOTHING has loaded yet; 'partial' when some but not
+  // all expected timeframes are present; 'ok' only at full 7/7.
+  _computeRestStatus(missingIds) {
+    if (!missingIds.length) return 'ok';
+    if (missingIds.length >= TIMEFRAME_DEFS.length) return 'error';
+    return 'partial';
+  }
+
   getHealth() {
+    const missingTimeframes = this._missingTimeframeIds();
+    const loadedTimeframes = TIMEFRAME_DEFS.length - missingTimeframes.length;
+    const htfReady = HTF_CORE_TIMEFRAMES.every(id => !missingTimeframes.includes(id));
     return {
       status: 'ok',
       uptimeSeconds: Math.round((Date.now() - this.startedAt.getTime()) / 1000),
       websocketStatus: this.websocketStatus,
-      restStatus: this.restStatus,
+      restStatus: this._computeRestStatus(missingTimeframes),
       lastRestError: this.lastRestError,
       timeframesLoaded: Object.keys(this.candlesByTimeframe),
+      expectedTimeframes: TIMEFRAME_DEFS.length,
+      loadedTimeframes,
+      missingTimeframes,
+      htfReady,
       freshness: this.getFreshness()
     };
   }

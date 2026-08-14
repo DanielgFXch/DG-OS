@@ -27,7 +27,40 @@ const { TIMEFRAME_DEFS } = require('./lib/timeframes.js');
 const PORT = parseInt(process.env.PORT, 10) || 8080;
 const QUOTE_REFRESH_MS = 15 * 60 * 1000; // modest — previousClose/isMarketOpen don't need WS-level freshness
 
+// Initial-burst spacing + one bounded retry pass. Root cause (see
+// docs/ALWAYS_ON_SERVER.md's "Initial fetch reliability" section): firing 8
+// REST requests (1 quote + 7 candle calls) within ~2.4s at the old 300ms
+// stagger could trip TwelveData's free-tier rate limit, most likely to hit
+// the FIRST calls in the loop — exactly the HTF-priority timeframes
+// (monthly/weekly/daily/4h) DG OS cares about most. A failed initial fetch
+// previously had no retry: the timeframe's key in candlesByTimeframe simply
+// never got created, and the only thing that could ever fill it was that
+// timeframe's own next candle-close (up to ~30 days away for monthly).
+// Test-only overrides (same pattern as TWELVEDATA_REST_BASE_URL/TWELVEDATA_WS_URL
+// below) — undefined in real use, lets local tests run in seconds instead of
+// ~25s without changing production timing.
+const INITIAL_FETCH_STAGGER_MS = parseInt(process.env.DGOS_INITIAL_FETCH_STAGGER_MS, 10) || 1500;
+const RETRY_DELAY_MS = parseInt(process.env.DGOS_RETRY_DELAY_MS, 10) || 10000;
+
 function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+// Runs refreshTimeframe() for exactly the given defs, staggered, and
+// returns the ids that failed. Used for both the initial pass and the one
+// retry pass below — same logic, no duplication.
+async function fetchTimeframes(marketState, defs) {
+  const failed = [];
+  for (const def of defs) {
+    try {
+      await marketState.refreshTimeframe(def.id);
+      console.log(`[server] loaded ${def.id} (${def.tdInterval}, ${def.outputsize} candles, ~${def.historicalReach})`);
+    } catch (err) {
+      console.error(`[server] initial fetch failed for ${def.id}:`, err.message);
+      failed.push(def);
+    }
+    await sleep(INITIAL_FETCH_STAGGER_MS);
+  }
+  return failed;
+}
 
 async function main() {
   const apiKey = process.env.TWELVEDATA_API_KEY;
@@ -43,15 +76,22 @@ async function main() {
 
   console.log('[server] starting — initial REST fetch for all timeframes...');
   await marketState.refreshQuote().catch(err => console.error('[server] initial quote fetch failed:', err.message));
-  for (const def of TIMEFRAME_DEFS) {
-    try {
-      await marketState.refreshTimeframe(def.id);
-      console.log(`[server] loaded ${def.id} (${def.tdInterval}, ${def.outputsize} candles, ~${def.historicalReach})`);
-    } catch (err) {
-      console.error(`[server] initial fetch failed for ${def.id}:`, err.message);
+
+  const failedFirstPass = await fetchTimeframes(marketState, TIMEFRAME_DEFS);
+
+  // Exactly one retry pass, only for timeframes still missing — never for
+  // ones that already succeeded, never more than once (no infinite loop).
+  if (failedFirstPass.length) {
+    console.log(`[server] ${failedFirstPass.length} timeframe(s) missing after initial pass (${failedFirstPass.map(d => d.id).join(', ')}) — retrying once after ${RETRY_DELAY_MS / 1000}s...`);
+    await sleep(RETRY_DELAY_MS);
+    const failedRetry = await fetchTimeframes(marketState, failedFirstPass);
+    if (failedRetry.length) {
+      console.error(`[server] still missing after retry: ${failedRetry.map(d => d.id).join(', ')} — will only recover at their own next candle close.`);
+    } else {
+      console.log('[server] retry pass recovered all previously missing timeframes.');
     }
-    await sleep(300); // stay well under TwelveData's free-tier rate limit during the initial burst
   }
+
   await marketState.refreshSessions();
 
   const socket = new TwelveDataSocket({

@@ -8,6 +8,25 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.22.1] — Initial-Fetch-Zuverlässigkeit nach Railway-Deployment
+
+Gefunden bei der Produktions-Persistenz-Verifikation nach dem ersten echten Railway-Restart: `/api/health` zeigte nach dem Neustart nur 3 von 7 Timeframes (`15min`, `30min`, `1h`) — Monthly/Weekly/Daily/4H fehlten. `/api/market/XAUUSD` bestätigte den Effekt: `premiumDiscount.daily/weekly/monthly` und `htfBias` waren `null`.
+
+### Root Cause
+Der initiale Fetch beim Serverstart (`server/index.js`) feuerte 8 TwelveData-Requests (1 Quote + 7 Kerzen-Timeframes) in ~2,4s (300ms Abstand) — vermutlich zu schnell für das TwelveData-Rate-Limit. Ein fehlgeschlagener Request wurde nur geloggt, nie wiederholt: das betroffene Timeframe bekam nie einen Eintrag in `candlesByTimeframe` und blieb bis zu seinem eigenen nächsten Candle-Close leer (bei Monthly bis zu ~30 Tage).
+
+### Bugfix
+- `server/index.js`: Abstand zwischen Initial-Fetch-Requests von 300ms auf 1500ms erhöht; genau EIN Retry-Pass nach 10s ausschließlich für die nach dem ersten Durchlauf fehlenden Timeframes (kein Retry für bereits erfolgreiche, keine Endlosschleife). WebSocket, Persistence, Scheduler (Phase E), `marketBrain.js` und die Event-Pipeline bleiben unverändert.
+- `server/marketState.js`: `getHealth()` liefert jetzt ehrlich `expectedTimeframes`, `loadedTimeframes`, `missingTimeframes` und `htfReady` (true nur wenn der HTF-Kern Weekly/Daily/4H/1H vollständig geladen ist). `restStatus` ist kein reiner Last-Call-Status mehr, sondern `"ok"` (7/7 geladen) / `"partial"` (teilweise) / `"error"` (0/7) — vorher konnte ein einzelner erfolgreicher Quote-Refresh `restStatus: "ok"` zeigen, obwohl mehrere HTF-Timeframes fehlten.
+
+### Getestet (lokal, gegen Mock-TwelveData-REST/WebSocket — kein echter API-Key)
+Alle 7 Timeframes laden erfolgreich ohne Retry; ein simulierter einmaliger Fehler auf 2 Timeframes wird vom Retry-Pass korrekt und ausschließlich für diese behoben (Aufruf-Zähler bewiesen: kein erneuter Request für bereits erfolgreiche Timeframes); ein dauerhaft fehlschlagendes HTF-Kern-Timeframe bleibt nach dem einen Retry-Pass korrekt als `missingTimeframes` markiert, `htfReady: false`, `restStatus: "partial"`, genau 2 Aufrufe (Initial + 1 Retry, kein Endlosloop); WebSocket erreicht weiterhin `streaming`; Event-Pipeline (`/api/events/XAUUSD`) antwortet unverändert; debounced Disk-Flush (`state/latest.json`) feuert weiterhin wie vorher.
+
+### Geänderte Dateien
+`server/index.js`, `server/marketState.js`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.22.0] — DG OS Always-On Market Server (gebaut, lokal getestet, nicht gehostet)
 
 ### Neu

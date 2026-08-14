@@ -102,7 +102,8 @@ Daniel Brain               (applies rules/strategy.md — in progress)
 ├── Scenario Engine        planned
 └── Risk Engine            planned
 
-System                     (not started)
+System
+├── Event Store            done — Phase 1, "Core Foundation" (git-committed state/ + typed event log, see below)
 ├── Alerts                 planned — server-side push, beyond the manual Telegram button
 ├── Reports                planned
 ├── Learning                planned
@@ -126,14 +127,142 @@ readability.
 TwelveData API (server-side key, GitHub Secret)
   -> .github/workflows/market-data.yml   (scheduled, every 15 min)
   -> data/market.json                     (deployed straight to Pages, gitignored)
-  -> app.js loadMarketData()              (client, no API key needed for this path)
-  -> dashboard UI
+       │                                  │
+       │                                  ▼
+       │                        app.js loadMarketData() (client) -> dashboard UI
+       ▼
+  scripts/ingest.js   (Node, same workflow run)
+  -> marketBrain.js computeAllDerivedModules()   (same logic app.js uses)
+  -> events.js classifyMarketEvents()            (diff vs. previous state)
+  -> state/latest.json   (persisted snapshot, git-committed)
+  -> state/events.jsonl  (persisted event log, git-committed)
 ```
 
 A second, optional path exists for sub-minute price ticks: the browser can
 open a direct WebSocket to TwelveData once Daniel enters his own API key
 client-side (see `openTdSocket()` in `app.js`). That path only ever updates
-`price`/`change` — ranges and opens still come from the 15-min JSON baseline.
+`price`/`change` — ranges and opens still come from the 15-min JSON baseline,
+and it does not feed the ingest pipeline described below (that only runs
+server-side, once per workflow run).
+
+## Event Store & Ingest Pipeline (Phase 1 — Core Foundation, v0.20.0)
+
+Built in direct response to Daniel's Phase 1 instruction: DG OS needed to
+"den Markt dauerhaft beobachten, Zustände speichern und nach einem Neustart
+rekonstruieren" — persist state and detect events, not just recompute
+everything from scratch in a browser tab that forgets everything on reload.
+Full context and the honesty caveat on "dauerhaft" below: see
+[`docs/DG_OS_V2_AUDIT.md`](DG_OS_V2_AUDIT.md), "RECOMMENDED V2 ARCHITECTURE"
+and its "Event classification" subsection.
+
+**Three new files, one existing file split in two:**
+
+- **`marketBrain.js`** (new) — every pure Market Brain / Daniel Brain
+  computation that used to live inline in `app.js` (Premium/Discount, HTF
+  Bias, Liquidity Engine, POI Engine, Structure Engine, DG Confidence
+  Engine, Daniel Decision Engine, DG Overview), moved out verbatim and
+  wrapped in a small UMD shim so the exact same code runs in the browser
+  (as globals, loaded before `app.js`) and in Node (via `require`, in
+  `scripts/ingest.js`). One source of truth for what a "sweep," a "fresh
+  POI," or a "BOS" *is* — the browser and the server-side ingest script can
+  no longer drift apart, because there's only one implementation.
+- **`app.js`** (trimmed) — now DOM/rendering + app-only concerns only:
+  greeting/clock, session cards, the legacy Alpha Simulation demo, Telegram,
+  the TwelveData WebSocket stream. Every `render*()` function stayed exactly
+  where it was; only the compute functions moved.
+- **`events.js`** (new) — `classifyMarketEvents(prevState, nextBrain)`,
+  implementing Daniel's Market-Context-vs-Trading-Event rule exactly (see
+  "Event classification" below).
+- **`scripts/ingest.js`** (new, Node-only) — run by
+  `.github/workflows/market-data.yml` right after the existing bash/jq step
+  writes `data/market.json`. Reads that file plus the previous
+  `state/latest.json` (or starts cold if none exists), computes the next
+  snapshot via `marketBrain.js`, diffs it via `events.js`, and writes both
+  `state/latest.json` and `state/events.jsonl` back to disk. The workflow
+  then commits `state/` back to the repo — only when something actually
+  changed (`git diff --cached --quiet` gates the commit) — using a bot
+  identity and the workflow's own `GITHUB_TOKEN` (`permissions:
+  contents: write`).
+
+**Deterministic POI/structure ids.** Before this build, `createPOI()` and
+`createStructureElement()` generated a random id
+(`Date.now()+Math.random()`) — harmless for a UI that just re-renders a
+fresh list every refresh, fatal for event diffing: the *same* structural
+zone would get a *different* id on every single recomputation, so "is this
+the same FVG as last time" was unanswerable. Both now derive their id
+deterministically from what actually defines the zone (type, timeframe,
+source-candle time, price bounds) — the same inputs always produce the same
+id, so `events.js` can compare "this POI in the new snapshot" against "the
+same POI last run" by id equality.
+
+**Bug found and fixed while building this:** `detectZoneReaction()` was
+scanning for a "touch" starting from a POI's `sourceCandle` — for a Fair
+Value Gap, that's the *middle* candle (`c1`), one candle before the gap is
+actually fully formed (`c2`, whose own low/high defines the top of the
+gap). Since `c2` trivially overlaps its own zone boundary, a brand-new,
+never-retested FVG could look like it had already been "touched and reacted
+to" by the very next candle — a false positive that would have poisoned
+`REACTION_DETECTED` from day one. Fixed by adding `formedThroughCandle` to
+the POI shape (the *last* candle whose range still defines the zone — `c2`
+for FVG, the displacement candle for Order Block) and scanning from there
+instead. This also silently improves the DG Overview "Meldungen" feed
+(v0.19.0), which uses the same detector.
+
+**Event classification — Market Context vs. Trading Event.** Exactly
+Daniel's rule: a session level (Asia/London/NY High/Low) merely coming into
+existence is silent market context, persisted but never notified; something
+happening *to* a level or a zone — touched, swept, reacted to, confirmed —
+is a trading event. `events.js`'s `EVENT_CATEGORY` map is the single place
+that decides this, so a consumer (the future Alert Layer, or any "show me
+the relevant stream" query) filters by category instead of a hand-maintained
+exclusion list. Every event type Daniel listed is implemented except
+`SETUP_FORMING`/`SETUP_CONFIRMED`/`SETUP_INVALIDATED`/`TARGET_REACHED` —
+those are registered in the vocabulary (so the schema is complete) but have
+no emitter, because a "setup" is inherently a `rules/strategy.md` concept
+and every chapter is still TODO; emitting them today would mean inventing
+the rule that decides what a setup is.
+
+**Two new generic candle-pattern detectors**, added to `marketBrain.js`
+under the same "structural fact, not a DG rule" precedent as the existing
+FVG/Order Block detectors: `detectDisplacementCandles()` (the same
+range-vs-local-average math already used inside `detectOrderBlocks()`,
+extracted so a displacement candle can fire its own event independent of
+whether it also formed an Order Block) and `detectEngulfingCandles()` (a
+classic 2-candle body-engulfing check). Neither makes any entry/exit/risk
+judgement — purely candle-shape geometry, feeding `DISPLACEMENT_DETECTED`
+and `ENGULFING_CONFIRMED`.
+
+**Cold-start honesty.** `classifyMarketEvents(prevState, nextBrain)` returns
+zero events whenever `prevState` is `null` (no previous run exists yet) —
+without a real "before" snapshot, every session level and every historical
+BOS/CHOCH/POI still inside the 72h candle window would look like it "just
+happened," which would be dishonest; they didn't just happen, there's just
+no baseline yet. A cold start only seeds `state/latest.json` silently.
+Verified by test: a second run against unchanged data also produces zero
+new events (idempotency) and `state/events.jsonl` does not grow.
+
+**What "dauerhaft beobachten" honestly means today.** This still runs on
+the same 15-minute GitHub Actions cron `data/market.json` has always used —
+not a continuous, always-on watcher. State persistence and
+restart-reconstruction are fully solved by this build; true continuous
+observation (sub-15-min, independent of any cron, detecting an event the
+moment it happens rather than up to 15 minutes later) needs an always-on
+host, a separate infrastructure decision deliberately left open in
+[`docs/DG_OS_V2_AUDIT.md`](DG_OS_V2_AUDIT.md)'s Recommended V2 Architecture
+(Layer 1) — not something to silently claim solved here.
+
+**Known limitation, by design:** `state/events.jsonl` is capped at the most
+recent 2000 events (`EVENTS_RETAIN` in `scripts/ingest.js`) to keep a file
+committed every ~15 minutes from growing without bound. Git history still
+has every prior version; only the working file is trimmed. A real database
+is Phase 3+ territory per the audit's migration plan, not solved by this
+build.
+
+**No new UI in this build, on purpose** — Daniel explicitly asked for the
+foundation first ("keine UI-Aufräumarbeiten vorziehen"). `state/latest.json`
+and `state/events.jsonl` are real, queryable, git-tracked files (and
+incidentally end up deployed to Pages alongside `data/market.json`, same
+trust model), but nothing in the dashboard reads them yet.
 
 ## Robustness pattern: "scan forward for a real candle"
 
@@ -722,22 +851,29 @@ first thing visible — four blocks: Levels, Struktur, Offene Zonen,
 Meldungen. `renderOverview()` populates `#overviewLevels`,
 `#overviewStructure`, `#overviewZones`, `#overviewEvents`.
 
-## MarketBrain aggregator (`app.js`)
+## MarketBrain aggregator (`marketBrain.js` shape, `app.js` instance)
 
 ```js
-const MarketBrain = { liveData, sessions, premiumDiscount, htfBias, liquidity, pois, structure, dgConfidence, decision, overview };
+const MarketBrain = createMarketBrainState();
+// { liveData, sessions, candles, premiumDiscount, htfBias, liquidity, pois, structure, dgConfidence, decision, overview }
 ```
 
-One shared object, populated by `loadMarketData()` and kept live-reactive by
-`refreshDerivedModules()` (called after every JSON refresh *and* every
-WebSocket tick). Every module in this document reads from and writes to this
-object — nothing reaches into `data/market.json` directly except
-`loadMarketData()` itself. Future modules (Confirmation, the remaining
-Stage 2 POI detectors, or new DG Confidence Engine / Decision Engine
-contributors) should add their own key here — and for a new Confidence
-contributor specifically, just one entry in `CONFIDENCE_CONTRIBUTORS`; for a
-new Decision Engine input, one entry in `DECISION_INPUT_MODULES` — nothing
-else — following the same shape as Modules 4-10.
+`createMarketBrainState()` (in `marketBrain.js`) is a factory, not a
+singleton, since v0.20.0 — `app.js` calls it once to create the browser's
+long-lived `MarketBrain` object; `scripts/ingest.js` builds a fresh one
+every run. `app.js`'s `refreshDerivedModules()` calls the shared
+`computeAllDerivedModules(brain)` (also `marketBrain.js`) and merges the
+result in, then re-renders every card — called after every JSON refresh
+*and* every WebSocket tick. `scripts/ingest.js` calls the exact same
+`computeAllDerivedModules()` server-side. Nothing reaches into
+`data/market.json` directly except `loadMarketData()` (browser) and
+`scripts/ingest.js` (server) themselves. Future modules (Confirmation, the
+remaining Stage 2 POI detectors, or new DG Confidence Engine / Decision
+Engine contributors) should add their own key here, in `marketBrain.js` —
+and for a new Confidence contributor specifically, just one entry in
+`CONFIDENCE_CONTRIBUTORS`; for a new Decision Engine input, one entry in
+`DECISION_INPUT_MODULES` — nothing else — following the same shape as
+Modules 4-10.
 
 ## `data/market.json` schema (grows module by module)
 

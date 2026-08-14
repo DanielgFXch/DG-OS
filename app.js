@@ -337,25 +337,101 @@ const DISPLAY_TIMEZONE=(function(){
   try{ return Intl.DateTimeFormat().resolvedOptions().timeZone||'—' }catch(err){ return'—' }
 })();
 
-// Data Freshness + Version + Market Source — Phase "Version & Freshness"
-// (v0.21.0). Ticks every second (see setInterval below) so "Data Age"
-// counts up live, not just on each 15-min/WS refresh. Reuses
-// computeDataFreshness()/formatDataAge() from marketBrain.js — the same
-// thresholds also drive setLiveStatus() above, so the header badge and this
-// card can never disagree.
+// Always-On Market Server (optional) — Phase D of the Always-On Market
+// Server build. Nothing is hosted yet (see docs/ALWAYS_ON_HOSTING.md), so
+// this is off by default and the dashboard behaves exactly as before
+// (15-min JSON baseline + optional browser WebSocket) until Daniel points
+// it at a real, reachable server. Same UX pattern as the existing
+// TwelveData WS key field: a URL saved in localStorage, never committed.
+let marketServerUrl=localStorage.getItem('dgos.marketServerUrl')||'';
+let marketServerState=null;      // last successful /api/market/XAUUSD response, or null
+let marketServerReachable=false;
+
+async function pollMarketServer(){
+  if(!marketServerUrl){ marketServerReachable=false; marketServerState=null; return; }
+  try{
+    const res=await fetch(`${marketServerUrl.replace(/\/$/,'')}/api/market/XAUUSD`,{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    marketServerState=await res.json();
+    marketServerReachable=true;
+    $('marketServerStatus').textContent=`Verbunden mit Always-On Server · ${marketServerUrl}`;
+  }catch(err){
+    marketServerReachable=false;
+    marketServerState=null;
+    $('marketServerStatus').textContent=`Always-On Server nicht erreichbar (${err.message}) — Dashboard nutzt Fallback (15-Min-Feed).`;
+  }
+  renderFreshness();
+}
+
+function connectMarketServer(url){
+  marketServerUrl=url.trim();
+  localStorage.setItem('dgos.marketServerUrl',marketServerUrl);
+  if(!marketServerUrl){
+    marketServerReachable=false;marketServerState=null;
+    $('marketServerStatus').textContent='Kein Always-On Server konfiguriert · nutzt den 15-Min-Feed + optionalen Browser-WebSocket.';
+    renderFreshness();
+    return;
+  }
+  pollMarketServer();
+}
+
+$('marketServerConnect').addEventListener('click',()=>connectMarketServer($('marketServerUrl').value));
+if(marketServerUrl) $('marketServerUrl').value=marketServerUrl;
+
+// Data Freshness + Version + Price/Candle Source — Phase "Version &
+// Freshness" (v0.21.0) + Phase D (Always-On Market Server). Ticks every
+// second (see setInterval below) so the age labels count up live. Price and
+// candle freshness are tracked SEPARATELY, per Daniel's explicit
+// instruction — a WebSocket price tick and a REST candle refresh are
+// genuinely different events with different natural cadences, and
+// collapsing them into one "Data Status" hid that distinction.
+//
+// Two sources, chosen automatically: if a reachable Always-On Server is
+// configured, its own freshness computation (server/marketState.js's
+// getFreshness(), reusing the exact same computeDataFreshness() this file
+// uses) is authoritative — real WS ticks, real REST refreshes. Otherwise,
+// falls back to exactly today's behavior: the local computeDataFreshness()
+// against the 15-min JSON baseline / optional browser WebSocket, with
+// price and candle freshness reported as identical (both genuinely come
+// from the same fetch in that mode — reporting them as different would be
+// fabricating a distinction that doesn't exist yet).
 function renderFreshness(){
-  const fresh=computeDataFreshness(lastMarketUpdateAt,tdStreaming);
-  setLiveStatus(fresh.status);
+  let price,candle,priceSourceLabel,candleSourceLabel,displayPrice;
 
-  const lastUpdateEl=$('statusLastUpdate'),tzEl=$('statusTimezone'),ageEl=$('statusDataAge'),stateEl=$('statusDataState'),sourceEl=$('statusSource');
-  if(!lastUpdateEl) return;
+  if(marketServerReachable&&marketServerState&&marketServerState.freshness){
+    const f=marketServerState.freshness;
+    price={status:f.priceStatus,ageLabel:f.priceDataAgeLabel};
+    candle={status:f.candleStatus,ageLabel:f.candleDataAgeLabel};
+    priceSourceLabel='TwelveData WebSocket (Server)';
+    candleSourceLabel='TwelveData REST (Server)';
+    displayPrice=(marketServerState.quote&&typeof marketServerState.quote.price==='number')?marketServerState.quote.price:null;
+    // The server already computes isPriceLive honestly (WS actually
+    // connected AND recent) — trust it directly rather than re-deriving.
+    if(!f.isPriceLive&&price.status==='LIVE') price={status:'DELAYED',ageLabel:price.ageLabel};
+  } else {
+    const fresh=computeDataFreshness(lastMarketUpdateAt,tdStreaming);
+    price={status:fresh.status,ageLabel:formatDataAge(fresh.ageSeconds)};
+    candle=price; // same underlying fetch in fallback mode — an honest, not fabricated, equality
+    priceSourceLabel=lastMarketUpdateAt?(tdStreaming?'TwelveData (WebSocket)':'TwelveData (15-Min-Feed)'):'—';
+    candleSourceLabel=lastMarketUpdateAt?'TwelveData (15-Min-Feed)':'—';
+    displayPrice=(MarketBrain.liveData&&typeof MarketBrain.liveData.price==='number')?MarketBrain.liveData.price:null;
+  }
 
-  lastUpdateEl.textContent=lastMarketUpdateAt?new Date(lastMarketUpdateAt).toLocaleTimeString('de-DE'):'—';
+  setLiveStatus(price.status);
+
+  const priceEl=$('statusPrice'),priceStateEl=$('statusPriceState'),tzEl=$('statusTimezone'),
+        lastPriceEl=$('statusLastPrice'),lastCandleEl=$('statusLastCandle'),
+        priceSourceEl=$('statusPriceSource'),candleSourceEl=$('statusCandleSource');
+  if(!lastPriceEl) return;
+
+  priceEl.textContent=fmtPrice(displayPrice);
+  priceStateEl.textContent=price.status.replace('_',' ');
+  priceStateEl.className=`status-pill status-pill-${price.status}`;
   tzEl.textContent=DISPLAY_TIMEZONE;
-  ageEl.textContent=formatDataAge(fresh.ageSeconds);
-  stateEl.textContent=fresh.status.replace('_',' ');
-  stateEl.className=`status-pill status-pill-${fresh.status}`;
-  sourceEl.textContent=lastMarketUpdateAt?(tdStreaming?'TwelveData (WebSocket)':'TwelveData (15-Min-Feed)'):'—';
+  lastPriceEl.textContent=price.ageLabel;
+  lastCandleEl.textContent=candle.ageLabel;
+  priceSourceEl.textContent=priceSourceLabel;
+  candleSourceEl.textContent=candleSourceLabel;
 }
 
 function renderVersion(version){
@@ -815,9 +891,11 @@ renderTicker();
 renderFreshness();
 updateSessionStatuses();
 loadMarketData();
+if(marketServerUrl) pollMarketServer();
 setInterval(renderGreeting,60000);
 setInterval(renderTicker,1000);
 setInterval(renderFreshness,1000);
+setInterval(()=>{ if(marketServerUrl) pollMarketServer(); },3000);
 setInterval(updateSessionStatuses,30000);
 setInterval(loadMarketData,60000);
 if(tg.token){testTelegramConnection(tg.token).then(bot=>setTelegramStatus(`Verbunden · @${bot.username}`)).catch(()=>setTelegramStatus('Nicht verbunden'))}

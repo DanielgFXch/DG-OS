@@ -8,6 +8,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.19.1] — DG OS V2 Audit
+
+### Neu
+- Neue Datei `docs/DG_OS_V2_AUDIT.md`: vollständiger technischer Audit des bestehenden Projekts vor dem Umbau zu „DG OS – Personal AI Trading Brain" — aktuelle Architektur, echte vs. simulierte Komponenten, implementierte Tradinglogik, Datenquellen, Datenbank (keine vorhanden), Frontend/Backend-Analyse, bekannte technische Schulden (u. a. defekte PWA-Icon-Pfade, komplett simulierte Hero-Entscheidungsanzeige), was für V2 erhalten bleibt, was ersetzt wird, empfohlene V2-Architektur (Ingestion Layer, Event Store, DG Trading Brain, Query/Conversation Layer, Alert Layer) und ein phasenweiser, jeweils freigabepflichtiger Migrationsplan
+- Reine Analyse- und Dokumentations-Arbeit — keine funktionalen Code-Änderungen, kein Feature entfernt oder umgebaut, wie explizit angefordert
+
+### Geänderte Dateien
+`app.js`, `docs/DG_OS_V2_AUDIT.md`, `CHANGELOG.md`
+
+---
+
 ## [0.19.0] — DG Overview: Dashboard auf einen Blick
 
 ### Neu

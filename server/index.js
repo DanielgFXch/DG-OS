@@ -121,7 +121,7 @@ async function main() {
 
   const apiServer = createApiServer(marketState);
   apiServer.listen(PORT, () => {
-    console.log(`[server] API listening on :${PORT} — GET /api/health, /api/market/XAUUSD, /api/events/XAUUSD`);
+    console.log(`[server] API listening on :${PORT} — GET /api/health, /api/market/XAUUSD, /api/events/XAUUSD, /api/brain/XAUUSD`);
   });
 
   function shutdown() {

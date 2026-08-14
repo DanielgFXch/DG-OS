@@ -293,6 +293,59 @@ function renderOverview(overview){
   eventsEl.innerHTML=events.length?events.map(e=>`<div class="ov-event ov-event-${e.kind}">${e.text}</div>`).join(''):'<div class="ov-empty">Noch keine Meldungen.</div>';
 }
 
+const REPORT_STATUS_CLASS={'WAIT':'wait','WATCH BUY':'watch','WATCH SELL':'watch','BULLISH SCENARIO':'bullish','BEARISH SCENARIO':'bearish'};
+
+// DG Trading Brain V1 — only ever populated from a reachable Always-On
+// Server's real GET /api/brain/XAUUSD response (tradingBrainState, set in
+// pollMarketServer()). No local/offline computation, no fallback numbers —
+// if the server isn't connected, this card says so honestly instead of
+// showing anything.
+function renderTradingBrain(brain){
+  const statusEl=$('brainStatus'),biasEl=$('brainBias'),confEl=$('brainConfidence');
+  const buyEl=$('brainBuyPOIs'),sellEl=$('brainSellPOIs'),liqEl=$('brainLiquidity'),targetsEl=$('brainTargets'),summaryEl=$('brainSummary');
+  if(!statusEl) return;
+
+  if(!brain||!brain.report){
+    statusEl.textContent='Nicht verbunden';statusEl.className='brain-status';
+    biasEl.textContent='—';biasEl.className='bias-value';
+    confEl.textContent='—';
+    const emptyMsg='<div class="poi-empty">Kein Always-On Server verbunden — siehe „XAUUSD Live" Karte.</div>';
+    buyEl.innerHTML=emptyMsg;sellEl.innerHTML=emptyMsg;
+    liqEl.innerHTML='<div class="liq-row"><span class="liq-label">Nicht verbunden.</span></div>';
+    targetsEl.innerHTML='<div class="poi-empty">Nicht verbunden.</div>';
+    summaryEl.textContent='Verbinde einen Always-On Server (siehe „XAUUSD Live" Karte), um den DG Trading Brain V1 Report zu sehen.';
+    return;
+  }
+
+  const report=brain.report,htf=brain.htfContext;
+  statusEl.textContent=report.status;
+  statusEl.className=`brain-status brain-status-${REPORT_STATUS_CLASS[report.status]||''}`;
+  biasEl.textContent=htf.overallBias?htf.overallBias.toUpperCase():'—';
+  biasEl.className=`bias-value ${htf.overallBias?'bias-'+htf.overallBias:''}`;
+  confEl.textContent=typeof htf.confidence==='number'?`${htf.confidence}%`:'—';
+
+  const poiRow=p=>`
+    <div class="poi-row">
+      <span class="poi-label">${p.type==='fvg'?'FVG':'Order Block'}<span class="poi-meta">${p.timeframe}</span></span>
+      <span class="poi-price">${p.range}<span class="poi-confidence">Score ${p.score} · ${p.quality}</span></span>
+    </div>`;
+  buyEl.innerHTML=(report.bestBuyPOIs&&report.bestBuyPOIs.length)?report.bestBuyPOIs.map(poiRow).join(''):'<div class="poi-empty">Keine Buy-POIs erkannt.</div>';
+  sellEl.innerHTML=(report.bestSellPOIs&&report.bestSellPOIs.length)?report.bestSellPOIs.map(poiRow).join(''):'<div class="poi-empty">Keine Sell-POIs erkannt.</div>';
+
+  liqEl.innerHTML=(report.keyLiquidity&&report.keyLiquidity.length)
+    ?report.keyLiquidity.map(text=>`<div class="liq-row"><span class="liq-label">${text}</span></div>`).join('')
+    :'<div class="liq-row"><span class="liq-label">Aktuell keine auffälligen Level.</span></div>';
+
+  const targets=(brain.targets||[]).slice(0,6);
+  targetsEl.innerHTML=targets.length?targets.map(t=>`
+    <div class="poi-row">
+      <span class="poi-label">${t.direction==='up'?'▲':'▼'} ${t.reason}<span class="poi-meta">${t.timeframe}</span></span>
+      <span class="poi-price">${fmtPrice(t.price)}</span>
+    </div>`).join(''):'<div class="poi-empty">Keine Targets erkannt.</div>';
+
+  summaryEl.textContent=report.summary||'';
+}
+
 // Runs every derived module (marketBrain.js's computeAllDerivedModules, the
 // same function the Node ingest script calls) and re-renders every card.
 // Called after every 15-min JSON refresh AND every WebSocket price tick.
@@ -346,30 +399,45 @@ const DISPLAY_TIMEZONE=(function(){
 let marketServerUrl=localStorage.getItem('dgos.marketServerUrl')||'';
 let marketServerState=null;      // last successful /api/market/XAUUSD response, or null
 let marketServerReachable=false;
+let tradingBrainState=null;      // last successful /api/brain/XAUUSD response, or null — DG Trading Brain V1, only reachable via the Always-On Server
 
 async function pollMarketServer(){
-  if(!marketServerUrl){ marketServerReachable=false; marketServerState=null; return; }
+  if(!marketServerUrl){ marketServerReachable=false; marketServerState=null; tradingBrainState=null; renderTradingBrain(tradingBrainState); return; }
   try{
-    const res=await fetch(`${marketServerUrl.replace(/\/$/,'')}/api/market/XAUUSD`,{cache:'no-store'});
+    const base=marketServerUrl.replace(/\/$/,'');
+    const res=await fetch(`${base}/api/market/XAUUSD`,{cache:'no-store'});
     if(!res.ok) throw new Error('HTTP '+res.status);
     marketServerState=await res.json();
     marketServerReachable=true;
     $('marketServerStatus').textContent=`Verbunden mit Always-On Server · ${marketServerUrl}`;
+    // Separate, independent fetch — the Trading Brain V1 endpoint is new
+    // (this build) and older Always-On Server deployments won't have it
+    // yet, so a failure here must never take down the market-state poll
+    // above; it just leaves the Trading Brain card honestly empty.
+    try{
+      const brainRes=await fetch(`${base}/api/brain/XAUUSD`,{cache:'no-store'});
+      tradingBrainState=brainRes.ok?await brainRes.json():null;
+    }catch(brainErr){
+      tradingBrainState=null;
+    }
   }catch(err){
     marketServerReachable=false;
     marketServerState=null;
+    tradingBrainState=null;
     $('marketServerStatus').textContent=`Always-On Server nicht erreichbar (${err.message}) — Dashboard nutzt Fallback (15-Min-Feed).`;
   }
   renderFreshness();
+  renderTradingBrain(tradingBrainState);
 }
 
 function connectMarketServer(url){
   marketServerUrl=url.trim();
   localStorage.setItem('dgos.marketServerUrl',marketServerUrl);
   if(!marketServerUrl){
-    marketServerReachable=false;marketServerState=null;
+    marketServerReachable=false;marketServerState=null;tradingBrainState=null;
     $('marketServerStatus').textContent='Kein Always-On Server konfiguriert · nutzt den 15-Min-Feed + optionalen Browser-WebSocket.';
     renderFreshness();
+    renderTradingBrain(tradingBrainState);
     return;
   }
   pollMarketServer();
@@ -889,6 +957,7 @@ render();
 renderGreeting();
 renderTicker();
 renderFreshness();
+renderTradingBrain(tradingBrainState);
 updateSessionStatuses();
 loadMarketData();
 if(marketServerUrl) pollMarketServer();

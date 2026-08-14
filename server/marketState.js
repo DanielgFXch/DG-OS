@@ -297,6 +297,15 @@ class MarketState {
   getRecentEvents(limit) {
     return store.readRecentEvents(limit);
   }
+
+  // DG Trading Brain V1 — computed fresh on each call, not on every price
+  // tick. It's read-only, request-driven output (GET /api/brain/XAUUSD),
+  // has no bearing on the event/persistence pipeline above, and multi-
+  // timeframe POI ranking across 4 timeframes is cheap enough (plain array
+  // math over at most a few hundred candles) not to need caching for V1.
+  getTradingBrain() {
+    return MB.computeTradingBrainV1(this.candlesByTimeframe, this.brain.liquidity, this._currentPrice());
+  }
 }
 
 module.exports = { MarketState, BRAIN_CANDLE_TIMEFRAME, LIVE_DATA_TIMEFRAMES };

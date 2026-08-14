@@ -8,6 +8,36 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.23.0] — DG Trading Brain V1
+
+Erster Ausbau der eigentlichen Trading-Logik, direkt aus Daniels "DG TRADING
+BRAIN V1"-Prompt umgesetzt (Funktion statt Perfektion, keine unnötigen
+Architektur-Umbauten, bestehende Infrastruktur beibehalten). Alles unten ist
+ausdrücklich **V1-Entwurf**, keine finalen DG-Regeln — siehe die neuen
+🟡 V1 DRAFT-Kapitel in `rules/strategy.md`.
+
+### Neu
+- **Modul 11 „DG Trading Brain V1"** in `marketBrain.js` — HTF Context (Weekly → Daily → 4H → 1H), Structure/FVG/Order Block jetzt pro Timeframe statt nur H1, POI Ranking (Score 0-100, regelbasiert, nachvollziehbar), Targets-Engine, Market Report. Nutzt ausschließlich die bereits bestehenden Detektoren (`detectStructure`/`detectFairValueGaps`/`detectOrderBlocks`, jetzt mit Timeframe-Parameter statt hartem `'H1'`) — keine zweite parallele Engine.
+- **`GET /api/brain/XAUUSD`** (`server/api.js`) — liefert `{symbol, timestamp, htfContext, structure, liquidity, premiumDiscount, pois, targets, report, status}`. Bestehende Endpoints unverändert.
+- **Neue Karte „DG Trading Brain V1"** im Dashboard (`index.html`/`app.js`) — HTF Bias, Status, Top Buy/Sell POIs, Key Liquidity, Targets, Market-Report-Zusammenfassung. Nur mit verbundenem Always-On Server sichtbar; ohne Verbindung ehrlich "Nicht verbunden", keine Fake-Zahlen.
+- **`rules/strategy.md`**: neuer Status 🟡 V1 DRAFT; Kapitel 1 (DG HTF Bias), 2 (DG Liquidity), 3 (DG Premium/Discount), 4 (DG Order Block), 5 (DG Valid FVG) mit dem tatsächlich in Daniels Prompt definierten V1-Inhalt gefüllt, offene Punkte klar als "noch offen" markiert. Alle anderen Kapitel bleiben unverändert 🔴 TODO.
+
+### Bewusst NICHT gebaut (wie von Daniel vorgegeben)
+Keine Trade-Ausführung, keine Entry-Automation, keine Risk-Engine, keine News-Engine, kein M1/M5-System, kein BUY/SELL READY — Status bleibt bei WAIT/WATCH BUY/WATCH SELL/BULLISH SCENARIO/BEARISH SCENARIO.
+
+### Bekannte Lücken in V1 (ehrlich benannt, nicht erfunden)
+- Equal Highs/Equal Lows fehlen in der Liquidity — kein Detector vorhanden.
+- "Schwache Reaktion" als POI-Ranking-Negativfaktor nicht umgesetzt — `detectZoneReaction()` liefert nur ja/nein, keine Stärke.
+- "Nächstes relevantes HTF Target" fließt nur als Kontext in die Bias-Begründung ein, nicht als Score-Faktor — keine nicht-willkürliche Regel dafür vorhanden.
+
+### Getestet (lokal, gegen Mock-TwelveData REST/WebSocket + echten Browser)
+Alle 4 HTF-Timeframes liefern echte Kontextdaten; FVG/Orderblock pro Timeframe; POI-Score 0-100 mit nachvollziehbaren `reasons`; Targets vorhanden; Report wird erzeugt, Status einer der 5 erlaubten Werte; keine BUY/SELL-READY-Sprache irgendwo in der Ausgabe; bestehender WebSocket bleibt `streaming`; Event-Pipeline unverändert erreichbar; Persistence-Flush weiterhin aktiv; bestehende APIs (`/api/health`, `/api/market/XAUUSD`, `/api/events/XAUUSD`) unverändert funktionsfähig; Dashboard-Karte per Playwright im verbundenen und nicht-verbundenen Zustand geprüft, keine Konsolenfehler, reale Daten sichtbar.
+
+### Geänderte Dateien
+`marketBrain.js`, `server/api.js`, `app.js`, `index.html`, `styles.css`, `rules/strategy.md`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.22.1] — Initial-Fetch-Zuverlässigkeit nach Railway-Deployment
 
 Gefunden bei der Produktions-Persistenz-Verifikation nach dem ersten echten Railway-Restart: `/api/health` zeigte nach dem Neustart nur 3 von 7 Timeframes (`15min`, `30min`, `1h`) — Monthly/Weekly/Daily/4H fehlten. `/api/market/XAUUSD` bestätigte den Effekt: `premiumDiscount.daily/weekly/monthly` und `htfBias` waren `null`.

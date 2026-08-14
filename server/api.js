@@ -57,6 +57,11 @@ function createApiServer(marketState) {
         return;
       }
 
+      if (req.method === 'GET' && url.pathname === '/api/brain/XAUUSD') {
+        sendJson(res, 200, marketState.getTradingBrain());
+        return;
+      }
+
       if (req.method === 'GET' && url.pathname === '/api/events/XAUUSD') {
         const limitParam = url.searchParams.get('limit');
         const limit = limitParam ? Math.max(1, Math.min(500, parseInt(limitParam, 10) || 50)) : 50;

@@ -677,10 +677,55 @@ into six different Market Brain modules on its own —
 - **Auto Trading** — would read `state === 'READY'` plus `moduleSnapshot`
   for execution parameters (far future, needs broker integration).
 
+## DG Overview (`app.js`) — dashboard aggregation, not a new module
+
+Built directly from Daniel's request for a clearer dashboard: "auf einen
+Blick" the session/day/week High/Low levels, current structure bias, which
+large zones are still open, and a readable text feed when a level is swept
+or a zone reacts. `computeOverview(brain)` is deliberately **not** a new
+Market Brain / Daniel Brain module — it reads only from Liquidity Engine,
+Structure Engine, and POI Engine outputs already sitting in `MarketBrain`,
+computes nothing new about the market itself, and invents no DG rule.
+
+- **Quick levels** — `OVERVIEW_QUICK_LEVEL_IDS` picks 10 of the 12
+  `MarketBrain.liquidity` entries (Asia/London/NY High & Low, Daily High &
+  Low, Weekly High & Low) and reuses their existing `status`
+  (active/touched/sweeped/invalid).
+- **Structure bias** — straight passthrough of
+  `MarketBrain.structure.internalBias`/`externalBias`.
+- **Open zones** — `MarketBrain.pois.list` filtered to `status === 'fresh'`
+  and `confidence >= OVERVIEW_ZONE_CONFIDENCE_MIN` (65), sorted by
+  confidence. Explicitly labeled "H1" in the UI, not "Daily" — DG OS does
+  not fetch Daily-candle history yet, so a true Daily-timeframe FVG isn't
+  possible today; this is the honest H1 substitute, not a fabricated Daily
+  zone.
+- **Meldungen (text feed)** — two kinds of message, both purely mechanical
+  and neither one a DG rule:
+  - **Sweep messages**: any liquidity level currently `status === 'sweeped'`,
+    reformatted as a sentence (e.g. "Asia High (Asia Session) ist gesweept —
+    aktueller Preis 2424.60"). No timestamp is invented — a swept level is a
+    current condition, not a discrete logged event, so none is shown.
+  - **Zone reaction messages**: `detectZoneReaction(poi, candles)` (POI
+    Engine, alongside `enrichPOIContext`) checks, per POI, whether price
+    later traded into the zone and a subsequent H1 candle closed back
+    outside it in the zone's own direction. Stored as `poi.reaction`
+    (`{at, reason}` or `null`). Deliberately **not** named "DG Confirmation"
+    or any other DG term — that would imply a defined `rules/strategy.md`
+    rule, and the Confirmation chapter is still TODO. It's the same honesty
+    level as `status` (fresh/mitigated): a structural fact DG OS can observe
+    mechanically, with no claim about what it means.
+
+### UI
+
+New "DG Overview" card, placed above the two-column layout so it's the
+first thing visible — four blocks: Levels, Struktur, Offene Zonen,
+Meldungen. `renderOverview()` populates `#overviewLevels`,
+`#overviewStructure`, `#overviewZones`, `#overviewEvents`.
+
 ## MarketBrain aggregator (`app.js`)
 
 ```js
-const MarketBrain = { liveData, sessions, premiumDiscount, htfBias, liquidity, pois, structure, dgConfidence, decision };
+const MarketBrain = { liveData, sessions, premiumDiscount, htfBias, liquidity, pois, structure, dgConfidence, decision, overview };
 ```
 
 One shared object, populated by `loadMarketData()` and kept live-reactive by

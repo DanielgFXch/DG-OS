@@ -1,7 +1,7 @@
 
 // Semantic Versioning (siehe CHANGELOG.md für die vollständige Historie).
 // Bei jedem abgeschlossenen Build hier + in CHANGELOG.md aktualisieren.
-const DG_OS_VERSION='0.18.3';
+const DG_OS_VERSION='0.19.0';
 
 const state={asia:false,sweep:false,engulf:false};
 const $=id=>document.getElementById(id);
@@ -57,7 +57,7 @@ function fmtPrice(n){return typeof n==='number'?n.toFixed(2):'—'}
 // the full module tree. Nothing outside this file should reach into
 // data/market.json directly; go through MarketBrain instead.
 // ---------------------------------------------------------------------------
-const MarketBrain={liveData:null,sessions:null,candles:null,premiumDiscount:null,htfBias:null,liquidity:null,pois:null,structure:null,dgConfidence:null,decision:null};
+const MarketBrain={liveData:null,sessions:null,candles:null,premiumDiscount:null,htfBias:null,liquidity:null,pois:null,structure:null,dgConfidence:null,decision:null,overview:null};
 
 // Module 4: Premium / Discount Engine
 //
@@ -267,7 +267,7 @@ function renderLiquidityEngine(levels){
 // createPOI() is still the single place that assembles a POI object, so
 // every field is guaranteed present (or explicitly null) regardless of
 // which detector — or the enrichment step — produced it.
-function createPOI({type,direction,priceHigh,priceLow,timeframe,createdAt,status,strength,confidence,reason,sourceCandle,impulseSize,displacement,structureReference,mitigationDetail,relatedLiquidity,relatedSession,relatedHTFBias,premiumDiscountZone}){
+function createPOI({type,direction,priceHigh,priceLow,timeframe,createdAt,status,strength,confidence,reason,sourceCandle,impulseSize,displacement,structureReference,mitigationDetail,relatedLiquidity,relatedSession,relatedHTFBias,premiumDiscountZone,reaction}){
   return{
     id:`${type}-${timeframe}-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,
     type,                                            // one of POI_TYPE_DEFS ids
@@ -288,7 +288,8 @@ function createPOI({type,direction,priceHigh,priceLow,timeframe,createdAt,status
     relatedLiquidity:relatedLiquidity||[],                            // ids into MarketBrain.liquidity, filled by enrichment
     relatedSession:relatedSession||null,                               // filled by enrichment
     relatedHTFBias:relatedHTFBias||null,                                // filled by enrichment
-    premiumDiscountZone:premiumDiscountZone||null                        // filled by enrichment
+    premiumDiscountZone:premiumDiscountZone||null,                       // filled by enrichment
+    reaction:reaction||null                                               // filled by enrichment — see detectZoneReaction()
   };
 }
 
@@ -499,15 +500,47 @@ function relatedLiquidityFor(poi,liquidityLevels){
     .map(lv=>lv.id);
 }
 
+// Zone reaction — a purely mechanical, structural fact, same honesty level
+// as `status` (fresh/mitigated): price traded into a zone, and a later H1
+// candle closed back outside it, in the zone's own direction. This is
+// deliberately NOT called "DG Confirmation" or any other DG term — that
+// would imply a defined DG rule, and rules/strategy.md's Confirmation
+// chapter is still TODO. It exists only so the DG Overview can tell Daniel,
+// in plain text, that a zone he's watching produced a reaction — nothing
+// about whether that reaction means anything.
+function detectZoneReaction(poi,candles){
+  if(!Array.isArray(candles)||poi.priceLow===null||poi.priceHigh===null||!poi.direction) return null;
+  const startIndex=candles.indexOf(poi.sourceCandle);
+  if(startIndex===-1) return null;
+
+  let touched=false;
+  for(let i=startIndex+1;i<candles.length;i++){
+    const c=candles[i];
+    const inZone=c.low<=poi.priceHigh&&c.high>=poi.priceLow;
+    if(inZone){ touched=true; continue; }
+    if(!touched) continue;
+    const reacted=poi.direction==='bullish'?c.close>poi.priceHigh:c.close<poi.priceLow;
+    if(reacted){
+      return{
+        at:candleTimeToIso(c.datetime),
+        reason:`Preis hat die Zone getestet und mit Kerze ${c.datetime} UTC wieder außerhalb geschlossen`
+      };
+    }
+  }
+  return null;
+}
+
 function enrichPOIContext(poi,brain){
   const liveData=brain.liveData;
   const midpoint=(poi.priceHigh!==null&&poi.priceLow!==null)?(poi.priceHigh+poi.priceLow)/2:null;
   const zone=(midpoint!==null&&liveData)?computeZoneForRange(midpoint,liveData.dailyHigh,liveData.dailyLow):null;
+  const candles=(brain.candles&&brain.candles.h1)||[];
   return Object.assign({},poi,{
     relatedLiquidity:relatedLiquidityFor(poi,brain.liquidity),
     relatedSession:poi.createdAt?sessionForTimestamp(new Date(poi.createdAt)):null,
     relatedHTFBias:(brain.htfBias&&brain.htfBias.bias)||null,
-    premiumDiscountZone:zone?zone.zone:null
+    premiumDiscountZone:zone?zone.zone:null,
+    reaction:detectZoneReaction(poi,candles)
   });
 }
 
@@ -1113,6 +1146,101 @@ function renderDecisionEngine(decision){
   container.innerHTML=html||'<div class="dgc-empty">Noch keine Daten.</div>';
 }
 
+// DG Overview — v0.19.0
+//
+// Not a new detection module — a pure aggregation/UI layer over engines
+// that already exist (Liquidity Engine, Structure Engine, POI Engine).
+// Built because Daniel asked for a single at-a-glance card: the session/
+// day/week high-low levels he checks first, the current structural bias,
+// which large H1 zones are still open, and a readable text feed for two
+// honestly-labeled mechanical events — a liquidity level being swept, and
+// a zone reaction (see detectZoneReaction() above). No new data, no new
+// DG rule, no invented weighting.
+const OVERVIEW_QUICK_LEVEL_IDS=['asiaHigh','asiaLow','londonHigh','londonLow','nyHigh','nyLow','dailyHigh','dailyLow','weeklyHigh','weeklyLow'];
+const OVERVIEW_ZONE_CONFIDENCE_MIN=65; // "große Zonen" — only the highest-confidence H1 POIs, not every minor gap
+const OVERVIEW_EVENT_LIMIT=10;
+
+function computeOverview(brain){
+  const liquidity=brain.liquidity||[];
+  const quickLevels=OVERVIEW_QUICK_LEVEL_IDS
+    .map(id=>liquidity.find(lv=>lv.id===id))
+    .filter(Boolean);
+
+  const poiList=(brain.pois&&brain.pois.list)||[];
+  const openZones=poiList
+    .filter(p=>p.status==='fresh'&&typeof p.confidence==='number'&&p.confidence>=OVERVIEW_ZONE_CONFIDENCE_MIN)
+    .sort((a,b)=>b.confidence-a.confidence);
+
+  const sweepMessages=liquidity
+    .filter(lv=>lv.status==='sweeped')
+    .map(lv=>({kind:'sweep',at:null,text:`${lv.label} (${lv.timeframe}) ist gesweept — aktueller Preis ${fmtPrice(lv.price)}`}));
+
+  const reactionMessages=poiList
+    .filter(p=>p.reaction)
+    .map(p=>{
+      const typeLabel=(POI_TYPE_DEFS.find(d=>d.id===p.type)||{}).label||p.type;
+      return{
+        kind:'reaction',at:p.reaction.at,
+        text:`${typeLabel} ${p.direction||''} (H1, ${fmtPrice(p.priceLow)}–${fmtPrice(p.priceHigh)}) — ${p.reaction.reason}`
+      };
+    });
+
+  const events=[...reactionMessages,...sweepMessages]
+    .sort((a,b)=>{
+      if(a.at&&b.at) return new Date(b.at)-new Date(a.at);
+      if(a.at) return -1;
+      if(b.at) return 1;
+      return 0;
+    })
+    .slice(0,OVERVIEW_EVENT_LIMIT);
+
+  return{
+    quickLevels,
+    structureBias:{
+      internal:(brain.structure&&brain.structure.internalBias)||null,
+      external:(brain.structure&&brain.structure.externalBias)||null
+    },
+    openZones,
+    events
+  };
+}
+
+function renderOverview(overview){
+  const levelsEl=$('overviewLevels'),structureEl=$('overviewStructure'),zonesEl=$('overviewZones'),eventsEl=$('overviewEvents');
+  if(!levelsEl) return;
+
+  const levels=(overview&&overview.quickLevels)||[];
+  levelsEl.innerHTML=levels.length?levels.map(lv=>`
+    <div class="ov-level">
+      <span class="ov-level-label">${lv.label}</span>
+      <span class="ov-level-price">${fmtPrice(lv.price)}</span>
+      <span class="ov-level-status ov-level-status-${lv.status}">${LIQUIDITY_STATUS_LABEL[lv.status]}</span>
+    </div>
+  `).join(''):'<div class="ov-empty">Noch keine Daten.</div>';
+
+  if(structureEl){
+    const bias=overview&&overview.structureBias,ext=bias&&bias.external,intn=bias&&bias.internal;
+    structureEl.innerHTML=`
+      <div class="ov-structure-item"><span>Extern</span><strong class="${ext?'bias-'+ext:''}">${ext?BIAS_LABEL[ext]:'—'}</strong></div>
+      <div class="ov-structure-item"><span>Intern</span><strong class="${intn?'bias-'+intn:''}">${intn?BIAS_LABEL[intn]:'—'}</strong></div>
+    `;
+  }
+
+  const zones=(overview&&overview.openZones)||[];
+  zonesEl.innerHTML=zones.length?zones.map(z=>{
+    const typeLabel=(POI_TYPE_DEFS.find(d=>d.id===z.type)||{}).label||z.type;
+    return`
+    <div class="ov-zone">
+      <span class="ov-zone-label">${typeLabel}<span class="ov-zone-meta">H1 · ${z.direction||'—'}</span></span>
+      <span class="ov-zone-price">${fmtPrice(z.priceLow)} – ${fmtPrice(z.priceHigh)}</span>
+      <span class="ov-zone-confidence">${z.confidence}%</span>
+    </div>`;
+  }).join(''):'<div class="ov-empty">Keine offenen Zonen über der Schwelle.</div>';
+
+  const events=(overview&&overview.events)||[];
+  eventsEl.innerHTML=events.length?events.map(e=>`<div class="ov-event ov-event-${e.kind}">${e.text}</div>`).join(''):'<div class="ov-empty">Noch keine Meldungen.</div>';
+}
+
 function refreshDerivedModules(){
   MarketBrain.premiumDiscount=computePremiumDiscount(MarketBrain.liveData);
   MarketBrain.htfBias=computeHTFBias(MarketBrain.liveData);
@@ -1121,6 +1249,7 @@ function refreshDerivedModules(){
   MarketBrain.structure=computeStructureEngine(MarketBrain);
   MarketBrain.dgConfidence=computeDGConfidenceEngine(MarketBrain);
   MarketBrain.decision=computeDecisionEngine(MarketBrain);
+  MarketBrain.overview=computeOverview(MarketBrain);
   renderPremiumDiscount(MarketBrain.premiumDiscount);
   renderHTFBias(MarketBrain.htfBias);
   renderLiquidityEngine(MarketBrain.liquidity);
@@ -1128,6 +1257,7 @@ function refreshDerivedModules(){
   renderStructureEngine(MarketBrain.structure);
   renderDGConfidence(MarketBrain.dgConfidence);
   renderDecisionEngine(MarketBrain.decision);
+  renderOverview(MarketBrain.overview);
 }
 
 function setLiveStatus(isLive,label){

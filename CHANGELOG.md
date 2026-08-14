@@ -8,6 +8,19 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.19.0] — DG Overview: Dashboard auf einen Blick
+
+### Neu
+- Neue Karte „DG Overview" ganz oben im Dashboard — auf einen Blick: Asia/London/New-York/Daily/Weekly High &amp; Low mit Status, aktuelle Struktur (intern &amp; extern, bullish/bearish) und offene, hochwertige H1-Zonen (fresh, ≥65% Confidence aus FVG/Order-Block-Erkennung)
+- Reine Aggregation bestehender Engines (Liquidity/Structure/POI Engine) — kein neues Modul, keine neue Erkennung, keine neue DG-Regel
+- Neue Textmeldungen-Liste: Sweeps aktiver Liquiditäts-Levels (Daily/Weekly/Session High/Low) als lesbarer Satz, plus ein neuer, bewusst NICHT „DG Confirmation" genannter mechanischer Check „Zonen-Reaktion" (`detectZoneReaction()`): Preis hat eine frische Zone getestet und mit einer Kerze wieder außerhalb geschlossen — eine strukturelle Tatsache wie `status`, keine erfundene DG-Regel
+- Ehrlichkeits-Hinweis direkt in der UI: „Offene Zonen" sind H1-Zonen, nicht echte Daily-Kerzen-FVGs — DG OS ruft aktuell keine Daily-Kerzen-Historie ab, das wird klar so benannt statt vorgetäuscht
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `docs/MARKET_BRAIN.md`, `CHANGELOG.md`
+
+---
+
 ## [0.18.3] — Dauerhafte Projektregel: DG Knowledge Assistant
 
 ### Neu

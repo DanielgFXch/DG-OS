@@ -264,6 +264,20 @@ body{
 .decision-state-READY{color:var(--green);text-shadow:0 0 16px rgba(56,226,176,.35)}
 .decision-state-INVALID{color:var(--red);text-shadow:0 0 16px rgba(255,77,109,.35)}
 
+.brain-status{
+  font-family:var(--display-font);font-weight:700;font-size:24px;letter-spacing:.02em;
+  margin-top:8px;color:var(--text)
+}
+.brain-status-wait{color:var(--gold);text-shadow:0 0 16px rgba(242,181,68,.3)}
+.brain-status-watch{color:var(--cyan);text-shadow:0 0 16px rgba(47,217,242,.3)}
+.brain-status-bullish{color:var(--green);text-shadow:0 0 16px rgba(56,226,176,.35)}
+.brain-status-bearish{color:var(--red);text-shadow:0 0 16px rgba(255,77,109,.35)}
+.brain-summary{
+  font-family:var(--hud-font);font-size:12.5px;line-height:1.6;color:var(--text);
+  white-space:pre-wrap;word-break:break-word;background:rgba(255,255,255,.02);
+  border:1px solid var(--line);border-radius:8px;padding:12px;margin:0
+}
+
 .status-card{margin-bottom:22px}
 .status-price-row{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;flex-wrap:wrap}
 .status-symbol{font-family:var(--hud-font);font-size:12px;color:var(--muted);letter-spacing:.08em}

@@ -278,8 +278,9 @@ function isZoneMitigatedAfter(candles,fromIndex,priceLow,priceHigh){
 // Classic 3-candle ICT imbalance: for chronological candles c0, c1, c2, a
 // bullish FVG exists when c0.high < c2.low (the untraded space between them
 // is the gap); a bearish FVG is the mirror case, c0.low > c2.high.
-function detectFairValueGaps(candles){
+function detectFairValueGaps(candles,timeframe){
   if(!Array.isArray(candles)||candles.length<3) return[];
+  timeframe=timeframe||'H1';
   const zones=[];
 
   for(let i=2;i<candles.length;i++){
@@ -298,7 +299,7 @@ function detectFairValueGaps(candles){
       : `Bearische Preislücke: High der Kerze ${c2.datetime} UTC liegt unter dem Low der Kerze ${c0.datetime} UTC`;
 
     zones.push(createPOI({
-      type:'fvg',direction,priceHigh,priceLow,timeframe:'H1',
+      type:'fvg',direction,priceHigh,priceLow,timeframe,
       createdAt:candleTimeToIso(c1.datetime),
       status,confidence,reason,sourceCandle:c1,formedThroughCandle:c2
     }));
@@ -325,8 +326,9 @@ function closeStrength(candle,direction){
     : (candle.high-candle.close)/range;
 }
 
-function detectOrderBlocks(candles){
+function detectOrderBlocks(candles,timeframe){
   if(!Array.isArray(candles)||candles.length<2) return[];
+  timeframe=timeframe||'H1';
   const zones=[];
 
   for(let i=1;i<candles.length;i++){
@@ -364,7 +366,7 @@ function detectOrderBlocks(candles){
       : `Bearischer Order Block: Kerze ${obCandle.datetime} UTC (bullish) vor Displacement-Kerze ${displacementCandle.datetime} UTC (${ratio.toFixed(1)}x Ø-Range, Close bei ${Math.round(strength*100)}% der Kerze)`;
 
     zones.push(createPOI({
-      type:'orderBlock',direction,priceHigh,priceLow,timeframe:'H1',
+      type:'orderBlock',direction,priceHigh,priceLow,timeframe,
       createdAt:candleTimeToIso(obCandle.datetime),
       status,confidence,reason,sourceCandle:obCandle,formedThroughCandle:displacementCandle,
       impulseSize,displacement:{candle:displacementCandle,range,avgRange,ratio}
@@ -459,6 +461,12 @@ function detectZoneReaction(poi,candles){
   return null;
 }
 
+function distanceToPriceFor(poi,currentPrice){
+  if(typeof currentPrice!=='number'||poi.priceHigh===null||poi.priceLow===null) return null;
+  const midpoint=(poi.priceHigh+poi.priceLow)/2;
+  return Math.round(Math.abs(midpoint-currentPrice)*100)/100;
+}
+
 function enrichPOIContext(poi,brain){
   const liveData=brain.liveData;
   const midpoint=(poi.priceHigh!==null&&poi.priceLow!==null)?(poi.priceHigh+poi.priceLow)/2:null;
@@ -469,6 +477,7 @@ function enrichPOIContext(poi,brain){
     relatedSession:poi.createdAt?sessionForTimestamp(new Date(poi.createdAt)):null,
     relatedHTFBias:(brain.htfBias&&brain.htfBias.bias)||null,
     premiumDiscountZone:zone?zone.zone:null,
+    distanceToPrice:distanceToPriceFor(poi,liveData&&liveData.price),
     reaction:detectZoneReaction(poi,candles)
   });
 }
@@ -610,7 +619,8 @@ function structureProminenceConfidence(candles,point,window){
   return Math.max(0,Math.min(100,Math.round((diff/avgRange)*100)));
 }
 
-function createSwingElement(point,structureType,candles,window){
+function createSwingElement(point,structureType,candles,window,timeframe){
+  timeframe=timeframe||'H1';
   const direction=directionForStructureLabel(point.label);
   const confidence=structureProminenceConfidence(candles,point,window);
   const pivotLabel=point.type==='swingHigh'?'Swing High':'Swing Low';
@@ -622,11 +632,12 @@ function createSwingElement(point,structureType,candles,window){
   return createStructureElement({
     type:point.type,label:point.label,price:point.price,
     createdAt:candleTimeToIso(point.candle.datetime),
-    timeframe:'H1',direction,structureType,status:point.status,confidence,reason,sourceCandle:point.candle
+    timeframe,direction,structureType,status:point.status,confidence,reason,sourceCandle:point.candle
   });
 }
 
-function createBreakEvent(type,direction,candle,brokenLevel,candles,index,window,structureType){
+function createBreakEvent(type,direction,candle,brokenLevel,candles,index,window,structureType,timeframe){
+  timeframe=timeframe||'H1';
   const avgRange=localAverageRange(candles,index,window);
   const confidence=avgRange>0?Math.max(0,Math.min(100,Math.round((Math.abs(candle.close-brokenLevel.price)/avgRange)*100))):0;
   const levelLabel=brokenLevel.type==='swingHigh'?'Swing High':'Swing Low';
@@ -636,12 +647,13 @@ function createBreakEvent(type,direction,candle,brokenLevel,candles,index,window
   return createStructureElement({
     type,label:null,price:candle.close,
     createdAt:candleTimeToIso(candle.datetime),
-    timeframe:'H1',direction,structureType,status:'confirmed',confidence,reason,sourceCandle:candle,
+    timeframe,direction,structureType,status:'confirmed',confidence,reason,sourceCandle:candle,
     brokenLevel:{type:brokenLevel.type,price:brokenLevel.price,createdAt:candleTimeToIso(brokenLevel.candle.datetime)}
   });
 }
 
-function detectStructure(candles,window,structureType){
+function detectStructure(candles,window,structureType,timeframe){
+  timeframe=timeframe||'H1';
   if(!Array.isArray(candles)||candles.length<window*2+3) return{elements:[],finalBias:null};
 
   const{highs:rawHighs,lows:rawLows}=detectRawSwingPoints(candles,window);
@@ -657,18 +669,18 @@ function detectStructure(candles,window,structureType){
     if(lowByIndex.has(i)) keyLow=lowByIndex.get(i);
     const c=candles[i];
     if(keyHigh&&keyHigh.status==='active'&&c.close>keyHigh.price){
-      events.push(createBreakEvent(bias==='bearish'?'CHOCH':'BOS','bullish',c,keyHigh,candles,i,window,structureType));
+      events.push(createBreakEvent(bias==='bearish'?'CHOCH':'BOS','bullish',c,keyHigh,candles,i,window,structureType,timeframe));
       keyHigh.status='broken';
       bias='bullish';
     }
     if(keyLow&&keyLow.status==='active'&&c.close<keyLow.price){
-      events.push(createBreakEvent(bias==='bullish'?'CHOCH':'BOS','bearish',c,keyLow,candles,i,window,structureType));
+      events.push(createBreakEvent(bias==='bullish'?'CHOCH':'BOS','bearish',c,keyLow,candles,i,window,structureType,timeframe));
       keyLow.status='broken';
       bias='bearish';
     }
   }
 
-  const swingElements=[...highs,...lows].map(p=>createSwingElement(p,structureType,candles,window));
+  const swingElements=[...highs,...lows].map(p=>createSwingElement(p,structureType,candles,window,timeframe));
   return{elements:[...swingElements,...events],finalBias:bias};
 }
 
@@ -976,6 +988,396 @@ function formatDataAge(ageSeconds){
   return rm?`${h}h ${rm}m`:`${h}h`;
 }
 
+// ---------------------------------------------------------------------------
+// Module 11: DG Trading Brain V1 — HTF context, POI ranking, targets, report
+//
+// V1 draft, dictated directly by Daniel (his "DG TRADING BRAIN V1" prompt)
+// rather than derived from rules/strategy.md, which is still fully TODO —
+// see that prompt's own §2 (Market Facts vs. DG Interpretation, kept
+// separate below: detectors stay pure facts, everything in this section is
+// clearly labeled V1 interpretation) and §15 (only what was actually
+// defined in the prompt gets transcribed, nothing invented beyond it).
+// Everything below is explicitly a V1 draft, not a claim that these are
+// Daniel's finished, permanent DG rules.
+//
+// Reuses the exact same detectors as the legacy single-H1 pipeline above
+// (detectStructure/detectFairValueGaps/detectOrderBlocks), just pointed at
+// each of the 7 HTF-priority candle series the Always-On Server already
+// holds — no second parallel engine, no new pattern detection invented.
+// ---------------------------------------------------------------------------
+const HTF_TIMEFRAME_DEFS=[
+  {key:'weekly',outputKey:'weekly',label:'Weekly',rank:4},
+  {key:'daily',outputKey:'daily',label:'Daily',rank:3},
+  {key:'4h',outputKey:'h4',label:'4H',rank:2},
+  {key:'1h',outputKey:'h1',label:'H1',rank:1}
+];
+
+function seriesRange(candles){
+  if(!Array.isArray(candles)||!candles.length) return null;
+  return{high:Math.max(...candles.map(c=>c.high)),low:Math.min(...candles.map(c=>c.low))};
+}
+
+// One timeframe's own Structure/FVG/Order Block read — same detectors as
+// the legacy H1 pipeline, pointed at a different candle series with an
+// explicit timeframe label instead of the hardcoded 'H1'.
+function computeTimeframeBrain(candles,timeframeLabel){
+  if(!Array.isArray(candles)||!candles.length){
+    return{timeframe:timeframeLabel,candleCount:0,range:null,lastCandle:null,structure:{list:[],internalBias:null,externalBias:null},rawFvgs:[],rawOrderBlocks:[]};
+  }
+  const internal=detectStructure(candles,STRUCTURE_INTERNAL_WINDOW,'internal',timeframeLabel);
+  const external=detectStructure(candles,STRUCTURE_EXTERNAL_WINDOW,'external',timeframeLabel);
+  return{
+    timeframe:timeframeLabel,
+    candleCount:candles.length,
+    range:seriesRange(candles),
+    lastCandle:candles[candles.length-1],
+    structure:{list:[...internal.elements,...external.elements],internalBias:internal.finalBias,externalBias:external.finalBias},
+    rawFvgs:detectFairValueGaps(candles,timeframeLabel),
+    rawOrderBlocks:detectOrderBlocks(candles,timeframeLabel)
+  };
+}
+
+// Nearest BOS/CHOCH on the same timeframe at or before a POI's own creation
+// — correlating two already-detected facts (Structure Engine + POI Engine),
+// not a new pattern detector.
+function relatedStructureFor(poi,structureList){
+  if(!poi.createdAt||!Array.isArray(structureList)) return null;
+  const poiTime=new Date(poi.createdAt).getTime();
+  const candidates=structureList
+    .filter(el=>(el.type==='BOS'||el.type==='CHOCH')&&el.createdAt&&new Date(el.createdAt).getTime()<=poiTime)
+    .sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt));
+  if(!candidates.length) return null;
+  const nearest=candidates[0];
+  return{id:nearest.id,type:nearest.type,direction:nearest.direction,price:nearest.price,createdAt:nearest.createdAt};
+}
+
+// Multi-timeframe POI enrichment — deliberately separate from
+// enrichPOIContext() above, which is hardcoded to the legacy single-H1
+// brain shape (brain.candles.h1, Daily-only Premium/Discount). Same
+// underlying facts (relatedLiquidity, reaction, distanceToPrice), each
+// evaluated against the POI's OWN timeframe range instead of always Daily.
+function computeTimeframePOIs(candles,timeframeLabel,ctx){
+  const raw=[...detectFairValueGaps(candles,timeframeLabel),...detectOrderBlocks(candles,timeframeLabel)];
+  const range=seriesRange(candles);
+  return raw.map(poi=>{
+    const midpoint=(poi.priceHigh!==null&&poi.priceLow!==null)?(poi.priceHigh+poi.priceLow)/2:null;
+    const zone=(midpoint!==null&&range)?computeZoneForRange(midpoint,range.high,range.low):null;
+    return Object.assign({},poi,{
+      relatedLiquidity:relatedLiquidityFor(poi,ctx.liquidity),
+      relatedSession:poi.createdAt?sessionForTimestamp(new Date(poi.createdAt)):null,
+      relatedHTFBias:ctx.overallBias||null,
+      relatedStructure:relatedStructureFor(poi,ctx.structureList),
+      premiumDiscountZone:zone?zone.zone:null,
+      distanceToPrice:distanceToPriceFor(poi,ctx.price),
+      reaction:detectZoneReaction(poi,candles)
+    });
+  });
+}
+
+// Previous day's High/Low as a liquidity level — Daniel's §6 explicitly
+// asks for this "wenn Daten vorhanden"; the daily candle series (Phase B of
+// the Always-On Server) makes it available now, unlike liveData's single
+// most-recent daily bar.
+function previousDayLiquidityFrom(dailySeries){
+  if(!Array.isArray(dailySeries)||dailySeries.length<2) return[];
+  const prev=dailySeries[dailySeries.length-2];
+  if(!prev) return[];
+  return[
+    {id:'prevDayHigh',label:'Previous Day High',type:'high',timeframe:'Daily',period:prev.datetime,price:prev.high,status:null},
+    {id:'prevDayLow',label:'Previous Day Low',type:'low',timeframe:'Daily',period:prev.datetime,price:prev.low,status:null}
+  ];
+}
+
+// Unbroken (status 'active') external swing points as resting liquidity —
+// a swing high/low nobody has traded through yet is exactly what
+// "relevante Swing Highs/Lows" liquidity means structurally. Equal
+// Highs/Lows are deliberately NOT added here — Daniel's §6 asked for them
+// only "falls bestehende Erkennung schon vorhanden ist", and no such
+// detector exists yet, so this stays honestly absent rather than guessed.
+function swingLiquidityFrom(tfBrainsByOutputKey,currentPrice){
+  const levels=[];
+  HTF_TIMEFRAME_DEFS.forEach(def=>{
+    const tf=tfBrainsByOutputKey[def.outputKey];
+    if(!tf||!tf.structure) return;
+    tf.structure.list
+      .filter(el=>(el.type==='swingHigh'||el.type==='swingLow')&&el.structureType==='external'&&el.status==='active')
+      .forEach(el=>{
+        const type=el.type==='swingHigh'?'high':'low';
+        levels.push({
+          id:`swing-${def.key}-${el.id}`,label:`${def.label} Swing ${type==='high'?'High':'Low'}`,
+          type,timeframe:def.label,period:el.createdAt,price:el.price,
+          status:typeof currentPrice==='number'?computeLiquidityStatus(el.price,type,currentPrice):'invalid'
+        });
+      });
+  });
+  return levels;
+}
+
+function computePremiumDiscountForRange(range,currentPrice,label){
+  if(!range||typeof currentPrice!=='number') return null;
+  const zone=computeZoneForRange(currentPrice,range.high,range.low);
+  return zone?Object.assign({timeframe:label},zone):null;
+}
+
+// V1 HTF Bias — a simple, explainable score, NOT a weighting-AI. Inputs per
+// Daniel's §4: external structure per timeframe (weighted by timeframe
+// rank), Premium/Discount lean on Daily+Weekly, and recent liquidity
+// sweeps (Market Fact) as a reversal-lean input. "Nächstes relevantes HTF
+// Target" is surfaced in `reasoning` as context, not scored — there's no
+// principled, non-arbitrary way to turn "nearest resting liquidity" into a
+// directional vote without inventing a rule Daniel hasn't defined.
+function computeOverallBias(tfBrainsByOutputKey,premiumDiscountByOutputKey,liquidity){
+  let bullishScore=0,bearishScore=0;
+  const reasoning=[];
+
+  HTF_TIMEFRAME_DEFS.forEach(def=>{
+    const tf=tfBrainsByOutputKey[def.outputKey];
+    const vote=tf&&(tf.structure.externalBias||tf.structure.internalBias);
+    if(vote==='bullish'){ bullishScore+=def.rank; reasoning.push(`${def.label}: externe Struktur bullish (Gewicht ${def.rank})`); }
+    else if(vote==='bearish'){ bearishScore+=def.rank; reasoning.push(`${def.label}: externe Struktur bearish (Gewicht ${def.rank})`); }
+    else reasoning.push(`${def.label}: noch keine klare Struktur-Richtung`);
+  });
+
+  ['weekly','daily'].forEach(key=>{
+    const pd=premiumDiscountByOutputKey[key];
+    if(!pd) return;
+    if(pd.zone==='discount'){ bullishScore+=1; reasoning.push(`${pd.timeframe}: Preis im Discount (${pd.distanceToEqPercent.toFixed(1)}% zur EQ)`); }
+    else if(pd.zone==='premium'){ bearishScore+=1; reasoning.push(`${pd.timeframe}: Preis im Premium (${pd.distanceToEqPercent.toFixed(1)}% zur EQ)`); }
+    else reasoning.push(`${pd.timeframe}: Preis nahe Equilibrium`);
+  });
+
+  const sweptLows=(liquidity||[]).filter(l=>l.type==='low'&&l.status==='sweeped');
+  const sweptHighs=(liquidity||[]).filter(l=>l.type==='high'&&l.status==='sweeped');
+  if(sweptLows.length){ bullishScore+=1; reasoning.push(`${sweptLows.length} Low-Liquidity-Level gesweept (${sweptLows.map(l=>l.label).join(', ')}) — möglicher Reversal-Impuls nach oben`); }
+  if(sweptHighs.length){ bearishScore+=1; reasoning.push(`${sweptHighs.length} High-Liquidity-Level gesweept (${sweptHighs.map(l=>l.label).join(', ')}) — möglicher Reversal-Impuls nach unten`); }
+
+  const nearestAbove=(liquidity||[]).filter(l=>l.type==='high'&&l.status==='active'&&typeof l.price==='number').sort((a,b)=>a.price-b.price)[0];
+  const nearestBelow=(liquidity||[]).filter(l=>l.type==='low'&&l.status==='active'&&typeof l.price==='number').sort((a,b)=>b.price-a.price)[0];
+  if(nearestAbove) reasoning.push(`Nächstes relevantes HTF-Target oberhalb: ${nearestAbove.label} bei ${fmtPrice(nearestAbove.price)}`);
+  if(nearestBelow) reasoning.push(`Nächstes relevantes HTF-Target unterhalb: ${nearestBelow.label} bei ${fmtPrice(nearestBelow.price)}`);
+
+  let overallBias='neutral';
+  if(bullishScore>bearishScore) overallBias='bullish';
+  else if(bearishScore>bullishScore) overallBias='bearish';
+
+  const total=bullishScore+bearishScore;
+  const confidence=total>0?Math.round((Math.abs(bullishScore-bearishScore)/total)*100):0;
+
+  return{overallBias,confidence,bullishScore,bearishScore,reasoning};
+}
+
+// V1 POI Ranking — regelbasiert, nachvollziehbar, exakt die in Daniels §10
+// genannten Faktoren, jeder gelesen aus einem bereits vom POI/Structure/
+// Liquidity Engine berechneten Feld. "Schwache Reaktion" aus §10 ist
+// bewusst NICHT umgesetzt — detectZoneReaction() liefert nur ja/nein, keine
+// Stärke, und eine Stärke zu erfinden wäre genau die Art Regel, die dieses
+// V1 nicht selbst erfinden soll.
+const POI_RANK_WEIGHT=HTF_TIMEFRAME_DEFS.reduce((m,d)=>{ m[d.label]=d.rank; return m; },{});
+
+function rankPOI(poi,overallBias,currentPrice){
+  let score=40; // neutral baseline
+  const reasons=[];
+
+  const tfWeight=POI_RANK_WEIGHT[poi.timeframe]||1;
+  score+=tfWeight*5;
+  reasons.push(`Timeframe ${poi.timeframe} (Gewicht ${tfWeight})`);
+
+  if(poi.status==='fresh'){ score+=15; reasons.push('Frisch / unmitigiert'); }
+  else{ score-=15; reasons.push('Bereits mitigiert'); }
+
+  if(poi.displacement){ score+=15; reasons.push('Mit Displacement entstanden'); }
+  if(poi.relatedStructure){ score+=10; reasons.push(`Verbunden mit ${poi.relatedStructure.type} (${poi.relatedStructure.direction})`); }
+  if(Array.isArray(poi.relatedLiquidity)&&poi.relatedLiquidity.length){ score+=10; reasons.push(`Nahe relevanter Liquidity (${poi.relatedLiquidity.length})`); }
+
+  if(overallBias&&overallBias!=='neutral'){
+    if(poi.direction===overallBias){ score+=15; reasons.push(`Passt zum HTF Bias (${overallBias})`); }
+    else{ score-=15; reasons.push(`Gegen HTF Bias (${overallBias})`); }
+  }
+
+  if(poi.premiumDiscountZone&&poi.premiumDiscountZone!=='equilibrium'){
+    const favorable=(poi.direction==='bullish'&&poi.premiumDiscountZone==='discount')||(poi.direction==='bearish'&&poi.premiumDiscountZone==='premium');
+    if(favorable){ score+=10; reasons.push(`Liegt sinnvoll im ${PD_ZONE_LABEL[poi.premiumDiscountZone]}`); }
+    else{ score-=5; reasons.push(`Liegt ungünstig im ${PD_ZONE_LABEL[poi.premiumDiscountZone]}`); }
+  }
+
+  const confluenceCount=[poi.displacement,poi.relatedStructure,(poi.relatedLiquidity||[]).length>0].filter(Boolean).length;
+  if(confluenceCount>=3){ score+=10; reasons.push('Mehrere Confluences'); }
+
+  if(!poi.relatedStructure&&!(poi.relatedLiquidity||[]).length){ score-=10; reasons.push('Liegt strukturell isoliert ("mitten im Nirgendwo")'); }
+
+  if(typeof poi.distanceToPrice==='number'&&typeof currentPrice==='number'&&currentPrice>0){
+    const distancePercent=(poi.distanceToPrice/currentPrice)*100;
+    if(distancePercent>5){ score-=10; reasons.push(`Sehr weit vom aktuellen Preis entfernt (${distancePercent.toFixed(1)}%)`); }
+  }
+
+  score=Math.max(0,Math.min(100,Math.round(score)));
+  const quality=score>=70?'high':(score>=40?'medium':'low');
+  return{score,quality,reasons};
+}
+
+// V1 Targets — resting liquidity + high-score opposite/aligned POIs,
+// nearest-first per direction, capped so the list stays readable.
+const TARGET_MAX_PER_DIRECTION=4;
+
+function rankTargetList(list){
+  return list.map((c,i)=>{ const{_weight,...rest}=c; return Object.assign({},rest,{priority:i+1}); });
+}
+
+function computeTargets(liquidity,rankedPOIs,currentPrice){
+  if(typeof currentPrice!=='number') return[];
+  const candidates=[];
+
+  (liquidity||[]).forEach(lv=>{
+    if(typeof lv.price!=='number'||lv.status==='invalid'||lv.status==='sweeped') return; // sweeped = already taken, not a forward target
+    candidates.push({
+      direction:lv.price>currentPrice?'up':'down',price:lv.price,type:'liquidity',timeframe:lv.timeframe,
+      priority:null,reason:`${lv.label} (${lv.timeframe})`,_weight:2
+    });
+  });
+
+  (rankedPOIs||[]).filter(p=>p.status==='fresh'&&p.score>=60).forEach(p=>{
+    const mid=(p.priceHigh+p.priceLow)/2;
+    candidates.push({
+      direction:mid>currentPrice?'up':'down',price:Math.round(mid*100)/100,type:`poi-${p.type}`,timeframe:p.timeframe,
+      priority:null,reason:`${p.type==='fvg'?'FVG':'Order Block'} ${p.direction} (${p.timeframe}, Score ${p.score})`,
+      _weight:POI_RANK_WEIGHT[p.timeframe]||1
+    });
+  });
+
+  const up=candidates.filter(c=>c.direction==='up').sort((a,b)=>(b._weight-a._weight)||(a.price-b.price)).slice(0,TARGET_MAX_PER_DIRECTION);
+  const down=candidates.filter(c=>c.direction==='down').sort((a,b)=>(b._weight-a._weight)||(b.price-a.price)).slice(0,TARGET_MAX_PER_DIRECTION);
+  return[...rankTargetList(up),...rankTargetList(down)];
+}
+
+// V1 Market Report — assembled entirely from already-computed fields above,
+// nothing new invented here beyond formatting/selection. `status` is a
+// simple, deterministic derivation, not a trading signal — explicitly
+// never BUY/SELL READY, per Daniel's §12.
+const REPORT_STATUS={WAIT:'WAIT',WATCH_BUY:'WATCH BUY',WATCH_SELL:'WATCH SELL',BULLISH_SCENARIO:'BULLISH SCENARIO',BEARISH_SCENARIO:'BEARISH SCENARIO'};
+
+function computeReportStatus(overallBias,rankedPOIs){
+  if(overallBias==='neutral') return REPORT_STATUS.WAIT;
+  const aligned=(rankedPOIs||[]).filter(p=>p.status==='fresh'&&p.direction===overallBias&&p.score>=70);
+  if(aligned.length) return overallBias==='bullish'?REPORT_STATUS.WATCH_BUY:REPORT_STATUS.WATCH_SELL;
+  return overallBias==='bullish'?REPORT_STATUS.BULLISH_SCENARIO:REPORT_STATUS.BEARISH_SCENARIO;
+}
+
+function summarizeTimeframeContext(tf,pd){
+  if(!tf||!tf.range) return'Noch keine Daten.';
+  const bias=tf.structure.externalBias?tf.structure.externalBias.toUpperCase():'NEUTRAL';
+  const zone=pd?PD_ZONE_LABEL[pd.zone]:null;
+  return`Struktur ${bias}${zone?`, Preis im ${zone}`:''} (Range ${fmtPrice(tf.range.low)}–${fmtPrice(tf.range.high)})`;
+}
+
+function generateMarketReport(input){
+  const{overallBias,confidence,reasoning,tfBrainsByOutputKey,premiumDiscountByOutputKey,liquidity,rankedPOIs,targets}=input;
+
+  const keyLiquidity=(liquidity||[])
+    .filter(l=>l.status==='sweeped'||l.status==='touched')
+    .slice(0,5)
+    .map(l=>`${l.label} (${l.timeframe}) — ${LIQUIDITY_STATUS_LABEL[l.status]||l.status} bei ${fmtPrice(l.price)}`);
+
+  const bestBuyPOIs=(rankedPOIs||[]).filter(p=>p.direction==='bullish'&&p.status==='fresh').sort((a,b)=>b.score-a.score).slice(0,3)
+    .map(p=>({timeframe:p.timeframe,type:p.type,range:`${fmtPrice(p.priceLow)}–${fmtPrice(p.priceHigh)}`,score:p.score,quality:p.quality}));
+  const bestSellPOIs=(rankedPOIs||[]).filter(p=>p.direction==='bearish'&&p.status==='fresh').sort((a,b)=>b.score-a.score).slice(0,3)
+    .map(p=>({timeframe:p.timeframe,type:p.type,range:`${fmtPrice(p.priceLow)}–${fmtPrice(p.priceHigh)}`,score:p.score,quality:p.quality}));
+
+  const status=computeReportStatus(overallBias,rankedPOIs);
+
+  const lines=[];
+  lines.push(`HTF Bias: ${overallBias.toUpperCase()} (${confidence}% Confidence)`);
+  lines.push(`Weekly: ${summarizeTimeframeContext(tfBrainsByOutputKey.weekly,premiumDiscountByOutputKey.weekly)}`);
+  lines.push(`Daily: ${summarizeTimeframeContext(tfBrainsByOutputKey.daily,premiumDiscountByOutputKey.daily)}`);
+  lines.push(`4H: ${summarizeTimeframeContext(tfBrainsByOutputKey.h4,premiumDiscountByOutputKey.h4)}`);
+  lines.push(keyLiquidity.length?`Wichtigste Liquidity: ${keyLiquidity.join(' · ')}`:'Wichtigste Liquidity: aktuell keine auffälligen Level.');
+  lines.push(bestBuyPOIs.length?`Beste Buy-Zonen: ${bestBuyPOIs.map(p=>`${p.range} (${p.timeframe}, ${p.quality})`).join(', ')}`:'Beste Buy-Zonen: keine.');
+  lines.push(bestSellPOIs.length?`Beste Sell-Zonen: ${bestSellPOIs.map(p=>`${p.range} (${p.timeframe}, ${p.quality})`).join(', ')}`:'Beste Sell-Zonen: keine.');
+  const up=(targets||[]).find(t=>t.direction==='up');
+  const down=(targets||[]).find(t=>t.direction==='down');
+  if(up) lines.push(`Nächstes Ziel aufwärts: ${fmtPrice(up.price)} (${up.reason})`);
+  if(down) lines.push(`Nächstes Ziel abwärts: ${fmtPrice(down.price)} (${down.reason})`);
+  lines.push(`Status: ${status}`);
+
+  return{
+    htfBias:{overallBias,confidence,reasoning},
+    weeklyContext:summarizeTimeframeContext(tfBrainsByOutputKey.weekly,premiumDiscountByOutputKey.weekly),
+    dailyContext:summarizeTimeframeContext(tfBrainsByOutputKey.daily,premiumDiscountByOutputKey.daily),
+    h4Context:summarizeTimeframeContext(tfBrainsByOutputKey.h4,premiumDiscountByOutputKey.h4),
+    keyLiquidity,bestBuyPOIs,bestSellPOIs,targets:targets||[],
+    status,summary:lines.join('\n')
+  };
+}
+
+function summarizeHTFContextEntry(tf,pd){
+  if(!tf) return null;
+  return{
+    timeframe:tf.timeframe,candleCount:tf.candleCount,range:tf.range,
+    internalBias:tf.structure.internalBias,externalBias:tf.structure.externalBias,
+    premiumDiscount:pd,fvgCount:tf.rawFvgs.length,orderBlockCount:tf.rawOrderBlocks.length,
+    lastCandle:tf.lastCandle
+  };
+}
+
+// Top-level orchestrator — the ONE function server/marketState.js calls.
+// candlesByTimeframe: the server's existing {id: {series, latestRealBar}}
+// map (weekly/daily/4h/1h at minimum). liquidityBase: the existing
+// computeLiquidityEngine(liveData) output — reused, not recomputed.
+function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice){
+  candlesByTimeframe=candlesByTimeframe||{};
+  const tfBrainsByOutputKey={};
+  HTF_TIMEFRAME_DEFS.forEach(def=>{
+    const entry=candlesByTimeframe[def.key];
+    tfBrainsByOutputKey[def.outputKey]=computeTimeframeBrain((entry&&entry.series)||[],def.label);
+  });
+
+  const premiumDiscountByOutputKey={};
+  HTF_TIMEFRAME_DEFS.forEach(def=>{
+    premiumDiscountByOutputKey[def.outputKey]=computePremiumDiscountForRange(tfBrainsByOutputKey[def.outputKey].range,currentPrice,def.label);
+  });
+
+  const dailyEntry=candlesByTimeframe.daily;
+  const prevDayLiquidity=previousDayLiquidityFrom(dailyEntry&&dailyEntry.series);
+  const combinedLiquidity=[...(liquidityBase||[]),...prevDayLiquidity,...swingLiquidityFrom(tfBrainsByOutputKey,currentPrice)];
+
+  const biasResult=computeOverallBias(tfBrainsByOutputKey,premiumDiscountByOutputKey,combinedLiquidity);
+
+  const rankedPOIs=[];
+  HTF_TIMEFRAME_DEFS.forEach(def=>{
+    const entry=candlesByTimeframe[def.key];
+    const series=(entry&&entry.series)||[];
+    if(!series.length) return;
+    const structureList=tfBrainsByOutputKey[def.outputKey].structure.list;
+    const enriched=computeTimeframePOIs(series,def.label,{liquidity:combinedLiquidity,structureList,overallBias:biasResult.overallBias,price:currentPrice});
+    enriched.forEach(poi=>{
+      const ranked=rankPOI(poi,biasResult.overallBias,currentPrice);
+      rankedPOIs.push(Object.assign({},poi,ranked));
+    });
+  });
+  rankedPOIs.sort((a,b)=>b.score-a.score);
+
+  const targets=computeTargets(combinedLiquidity,rankedPOIs,currentPrice);
+
+  const report=generateMarketReport({
+    overallBias:biasResult.overallBias,confidence:biasResult.confidence,reasoning:biasResult.reasoning,
+    tfBrainsByOutputKey,premiumDiscountByOutputKey,liquidity:combinedLiquidity,rankedPOIs,targets
+  });
+
+  const htfContext={
+    weekly:summarizeHTFContextEntry(tfBrainsByOutputKey.weekly,premiumDiscountByOutputKey.weekly),
+    daily:summarizeHTFContextEntry(tfBrainsByOutputKey.daily,premiumDiscountByOutputKey.daily),
+    h4:summarizeHTFContextEntry(tfBrainsByOutputKey.h4,premiumDiscountByOutputKey.h4),
+    h1:summarizeHTFContextEntry(tfBrainsByOutputKey.h1,premiumDiscountByOutputKey.h1),
+    overallBias:biasResult.overallBias,confidence:biasResult.confidence,reasoning:biasResult.reasoning
+  };
+
+  return{
+    symbol:'XAUUSD',timestamp:new Date().toISOString(),htfContext,
+    structure:{weekly:tfBrainsByOutputKey.weekly.structure,daily:tfBrainsByOutputKey.daily.structure,h4:tfBrainsByOutputKey.h4.structure,h1:tfBrainsByOutputKey.h1.structure},
+    liquidity:combinedLiquidity,premiumDiscount:premiumDiscountByOutputKey,
+    pois:rankedPOIs,targets,report,status:report.status
+  };
+}
+
 // Runs every derived module in dependency order over {liveData, sessions,
 // candles} and returns a brand-new, fully-computed brain snapshot. This is
 // the ONE function both the browser (app.js's refreshDerivedModules) and
@@ -1017,7 +1419,11 @@ return{
   describeHTFBiasInput,describeStructureInput,describeLiquidityInput,describePOIInput,describePremiumDiscountInput,describeDGConfidenceInput,
   DECISION_INPUT_MODULES,computeDecisionEngine,
   OVERVIEW_QUICK_LEVEL_IDS,OVERVIEW_ZONE_CONFIDENCE_MIN,OVERVIEW_EVENT_LIMIT,computeOverview,
-  computeAllDerivedModules
+  computeAllDerivedModules,
+  HTF_TIMEFRAME_DEFS,seriesRange,computeTimeframeBrain,relatedStructureFor,computeTimeframePOIs,
+  previousDayLiquidityFrom,swingLiquidityFrom,computePremiumDiscountForRange,computeOverallBias,
+  POI_RANK_WEIGHT,rankPOI,computeTargets,REPORT_STATUS,computeReportStatus,summarizeTimeframeContext,
+  generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1
 };
 
 });

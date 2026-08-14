@@ -1,7 +1,7 @@
 {
-  "updatedAt": "2026-08-14T16:39:44.013Z",
+  "updatedAt": "2026-08-14T17:39:49.984Z",
   "liveData": {
-    "price": 4386.46322,
+    "price": 4380.15023,
     "dailyOpen": 4350.64279,
     "dailyHigh": 4396.587,
     "dailyLow": 4310.61379,
@@ -38,9 +38,9 @@
       "low": 4310.61379,
       "range": 85.97321000000011,
       "equilibrium": 4353.600395,
-      "price": 4386.46322,
-      "distanceToEq": 32.86282499999925,
-      "distanceToEqPercent": 38.22449458383513,
+      "price": 4380.15023,
+      "distanceToEq": 26.549834999999803,
+      "distanceToEqPercent": 30.881521115705425,
       "zone": "premium",
       "isPremium": true,
       "isDiscount": false,
@@ -51,22 +51,22 @@
       "low": 4310.61379,
       "range": 139.17039999999997,
       "equilibrium": 4380.198990000001,
-      "price": 4386.46322,
-      "distanceToEq": 6.264229999998861,
-      "distanceToEqPercent": 4.501122365099807,
-      "zone": "premium",
-      "isPremium": true,
+      "price": 4380.15023,
+      "distanceToEq": -0.048760000000584114,
+      "distanceToEqPercent": -0.035036185856032694,
+      "zone": "equilibrium",
+      "isPremium": false,
       "isDiscount": false,
-      "isEquilibrium": false
+      "isEquilibrium": true
     },
     "monthly": {
       "high": 4449.78419,
       "low": 4022.04078,
       "range": 427.7434100000005,
       "equilibrium": 4235.912485,
-      "price": 4386.46322,
-      "distanceToEq": 150.5507349999998,
-      "distanceToEqPercent": 35.19650600812287,
+      "price": 4380.15023,
+      "distanceToEq": 144.23774500000036,
+      "distanceToEqPercent": 33.72062353923821,
       "zone": "premium",
       "isPremium": true,
       "isDiscount": false,
@@ -76,7 +76,7 @@
   "htfBias": {
     "bias": "bullish",
     "confidence": 100,
-    "trendStrength": 51,
+    "trendStrength": 47,
     "reason": "Daily > Open · Weekly > Open · Monthly > Open",
     "lastBOS": null,
     "currentStructure": null
@@ -228,8 +228,8 @@
           "close": 4403.69312
         },
         "range": 20.673040000000583,
-        "avgRange": 13.27081714285714,
-        "ratio": 1.5577819946925877
+        "avgRange": 13.097821538461595,
+        "ratio": 1.5783571290305376
       },
       "structureReference": null,
       "mitigationDetail": null,
@@ -412,7 +412,7 @@
       "createdAt": "2026-08-12T00:00:00.000Z",
       "status": "mitigated",
       "strength": null,
-      "confidence": 39,
+      "confidence": 40,
       "reason": "Bullische Preislücke: Low der Kerze 2026-08-12 01:00:00 UTC liegt über dem High der Kerze 2026-08-11 23:00:00 UTC",
       "sourceCandle": {
         "datetime": "2026-08-12 00:00:00",
@@ -451,7 +451,7 @@
       "createdAt": "2026-08-12T01:00:00.000Z",
       "status": "mitigated",
       "strength": null,
-      "confidence": 89,
+      "confidence": 92,
       "reason": "Bullische Preislücke: Low der Kerze 2026-08-12 02:00:00 UTC liegt über dem High der Kerze 2026-08-12 00:00:00 UTC",
       "sourceCandle": {
         "datetime": "2026-08-12 01:00:00",
@@ -494,7 +494,7 @@
       "createdAt": "2026-08-12T02:00:00.000Z",
       "status": "mitigated",
       "strength": null,
-      "confidence": 30,
+      "confidence": 31,
       "reason": "Bullische Preislücke: Low der Kerze 2026-08-12 03:00:00 UTC liegt über dem High der Kerze 2026-08-12 01:00:00 UTC",
       "sourceCandle": {
         "datetime": "2026-08-12 02:00:00",
@@ -1319,40 +1319,40 @@
       "relatedHTFBias": "bullish"
     },
     {
-      "id": "swingLow-internal-2026-08-11 18:00:00--4361.2892",
-      "type": "swingLow",
-      "label": null,
-      "price": 4361.2892,
-      "createdAt": "2026-08-11T18:00:00.000Z",
+      "id": "swingHigh-internal-2026-08-14 16:00:00-LH-4395.4561",
+      "type": "swingHigh",
+      "label": "LH",
+      "price": 4395.45613,
+      "createdAt": "2026-08-14T16:00:00.000Z",
       "timeframe": "H1",
-      "direction": null,
+      "direction": "bearish",
       "structureType": "internal",
       "status": "active",
       "confidence": 4,
-      "reason": "Erster erkannter Swing Low bei 4361.2892 (2026-08-11 18:00:00 UTC, interne Struktur) — noch kein Vergleichspunkt",
+      "reason": "Lower High: Swing High bei 4395.45613 (2026-08-14 16:00:00 UTC, interne Struktur)",
       "sourceCandle": {
-        "datetime": "2026-08-11 18:00:00",
-        "open": 4371.50867,
-        "high": 4372.6332,
-        "low": 4361.2892,
-        "close": 4371.38532
+        "datetime": "2026-08-14 16:00:00",
+        "open": 4391.82063,
+        "high": 4395.45613,
+        "low": 4381.54493,
+        "close": 4385.33372
       },
       "brokenLevel": null,
       "relatedSession": "ny",
       "relatedHTFBias": "bullish"
     },
     {
-      "id": "swingLow-internal-2026-08-11 23:00:00-HL-4363.3825",
+      "id": "swingLow-internal-2026-08-11 23:00:00--4363.3825",
       "type": "swingLow",
-      "label": "HL",
+      "label": null,
       "price": 4363.38249,
       "createdAt": "2026-08-11T23:00:00.000Z",
       "timeframe": "H1",
-      "direction": "bullish",
+      "direction": null,
       "structureType": "internal",
       "status": "active",
       "confidence": 28,
-      "reason": "Higher Low: Swing Low bei 4363.38249 (2026-08-11 23:00:00 UTC, interne Struktur)",
+      "reason": "Erster erkannter Swing Low bei 4363.38249 (2026-08-11 23:00:00 UTC, interne Struktur) — noch kein Vergleichspunkt",
       "sourceCandle": {
         "datetime": "2026-08-11 23:00:00",
         "open": 4369.94859,
@@ -2284,7 +2284,7 @@
     }
   ],
   "dgConfidence": {
-    "confidence": 71,
+    "confidence": 65,
     "contributions": [
       {
         "id": "session",
@@ -2303,9 +2303,9 @@
       {
         "id": "premiumDiscount",
         "label": "Premium/Discount",
-        "score": 100,
+        "score": 67,
         "status": "positive",
-        "reason": "3/3 Timeframes zeigen eine klare Premium/Discount-Lage (nicht Equilibrium)."
+        "reason": "2/3 Timeframes zeigen eine klare Premium/Discount-Lage (nicht Equilibrium)."
       },
       {
         "id": "htfBias",
@@ -2347,9 +2347,9 @@
       {
         "id": "premiumDiscount",
         "label": "Premium/Discount",
-        "score": 100,
+        "score": 67,
         "status": "positive",
-        "reason": "3/3 Timeframes zeigen eine klare Premium/Discount-Lage (nicht Equilibrium)."
+        "reason": "2/3 Timeframes zeigen eine klare Premium/Discount-Lage (nicht Equilibrium)."
       },
       {
         "id": "htfBias",
@@ -2378,10 +2378,10 @@
     "missingFactors": []
   },
   "decision": {
-    "id": "decision-1786725584011",
-    "timestamp": "2026-08-14T16:39:44.011Z",
+    "id": "decision-1786729189982",
+    "timestamp": "2026-08-14T17:39:49.982Z",
     "state": "WAIT",
-    "confidence": 71,
+    "confidence": 65,
     "reason": "Keine DG-Regeln definiert — rules/strategy.md ist noch vollständig TODO. Die Decision Engine wartet, bis mindestens ein Kapitel ausgefüllt und die Regelanwendung dafür gebaut ist.",
     "supportingModules": [
       "htfBias",
@@ -2448,13 +2448,13 @@
         "label": "Premium/Discount",
         "available": true,
         "direction": null,
-        "summary": "daily: premium · weekly: premium · monthly: premium"
+        "summary": "daily: premium · weekly: equilibrium · monthly: premium"
       },
       "dgConfidence": {
         "label": "DG Confidence Engine",
         "available": true,
         "direction": null,
-        "summary": "71% Confidence · 5 positiv, 1 negativ, 0 fehlend."
+        "summary": "65% Confidence · 5 positiv, 1 negativ, 0 fehlend."
       }
     }
   },

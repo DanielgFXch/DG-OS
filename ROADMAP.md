@@ -64,7 +64,8 @@ automatically to every module below, and is documented identically in
 | Module | Status |
 |---|---|
 | DG Overview (dashboard aggregation) | done — at-a-glance session/day/week levels, structure bias, open H1 zones, text feed for sweeps + zone reactions; reads existing modules only, no new detection |
-| Alerts, Reports, Learning, Statistics | not started |
+| Event Store & Ingest Pipeline | done — Phase 1 "Core Foundation" (v0.20.0): `marketBrain.js`/`events.js`/`scripts/ingest.js`, git-committed `state/latest.json` + `state/events.jsonl`, Market-Context-vs-Trading-Event classification. Still on the 15-min cron, not a truly continuous always-on watcher — see `docs/MARKET_BRAIN.md`'s "Event Store & Ingest Pipeline" section |
+| Alerts, Reports, Learning, Statistics | not started — Alerts is the first natural consumer of the Event Store above |
 
 (Module numbers track build order, not architectural layer — see the note
 above the system tree in `docs/MARKET_BRAIN.md`.)

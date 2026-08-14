@@ -8,6 +8,35 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.20.0] — Phase 1: Core Foundation — Event Store & Ingest Pipeline
+
+### Neu
+- Neue Datei `marketBrain.js`: jede reine Market-Brain-/Daniel-Brain-Berechnung (Premium/Discount, HTF Bias, Liquidity Engine, POI Engine, Structure Engine, DG Confidence Engine, Daniel Decision Engine, DG Overview) aus `app.js` extrahiert — läuft jetzt identisch im Browser (als globale Funktionen, vor `app.js` geladen) und in Node (`require()`), damit Browser und Server-Ingest niemals auseinanderlaufen können
+- Neue Datei `events.js`: `classifyMarketEvents()` implementiert Daniels Korrektur exakt — Session-Level-Entstehung (`ASIA_HIGH_CREATED` etc.) ist **Market Context** (still, nie Notification, nie Trading-Event-Stream, nie Setup-Signal), Touch/Sweep/Reaktion/Confirmation sind **Trading Events** (persistiert, benachrichtigungsfähig); Kategorie steckt in einem Feld pro Event, nicht in einer manuell gepflegten Ausschlussliste
+- Neue Datei `scripts/ingest.js` (Node): läuft in `.github/workflows/market-data.yml` direkt nach dem bestehenden TwelveData-Fetch, berechnet den nächsten Market-Brain-Snapshot, vergleicht ihn mit dem vorherigen und persistiert beides — `state/latest.json` (aktueller Snapshot, restart-sicher, git-committed) und `state/events.jsonl` (Event-Log, auf die letzten 2000 Einträge begrenzt, git-committed)
+- `market-data.yml` committet `state/` jetzt automatisch zurück ins Repo (nur bei echter Änderung, `contents: write`) — das ist DG OS' erster echter, dauerhafter Datenspeicher: ein Neustart rekonstruiert den letzten bekannten Zustand direkt aus `state/latest.json`
+- Implementierte Event-Typen (alle aus bereits bestehenden, echten Detektoren abgeleitet, keine neue Tradingregel erfunden): `ASIA/LONDON/NY_HIGH/LOW_CREATED` (Kontext), `ASIA/LONDON/NY_HIGH/LOW_TOUCHED`/`_SWEPT`, `LIQUIDITY_SWEPT`, `POI_REACHED`, `FVG_REACHED`, `ORDERBLOCK_REACHED`, `REACTION_DETECTED`, `BOS_CONFIRMED`, `CHOCH_CONFIRMED`, `DISPLACEMENT_DETECTED`, `ENGULFING_CONFIRMED` (zwei neue generische, DG-regel-freie Kerzenmuster-Detektoren, gleiche Kategorie wie FVG/Order Block)
+- `SETUP_FORMING`/`SETUP_CONFIRMED`/`SETUP_INVALIDATED`/`TARGET_REACHED` bewusst nur im Vokabular registriert, aber ohne Emitter — ein "Setup" ist untrennbar eine `rules/strategy.md`-Regel, die noch nicht existiert
+- Deterministische IDs für POIs und Structure-Elemente (vorher zufällig, jetzt aus Typ/Timeframe/Kerzenzeit/Preisgrenzen abgeleitet) — notwendige Voraussetzung dafür, dass zwei aufeinanderfolgende Snapshots überhaupt verglichen werden können
+
+### Bugfixes
+- `detectZoneReaction()` scannte fälschlich ab der mittleren FVG-Kerze statt der zuletzt zonenbildenden Kerze — dadurch konnte eine frische, nie wirklich retestete FVG sofort wie "getestet und reagiert" aussehen. Betraf bereits die produktive DG-Overview-"Meldungen"-Anzeige (v0.19.0), nicht erst diesen Build
+
+### Geändert
+- `app.js` (1738 → ~700 Zeilen): jetzt nur noch DOM/Rendering + App-Logik (Begrüßung, Sessions-Uhr, Alpha Simulation, Telegram, WebSocket-Stream) — jede `render*()`-Funktion unverändert, nur die Berechnungen sind umgezogen
+- `index.html`: lädt `marketBrain.js` vor `app.js`
+- `sw.js`: Cache-Liste um `marketBrain.js` ergänzt, Cache-Version erhöht
+
+### Bekannte Grenzen (bewusst, dokumentiert)
+- Läuft weiterhin auf dem bestehenden 15-Minuten-Cron — noch kein echtes durchgängiges Live-Monitoring unabhängig vom Cron; das braucht einen eigenen Always-on-Host (spätere, separate Infrastruktur-Entscheidung, siehe `docs/DG_OS_V2_AUDIT.md`)
+- `state/events.jsonl` auf 2000 Einträge begrenzt (Git-Historie bleibt vollständig) — eine echte Datenbank ist spätere Ausbaustufe
+- Keine neue UI in diesem Build — bewusst, wie von Daniel angeordnet ("keine UI-Aufräumarbeiten vorziehen")
+
+### Geänderte Dateien
+`app.js`, `marketBrain.js` (neu), `events.js` (neu), `scripts/ingest.js` (neu), `index.html`, `sw.js`, `.github/workflows/market-data.yml`, `docs/MARKET_BRAIN.md`, `docs/DG_OS_V2_AUDIT.md`, `ROADMAP.md`, `CLAUDE.md`, `CHANGELOG.md`
+
+---
+
 ## [0.19.2] — Audit-Korrektur: Event-Klassifikation Market Context vs. Trading Event
 
 ### Neu

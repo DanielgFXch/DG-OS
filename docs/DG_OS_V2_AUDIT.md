@@ -266,14 +266,23 @@ Rule of thumb baked into the schema: **a level being created is market context; 
 
 ## MIGRATION PLAN
 
-Phased, each phase gated behind explicit approval — nothing here is authorized to start yet.
+Phased, each phase gated behind explicit approval — nothing here is authorized to start unless explicitly greenlit.
+
+> **Naming note:** Daniel greenlit this work as **"Phase 1 – Core Foundation"**
+> in his own numbering, distinct from the phase numbers below (which are this
+> audit's own draft sequence, written before he gave instructions). His
+> "Phase 1" maps onto this list's **Phase 2 (persistence)** plus part of
+> **Phase 3 (server-side computation)** — see the status tags below. His
+> instruction was explicit that UI cleanup (this list's Phase 1) stays
+> deferred, not pulled forward. Future sessions: treat Daniel's own phase
+> numbering, wherever he states it, as authoritative over this list's.
 
 - **Phase 0 (this document).** No code changes. ✅ Done.
-- **Phase 1 — V1 cleanup (small, safe, high-value).** Once approved: retire the Alpha-Simulation-only UI blocks (hero badge wiring, duplicate Asia card, Market Plan card, Liquidity/Confirmation check cards) since they actively mislead; fix the broken icon paths. Touches only the frontend, nothing about data/architecture — could ship independently of the rest of this plan if useful.
-- **Phase 2 — Introduce persistence.** Stand up an Event Store (even a minimal one) and have the *existing* client-side Market Brain computations (reused as-is, not rewritten) start emitting events into it — proves the event pipeline end-to-end before anything is built on top of it.
-- **Phase 3 — Move computation server-side.** Port the Market Brain modules into an always-on ingestion service so events get detected even when no browser tab is open; the frontend becomes a client of this service instead of computing everything itself.
-- **Phase 4 — Alert Layer.** Wire the Event Store to Telegram (and later other channels) server-side, replacing the current client-side/localStorage-token approach.
-- **Phase 5 — Query/Conversation Layer.** Build the "Gomez, wie ist die Lage?" interface on top of the now-durable event history + current Market Brain snapshot — deterministic template first, richer conversation later.
-- **Phase 6 — DG Trading Brain integration.** Once `rules/strategy.md` chapters are actually filled in (unaffected by any of the above — this is Knowledge Mode's own separate gate), wire the rules layer into the Decision Engine for real WATCH/READY states, and only then into the Alert/Query layers as "this matters enough to tell you."
+- **Phase 1 — V1 cleanup (small, safe, high-value).** ⏸️ Deferred — Daniel explicitly asked not to pull this forward when greenlighting Core Foundation. Once approved: retire the Alpha-Simulation-only UI blocks (hero badge wiring, duplicate Asia card, Market Plan card, Liquidity/Confirmation check cards) since they actively mislead; fix the broken icon paths. Touches only the frontend, nothing about data/architecture.
+- **Phase 2 — Introduce persistence.** ✅ Done (v0.20.0, "Core Foundation"). `marketBrain.js`/`events.js`/`scripts/ingest.js` — the *existing* Market Brain computations, extracted verbatim (not rewritten) so browser and server share one implementation — now emit a classified (Market Context vs. Trading Event, per Daniel's explicit correction) event stream into a git-committed `state/latest.json` + `state/events.jsonl`. See `docs/MARKET_BRAIN.md`'s "Event Store & Ingest Pipeline" section for the full writeup, including a real bug found and fixed in the process (`detectZoneReaction`'s off-by-one self-touch).
+- **Phase 3 — Move computation server-side.** 🟡 Partially done. The computation now genuinely runs server-side too (`scripts/ingest.js`, via `marketBrain.js`, in the same GitHub Actions job that fetches TwelveData) — so events get detected even if no browser tab is open, *at the moment the workflow runs*. What's still open: this runs on the same 15-minute cron as always, not a continuous always-on watcher independent of any schedule. That still needs the always-on host this phase originally described — a separate infrastructure/hosting decision, not made here.
+- **Phase 4 — Alert Layer.** Not started. Wire the Event Store to Telegram (and later other channels) server-side, replacing the current client-side/localStorage-token approach.
+- **Phase 5 — Query/Conversation Layer.** Not started. Build the "Gomez, wie ist die Lage?" interface on top of the now-durable event history + current Market Brain snapshot — deterministic template first, richer conversation later.
+- **Phase 6 — DG Trading Brain integration.** Not started. Once `rules/strategy.md` chapters are actually filled in (unaffected by any of the above — this is Knowledge Mode's own separate gate), wire the rules layer into the Decision Engine for real WATCH/READY states, and only then into the Alert/Query layers as "this matters enough to tell you."
 
 Each phase is independently reviewable and independently reversible — none of them requires committing to the next one in advance.

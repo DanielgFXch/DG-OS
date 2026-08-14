@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -164,6 +164,22 @@ jobs:
               }
             }' > data/market.json
           cat data/market.json
+
+      - name: Ingest — compute Market Brain, detect events, persist state
+        run: node scripts/ingest.js
+
+      - name: Commit persisted state (Phase 1 — Core Foundation)
+        run: |
+          # state/ is DG OS's only real datastore today (see
+          # docs/DG_OS_V2_AUDIT.md): a git-committed, restart-safe snapshot
+          # plus an append-only event log, written by scripts/ingest.js
+          # above. Committed only when something actually changed, so a
+          # quiet market doesn't spam the history with no-op commits.
+          git config user.name "dg-os-bot"
+          git config user.email "dg-os-bot@users.noreply.github.com"
+          git add state/
+          git diff --cached --quiet || git commit -m "DG OS state: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          git push
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

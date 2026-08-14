@@ -59,7 +59,12 @@ automatically to every module below, and is documented identically in
 | 8 — DG Confidence Engine | architecture done — contribution-score aggregation, no trading opinion |
 | 10 — Daniel Decision Engine | architecture done — WAIT/WATCH/READY/INVALID data model, always WAIT today since `rules/strategy.md` is entirely `TODO` |
 
-**System layer — not started:** Alerts, Reports, Learning, Statistics.
+**System layer:**
+
+| Module | Status |
+|---|---|
+| DG Overview (dashboard aggregation) | done — at-a-glance session/day/week levels, structure bias, open H1 zones, text feed for sweeps + zone reactions; reads existing modules only, no new detection |
+| Alerts, Reports, Learning, Statistics | not started |
 
 (Module numbers track build order, not architectural layer — see the note
 above the system tree in `docs/MARKET_BRAIN.md`.)

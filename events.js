@@ -206,6 +206,179 @@ function classifyMarketEvents(prevState,nextBrain){
   return{events,patternIds:patternDiff.nextIds};
 }
 
-return{EVENT_CATEGORY,classifyMarketEvents,diffLiquidityEvents,diffPOIEvents,diffStructureEvents,diffCandlePatternEvents};
+// ---------------------------------------------------------------------------
+// DG Trading Brain V1 Event/Alert Engine (autonomous night build, Phase 5/6/
+// 9/10). Separate from classifyMarketEvents() above on purpose — that
+// function diffs the LEGACY single-H1 brain (computeAllDerivedModules);
+// this one diffs the NEW multi-timeframe DG Trading Brain
+// (computeTradingBrainV1's `decision` summary, see marketBrain.js). Shares
+// the same event store (state/events.jsonl via marketStateStore.js) but
+// tags every event `source:'tradingBrainV1'` so the two vocabularies never
+// get confused with each other, even where a type name coincides
+// (REACTION_DETECTED, ENGULFING_CONFIRMED exist in both).
+//
+// Every event carries Daniel's requested shape: type, timestamp, symbol,
+// direction, timeframe, price, relatedPoi, significance, explanation,
+// dedupeKey. Dedup itself works by only ever calling this function with a
+// genuine transition (previous vs. next state) — see marketState.js.
+// ---------------------------------------------------------------------------
+
+// SYSTEM_THRESHOLD, not a DG rule: how close price must get to a POI's near
+// edge to count as "approaching" for UI/event purposes only. No trading
+// decision ever depends on this number — see rules/strategy.md Kapitel 6's
+// explicit instruction to keep such a distance out of strategy.md entirely.
+const POI_APPROACH_THRESHOLD_PERCENT=0.15;
+const CONFIRMATION_RANK={NO_CONFIRMATION:0,REACTION_DETECTED:1,CONFIRMATION_DEVELOPING:2,ENGULFING_CONFIRMED:3,STRUCTURE_CONFIRMED:4};
+const ACTIVE_ENTRY_STATUSES=['WATCH_BUY','WATCH_SELL','BUY_CONFIRMATION','SELL_CONFIRMATION','BUY_READY','SELL_READY'];
+
+// Alert-Fatigue-Schutz (Kapitel 13/16, "keine unnötigen Alerts für ... jeden
+// Price Tick"): price sitting right at a liquidity level can flip
+// touched/sweeped back and forth tick to tick, which would otherwise flip
+// WATCH_BUY <-> WAIT (and fire SETUP_INVALIDATED) every few seconds. A
+// WATCH_BUY/WATCH_SELL entry (still tentative by definition) re-alerts only
+// after this cooldown; BUY_READY/SELL_READY always alerts immediately —
+// never suppressed, since that's the one status Daniel must never miss.
+const STATUS_EVENT_COOLDOWN_MS=60000;
+
+function tbEvent(type,fields){
+  fields=fields||{};
+  const at=fields.at||new Date().toISOString();
+  return{
+    type,category:'trading',source:'tradingBrainV1',at,symbol:'XAUUSD',
+    direction:fields.direction||null,timeframe:fields.timeframe||null,
+    price:typeof fields.price==='number'?fields.price:null,
+    relatedPoi:fields.relatedPoi||null,
+    significance:fields.significance||'normal',
+    explanation:fields.explanation||null,
+    dedupeKey:fields.dedupeKey||`${type}-${fields.relatedPoi||'none'}-${fields.direction||'none'}`
+  };
+}
+
+function isApproaching(primaryPoi,currentPrice){
+  if(!primaryPoi||typeof currentPrice!=='number'||typeof primaryPoi.priceHigh!=='number'||typeof primaryPoi.priceLow!=='number') return false;
+  const nearEdge=primaryPoi.direction==='bullish'?primaryPoi.priceHigh:primaryPoi.priceLow;
+  if(!(currentPrice>0)) return false;
+  return(Math.abs(currentPrice-nearEdge)/currentPrice)*100<=POI_APPROACH_THRESHOLD_PERCENT;
+}
+
+// DG Active Setup Model (Kapitel/Phase 10) — only exists while a real
+// WATCH/CONFIRMATION/READY scenario is active; WAIT never gets an invented
+// setup. `id`/`createdAt` stay stable across ticks for the SAME direction
+// so the setup's own lifetime is trackable; a direction flip creates a new
+// setup (the old one having already gone through SETUP_INVALIDATED).
+function buildActiveSetup(decision,existing,currentPrice){
+  if(!decision||!ACTIVE_ENTRY_STATUSES.includes(decision.status)) return null;
+  const now=new Date().toISOString();
+  const reuse=existing&&existing.direction===decision.direction;
+  return{
+    id:reuse?existing.id:`setup-${Date.now()}`,
+    symbol:'XAUUSD',direction:decision.direction,status:decision.status,
+    createdAt:reuse?existing.createdAt:now,updatedAt:now,
+    macroBias:decision.macroBias,tradingBias:decision.tradingBias,
+    primaryPoi:decision.primaryPoi,confirmation:decision.confirmation,
+    entryZone:decision.entryZone,invalidation:decision.invalidation,
+    targets:decision.targets,riskReward:decision.riskReward,reasons:decision.reasons,
+    _approaching:isApproaching(decision.primaryPoi,currentPrice)
+  };
+}
+
+// The one entry point for the new pipeline. `prevState` is
+// {entryStatus, activeSetup, lastStatusEventAt} read from
+// tradingBrainStore.js (or null on cold start — like classifyMarketEvents(),
+// a cold start seeds state and emits nothing, since there's no real
+// "before" to diff against). `now` defaults to Date.now(), overridable for
+// tests. Returns {events, statusEventEmitted, approachEventEmitted} — the
+// caller persists each cooldown timestamp only when its own flag is true,
+// so a cooldown clock only resets on an actual alert, never on a
+// suppressed flap.
+function classifyTradingBrainEvents(prevState,brain,currentPrice,now){
+  now=typeof now==='number'?now:Date.now();
+  const events=[];
+  let statusEventEmitted=false,approachEventEmitted=false;
+  if(!brain||!brain.decision) return{events,statusEventEmitted,approachEventEmitted};
+  const decision=brain.decision;
+  const prevStatus=prevState&&prevState.entryStatus;
+  const prevActiveSetup=prevState&&prevState.activeSetup;
+  if(!prevState) return{events,statusEventEmitted,approachEventEmitted}; // cold start: seed only, no fabricated "just happened" events
+
+  const lastStatusEventAt=prevState.lastStatusEventAt?new Date(prevState.lastStatusEventAt).getTime():0;
+  const inCooldown=(now-lastStatusEventAt)<STATUS_EVENT_COOLDOWN_MS;
+
+  if(decision.status!==prevStatus){
+    if(ACTIVE_ENTRY_STATUSES.includes(decision.status)){
+      const isReady=decision.status.endsWith('READY');
+      if(isReady||!inCooldown){
+        events.push(tbEvent(decision.status,{
+          direction:decision.direction,price:currentPrice,
+          relatedPoi:decision.primaryPoi&&decision.primaryPoi.id,
+          timeframe:decision.primaryPoi&&decision.primaryPoi.timeframe,
+          significance:isReady?'high':'normal',
+          explanation:(decision.reasons&&decision.reasons[0])||null
+        }));
+        statusEventEmitted=true;
+      }
+    }else if(decision.status==='WAIT'&&prevActiveSetup&&ACTIVE_ENTRY_STATUSES.includes(prevStatus)&&!inCooldown){
+      events.push(tbEvent('SETUP_INVALIDATED',{
+        direction:prevActiveSetup.direction,price:currentPrice,
+        relatedPoi:prevActiveSetup.primaryPoi&&prevActiveSetup.primaryPoi.id,
+        significance:'high',explanation:'Setup wurde ungültig — Status zurück auf WAIT.'
+      }));
+      statusEventEmitted=true;
+    }else if(decision.status==='DATA_NOT_READY'&&prevStatus!=='DATA_NOT_READY'){
+      events.push(tbEvent('DATA_NOT_READY',{significance:'high',explanation:(decision.reasons&&decision.reasons[0])||null}));
+      statusEventEmitted=true;
+    }else if(prevStatus==='DATA_NOT_READY'&&decision.status!=='DATA_NOT_READY'){
+      events.push(tbEvent('SYSTEM_RECOVERED',{significance:'high',explanation:'HTF-Kern-Timeframes wieder vollständig geladen.'}));
+      statusEventEmitted=true;
+    }
+  }
+
+  // Confirmation progression — only on the SAME primary POI, only forward.
+  if(decision.primaryPoi&&prevActiveSetup&&prevActiveSetup.primaryPoi&&prevActiveSetup.primaryPoi.id===decision.primaryPoi.id){
+    const prevConf=prevActiveSetup.confirmation&&prevActiveSetup.confirmation.status;
+    const nextConf=decision.confirmation&&decision.confirmation.status;
+    if(nextConf&&nextConf!=='NO_CONFIRMATION'&&nextConf!==prevConf&&(CONFIRMATION_RANK[nextConf]||0)>(CONFIRMATION_RANK[prevConf]||-1)){
+      events.push(tbEvent(nextConf,{
+        direction:decision.direction,price:currentPrice,relatedPoi:decision.primaryPoi.id,timeframe:decision.primaryPoi.timeframe,
+        significance:(nextConf==='STRUCTURE_CONFIRMED'||nextConf==='ENGULFING_CONFIRMED')?'high':'normal',
+        explanation:(decision.confirmation.reasons&&decision.confirmation.reasons[0])||null
+      }));
+    }
+  }
+
+  // IMPORTANT_POI_APPROACHING — SYSTEM_THRESHOLD only, see constant above.
+  // Cooldown-gated the same way as status events (its own independent
+  // clock): the "primary POI" candidate can itself change identity from
+  // tick to tick as scores shift near a tie, which made an identity-based
+  // "wasApproaching" check alone fire repeatedly — a plain cooldown is
+  // simpler and actually prevents the spam.
+  const lastApproachEventAt=prevState.lastApproachEventAt?new Date(prevState.lastApproachEventAt).getTime():0;
+  const approachInCooldown=(now-lastApproachEventAt)<STATUS_EVENT_COOLDOWN_MS;
+  if(decision.primaryPoi&&isApproaching(decision.primaryPoi,currentPrice)&&!approachInCooldown){
+    events.push(tbEvent('IMPORTANT_POI_APPROACHING',{
+      direction:decision.primaryPoi.direction,timeframe:decision.primaryPoi.timeframe,price:currentPrice,relatedPoi:decision.primaryPoi.id,
+      explanation:`Preis nähert sich ${decision.primaryPoi.type} (${decision.primaryPoi.timeframe}) — SYSTEM_THRESHOLD ${POI_APPROACH_THRESHOLD_PERCENT}%, keine DG-Regel.`
+    }));
+    approachEventEmitted=true;
+  }
+
+  // PRIMARY_TARGET_REACHED — same target price still primary, price now crossed it.
+  if(decision.targets&&decision.targets.length&&typeof currentPrice==='number'&&prevActiveSetup&&prevActiveSetup.targets){
+    const primary=decision.targets.find(t=>t.priority==='PRIMARY');
+    const prevPrimary=prevActiveSetup.targets.find(t=>t.priority==='PRIMARY');
+    if(primary&&prevPrimary&&primary.price===prevPrimary.price){
+      const reached=primary.direction==='up'?currentPrice>=primary.price:currentPrice<=primary.price;
+      if(reached) events.push(tbEvent('PRIMARY_TARGET_REACHED',{direction:decision.direction,price:currentPrice,significance:'high',explanation:`Primary Target erreicht: ${primary.reason}.`}));
+    }
+  }
+
+  return{events,statusEventEmitted,approachEventEmitted};
+}
+
+return{
+  EVENT_CATEGORY,classifyMarketEvents,diffLiquidityEvents,diffPOIEvents,diffStructureEvents,diffCandlePatternEvents,
+  POI_APPROACH_THRESHOLD_PERCENT,CONFIRMATION_RANK,ACTIVE_ENTRY_STATUSES,STATUS_EVENT_COOLDOWN_MS,
+  buildActiveSetup,classifyTradingBrainEvents
+};
 
 });

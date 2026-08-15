@@ -8,6 +8,30 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.26.0] — Event/Alert Engine V1 + Active Setup Model (Market Memory)
+
+Checkpoint 2 der Nacht-Session. DG Trading Brain V1 wird jetzt auf jeder
+Brain-Änderung neu berechnet (nicht mehr nur bei API-Anfragen), gegen den
+vorherigen Zustand gediffed und persistiert — DG OS "vergisst" ein
+laufendes Setup nicht mehr bei einem Railway-Restart.
+
+### Neu
+- `server/lib/tradingBrainStore.js`: persistiert Entry Status + Active Setup nach `state/tradingBrainState.json` auf dem bestehenden Railway Volume (nicht git-getrackt, wie `data/`).
+- `events.js`: `classifyTradingBrainEvents()` + `buildActiveSetup()` — neue, vom Legacy-Event-Pipeline getrennte Diff-Logik (Tag `source:'tradingBrainV1'`) für die Kapitel-9-Statuswechsel (WATCH_BUY/WATCH_SELL/BUY_CONFIRMATION/SELL_CONFIRMATION/BUY_READY/SELL_READY/SETUP_INVALIDATED/DATA_NOT_READY/SYSTEM_RECOVERED), Confirmation-Fortschritt (REACTION_DETECTED→…→STRUCTURE_CONFIRMED, nur vorwärts, nur am selben POI), `IMPORTANT_POI_APPROACHING` (SYSTEM_THRESHOLD, keine DG-Regel, klar so gekennzeichnet) und `PRIMARY_TARGET_REACHED`. Jedes Event trägt type/timestamp/symbol/direction/timeframe/price/relatedPoi/significance/explanation/dedupeKey.
+- Alert-Fatigue-Schutz: Status- und Approach-Events haben eine 60s-Cooldown, damit kurzfristig zappelnder Preis nicht WATCH_BUY/SETUP_INVALIDATED im Sekundentakt spammt — BUY_READY/SELL_READY werden davon nie unterdrückt.
+- `server/marketState.js`: `_recomputeTradingBrain()` läuft bei jeder Brain-Änderung (gleicher Trigger wie die bestehende Legacy-Diff-Logik), `getTradingBrain()` liefert jetzt den konsistenten gecachten Stand inkl. `activeSetup` statt bei jeder Anfrage neu (und aus dem Nichts) zu rechnen.
+
+### Bugfix
+- `getTradingBrain()`s Fallback-Pfad (vor der ersten Brain-Änderung) berechnete den Trading Brain zwar frisch, aktualisierte aber `activeSetup` nicht mit — dadurch konnte die API einen WATCH_BUY-Status mit `activeSetup: null` zurückgeben. Behoben, indem der Fallback denselben Pfad wie jede andere Neuberechnung nutzt.
+
+### Getestet
+16 neue Unit-Tests (Cold Start, Übergänge, Cooldown-Unterdrückung, „BUY_READY nie unterdrückt", Confirmation-Fortschritt nur vorwärts, DATA_NOT_READY/SYSTEM_RECOVERED, Active-Setup-Regeln, Persistenz-Round-Trip) — alle grün. Live gegen echten Server verifiziert: vor dem Fix Status-Flapping alle paar Sekunden, danach nur noch reale Übergänge; Restart-Test bestätigt, dass Setup-Status nach Neustart erhalten bleibt. Bestehende Regressionstests (End-to-End Trading Brain, Sweep/Reversal, Initial-Fetch-Retry) weiterhin grün.
+
+### Geänderte Dateien
+`events.js`, `server/marketState.js`, `server/lib/tradingBrainStore.js` (neu), `.gitignore`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.25.0] — Decision Summary, echter DG Report, Live-Dashboard
 
 Erster Checkpoint der Nacht-Session (Autonomous Night Build, Daniels

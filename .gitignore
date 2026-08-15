@@ -1,3 +1,8 @@
 data/
 .env
 node_modules/
+# Railway-Persistent-Volume-only runtime state (DG Trading Brain V1 Market
+# Memory) — unlike state/latest.json / state/events.jsonl, this is never
+# written by the GitHub Actions ingest workflow and has no git-committed
+# seed to keep in sync; it only ever exists on the running server's volume.
+state/tradingBrainState.json

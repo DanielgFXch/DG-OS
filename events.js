@@ -324,6 +324,16 @@ function classifyTradingBrainEvents(prevState,brain,currentPrice,now){
         significance:'high',explanation:'Setup wurde ungültig — Status zurück auf WAIT.'
       }));
       statusEventEmitted=true;
+    }else if(decision.status==='MISSED'){
+      // Never cooldown-gated: MISSED is inherently a one-shot transition —
+      // buildActiveSetup() clears activeSetup once status is MISSED, so
+      // the same priorSetupContext can't re-trigger it on the next tick.
+      events.push(tbEvent('MISSED',{
+        direction:decision.direction,price:currentPrice,
+        relatedPoi:prevActiveSetup&&prevActiveSetup.primaryPoi&&prevActiveSetup.primaryPoi.id,
+        significance:'high',explanation:(decision.reasons&&decision.reasons[0])||null
+      }));
+      statusEventEmitted=true;
     }else if(decision.status==='DATA_NOT_READY'&&prevStatus!=='DATA_NOT_READY'){
       events.push(tbEvent('DATA_NOT_READY',{significance:'high',explanation:(decision.reasons&&decision.reasons[0])||null}));
       statusEventEmitted=true;

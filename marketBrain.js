@@ -1626,7 +1626,40 @@ function liquiditySweepSupport(direction,liquidity){
   return(liquidity||[]).filter(l=>l.type===wantType&&l.status==='sweeped'&&l.relevance&&l.relevance.tier!=='low');
 }
 
-function computeEntryDecision(tradingBiasState,poisAll,liquidity,currentPrice){
+// DG No-Trade Rules (Kapitel 12) — "MISSED": "Wenn das erwartete Szenario
+// bereits ohne validen Entry ausgelöst wurde und der Markt deutlich
+// gelaufen ist: STATUS = MISSED / NO_ENTRY. DG OS darf dem Markt nicht
+// hinterherjagen." Requires knowing the PRIOR setup — computeEntryDecision
+// itself is otherwise stateless, so `priorSetupContext` (the server's
+// persisted Active Setup, see server/marketState.js) is the one piece of
+// history threaded in here, optionally: browser/tests calling without it
+// simply never see MISSED, which is honest (no history = can't know).
+// Mechanical, disclosed distance rule (not a Daniel-given number, same
+// spirit as the SL buffer above): only fires once a setup had already
+// reached Confirmation-or-later (a mere WATCH never produced a real
+// entry chance to miss), and only once price has moved a full zone-height
+// past the missed POI in the trade direction — a plain, symmetric proxy
+// for "deutlich gelaufen", not an invented trading threshold.
+const MISSED_MOVE_PROGRESSED_STATUSES=['BUY_CONFIRMATION','SELL_CONFIRMATION','BUY_READY','SELL_READY'];
+
+function detectMissedMove(priorSetupContext,currentPrice){
+  if(!priorSetupContext||!priorSetupContext.primaryPoi||typeof currentPrice!=='number') return null;
+  if(!MISSED_MOVE_PROGRESSED_STATUSES.includes(priorSetupContext.status)) return null;
+  const poi=priorSetupContext.primaryPoi;
+  if(typeof poi.priceHigh!=='number'||typeof poi.priceLow!=='number') return null;
+  const zoneHeight=poi.priceHigh-poi.priceLow;
+  if(!(zoneHeight>0)) return null;
+  const ranAway=priorSetupContext.direction==='bullish'
+    ?currentPrice>=poi.priceHigh+zoneHeight
+    :currentPrice<=poi.priceLow-zoneHeight;
+  if(!ranAway) return null;
+  return{
+    direction:priorSetupContext.direction,
+    reason:`Markt ist nach ${priorSetupContext.status} ohne sinnvollen Entry weitergelaufen (Kapitel 12: MISSED/NO_ENTRY) — ${poi.type} (${poi.timeframe}) ist nicht mehr sinnvoll erreichbar.`
+  };
+}
+
+function computeEntryDecision(tradingBiasState,poisAll,liquidity,currentPrice,priorSetupContext){
   if(!DG_RULES_DEFINED.entry){
     return{status:'AWAITING_DG_RULE',direction:null,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:null,reasons:['DG Entry (Kapitel 9) ist noch nicht definiert.']};
   }
@@ -1642,6 +1675,10 @@ function computeEntryDecision(tradingBiasState,poisAll,liquidity,currentPrice){
     .sort((a,b)=>(b.score-a.score)||((typeof a.distanceToPrice==='number'?a.distanceToPrice:Infinity)-(typeof b.distanceToPrice==='number'?b.distanceToPrice:Infinity)));
 
   if(!candidates.length){
+    const missed=detectMissedMove(priorSetupContext,currentPrice);
+    if(missed){
+      return{status:'MISSED',direction:missed.direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:null,reasons:[missed.reason]};
+    }
     return{status:'WAIT',direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:null,reasons:[`Kein relevanter POI in Trading-Bias-Richtung (${direction}) — Kapitel 12.`]};
   }
 
@@ -1761,7 +1798,7 @@ function timeOfDayGreeting(date){
 }
 
 const ENTRY_STATUS_HEADLINE={
-  WAIT:'⚪ WAIT',DATA_NOT_READY:'⚠️ DATA NOT READY',
+  WAIT:'⚪ WAIT',DATA_NOT_READY:'⚠️ DATA NOT READY',MISSED:'⏭️ MISSED / NO ENTRY',
   WATCH_BUY:'🟡 WATCH BUY',WATCH_SELL:'🟡 WATCH SELL',
   BUY_CONFIRMATION:'🟠 BUY CONFIRMATION',SELL_CONFIRMATION:'🟠 SELL CONFIRMATION',
   BUY_READY:'🟢 BUY READY',SELL_READY:'🔴 SELL READY'
@@ -1769,6 +1806,7 @@ const ENTRY_STATUS_HEADLINE={
 
 function waitingForText(decision){
   if(decision.status==='DATA_NOT_READY') return'Marktdaten (ein HTF-Timeframe fehlt noch).';
+  if(decision.status==='MISSED') return'Das nächste valide Setup — dieses ist ohne Entry gelaufen (Kapitel 12).';
   if(decision.status==='WAIT') return decision.missingRequirements[0]||'Ein relevantes Setup nach DG-Regeln.';
   if(decision.status==='WATCH_BUY'||decision.status==='WATCH_SELL') return'Reaktion am relevanten POI.';
   if(decision.status==='BUY_CONFIRMATION'||decision.status==='SELL_CONFIRMATION'){
@@ -1923,7 +1961,13 @@ function summarizeHTFContextEntry(tf,pd){
 // (5) DG POI Quality (Kapitel 4/5/6/7), (6) DG Confirmation (Kapitel 8)
 // per POI, (7) DG Entry (Kapitel 9), (8) DG Targets + R:R (Kapitel 10/11),
 // (9) the Market Report (Kapitel 12 status + Kapitel 13/14 notes).
-function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice){
+// `priorSetupContext` (optional, 4th arg): the server's persisted Active
+// Setup ({direction,status,primaryPoi}, see server/marketState.js) — the
+// one piece of cross-call memory needed to detect Kapitel 12's MISSED/
+// NO_ENTRY. Stateless callers (browser, tests) simply omit it, in which
+// case MISSED can never fire — an honest consequence of having no history,
+// not a bug.
+function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,priorSetupContext){
   candlesByTimeframe=candlesByTimeframe||{};
 
   // (1) Per-timeframe Market Facts
@@ -1981,7 +2025,7 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice){
   poisAll.forEach(poi=>{ poi.confirmation=computeConfirmation(poi,ltf15mSeries); });
 
   // (7) DG Entry (Kapitel 9)
-  const entryDecision=computeEntryDecision(biasResult.overallBias,poisAll,combinedLiquidity,currentPrice);
+  const entryDecision=computeEntryDecision(biasResult.overallBias,poisAll,combinedLiquidity,currentPrice,priorSetupContext);
 
   // (8) DG Targets (Kapitel 10) + DG Risk Management (Kapitel 11)
   const targets=computeTargets(combinedLiquidity,poisAll,poisAll,currentPrice,biasResult.overallBias);
@@ -2082,7 +2126,8 @@ return{
   POI_QUALITY_CHAPTER,POI_QUALITY_TIER_THRESHOLDS,zonesOverlap,poiOverlapsFreshPOI,poiHasSweepSupport,poiFavorablePDLocation,computePOIQuality,
   CONFIRMATION_STATES,CONFIRMATION_LOOKAHEAD_CANDLES,isRejectionCandle,computeConfirmation,
   TARGET_MAX_PER_DIRECTION,hasCounterPOIInPath,computeTargets,
-  ENTRY_CANDIDATE_MIN_QUALITY,ENTRY_SL_BUFFER_PERCENT_OF_ZONE,liquiditySweepSupport,computeEntryDecision,
+  ENTRY_CANDIDATE_MIN_QUALITY,ENTRY_SL_BUFFER_PERCENT_OF_ZONE,liquiditySweepSupport,
+  MISSED_MOVE_PROGRESSED_STATUSES,detectMissedMove,computeEntryDecision,
   computeRiskManagement,NEWS_STATUS,SESSION_LIQUIDITY_TIMEFRAMES,computeSessionNotes,
   buildDecisionSummary,timeOfDayGreeting,ENTRY_STATUS_HEADLINE,waitingForText,generateDGBriefing,
   summarizeTimeframeContext,generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1

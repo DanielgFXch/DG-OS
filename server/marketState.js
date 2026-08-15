@@ -214,7 +214,12 @@ class MarketState {
   // per API request, and every genuine transition gets diffed into a real
   // event exactly like the legacy pipeline already does for liquidity/POIs.
   _recomputeTradingBrain() {
-    this.tradingBrain = MB.computeTradingBrainV1(this.candlesByTimeframe, this.brain.liquidity, this._currentPrice());
+    // Passes the PRIOR Active Setup (before this recompute) so
+    // computeEntryDecision can detect Kapitel 12's MISSED/NO_ENTRY — the
+    // one piece of cross-call memory that function needs and only the
+    // server (not the stateless browser/test callers) actually has.
+    const priorSetupContext = this._prevTradingBrainState && this._prevTradingBrainState.activeSetup;
+    this.tradingBrain = MB.computeTradingBrainV1(this.candlesByTimeframe, this.brain.liquidity, this._currentPrice(), priorSetupContext);
     const decision = this.tradingBrain.decision;
     const { events: tbEvents, statusEventEmitted, approachEventEmitted } = classifyTradingBrainEvents(this._prevTradingBrainState, this.tradingBrain, this._currentPrice());
     if (tbEvents.length) this._pendingEvents.push(...tbEvents);

@@ -391,6 +391,50 @@ function renderTradingBrain(brain){
   summaryEl.textContent=report.summary||'';
 }
 
+// Hero card ("AKTUELLE HANDLUNG") — historically driven entirely by the
+// Alpha Simulation buttons below (computeDecision()/render()). Now: when a
+// real Always-On Server is connected, this overwrites the hero with the
+// real DG Trading Brain decision (brain.decision) and flips the badge to
+// LIVE. When no server is connected, this function does nothing and the
+// Alpha Simulation's own render() keeps driving the hero exactly as
+// before — the TEST badge stays visible so it's never mistaken for a real
+// status (Daniel's explicit "keine alten Alpha-/Fake-Werte mehr" for real
+// decisions, "Simulation darf bleiben, aber klar getrennt/gekennzeichnet").
+const HERO_ACTION_CLASS={WAIT:'wait',DATA_NOT_READY:'wait',WATCH_BUY:'watch',WATCH_SELL:'watch',BUY_CONFIRMATION:'watch',SELL_CONFIRMATION:'watch',BUY_READY:'buy',SELL_READY:'sell'};
+const HERO_ACTION_ICON={wait:'ic-clock',watch:'ic-eye',buy:'ic-trend-up',sell:'ic-trend-down'};
+const HERO_ACTION_LABEL={WAIT:'WAIT',DATA_NOT_READY:'DATA NOT READY',WATCH_BUY:'WATCH BUY',WATCH_SELL:'WATCH SELL',BUY_CONFIRMATION:'BUY CONFIRMATION',SELL_CONFIRMATION:'SELL CONFIRMATION',BUY_READY:'BUY READY',SELL_READY:'SELL READY'};
+
+function renderHeroAction(brain){
+  const badge=$('heroSourceBadge');
+  if(!brain||!brain.decision){
+    if(badge){ badge.textContent='SIMULATION'; badge.className='badge-test'; }
+    return;
+  }
+  if(badge){ badge.textContent='LIVE'; badge.className='badge-live'; }
+
+  const d=brain.decision;
+  const cls=HERO_ACTION_CLASS[d.status]||'wait';
+  $('action').className=`action ${cls}`;
+  $('action').innerHTML=`<svg class="ic ic-action"><use href="#${HERO_ACTION_ICON[cls]}"></use></svg><span>${HERO_ACTION_LABEL[d.status]||d.status}</span>`;
+  $('tradeType').textContent=d.reasons&&d.reasons.length?d.reasons[0]:'—';
+  $('decisionReason').textContent=(d.missingRequirements&&d.missingRequirements.length)
+    ?`Fehlt: ${d.missingRequirements.join(', ')}`
+    :((d.reasons||[]).join(' · ')||'—');
+
+  // Kapitel 1 defines no confidence formula, so the ring never shows a
+  // fabricated percentage for real data — it shows the POI quality score
+  // (0-100 style visual only when a primary POI exists) purely as a
+  // "how many confluences support this" visual, explicitly not a
+  // probability. When no primary POI exists yet, ring stays neutral/empty.
+  const poiScorePercent=d.primaryPoi&&typeof d.primaryPoi.score==='number'?Math.min(100,Math.round((d.primaryPoi.score/7)*100)):0;
+  $('confidence').textContent=d.primaryPoi?`${poiScorePercent}%`:'—';
+  const ring=$('confRing');
+  if(ring){
+    ring.style.stroke=TIER_COLOR[cls==='buy'?'ready':(cls==='sell'?'ready':cls)]||TIER_COLOR.wait;
+    ring.style.strokeDashoffset=CONF_RING_CIRCUMFERENCE*(1-poiScorePercent/100);
+  }
+}
+
 // Runs every derived module (marketBrain.js's computeAllDerivedModules, the
 // same function the Node ingest script calls) and re-renders every card.
 // Called after every 15-min JSON refresh AND every WebSocket price tick.
@@ -447,7 +491,7 @@ let marketServerReachable=false;
 let tradingBrainState=null;      // last successful /api/brain/XAUUSD response, or null — DG Trading Brain V1, only reachable via the Always-On Server
 
 async function pollMarketServer(){
-  if(!marketServerUrl){ marketServerReachable=false; marketServerState=null; tradingBrainState=null; renderTradingBrain(tradingBrainState); return; }
+  if(!marketServerUrl){ marketServerReachable=false; marketServerState=null; tradingBrainState=null; renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState); return; }
   try{
     const base=marketServerUrl.replace(/\/$/,'');
     const res=await fetch(`${base}/api/market/XAUUSD`,{cache:'no-store'});
@@ -472,7 +516,7 @@ async function pollMarketServer(){
     $('marketServerStatus').textContent=`Always-On Server nicht erreichbar (${err.message}) — Dashboard nutzt Fallback (15-Min-Feed).`;
   }
   renderFreshness();
-  renderTradingBrain(tradingBrainState);
+  renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
 }
 
 function connectMarketServer(url){
@@ -482,7 +526,7 @@ function connectMarketServer(url){
     marketServerReachable=false;marketServerState=null;tradingBrainState=null;
     $('marketServerStatus').textContent='Kein Always-On Server konfiguriert · nutzt den 15-Min-Feed + optionalen Browser-WebSocket.';
     renderFreshness();
-    renderTradingBrain(tradingBrainState);
+    renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
     return;
   }
   pollMarketServer();
@@ -883,31 +927,16 @@ document.querySelectorAll('[data-step]').forEach(btn=>{
     render();
   })
 });
+// Real DG Briefing (Phase 2/3) — deterministically templated from the
+// live DG Trading Brain V1 output (marketBrain.js's generateDGBriefing()),
+// never from the Alpha Simulation buttons. Only ever available once a real
+// Always-On Server is connected — no fallback to simulated/fake values,
+// since this text is also what gets sent to Telegram.
 function briefingText(){
-  const {tier}=computeDecision();
-  const headline=tier==='ready'?'🔴 SELL READY':tier==='watch'?'🟠 SELL WATCH':'🟡 WAIT';
-  return `🧠 DG OS
-
-${headline}
-${$('decisionReason').textContent}
-Confidence: ${$('confidence').textContent}
-
-🌍 Market Plan
-HTF: Bullish
-Primary Target: Daily Buyside
-
-💧 Event
-${state.sweep?'Asia High gesweept':'Noch kein signifikanter Sweep'}
-
-⚡ Confirmation
-${state.engulf?'M5 Bearish Engulfing + Displacement':'Fehlt'}
-
-🎯 Trade Plan
-Typ: ${state.sweep&&state.engulf?'Countertrend Scalp':'—'}
-Ziel: ${state.sweep?'Asia Low':'—'}
-
-💡 Warum?
-${state.sweep&&state.engulf?'Asia High Sweep + bearish Confirmation im POI. HTF bleibt bullish.':'DG OS wartet auf die nächste valide Bestätigung.'}`;
+  if(!tradingBrainState||!tradingBrainState.decision){
+    return'Kein Always-On Server verbunden — siehe „XAUUSD Live" Karte. Ohne echte Marktdaten erzeugt DG OS kein Briefing (keine Alpha-/Fake-Werte).';
+  }
+  return generateDGBriefing(tradingBrainState,new Date());
 }
 $('previewBriefing').addEventListener('click',()=>{
   const box=$('briefing');
@@ -1002,7 +1031,7 @@ render();
 renderGreeting();
 renderTicker();
 renderFreshness();
-renderTradingBrain(tradingBrainState);
+renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
 updateSessionStatuses();
 loadMarketData();
 if(marketServerUrl) pollMarketServer();

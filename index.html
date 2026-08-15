@@ -95,7 +95,7 @@
     <section class="hero card">
       <div class="hero-reticle" aria-hidden="true"></div>
       <div class="hero-main">
-        <div class="eyebrow">AKTUELLE HANDLUNG</div>
+        <div class="eyebrow">AKTUELLE HANDLUNG <span id="heroSourceBadge" class="badge-test">SIMULATION</span></div>
         <div id="action" class="action wait"></div>
         <div id="tradeType" class="muted">Noch keine Trade-Freigabe</div>
         <div id="decisionReason" class="decision-reason"></div>
@@ -338,14 +338,14 @@
 
       <div class="col">
         <section class="card">
-          <div class="section-title"><svg class="ic"><use href="#ic-flask"></use></svg>Alpha Simulation</div>
+          <div class="section-title"><svg class="ic"><use href="#ic-flask"></use></svg>Alpha Simulation <span class="badge-test">TEST</span></div>
           <div class="buttons">
             <button data-step="asia">1 · Asia beenden</button>
             <button data-step="sweep" class="danger">2 · Asia High sweep</button>
             <button data-step="engulf" class="danger">3 · Bearish Engulfing</button>
             <button data-step="reset" class="secondary">Reset</button>
           </div>
-          <p class="hint">Dieser Alpha-Screen ist bereits als PWA gebaut. Sobald wir Live-XAUUSD anschließen, ersetzen echte Events diese Test-Buttons.</p>
+          <p class="hint">TEST-SIMULATION, kein Live-Status: nur wenn kein Always-On Server verbunden ist, steuert dieser Demo-Screen die Karte „Aktuelle Handlung" oben. Sobald ein Server verbunden ist, zeigt diese Karte echte DG-Trading-Brain-Daten und die Simulation hat keinen Effekt mehr.</p>
         </section>
 
         <section class="card">
@@ -364,7 +364,7 @@
           <div class="field-settings">
             <input id="tgToken" type="password" placeholder="Bot Token (von @BotFather)" autocomplete="off" />
             <input id="tgChatId" type="text" placeholder="Chat-ID" autocomplete="off" />
-            <label class="tg-auto"><input id="tgAutoSend" type="checkbox" /> Auto-Senden bei SELL-Signal</label>
+            <label class="tg-auto"><input id="tgAutoSend" type="checkbox" /> Auto-Senden bei Alpha-Test-Signal (Demo, sendet echten Report-Inhalt)</label>
             <div class="buttons">
               <button id="tgSave" class="secondary">Speichern &amp; testen</button>
             </div>

@@ -1705,6 +1705,124 @@ function computeRiskManagement(entryDecision,targets,currentPrice){
   };
 }
 
+// DG Decision Summary — a clean, flat assembly of fields that already exist
+// scattered across entry/risk/bias/pois, requested explicitly so a
+// consumer (dashboard, Telegram, future briefing) doesn't have to know the
+// internal shape of the engine. Nothing computed here is new — every field
+// is a direct read or trivial derivation of the interpretation results
+// computed above. `missingRequirements` is only populated for WAIT/
+// DATA_NOT_READY (there IS something missing); once a setup is active
+// there's nothing missing by definition, so it stays empty.
+function buildDecisionSummary(entryDecision,biasResult,risk,targets,poisAll){
+  const primaryPoi=entryDecision.primaryPOI?(poisAll||[]).find(p=>p.id===entryDecision.primaryPOI)||null:null;
+  const primaryPoiSummary=primaryPoi?{
+    id:primaryPoi.id,type:primaryPoi.type,timeframe:primaryPoi.timeframe,direction:primaryPoi.direction,
+    priceLow:primaryPoi.priceLow,priceHigh:primaryPoi.priceHigh,quality:primaryPoi.quality,score:primaryPoi.score,
+    status:primaryPoi.status,reaction:primaryPoi.reaction||null
+  }:null;
+  const wantDirection=entryDecision.direction==='bullish'?'up':(entryDecision.direction==='bearish'?'down':null);
+  const directionTargets=wantDirection?(targets||[]).filter(t=>t.direction===wantDirection):[];
+  const isPending=entryDecision.status==='WAIT'||entryDecision.status==='DATA_NOT_READY'||entryDecision.status==='AWAITING_DG_RULE';
+
+  return{
+    status:entryDecision.status,
+    direction:entryDecision.direction,
+    confidence:null, // Kapitel 1 defines no confidence formula — never fabricated
+    macroBias:biasResult.macro?biasResult.macro.state:null,
+    tradingBias:biasResult.trading?biasResult.trading.state:biasResult.overallBias,
+    primaryPoi:primaryPoiSummary,
+    confirmation:primaryPoi?primaryPoi.confirmation||null:null,
+    entryZone:entryDecision.entryZone,
+    invalidation:typeof entryDecision.stopLoss==='number'?entryDecision.stopLoss:null,
+    targets:directionTargets,
+    riskReward:(risk&&risk.riskRewardByTarget)||[],
+    missingRequirements:isPending?(entryDecision.reasons||[]):[],
+    reasons:entryDecision.reasons||[]
+  };
+}
+
+// DG Market Report V1 (Phase 2) — a compact, trader-readable briefing text,
+// entirely templated from already-computed Market Facts + DG Interpretation
+// results (decision summary + report). No invented prose, no LLM
+// analysis — every sentence is a direct read of a computed field, exactly
+// like `report.summary` above, just formatted for a human reading it in
+// the morning instead of for debugging.
+function timeOfDayGreeting(date){
+  date=date||new Date();
+  let hour;
+  try{
+    hour=Number(new Intl.DateTimeFormat('en-GB',{hour:'2-digit',hour12:false,timeZone:'Europe/Zurich'}).format(date));
+  }catch(err){
+    hour=date.getHours();
+  }
+  if(hour>=5&&hour<12) return'Guten Morgen';
+  if(hour>=12&&hour<18) return'Guten Nachmittag';
+  return'Guten Abend';
+}
+
+const ENTRY_STATUS_HEADLINE={
+  WAIT:'⚪ WAIT',DATA_NOT_READY:'⚠️ DATA NOT READY',
+  WATCH_BUY:'🟡 WATCH BUY',WATCH_SELL:'🟡 WATCH SELL',
+  BUY_CONFIRMATION:'🟠 BUY CONFIRMATION',SELL_CONFIRMATION:'🟠 SELL CONFIRMATION',
+  BUY_READY:'🟢 BUY READY',SELL_READY:'🔴 SELL READY'
+};
+
+function waitingForText(decision){
+  if(decision.status==='DATA_NOT_READY') return'Marktdaten (ein HTF-Timeframe fehlt noch).';
+  if(decision.status==='WAIT') return decision.missingRequirements[0]||'Ein relevantes Setup nach DG-Regeln.';
+  if(decision.status==='WATCH_BUY'||decision.status==='WATCH_SELL') return'Reaktion am relevanten POI.';
+  if(decision.status==='BUY_CONFIRMATION'||decision.status==='SELL_CONFIRMATION'){
+    const c=decision.confirmation&&decision.confirmation.status;
+    return`15M Confirmation (aktuell: ${c||'REACTION_DETECTED'}).`;
+  }
+  if(decision.status==='BUY_READY'||decision.status==='SELL_READY') return'Nichts mehr — Setup ist laut DG-Regeln bereit (Decision-Support, keine automatische Order).';
+  return'—';
+}
+
+function generateDGBriefing(brain,now){
+  const decision=brain.decision,report=brain.report,liquidity=brain.liquidity||[];
+  const greeting=`${timeOfDayGreeting(now)} Gomes.`;
+
+  const openBuyside=liquidity.filter(l=>l.type==='high'&&l.status==='active').sort((a,b)=>a.price-b.price).slice(0,3);
+  const openSellside=liquidity.filter(l=>l.type==='low'&&l.status==='active').sort((a,b)=>b.price-a.price).slice(0,3);
+  const recentlySwept=liquidity.filter(l=>l.status==='sweeped').slice(0,3);
+
+  const poiLine=p=>`${p.range} (${p.timeframe}, ${p.quality})`; // p.range is already the pre-formatted "X–Y" string from report.freshBullish/BearishPOIs
+  const buyAreas=(report.freshBullishPOIs||[]).slice(0,3);
+  const sellAreas=(report.freshBearishPOIs||[]).slice(0,3);
+
+  const lines=[];
+  lines.push(greeting,'');
+  lines.push('MARKET STATUS');
+  lines.push(ENTRY_STATUS_HEADLINE[decision.status]||decision.status,'');
+  lines.push('HTF');
+  lines.push(`Macro: ${decision.macroBias||'—'}`);
+  lines.push(`Trading: ${decision.tradingBias||'—'}`,'');
+  lines.push('LIQUIDITY');
+  lines.push(`Buyside offen: ${openBuyside.length?openBuyside.map(l=>`${l.label} ${fmtPrice(l.price)}`).join(' · '):'keine'}`);
+  lines.push(`Sellside offen: ${openSellside.length?openSellside.map(l=>`${l.label} ${fmtPrice(l.price)}`).join(' · '):'keine'}`);
+  lines.push(`Bereits gesweept: ${recentlySwept.length?recentlySwept.map(l=>`${l.label} ${fmtPrice(l.price)}`).join(' · '):'keine'}`,'');
+  lines.push('TOP BUY AREAS');
+  lines.push(buyAreas.length?buyAreas.map((p,i)=>`${i+1}. ${poiLine(p)}`).join('\n'):'keine','');
+  lines.push('TOP SELL AREAS');
+  lines.push(sellAreas.length?sellAreas.map((p,i)=>`${i+1}. ${poiLine(p)}`).join('\n'):'keine','');
+  lines.push('CURRENT SCENARIO');
+  lines.push(decision.reasons[0]||'—','');
+  lines.push('WAITING FOR');
+  lines.push(waitingForText(decision),'');
+  lines.push('TARGETS');
+  const primaryTarget=decision.targets.find(t=>t.priority==='PRIMARY');
+  const secondaryTarget=decision.targets.find(t=>t.priority==='SECONDARY');
+  lines.push(`Primary: ${primaryTarget?`${fmtPrice(primaryTarget.price)} (${primaryTarget.reason})`:'—'}`);
+  lines.push(`Secondary: ${secondaryTarget?`${fmtPrice(secondaryTarget.price)} (${secondaryTarget.reason})`:'—'}`,'');
+  lines.push('INVALIDATION');
+  lines.push(typeof decision.invalidation==='number'?fmtPrice(decision.invalidation):'—','');
+  lines.push('WHY');
+  lines.push(decision.reasons.join(' · ')||'—');
+
+  return lines.join('\n');
+}
+
 // DG News (Kapitel 14) — Daniel's own explicit V1 answer: "Falls noch
 // keine zuverlässige Live-News-/Economic-Calendar-Datenquelle angebunden
 // ist: NEWS_STATUS = DATA_SOURCE_NOT_CONNECTED." No such source exists in
@@ -1889,13 +2007,22 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice){
   // what the (necessarily degraded) computation above produced.
   const htfCoreMissing=['weekly','daily','4h','1h'].filter(key=>!((candlesByTimeframe[key]&&candlesByTimeframe[key].series)||[]).length);
   const finalStatus=htfCoreMissing.length?'DATA_NOT_READY':report.status;
-  if(htfCoreMissing.length) report.status=finalStatus;
+  if(htfCoreMissing.length){
+    report.status=finalStatus;
+    entryDecision.status=finalStatus;
+    entryDecision.reasons=['Ein oder mehrere HTF-Kern-Timeframes (Weekly/Daily/4H/1H) haben noch keine Kerzendaten (Kapitel 12: DATA_NOT_READY).'];
+  }
+
+  // Phase 1 (Decision Summary Block) — one clean, flat object assembling
+  // fields that already exist above, requested explicitly so a consumer
+  // doesn't need to know the engine's internal shape. Nothing new computed.
+  const decision=buildDecisionSummary(entryDecision,biasResult,risk,targets,poisAll);
 
   return{
     symbol:'XAUUSD',timestamp:new Date().toISOString(),htfContext,
     structure:{monthly:tfBrainsByOutputKey.monthly.structure,weekly:tfBrainsByOutputKey.weekly.structure,daily:tfBrainsByOutputKey.daily.structure,h4:tfBrainsByOutputKey.h4.structure,h1:tfBrainsByOutputKey.h1.structure},
     liquidity:combinedLiquidity,premiumDiscount:premiumDiscountByOutputKey,
-    pois:poisAll,targets,entry:entryDecision,risk,report,status:finalStatus,
+    pois:poisAll,targets,entry:entryDecision,risk,decision,report,status:finalStatus,
     sessionNotes,newsStatus:NEWS_STATUS,
     // Machine-readable pointer to which rules/strategy.md chapters still
     // gate a field somewhere in this output — cheap, honest, not a guess.
@@ -1957,6 +2084,7 @@ return{
   TARGET_MAX_PER_DIRECTION,hasCounterPOIInPath,computeTargets,
   ENTRY_CANDIDATE_MIN_QUALITY,ENTRY_SL_BUFFER_PERCENT_OF_ZONE,liquiditySweepSupport,computeEntryDecision,
   computeRiskManagement,NEWS_STATUS,SESSION_LIQUIDITY_TIMEFRAMES,computeSessionNotes,
+  buildDecisionSummary,timeOfDayGreeting,ENTRY_STATUS_HEADLINE,waitingForText,generateDGBriefing,
   summarizeTimeframeContext,generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1
 };
 

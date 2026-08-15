@@ -303,7 +303,7 @@ function renderOverview(overview){
 // DG Confidence Engine card's "missing" style; every other status/bias/
 // quality value is colored as a real verdict.
 const ENTRY_STATUS_CLASS={
-  WAIT:'wait',DATA_NOT_READY:'awaiting',
+  WAIT:'wait',DATA_NOT_READY:'awaiting',MISSED:'awaiting',
   WATCH_BUY:'watch',WATCH_SELL:'watch',
   BUY_CONFIRMATION:'watch',SELL_CONFIRMATION:'watch',
   BUY_READY:'bullish',SELL_READY:'bearish'
@@ -400,9 +400,9 @@ function renderTradingBrain(brain){
 // before — the TEST badge stays visible so it's never mistaken for a real
 // status (Daniel's explicit "keine alten Alpha-/Fake-Werte mehr" for real
 // decisions, "Simulation darf bleiben, aber klar getrennt/gekennzeichnet").
-const HERO_ACTION_CLASS={WAIT:'wait',DATA_NOT_READY:'wait',WATCH_BUY:'watch',WATCH_SELL:'watch',BUY_CONFIRMATION:'watch',SELL_CONFIRMATION:'watch',BUY_READY:'buy',SELL_READY:'sell'};
+const HERO_ACTION_CLASS={WAIT:'wait',DATA_NOT_READY:'wait',MISSED:'wait',WATCH_BUY:'watch',WATCH_SELL:'watch',BUY_CONFIRMATION:'watch',SELL_CONFIRMATION:'watch',BUY_READY:'buy',SELL_READY:'sell'};
 const HERO_ACTION_ICON={wait:'ic-clock',watch:'ic-eye',buy:'ic-trend-up',sell:'ic-trend-down'};
-const HERO_ACTION_LABEL={WAIT:'WAIT',DATA_NOT_READY:'DATA NOT READY',WATCH_BUY:'WATCH BUY',WATCH_SELL:'WATCH SELL',BUY_CONFIRMATION:'BUY CONFIRMATION',SELL_CONFIRMATION:'SELL CONFIRMATION',BUY_READY:'BUY READY',SELL_READY:'SELL READY'};
+const HERO_ACTION_LABEL={WAIT:'WAIT',DATA_NOT_READY:'DATA NOT READY',MISSED:'MISSED / NO ENTRY',WATCH_BUY:'WATCH BUY',WATCH_SELL:'WATCH SELL',BUY_CONFIRMATION:'BUY CONFIRMATION',SELL_CONFIRMATION:'SELL CONFIRMATION',BUY_READY:'BUY READY',SELL_READY:'SELL READY'};
 
 function renderHeroAction(brain){
   const badge=$('heroSourceBadge');
@@ -992,13 +992,13 @@ const ALERT_CATEGORY_TYPES={
   alertConfirmation:['REACTION_DETECTED','CONFIRMATION_DEVELOPING','ENGULFING_CONFIRMED','STRUCTURE_CONFIRMED'],
   alertWatch:['WATCH_BUY','WATCH_SELL','BUY_CONFIRMATION','SELL_CONFIRMATION'],
   alertLiquidity:['IMPORTANT_POI_APPROACHING','PRIMARY_TARGET_REACHED'],
-  alertSystem:['DATA_NOT_READY','SYSTEM_RECOVERED','SETUP_INVALIDATED']
+  alertSystem:['DATA_NOT_READY','SYSTEM_RECOVERED','SETUP_INVALIDATED','MISSED']
 };
 const ALERT_CHECKBOX_IDS=Object.keys(ALERT_CATEGORY_TYPES);
 const ALERT_TYPE_ICON={
   BUY_READY:'🟢',SELL_READY:'🔴',WATCH_BUY:'🟡',WATCH_SELL:'🟡',BUY_CONFIRMATION:'🟠',SELL_CONFIRMATION:'🟠',
   ENGULFING_CONFIRMED:'⚡',STRUCTURE_CONFIRMED:'⚡',REACTION_DETECTED:'👀',CONFIRMATION_DEVELOPING:'👀',
-  IMPORTANT_POI_APPROACHING:'📍',PRIMARY_TARGET_REACHED:'🎯',SETUP_INVALIDATED:'⚠️',DATA_NOT_READY:'⚠️',SYSTEM_RECOVERED:'✅'
+  IMPORTANT_POI_APPROACHING:'📍',PRIMARY_TARGET_REACHED:'🎯',SETUP_INVALIDATED:'⚠️',DATA_NOT_READY:'⚠️',SYSTEM_RECOVERED:'✅',MISSED:'⏭️'
 };
 const ALERT_SEEN_STORAGE_KEY='dgos.seenAlertDedupeKeys';
 const ALERT_SEEN_MAX=300;

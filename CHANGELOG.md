@@ -8,6 +8,25 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.28.0] — MISSED/NO_ENTRY Status (Kapitel 12)
+
+Checkpoint 4 der Nacht-Session — schließt die im letzten Abschlussbericht
+explizit genannte Lücke.
+
+### Neu (`marketBrain.js`, `events.js`, `server/marketState.js`)
+- `computeEntryDecision()` bekommt einen optionalen 5. Parameter `priorSetupContext` (das vom Server persistierte Active Setup) — die einzige Möglichkeit, MISSED überhaupt zu erkennen, da die Funktion sonst zustandslos ist. Ohne diesen Parameter (Browser, Tests) kann MISSED nie auftreten — ehrliche Konsequenz fehlender Historie, kein Bug.
+- `detectMissedMove()`: MISSED feuert nur, wenn ein Setup bereits mindestens BUY_CONFIRMATION/SELL_CONFIRMATION/BUY_READY/SELL_READY erreicht hatte UND der Preis sich seitdem um eine volle Zonenhöhe vom verpassten POI wegbewegt hat, ohne dass ein neuer Kandidat existiert — mechanische, offengelegte Distanzregel (dokumentiert als eigene V1-Entscheidung, keine Daniel-Zahl), passend zu Kapitel 12: "Markt ist ohne sinnvollen Entry gelaufen."
+- `server/marketState.js` reicht das vorherige Active Setup jetzt bei jeder Neuberechnung durch; `events.js` feuert ein neues `MISSED`-Event bei diesem Übergang (nie durch das Cooldown-Fenster unterdrückt, da inhärent einmalig — `buildActiveSetup()` räumt den Zustand danach automatisch ab).
+- Dashboard/Telegram: `MISSED` in allen Status-Label-Zuordnungen (Hero-Karte, Briefing-Headline, Alert-Kategorien) ergänzt.
+
+### Getestet
+7 neue Unit-Tests (MISSED-Erkennung, Abstandsgrenze, zustandslose Aufrufer bekommen nie MISSED, ein reines WATCH qualifiziert nicht, Event-Emission, Active-Setup-Clearing) — alle grün. Bestehende Regressionstests unverändert grün.
+
+### Geänderte Dateien
+`marketBrain.js`, `events.js`, `server/marketState.js`, `app.js`, `index.html`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.27.0] — Echte Event-basierte Telegram-Alerts + Alert-Einstellungen
 
 Checkpoint 3 der Nacht-Session. DG OS meldet jetzt wichtige Veränderungen

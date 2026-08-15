@@ -8,6 +8,52 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.29.0] — Dashboard-Ehrlichkeits-Audit (Phase 4 Nacharbeit)
+
+Checkpoint 5 der Nacht-Session — Fortsetzung nach "AUTONOME NIGHT BUILD".
+Gezielter Audit aller Karten auf erfundene/statische Werte, wie in Daniels
+"keine erfundene Prozentzahl"-Vorgabe für Phase 4 gefordert.
+
+### Gefunden & behoben (`index.html`, `app.js`)
+- Der DG-Confidence-Ring im Hero-Bereich hatte einen fest einprogrammierten
+  Startwert `54%` in der HTML-Datei (Rückstand aus der Alpha-Simulation).
+  Standard jetzt `—`, keine erfundene Zahl mehr vor der ersten Berechnung.
+- **Echter Bug:** Die Alpha-Simulation (`render()`) und die reale Hero-Anzeige
+  (`renderHeroAction()`) teilen sich dieselben DOM-Elemente (`#action`,
+  `#confidence`, `#tradeType`, `#decisionReason`). Ein Klick auf einen
+  Alpha-Simulation-Button überschrieb bisher — auch bei aktiv verbundenem
+  Always-On Server — kurzzeitig (bis zu 3s, bis zum nächsten Poll) die echten
+  Werte mit simulierten Zahlen, während das Badge weiterhin "LIVE" zeigte.
+  Fix: nach jedem Simulation-Klick wird sofort `renderHeroAction()` mit dem
+  echten (oder `null`, wenn nicht verbunden) Zustand erneut aufgerufen, sodass
+  nie fingierte Werte unter einem "LIVE"-Badge sichtbar sind.
+- Vier Legacy-Karten ("Market Plan", "Asia Session", "Liquidity",
+  "Confirmation") zeigten Alpha-Simulation-Werte völlig unbeschriftet, sahen
+  also wie echte Module aus. Jetzt alle mit dem gleichen `TEST`-Badge markiert
+  wie die "Alpha Simulation"-Karte selbst.
+- Die "Market Plan"-Karte enthielt außerdem zwei komplett tote, nie von JS
+  aktualisierte Felder (`HTF Plan: Bullish`, `Primary Target: Daily Buyside`)
+  — fest verdrahtete Fantasiewerte ohne jede Datenquelle. Entfernt.
+- Die zwei statischen "Ja"/"H1 OB + M5 FVG"-Checks in der Liquidity-Karte
+  (Teil von `computeDecision()`s Platzhalter-Kriterien) sind jetzt explizit
+  als "(simuliert)" gekennzeichnet.
+- System-Status-Karte und die separate "DG Confidence Engine"-Karte geprüft:
+  beide zeigten bereits ehrliche `—`/"Noch keine Daten"-Fallbacks, keine
+  Änderung nötig.
+
+### Getestet
+`test_dg_rules_v1.js` (37/37 grün, unverändert — reine Logik, nicht
+betroffen), Duplicate-ID-Check auf `index.html`, Playwright-Check bestätigt:
+(a) unverbunden → Simulation läuft frei unter "SIMULATION"-Badge, (b) mit
+simuliertem `marketServerReachable=true`+`tradingBrainState` → Klick auf
+Alpha-Simulation-Button ändert die Hero-Anzeige nicht mehr, echte Werte
+bleiben unter "LIVE"-Badge sichtbar.
+
+### Geänderte Dateien
+`index.html`, `app.js`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.28.0] — MISSED/NO_ENTRY Status (Kapitel 12)
 
 Checkpoint 4 der Nacht-Session — schließt die im letzten Abschlussbericht

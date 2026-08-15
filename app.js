@@ -926,6 +926,13 @@ document.querySelectorAll('[data-step]').forEach(btn=>{
     if(s==='engulf'){state.asia=true;state.sweep=true;state.engulf=true}
     if(s==='reset'){state.asia=false;state.sweep=false;state.engulf=false;lastAutoSendKey=''}
     render();
+    // render() writes into the hero card's shared #action/#confidence/etc.
+    // elements (Alpha Simulation and the real hero share DOM slots, see
+    // renderHeroAction() above). If a real Always-On Server is connected,
+    // re-assert the real decision immediately so a Simulation button click
+    // never leaves fabricated numbers visible under the "LIVE" badge, even
+    // for the few seconds until the next poll.
+    renderHeroAction(marketServerReachable?tradingBrainState:null);
   })
 });
 // Real DG Briefing (Phase 2/3) — deterministically templated from the

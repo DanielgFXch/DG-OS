@@ -369,6 +369,15 @@
               <button id="tgSave" class="secondary">Speichern &amp; testen</button>
             </div>
           </div>
+          <div class="field-settings">
+            <div class="ov-block-title">Live-Alerts (nur mit Always-On Server)</div>
+            <label class="tg-auto"><input id="alertReady" type="checkbox" checked /> BUY/SELL READY</label>
+            <label class="tg-auto"><input id="alertConfirmation" type="checkbox" /> Confirmation (Reaktion/Engulfing/Structure)</label>
+            <label class="tg-auto"><input id="alertWatch" type="checkbox" /> WATCH BUY/SELL</label>
+            <label class="tg-auto"><input id="alertLiquidity" type="checkbox" /> POI nähert sich / Target erreicht</label>
+            <label class="tg-auto"><input id="alertSystem" type="checkbox" checked /> System-/Datenprobleme</label>
+            <p class="hint">Sendet kurze Alerts automatisch an Telegram, sobald ein echtes Event dieser Art auftritt (dedupliziert, kein Spam). Nur aktiv, solange diese Seite offen und ein Always-On Server verbunden ist.</p>
+          </div>
           <button id="previewBriefing" class="primary full">DG Briefing anzeigen</button>
           <button id="tgSend" class="full" disabled>An Telegram senden</button>
           <pre id="briefing" class="briefing hidden"></pre>

@@ -8,6 +8,25 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.27.0] — Echte Event-basierte Telegram-Alerts + Alert-Einstellungen
+
+Checkpoint 3 der Nacht-Session. DG OS meldet jetzt wichtige Veränderungen
+selbstständig an Telegram — zentral für Daniels Vision ("informiere mich,
+auch wenn ich nicht am Chart bin").
+
+### Neu (`app.js`, `index.html`)
+- Live-Alerts-Sektion in der Telegram-Karte: 5 Kategorie-Checkboxen (BUY/SELL READY, Confirmation, WATCH BUY/SELL, POI-Nähe/Target erreicht, System-/Datenprobleme), Zustand pro Checkbox in `localStorage` persistiert. Default konservativ (nur READY + System aktiv), wie von Daniel explizit gefordert.
+- `pollAndSendEventAlerts()`: läuft im bestehenden Poll-Takt (`pollMarketServer()`), holt `/api/events/XAUUSD`, filtert auf `source:'tradingBrainV1'` + aktivierte Kategorien, sendet neue (noch nicht gesehene) Events als kurze Telegram-Nachricht. Eigenständiger Mechanismus, komplett getrennt vom Alpha-Simulation-Auto-Send.
+- Client-seitiges Dedup (`localStorage`, gedeckelt auf 300 Einträge) zusätzlich zum bereits serverseitig gedeckelten Cooldown (v0.26.0) — übersteht auch einen Seiten-Reload ohne Doppel-Alerts.
+
+### Getestet
+Dashboard gegen echten Server per Playwright geprüft — Checkboxen zeigen korrekte konservative Defaults, keine JS-Fehler. Bestehende Regressionstests weiterhin grün.
+
+### Geänderte Dateien
+`app.js`, `index.html`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.26.0] — Event/Alert Engine V1 + Active Setup Model (Market Memory)
 
 Checkpoint 2 der Nacht-Session. DG Trading Brain V1 wird jetzt auf jeder

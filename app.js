@@ -517,6 +517,7 @@ async function pollMarketServer(){
   }
   renderFreshness();
   renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
+  pollAndSendEventAlerts();
 }
 
 function connectMarketServer(url){
@@ -972,6 +973,92 @@ async function sendTelegramMessage(token,chatId,text){
   const data=await res.json();
   if(!data.ok) throw new Error(data.description||'Senden fehlgeschlagen');
   return data.result;
+}
+
+// ---------------------------------------------------------------------------
+// Live Event Alerts (Phase 5/6/7/8 of the autonomous night build) — polls
+// the Always-On Server's real /api/events/XAUUSD (populated by
+// events.js's classifyTradingBrainEvents(), server-side deduped + cooldown-
+// gated already) and forwards NEW, category-enabled events to Telegram as
+// short alerts. A SEPARATE mechanism from the Alpha Simulation's
+// maybeAutoSend() above — this one only ever reacts to real
+// source:'tradingBrainV1' events, never to Alpha test-button clicks.
+// Client-side dedup (localStorage) on top of the server's own cooldown
+// covers page reloads. Default conservative per Daniel's explicit
+// instruction: only BUY/SELL READY and System/Data problems start enabled.
+// ---------------------------------------------------------------------------
+const ALERT_CATEGORY_TYPES={
+  alertReady:['BUY_READY','SELL_READY'],
+  alertConfirmation:['REACTION_DETECTED','CONFIRMATION_DEVELOPING','ENGULFING_CONFIRMED','STRUCTURE_CONFIRMED'],
+  alertWatch:['WATCH_BUY','WATCH_SELL','BUY_CONFIRMATION','SELL_CONFIRMATION'],
+  alertLiquidity:['IMPORTANT_POI_APPROACHING','PRIMARY_TARGET_REACHED'],
+  alertSystem:['DATA_NOT_READY','SYSTEM_RECOVERED','SETUP_INVALIDATED']
+};
+const ALERT_CHECKBOX_IDS=Object.keys(ALERT_CATEGORY_TYPES);
+const ALERT_TYPE_ICON={
+  BUY_READY:'🟢',SELL_READY:'🔴',WATCH_BUY:'🟡',WATCH_SELL:'🟡',BUY_CONFIRMATION:'🟠',SELL_CONFIRMATION:'🟠',
+  ENGULFING_CONFIRMED:'⚡',STRUCTURE_CONFIRMED:'⚡',REACTION_DETECTED:'👀',CONFIRMATION_DEVELOPING:'👀',
+  IMPORTANT_POI_APPROACHING:'📍',PRIMARY_TARGET_REACHED:'🎯',SETUP_INVALIDATED:'⚠️',DATA_NOT_READY:'⚠️',SYSTEM_RECOVERED:'✅'
+};
+const ALERT_SEEN_STORAGE_KEY='dgos.seenAlertDedupeKeys';
+const ALERT_SEEN_MAX=300;
+
+ALERT_CHECKBOX_IDS.forEach(id=>{
+  const el=$(id);
+  if(!el) return;
+  const stored=localStorage.getItem(`dgos.${id}`);
+  el.checked=stored===null?el.checked:stored==='1'; // keep the HTML-default (checked attribute) when nothing saved yet
+  el.addEventListener('change',()=>localStorage.setItem(`dgos.${id}`,el.checked?'1':'0'));
+});
+
+function loadSeenAlertKeys(){
+  try{ return new Set(JSON.parse(localStorage.getItem(ALERT_SEEN_STORAGE_KEY)||'[]')); }catch(err){ return new Set(); }
+}
+function saveSeenAlertKeys(set){
+  const arr=Array.from(set).slice(-ALERT_SEEN_MAX);
+  localStorage.setItem(ALERT_SEEN_STORAGE_KEY,JSON.stringify(arr));
+}
+
+function alertText(event){
+  const icon=ALERT_TYPE_ICON[event.type]||'🧠';
+  const lines=[`${icon} DG OS: ${event.type}`];
+  if(event.explanation) lines.push(event.explanation);
+  if(typeof event.price==='number') lines.push(`Preis: ${fmtPrice(event.price)}`);
+  if(event.timeframe) lines.push(`Timeframe: ${event.timeframe}`);
+  return lines.join('\n');
+}
+
+async function pollAndSendEventAlerts(){
+  if(!marketServerUrl||!marketServerReachable||!tg.token||!tg.chatId) return;
+  const enabledTypes=new Set();
+  ALERT_CHECKBOX_IDS.forEach(id=>{
+    const el=$(id);
+    if(el&&el.checked) ALERT_CATEGORY_TYPES[id].forEach(t=>enabledTypes.add(t));
+  });
+  if(!enabledTypes.size) return;
+
+  try{
+    const base=marketServerUrl.replace(/\/$/,'');
+    const res=await fetch(`${base}/api/events/XAUUSD?limit=25`,{cache:'no-store'});
+    if(!res.ok) return;
+    const{events}=await res.json();
+    const tradingEvents=(events||[]).filter(e=>e.source==='tradingBrainV1'&&enabledTypes.has(e.type));
+    if(!tradingEvents.length) return;
+
+    const seen=loadSeenAlertKeys();
+    const unseen=tradingEvents.filter(e=>!seen.has(e.dedupeKey+'-'+e.at));
+    if(!unseen.length) return;
+
+    for(const event of unseen){
+      try{
+        await sendTelegramMessage(tg.token,tg.chatId,alertText(event));
+        seen.add(event.dedupeKey+'-'+event.at);
+      }catch(err){
+        setTelegramStatus(`Alert-Senden fehlgeschlagen: ${err.message}`);
+      }
+    }
+    saveSeenAlertKeys(seen);
+  }catch(err){ /* server unreachable this tick — next poll retries, nothing to surface here */ }
 }
 
 $('tgSave').addEventListener('click',async()=>{

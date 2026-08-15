@@ -139,35 +139,43 @@
 
     <section class="card brain-card">
       <div class="section-title"><svg class="ic"><use href="#ic-gauge"></use></svg>DG Trading Brain V1</div>
-      <div class="eyebrow">Market Facts live über 7 Timeframes (Weekly → Daily → 4H → 1H) · Bias/POI-Qualität/Targets warten auf Daniels Regeln in <code>rules/strategy.md</code> (AWAITING_DG_RULE) · nur mit Always-On Server · niemals BUY/SELL READY</div>
+      <div class="eyebrow">Kapitel 0-16 in <code>rules/strategy.md</code> von Daniel definiert · Regelanwendung läuft nach Regel → Implementierung → Tests → Deploy · nur mit Always-On Server · Decision-Support, niemals automatische Order-Ausführung</div>
       <div class="overview-grid">
         <div class="overview-block">
-          <div class="ov-block-title">Status</div>
+          <div class="ov-block-title">Entry Status (Kapitel 9)</div>
           <div id="brainStatus" class="brain-status">Nicht verbunden</div>
         </div>
         <div class="overview-block">
-          <div class="ov-block-title">HTF Bias</div>
+          <div class="ov-block-title">HTF Bias (Kapitel 1) — Macro / Trading</div>
           <div id="brainBias" class="bias-value">—</div>
           <div class="rows"><div class="row"><span>Confidence</span><strong id="brainConfidence">—</strong></div></div>
         </div>
       </div>
+      <div class="overview-block">
+        <div class="ov-block-title">Entry / Risk (Kapitel 9/11)</div>
+        <div id="brainEntry" class="liq-table"><div class="liq-row"><span class="liq-label">Nicht verbunden.</span></div></div>
+      </div>
       <div class="overview-grid">
         <div class="overview-block">
-          <div class="ov-block-title">Top Buy POIs</div>
+          <div class="ov-block-title">Fresh Bullish POIs</div>
           <div id="brainBuyPOIs" class="poi-table"><div class="poi-empty">Nicht verbunden.</div></div>
         </div>
         <div class="overview-block">
-          <div class="ov-block-title">Top Sell POIs</div>
+          <div class="ov-block-title">Fresh Bearish POIs</div>
           <div id="brainSellPOIs" class="poi-table"><div class="poi-empty">Nicht verbunden.</div></div>
         </div>
       </div>
       <div class="overview-block">
-        <div class="ov-block-title">Key Liquidity</div>
+        <div class="ov-block-title">Liquidity (touched/sweeped, Kapitel 2)</div>
         <div id="brainLiquidity" class="liq-table"><div class="liq-row"><span class="liq-label">Nicht verbunden.</span></div></div>
       </div>
       <div class="overview-block">
-        <div class="ov-block-title">Targets</div>
+        <div class="ov-block-title">Targets (Kapitel 10)</div>
         <div id="brainTargets" class="poi-table"><div class="poi-empty">Nicht verbunden.</div></div>
+      </div>
+      <div class="overview-block">
+        <div class="ov-block-title">Sessions (Kapitel 13) &amp; News (Kapitel 14)</div>
+        <div id="brainSessionNews" class="liq-table"><div class="liq-row"><span class="liq-label">Nicht verbunden.</span></div></div>
       </div>
       <div class="overview-block">
         <div class="ov-block-title">Market Report</div>

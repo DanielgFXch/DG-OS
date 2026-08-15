@@ -297,15 +297,23 @@ function renderOverview(overview){
 // Server's real GET /api/brain/XAUUSD response (tradingBrainState, set in
 // pollMarketServer()). No local/offline computation, no fallback numbers —
 // if the server isn't connected, this card says so honestly instead of
-// showing anything. Interpretation fields (Bias, POI quality, target
-// priority, Status) are gated server-side behind DG_RULES_DEFINED and come
-// back as the literal string 'AWAITING_DG_RULE' until Daniel defines the
-// matching rules/strategy.md chapter — rendered here in the same muted
-// style the DG Confidence Engine card already uses for "missing", never
-// colored as if it were a real bullish/bearish verdict.
+// showing anything. As of the Kapitel-0-16 build every field below is a
+// real DG rule application (marketBrain.js Module 11) — DATA_NOT_READY is
+// the only remaining "not a real verdict yet" state, shown muted like the
+// DG Confidence Engine card's "missing" style; every other status/bias/
+// quality value is colored as a real verdict.
+const ENTRY_STATUS_CLASS={
+  WAIT:'wait',DATA_NOT_READY:'awaiting',
+  WATCH_BUY:'watch',WATCH_SELL:'watch',
+  BUY_CONFIRMATION:'watch',SELL_CONFIRMATION:'watch',
+  BUY_READY:'bullish',SELL_READY:'bearish'
+};
+const BIAS_STATE_CLASS={BULLISH:'bullish',BEARISH:'bearish',NEUTRAL_MIXED:'',AWAITING_DG_RULE:'awaiting'};
+
 function renderTradingBrain(brain){
-  const statusEl=$('brainStatus'),biasEl=$('brainBias'),confEl=$('brainConfidence');
-  const buyEl=$('brainBuyPOIs'),sellEl=$('brainSellPOIs'),liqEl=$('brainLiquidity'),targetsEl=$('brainTargets'),summaryEl=$('brainSummary');
+  const statusEl=$('brainStatus'),biasEl=$('brainBias'),confEl=$('brainConfidence'),entryEl=$('brainEntry');
+  const buyEl=$('brainBuyPOIs'),sellEl=$('brainSellPOIs'),liqEl=$('brainLiquidity'),targetsEl=$('brainTargets');
+  const sessionNewsEl=$('brainSessionNews'),summaryEl=$('brainSummary');
   if(!statusEl) return;
 
   if(!brain||!brain.report){
@@ -316,22 +324,50 @@ function renderTradingBrain(brain){
     buyEl.innerHTML=emptyMsg;sellEl.innerHTML=emptyMsg;
     liqEl.innerHTML='<div class="liq-row"><span class="liq-label">Nicht verbunden.</span></div>';
     targetsEl.innerHTML='<div class="poi-empty">Nicht verbunden.</div>';
+    entryEl.innerHTML='<div class="liq-row"><span class="liq-label">Nicht verbunden.</span></div>';
+    sessionNewsEl.innerHTML='<div class="liq-row"><span class="liq-label">Nicht verbunden.</span></div>';
     summaryEl.textContent='Verbinde einen Always-On Server (siehe „XAUUSD Live" Karte), um den DG Trading Brain Report zu sehen.';
     return;
   }
 
-  const report=brain.report,htf=brain.htfContext;
-  const awaiting=report.status==='AWAITING_DG_RULE';
-  statusEl.textContent=awaiting?'AWAITING DG RULE':report.status;
-  statusEl.className=`brain-status ${awaiting?'brain-status-awaiting':''}`;
-  biasEl.textContent=awaiting?'AWAITING DG RULE':(htf.overallBias?htf.overallBias.toUpperCase():'—');
-  biasEl.className=`bias-value ${awaiting?'bias-awaiting':(htf.overallBias?'bias-'+htf.overallBias:'')}`;
+  const report=brain.report,htf=brain.htfContext,entry=brain.entry||report.entry,risk=brain.risk||report.risk;
+  const dataNotReady=report.status==='DATA_NOT_READY';
+  statusEl.textContent=report.status;
+  statusEl.className=`brain-status brain-status-${ENTRY_STATUS_CLASS[report.status]||''}`;
+
+  const macroState=htf.macro?htf.macro.state:null,tradingState=htf.trading?htf.trading.state:htf.overallBias;
+  biasEl.textContent=macroState?`Macro ${macroState} / Trading ${tradingState}`:(htf.overallBias||'—');
+  biasEl.className=`bias-value ${dataNotReady?'bias-awaiting':`bias-${(BIAS_STATE_CLASS[tradingState]||'')}`}`;
   confEl.textContent=typeof htf.confidence==='number'?`${htf.confidence}%`:'—';
 
+  // Entry / Risk block — only shows real numbers once Kapitel 9 actually
+  // produced an entry zone + stop loss (*_CONFIRMATION / *_READY); WAIT/
+  // WATCH states show the plain-language reason instead, never a guessed price.
+  const entryRows=[];
+  if(entry){
+    entryRows.push(`<div class="liq-row"><span class="liq-label">Status: ${entry.status}${entry.reasons&&entry.reasons.length?` — ${entry.reasons[0]}`:''}</span></div>`);
+    if(entry.entryZone&&typeof entry.entryZone==='object'){
+      entryRows.push(`<div class="liq-row"><span class="liq-label">Entry Zone: ${fmtPrice(entry.entryZone.priceLow)}–${fmtPrice(entry.entryZone.priceHigh)}</span></div>`);
+    }
+    if(typeof entry.stopLoss==='number'){
+      entryRows.push(`<div class="liq-row"><span class="liq-label">Stop Loss: ${fmtPrice(entry.stopLoss)}</span></div>`);
+    }
+    if(risk&&typeof risk.entryPrice==='number'){
+      entryRows.push(`<div class="liq-row"><span class="liq-label">Risk-Distanz: ${risk.riskDistance} · Position Size: MANUAL</span></div>`);
+    }
+    if(risk&&risk.riskRewardByTarget&&risk.riskRewardByTarget.length){
+      const rrText=risk.riskRewardByTarget.map(t=>`${t.priority} ${fmtPrice(t.price)} (R:R ${t.rr})`).join(' · ');
+      entryRows.push(`<div class="liq-row"><span class="liq-label">R:R: ${rrText}</span></div>`);
+    }
+  }
+  entryEl.innerHTML=entryRows.length?entryRows.join(''):'<div class="liq-row"><span class="liq-label">Kein aktiver Entry-Kontext.</span></div>';
+
+  const qualityLabel={high:'HOCH',medium:'MITTEL',low:'NIEDRIG'};
+  const typeLabel={fvg:'FVG',orderBlock:'Order Block',breaker:'Breaker',ifvg:'iFVG'};
   const poiRow=p=>`
     <div class="poi-row">
-      <span class="poi-label">${p.type==='fvg'?'FVG':'Order Block'}<span class="poi-meta">${p.timeframe} · ${p.status}</span></span>
-      <span class="poi-price">${p.range}<span class="poi-confidence">Qualität: AWAITING_DG_RULE</span></span>
+      <span class="poi-label">${typeLabel[p.type]||p.type}<span class="poi-meta">${p.timeframe} · ${p.status}</span></span>
+      <span class="poi-price">${p.range}<span class="poi-confidence">Qualität: ${qualityLabel[p.quality]||p.quality} (${p.score})</span></span>
     </div>`;
   buyEl.innerHTML=(report.freshBullishPOIs&&report.freshBullishPOIs.length)?report.freshBullishPOIs.map(poiRow).join(''):'<div class="poi-empty">Keine frischen Bullish-POIs erkannt.</div>';
   sellEl.innerHTML=(report.freshBearishPOIs&&report.freshBearishPOIs.length)?report.freshBearishPOIs.map(poiRow).join(''):'<div class="poi-empty">Keine frischen Bearish-POIs erkannt.</div>';
@@ -341,11 +377,16 @@ function renderTradingBrain(brain){
     :'<div class="liq-row"><span class="liq-label">Aktuell keine auffälligen Level.</span></div>';
 
   const targets=(brain.targets||[]).slice(0,6);
+  const priorityBadge={PRIMARY:'①',SECONDARY:'②',EXTENDED:'③'};
   targetsEl.innerHTML=targets.length?targets.map(t=>`
     <div class="poi-row">
-      <span class="poi-label">${t.direction==='up'?'▲':'▼'} ${t.reason}<span class="poi-meta">${t.timeframe}</span></span>
+      <span class="poi-label">${t.direction==='up'?'▲':'▼'} ${priorityBadge[t.priority]||''} ${t.reason}<span class="poi-meta">${t.timeframe} · ${t.priority}</span></span>
       <span class="poi-price">${fmtPrice(t.price)}</span>
     </div>`).join(''):'<div class="poi-empty">Keine Targets erkannt.</div>';
+
+  const sessionNewsRows=(report.sessionNotes||[]).map(text=>`<div class="liq-row"><span class="liq-label">${text}</span></div>`);
+  sessionNewsRows.push(`<div class="liq-row"><span class="liq-label">News: ${report.newsStatus||'DATA_SOURCE_NOT_CONNECTED'}</span></div>`);
+  sessionNewsEl.innerHTML=sessionNewsRows.join('');
 
   summaryEl.textContent=report.summary||'';
 }

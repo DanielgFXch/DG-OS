@@ -8,6 +8,83 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.30.0] — V1 Prioritäten: Liquidity → Sweep → Reaction → FVG/OB → Meldung
+
+Auf Daniels expliziten Auftrag "DG OS – V1 PRIORITÄTEN VEREINFACHEN":
+Premium/Discount, komplexes Bias-Scoring und feine POI-Rankings haben keine
+Priorität mehr. Höchste Priorität ist jetzt: relevante Liquidity sauber
+erkennen → Sweep erkennen → Reaktion danach erkennen → relevante FVGs/Order
+Blocks im Kontext zeigen → klar melden. Bestehende Architektur nicht
+umgebaut — Priorisierung/Filterung angepasst plus zwei neue, kleine
+Zustands-Bausteine (Liquidity Memory, Liquidity-Events), nach demselben
+Muster wie das bestehende Active Setup Model.
+
+### DG Liquidity — V1-Prioritätsfilter (`marketBrain.js`)
+- `isV1PrimaryLiquidity()`: nur noch Previous/aktuelles Daily High/Low,
+  relevante externe Daily/4H Swings und die drei Session-Levels
+  (Asia/London/New York High/Low) zählen als primäre Liquidity. Weekly/
+  Monthly-Level und H1-Swings bleiben Bias-Kontext, sind aber nie mehr
+  Haupt-Liquidity/-Target/-Sweep-Support in V1.
+- Neuer Status `APPROACHING` zwischen `OPEN` und `TOUCHED`
+  (`LIQUIDITY_APPROACH_PERCENT`), Anzeige-Vokabular jetzt Daniels eigenes:
+  OPEN/APPROACHING/TOUCHED/SWEPT.
+
+### Liquidity Memory — Sweep-Persistenz + Reaktionserkennung
+- `enrichLiquidityWithMemory()`: ein Sweep wird nur einmal als neu gemeldet
+  ("nicht immer wieder als neu melden") — der Status bleibt SWEPT (sticky),
+  auch wenn der Preis kurz zurück in die Zone läuft; `sweptAt` wird beim
+  ersten echten Beobachtungszeitpunkt gesetzt und danach nie überschrieben.
+  Eine neue Periode (z.B. der nächste Handelstag) startet mit einer sauberen
+  Weste, keine Vererbung alter Sweeps.
+- `detectLiquidityReaction()`: prüft nach jedem relevanten Sweep exakt
+  Daniels fünf Kriterien — Rejection, Engulfing, Displacement, BOS/CHOCH,
+  neue FVG — auf H1 und liefert `REACTED` oder `NO_REACTION_YET`.
+- Zustand wird wie das Active Setup Model serverseitig persistiert
+  (`server/marketState.js`, gleiche `tradingBrainState.json`), übersteht
+  also einen Railway-Neustart.
+
+### DG Entry (Kapitel 9) — Bias ist Context, kein Gatekeeper mehr
+- `computeEntryDecision()` blockiert bei NEUTRAL_MIXED Bias nicht mehr
+  automatisch auf WAIT. Liegt in einer der beiden Richtungen ein echter
+  Liquidity Sweep + relevanter POI + Reaktion vor, kann WATCH_BUY/
+  WATCH_SELL (bis hin zu READY) trotzdem entstehen — beide Richtungen
+  werden rein faktenbasiert geprüft, die weiter fortgeschrittene gewinnt.
+  MISSED-Erkennung (Kapitel 12) läuft jetzt unabhängig von der aktuellen
+  Bias-Richtung.
+- `liquiditySweepSupport()`/`computeTargets()`: nur noch primäre Liquidity
+  zählt als Sweep-Support bzw. Liquidity-Target; bereits TOUCHED/SWEPT
+  Level werden nie erneut als frisches Target behandelt.
+
+### Briefing/Report V1 (`generateDGBriefing`, `generateMarketReport`)
+- Neues Format exakt nach Daniels Vorgabe: STATUS / LIQUIDITY (Oben/Unten,
+  Status + Swept-At + Reaction pro Level) / RECENT EVENTS (aus echten
+  Sweep-/Reaction-Zeitstempeln, keine erfundene Reihenfolge) / RELEVANT
+  POIs (Bullish/Bearish) / WAITING FOR.
+- FVG/Order-Block-Auswahl im Report jetzt auf Daily/4H/1H begrenzt, frisch,
+  mit Priorität für bereits reagierte Zonen und Nähe zum Preis — nicht mehr
+  hunderte alte Zonen aller Timeframes.
+
+### Alerts (`events.js`, `app.js`, `index.html`)
+- Neue Event-Typen `LIQUIDITY_APPROACHING`, `LIQUIDITY_SWEPT`,
+  `LIQUIDITY_REACTED` (source `tradingBrainV1`, eigene Dedupe-Keys/Cooldown,
+  nur für primäre Liquidity).
+- Alert-Kategorien in der Telegram-Karte neu priorisiert und umbenannt:
+  Liquidity (Approaching/Swept/Reaction/POI/Target) jetzt standardmäßig an,
+  ebenso Confirmation — passend zu Daniels Prioritätenliste 1–6.
+
+### Getestet
+69 Unit-Tests in `test_dg_rules_v1.js` (22 neu: Liquidity-Status/Prioritäts-
+filter/Memory/Reaction, Bias-als-Context, SELL_READY-Kette), 23 in
+`test_alert_engine.js` (7 neu: Liquidity-Events), vollständiger End-to-End-
+Servertest (`test_trading_brain.js`) und Sweep-Reversal-Regressionstest
+weiterhin grün. Playwright-Smoke-Test ohne Konsolenfehler.
+
+### Geänderte Dateien
+`marketBrain.js`, `events.js`, `server/marketState.js`, `app.js`,
+`index.html`, `styles.css`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.29.1] — Testabdeckung für alle 8 Kapitel-15-Beispiele komplettiert
 
 Checkpoint 6 der Nacht-Session. Audit der Unit-Tests gegen Daniels eigene

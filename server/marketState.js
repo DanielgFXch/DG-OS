@@ -28,9 +28,10 @@
 // ---------------------------------------------------------------------------
 
 const MB = require('../marketBrain.js');
-const { classifyMarketEvents } = require('../events.js');
+const { classifyMarketEvents, classifyTradingBrainEvents, buildActiveSetup } = require('../events.js');
 const rest = require('./lib/twelveDataRest.js');
 const store = require('./lib/marketStateStore.js');
+const tbStore = require('./lib/tradingBrainStore.js');
 const { TIMEFRAME_DEFS } = require('./lib/timeframes.js');
 
 const DIFF_DEBOUNCE_MS = 5000;
@@ -79,6 +80,16 @@ class MarketState {
     this._lastDiffedBrainState = store.readLatestState(); // seed from disk for restart-safety
     this._pendingEvents = [];
     this._diskFlushTimer = null;
+
+    // DG Trading Brain V1 "Market Memory" (Phase 9/10/11 of the autonomous
+    // night build) — the multi-timeframe brain is recomputed on every brain
+    // change (same trigger as the legacy diff above) so its Entry Status/
+    // Active Setup can be diffed for real events and survive a restart,
+    // instead of only being computed fresh, statelessly, per API request.
+    this.tradingBrain = null;
+    const seededTbState = tbStore.readTradingBrainState();
+    this._prevTradingBrainState = seededTbState; // {entryStatus, activeSetup} or null on true cold start
+    this.activeSetup = seededTbState ? seededTbState.activeSetup : null;
 
     this.startedAt = new Date();
   }
@@ -189,8 +200,35 @@ class MarketState {
     persisted.patternIds = patternIds;
     this._lastDiffedBrainState = persisted; // becomes the baseline for the NEXT change, however soon it arrives
     if (events.length) this._pendingEvents.push(...events);
+
+    this._recomputeTradingBrain();
+
     this._scheduleDiskFlush();
     return events;
+  }
+
+  // DG Trading Brain V1 recompute + event diff (autonomous night build,
+  // Phase 5/6/9/10/11). Runs on the SAME trigger as the legacy diff above —
+  // computeTradingBrainV1 is cheap (tens of ms across 5 timeframes) — so
+  // Entry Status/Active Setup are always current, not just computed fresh
+  // per API request, and every genuine transition gets diffed into a real
+  // event exactly like the legacy pipeline already does for liquidity/POIs.
+  _recomputeTradingBrain() {
+    this.tradingBrain = MB.computeTradingBrainV1(this.candlesByTimeframe, this.brain.liquidity, this._currentPrice());
+    const decision = this.tradingBrain.decision;
+    const { events: tbEvents, statusEventEmitted, approachEventEmitted } = classifyTradingBrainEvents(this._prevTradingBrainState, this.tradingBrain, this._currentPrice());
+    if (tbEvents.length) this._pendingEvents.push(...tbEvents);
+    this.activeSetup = buildActiveSetup(decision, this._prevTradingBrainState && this._prevTradingBrainState.activeSetup, this._currentPrice());
+    // Each cooldown timestamp only advances when ITS OWN event type was
+    // actually emitted (not on every suppressed flap) — see events.js's
+    // STATUS_EVENT_COOLDOWN_MS comment for why this exists.
+    const prevTb = this._prevTradingBrainState;
+    this._prevTradingBrainState = {
+      entryStatus: decision.status,
+      activeSetup: this.activeSetup,
+      lastStatusEventAt: statusEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastStatusEventAt) || null),
+      lastApproachEventAt: approachEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastApproachEventAt) || null)
+    };
   }
 
   _scheduleDiskFlush() {
@@ -204,13 +242,16 @@ class MarketState {
   // Writes the LATEST known state (not necessarily the state at the moment
   // the timer was first scheduled — this._lastDiffedBrainState always
   // reflects the most recent _onBrainChanged() call) plus every event
-  // collected since the last flush, in one batch.
+  // collected since the last flush, in one batch. Also persists the DG
+  // Trading Brain's Entry Status/Active Setup (Market Memory) so a Railway
+  // restart doesn't forget an in-progress setup.
   _flushToDisk() {
     store.writeLatestState(this._lastDiffedBrainState);
     if (this._pendingEvents.length) {
       store.appendEvents(this._pendingEvents);
       this._pendingEvents = [];
     }
+    if (this._prevTradingBrainState) tbStore.writeTradingBrainState(this._prevTradingBrainState);
   }
 
   // ---- Public snapshots ----------------------------------------------------
@@ -298,13 +339,24 @@ class MarketState {
     return store.readRecentEvents(limit);
   }
 
-  // DG Trading Brain V1 — computed fresh on each call, not on every price
-  // tick. It's read-only, request-driven output (GET /api/brain/XAUUSD),
-  // has no bearing on the event/persistence pipeline above, and multi-
-  // timeframe POI ranking across 4 timeframes is cheap enough (plain array
-  // math over at most a few hundred candles) not to need caching for V1.
+  // DG Trading Brain V1 — as of the Market Memory build, this returns the
+  // CACHED brain recomputed on every brain change (_recomputeTradingBrain,
+  // called from _onBrainChanged), not a fresh recompute per request. This
+  // keeps the API response consistent with whatever the event log just
+  // diffed against, and includes the persisted Active Setup. Falls back to
+  // computing once on demand if called before the server has processed its
+  // first brain change yet (e.g. right after boot).
   getTradingBrain() {
-    return MB.computeTradingBrainV1(this.candlesByTimeframe, this.brain.liquidity, this._currentPrice());
+    // Goes through the exact same path _onBrainChanged() uses (never a
+    // bare inline compute) so activeSetup/event-diffing/persistence stay
+    // consistent no matter what triggered the very first computation —
+    // a bare inline fallback here previously left activeSetup stuck at
+    // null even once a real WATCH/CONFIRMATION/READY status existed.
+    if (!this.tradingBrain) {
+      this._recomputeTradingBrain();
+      this._scheduleDiskFlush(); // so activeSetup/events from this on-demand compute still reach disk
+    }
+    return Object.assign({}, this.tradingBrain, { activeSetup: this.activeSetup || null });
   }
 }
 

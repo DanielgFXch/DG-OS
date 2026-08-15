@@ -8,6 +8,39 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.24.0] — DG Trading Brain V1: alle 17 Kapitel implementiert
+
+Daniel hat alle 17 Kapitel von `rules/strategy.md` in einer Session direkt
+diktiert. Dieser Build implementiert die Regelanwendung für die 14 davon,
+die auf ein echtes Laufzeitmodul abbilden (Philosophy/Examples/Edge Cases
+sind reine Referenzkapitel ohne eigenständiges Modul). `DG_RULES_DEFINED`
+ist jetzt für diese 14 Kapitel `true`.
+
+### Neu / Geändert (`marketBrain.js`, Modul 11)
+- **DG HTF Bias** (Kapitel 1): Macro (Monthly/Weekly) und Trading (Daily/4H) getrennt bewertet, je eine offengelegte Confluence-Abstimmung (Struktur + Premium/Discount + Liquidity-Sweeps + frische POIs) statt einer erfundenen Gewichtungsformel. Keine erfundene Confidence-Zahl.
+- **DG Liquidity** (Kapitel 2): neues `relevance`-Feld pro Level (Score + Tier `low/medium/high`) nach Daniels expliziter Vorgabe — externe Struktur-Swings + HTF vor internen/LTF, zusätzliche Relevanz durch Equal-Level- und POI-Nähe. Keine neue Swing-Erkennung — nutzt die bestehende Structure Engine unverändert.
+- **DG Premium/Discount** (Kapitel 3): Range kommt jetzt aus dem jüngsten externen Struktur-Swing-High/Low statt aus dem vollen Kerzen-Fenster; zusätzlich OTE-(0.68-0.78) und Deep-(0.85-0.89) Fibonacci-Zonen.
+- **DG Order Block / Valid FVG / Breaker / Inverse FVG** (Kapitel 4/5/6/7): reales Confluence-Score-Ranking (`score`/`quality`) nach den in den Kapiteln genannten Faktoren; 65%-Mitigations-Richtwert für Order Blocks; OPEN/PARTIALLY/FULLY-MITIGATED-Status für FVGs. `detectBreakers()`/`detectInverseFairValueGaps()` sind jetzt echte Detektoren (vorher Stubs) und in die Multi-Timeframe-POI-Pipeline eingebunden.
+- **DG Confirmation** (Kapitel 8): prüft 15M-Kerzen nach einer POI-Reaktion auf Engulfing/Structure-Shift/Rejection — alle 5 Zustände (NO_CONFIRMATION bis STRUCTURE_CONFIRMED) erreichbar.
+- **DG Entry** (Kapitel 9): echte Zustandsmaschine (WAIT/WATCH_BUY/WATCH_SELL/BUY_CONFIRMATION/SELL_CONFIRMATION/BUY_READY/SELL_READY) aus Bias + Liquidity-Sweep + POI-Qualität + Confirmation. Entry Zone kommt aus der bestätigenden FVG, Stop Loss liegt hinter dem stützenden Sweep — nie automatische Order-Ausführung.
+- **DG Exit/Targets** (Kapitel 10): reale PRIMARY/SECONDARY/EXTENDED-Priorität nach Timeframe-Rang, Bias-Übereinstimmung, Distanz und Counter-POI-Kontext.
+- **DG Risk Management** (Kapitel 11): R:R wird arithmetisch berechnet, sobald ein echtes BUY_READY/SELL_READY-Setup existiert; `positionSize` bleibt immer die Konstante `'MANUAL'`.
+- **DG No-Trade Rules** (Kapitel 12): WAIT-Zustände + `DATA_NOT_READY`-Override, wenn ein HTF-Kern-Timeframe fehlt.
+- **DG Sessions** (Kapitel 13): informative Sweep-Notizen (z. B. "Asia Low gesweept"), nie eine Handelsregel.
+- **DG News** (Kapitel 14): `NEWS_STATUS = 'DATA_SOURCE_NOT_CONNECTED'` — Daniels eigene V1-Antwort, keine Annahme.
+- HTF-Kontext erweitert um Monthly (Macro Bias) und 15M (nur für Confirmation).
+
+### Dashboard (`app.js`, `index.html`, `styles.css`)
+- „DG Trading Brain V1"-Karte zeigt jetzt reale Werte statt `AWAITING_DG_RULE`: farbcodierter Entry Status, Macro/Trading Bias, POI-Qualität mit Score, Target-Priorität, neuer Entry/Risk-Block (Entry Zone, Stop Loss, R:R) sowie Sessions/News-Hinweise.
+
+### Getestet
+30 neue Unit-Tests direkt gegen die einzelnen Regel-Funktionen (Bias-Gruppierung, POI-Qualität, alle 5 Confirmation-Zustände, vollständige Entry-Kette bis BUY_READY inkl. Kapitel-15-Beispielszenarien 3/4/7); bestehender End-to-End-Test gegen den echten Server aktualisiert und grün (reale Werte statt der alten Gating-Assertions); Sweep/Reversal- und Initial-Fetch-Retry-Regressionstests unverändert grün; Dashboard-Karte per Playwright gegen den echten Server geprüft.
+
+### Geänderte Dateien
+`marketBrain.js`, `app.js`, `index.html`, `styles.css`, `CLAUDE.md`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.23.1] — DG Trading Brain V1: Interpretation-Ebene ehrlich gegated
 
 Korrektur an v0.23.0, noch vor Produktionsverifikation: die POI-Score-,

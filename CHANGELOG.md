@@ -8,6 +8,35 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.29.1] — Testabdeckung für alle 8 Kapitel-15-Beispiele komplettiert
+
+Checkpoint 6 der Nacht-Session. Audit der Unit-Tests gegen Daniels eigene
+Kapitel-15-Beispiele (`rules/strategy.md`) ergab: 4 von 8 Beispielen hatten
+noch keinen expliziten Test (Beispiel 1/2 Valid Buy/Sell, Beispiel 5
+Counter-POI as Target, Beispiel 8 No Trade). Beispiel 1 (Valid Buy, volle
+BUY_READY-Kette) war bereits abgedeckt, aber ohne explizite Referenz.
+
+### Neu (Tests, nicht Teil des Repos — siehe scratchpad)
+- Beispiel 2 (Valid Sell): volle SELL_READY-Kette, symmetrisch zum
+  bestehenden BUY_READY-Test — Stop Loss oberhalb des geswepten Levels,
+  Entry Zone aus der bestätigenden FVG.
+- Beispiel 5 (Counter-POI as Target): bestätigt, dass ein gegenläufiger
+  POI zwischen Preis und einem weiter entfernten Liquidity-Level als Target
+  berücksichtigt wird (nicht ignoriert) und `hasCounterPOIInPath()` korrekt
+  erkennt, wann ein Counter-POI im Pfad liegt (Grundlage für die Prioritäts-
+  Reduktion in `computeTargets()`).
+- Beispiel 8 (No Trade): mehrere kleine/niedrigqualitative POIs plus
+  vorhandener Liquidity Sweep führen weiterhin zu WAIT, nie zu einer
+  erzwungenen Trade-Idee.
+
+Kein Code in `marketBrain.js`/`events.js`/`server/` geändert — reiner
+Testabdeckungs-Checkpoint, alle 45 Tests (vorher 37) grün.
+
+### Geänderte Dateien
+`package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.29.0] — Dashboard-Ehrlichkeits-Audit (Phase 4 Nacharbeit)
 
 Checkpoint 5 der Nacht-Session — Fortsetzung nach "AUTONOME NIGHT BUILD".

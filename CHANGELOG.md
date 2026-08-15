@@ -8,6 +8,31 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.25.0] — Decision Summary, echter DG Report, Live-Dashboard
+
+Erster Checkpoint der Nacht-Session (Autonomous Night Build, Daniels
+Auftrag): Trading Brain V1 aus v0.24.0 bekommt jetzt einen sauberen
+Decision-Block, einen echten trader-tauglichen Report-Text und wird
+tatsächlich im Dashboard/Briefing/Telegram angezeigt statt der alten
+Alpha-Simulationswerte.
+
+### Neu (`marketBrain.js`)
+- `brain.decision` — flacher Summary-Block (`status`, `direction`, `macroBias`, `tradingBias`, `primaryPoi`, `confirmation`, `entryZone`, `invalidation`, `targets`, `riskReward`, `missingRequirements`, `reasons`). Reine Zusammenfassung bereits berechneter Felder, keine neue Logik.
+- `generateDGBriefing(brain, now)` — deterministischer, kompakter Report-Text (Begrüßung nach Tageszeit in Europe/Zurich, Market Status, HTF, Liquidity, Top Buy/Sell Areas, Current Scenario, Waiting For, Targets, Invalidation, Why). Ausschließlich aus bereits berechneten Market Facts/DG-Regeln zusammengesetzt, keine erfundene Analyse.
+
+### Dashboard (`app.js`, `index.html`, `styles.css`)
+- Hero-Karte „Aktuelle Handlung" zeigt jetzt den echten Entry Status (`brain.decision`) inkl. Badge LIVE/SIMULATION, sobald ein Always-On Server verbunden ist — ohne Server bleibt die bisherige Alpha-Simulation als Demo aktiv, jetzt klar als TEST gekennzeichnet.
+- „DG Briefing anzeigen" und „An Telegram senden" nutzen ab sofort ausschließlich `generateDGBriefing()` — keine Alpha-/Fake-Werte mehr in einem Report, der real gesendet werden kann.
+- Alpha-Simulation-Karte trägt jetzt einen sichtbaren TEST-Badge und einen Hinweistext, dass sie nur ohne verbundenen Server die Hero-Karte steuert.
+
+### Getestet
+Bestehende 30 Unit-Tests weiterhin grün; End-to-End-Test gegen echten Server weiterhin grün; Dashboard gegen echten Server per Playwright geprüft — Hero-Karte zeigt live „WATCH BUY" mit LIVE-Badge, Briefing-Text zeigt reale Kurse/POIs/Liquidity.
+
+### Geänderte Dateien
+`marketBrain.js`, `app.js`, `index.html`, `styles.css`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.24.0] — DG Trading Brain V1: alle 17 Kapitel implementiert
 
 Daniel hat alle 17 Kapitel von `rules/strategy.md` in einer Session direkt

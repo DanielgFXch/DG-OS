@@ -157,6 +157,16 @@ body{
 }
 .section-title{display:flex;align-items:center;gap:7px;margin-bottom:12px}
 .section-title::before{content:"//";color:var(--cyan-dim)}
+.badge-test{
+  font-family:var(--hud-font);font-size:9px;font-weight:700;letter-spacing:.08em;
+  color:var(--gold);border:1px solid var(--gold);border-radius:4px;padding:1px 5px;margin-left:6px;
+  vertical-align:middle;text-transform:uppercase;opacity:.85
+}
+.badge-live{
+  font-family:var(--hud-font);font-size:9px;font-weight:700;letter-spacing:.08em;
+  color:var(--green);border:1px solid var(--green);border-radius:4px;padding:1px 5px;margin-left:6px;
+  vertical-align:middle;text-transform:uppercase;opacity:.85
+}
 
 .action{display:flex;align-items:center;gap:10px;font-size:30px;font-weight:700;letter-spacing:-.01em;margin-top:8px;font-family:var(--display-font);transition:color .4s ease,text-shadow .4s ease}
 .action.wait{color:var(--gold);text-shadow:0 0 18px rgba(242,181,68,.35)}

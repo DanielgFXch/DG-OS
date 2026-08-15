@@ -294,12 +294,12 @@ function buildActiveSetup(decision,existing,currentPrice){
 function classifyTradingBrainEvents(prevState,brain,currentPrice,now){
   now=typeof now==='number'?now:Date.now();
   const events=[];
-  let statusEventEmitted=false,approachEventEmitted=false;
-  if(!brain||!brain.decision) return{events,statusEventEmitted,approachEventEmitted};
+  let statusEventEmitted=false,approachEventEmitted=false,liquidityApproachEventEmitted=false;
+  if(!brain||!brain.decision) return{events,statusEventEmitted,approachEventEmitted,liquidityApproachEventEmitted};
   const decision=brain.decision;
   const prevStatus=prevState&&prevState.entryStatus;
   const prevActiveSetup=prevState&&prevState.activeSetup;
-  if(!prevState) return{events,statusEventEmitted,approachEventEmitted}; // cold start: seed only, no fabricated "just happened" events
+  if(!prevState) return{events,statusEventEmitted,approachEventEmitted,liquidityApproachEventEmitted}; // cold start: seed only, no fabricated "just happened" events
 
   const lastStatusEventAt=prevState.lastStatusEventAt?new Date(prevState.lastStatusEventAt).getTime():0;
   const inCooldown=(now-lastStatusEventAt)<STATUS_EVENT_COOLDOWN_MS;
@@ -356,6 +356,56 @@ function classifyTradingBrainEvents(prevState,brain,currentPrice,now){
     }
   }
 
+    // V1 Priority #1/#2/#3 (Daniel's explicit reorder): Liquidity Approaching,
+  // Liquidity Swept, Reaction Detected on PRIMARY liquidity levels now rank
+  // above POI/Confirmation alerts. LIQUIDITY_SWEPT/LIQUIDITY_REACTED are
+  // diffed off the Liquidity Memory (see marketBrain.js's
+  // enrichLiquidityWithMemory) — a memory key appearing for the first time
+  // IS the sweep event, so "nicht immer wieder als neu melden" falls out
+  // naturally: the same sweep can never diff as new twice.
+  const prevLiquidityMemory=(prevState&&prevState.liquidityMemory)||{};
+  const nextLiquidityMemory=brain.liquidityMemory||{};
+  const levelByMemoryKey=new Map((brain.liquidity||[]).map(lv=>[MB.liquidityMemoryKey(lv),lv]));
+  Object.keys(nextLiquidityMemory).forEach(key=>{
+    const next=nextLiquidityMemory[key];
+    const prev=prevLiquidityMemory[key];
+    const level=levelByMemoryKey.get(key);
+    if(!level||!MB.isV1PrimaryLiquidity(level)) return; // V1 priority: only primary liquidity gets its own sweep/reaction alert
+    if(!prev){
+      events.push(tbEvent('LIQUIDITY_SWEPT',{
+        direction:level.type==='high'?'bearish':'bullish',price:level.price,timeframe:level.timeframe,
+        significance:'high',explanation:`${level.label} gesweept bei ${level.price} — relevantes Liquidity-Level (Kapitel 2).`,
+        dedupeKey:`LIQUIDITY_SWEPT-${key}`
+      }));
+    }
+    const prevReaction=prev&&prev.reaction&&prev.reaction.status;
+    const nextReaction=next.reaction&&next.reaction.status;
+    if(nextReaction==='REACTED'&&prevReaction!=='REACTED'){
+      events.push(tbEvent('LIQUIDITY_REACTED',{
+        direction:level.type==='high'?'bearish':'bullish',price:level.price,timeframe:level.timeframe,
+        significance:'high',explanation:(next.reaction.reasons&&next.reaction.reasons[0])||`Reaktion nach Sweep von ${level.label} erkannt.`,
+        dedupeKey:`LIQUIDITY_REACTED-${key}`
+      }));
+    }
+  });
+
+  // LIQUIDITY_APPROACHING — current-state check (not a diff, same pattern as
+  // IMPORTANT_POI_APPROACHING below), its own independent cooldown so it
+  // doesn't compete with POI-approach or status-transition alerts.
+  const lastLiquidityApproachEventAt=prevState.lastLiquidityApproachEventAt?new Date(prevState.lastLiquidityApproachEventAt).getTime():0;
+  const liquidityApproachInCooldown=(now-lastLiquidityApproachEventAt)<STATUS_EVENT_COOLDOWN_MS;
+  if(!liquidityApproachInCooldown){
+    const approaching=(brain.liquidity||[]).find(lv=>lv.status==='approaching'&&MB.isV1PrimaryLiquidity(lv));
+    if(approaching){
+      events.push(tbEvent('LIQUIDITY_APPROACHING',{
+        direction:approaching.type==='high'?'bearish':'bullish',price:currentPrice,timeframe:approaching.timeframe,
+        explanation:`Preis nähert sich ${approaching.label} (${approaching.timeframe}) bei ${approaching.price}.`,
+        dedupeKey:`LIQUIDITY_APPROACHING-${MB.liquidityMemoryKey(approaching)}`
+      }));
+      liquidityApproachEventEmitted=true;
+    }
+  }
+
   // IMPORTANT_POI_APPROACHING — SYSTEM_THRESHOLD only, see constant above.
   // Cooldown-gated the same way as status events (its own independent
   // clock): the "primary POI" candidate can itself change identity from
@@ -382,7 +432,7 @@ function classifyTradingBrainEvents(prevState,brain,currentPrice,now){
     }
   }
 
-  return{events,statusEventEmitted,approachEventEmitted};
+  return{events,statusEventEmitted,approachEventEmitted,liquidityApproachEventEmitted};
 }
 
 return{

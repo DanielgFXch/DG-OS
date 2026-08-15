@@ -991,20 +991,26 @@ async function sendTelegramMessage(token,chatId,text){
 // maybeAutoSend() above — this one only ever reacts to real
 // source:'tradingBrainV1' events, never to Alpha test-button clicks.
 // Client-side dedup (localStorage) on top of the server's own cooldown
-// covers page reloads. Default conservative per Daniel's explicit
-// instruction: only BUY/SELL READY and System/Data problems start enabled.
+// covers page reloads. V1 priority reorder (Daniel's explicit instruction):
+// 1. Relevant Liquidity approaching, 2. Liquidity swept, 3. Reaction
+// detected, 4. Relevant FVG/OB reached, 5. Engulfing/Structure confirmation,
+// 6. BUY_READY/SELL_READY. alertLiquidity/alertConfirmation now default to
+// enabled alongside alertReady/alertSystem — WATCH_BUY/WATCH_SELL stay off
+// by default (still the most tentative, not on Daniel's explicit list) to
+// keep this from becoming an alert flood ("Keine Alert-Flut").
 // ---------------------------------------------------------------------------
 const ALERT_CATEGORY_TYPES={
   alertReady:['BUY_READY','SELL_READY'],
+  alertLiquidity:['LIQUIDITY_APPROACHING','LIQUIDITY_SWEPT','LIQUIDITY_REACTED','IMPORTANT_POI_APPROACHING','PRIMARY_TARGET_REACHED'],
   alertConfirmation:['REACTION_DETECTED','CONFIRMATION_DEVELOPING','ENGULFING_CONFIRMED','STRUCTURE_CONFIRMED'],
   alertWatch:['WATCH_BUY','WATCH_SELL','BUY_CONFIRMATION','SELL_CONFIRMATION'],
-  alertLiquidity:['IMPORTANT_POI_APPROACHING','PRIMARY_TARGET_REACHED'],
   alertSystem:['DATA_NOT_READY','SYSTEM_RECOVERED','SETUP_INVALIDATED','MISSED']
 };
 const ALERT_CHECKBOX_IDS=Object.keys(ALERT_CATEGORY_TYPES);
 const ALERT_TYPE_ICON={
   BUY_READY:'🟢',SELL_READY:'🔴',WATCH_BUY:'🟡',WATCH_SELL:'🟡',BUY_CONFIRMATION:'🟠',SELL_CONFIRMATION:'🟠',
   ENGULFING_CONFIRMED:'⚡',STRUCTURE_CONFIRMED:'⚡',REACTION_DETECTED:'👀',CONFIRMATION_DEVELOPING:'👀',
+  LIQUIDITY_APPROACHING:'📍',LIQUIDITY_SWEPT:'💧',LIQUIDITY_REACTED:'👀',
   IMPORTANT_POI_APPROACHING:'📍',PRIMARY_TARGET_REACHED:'🎯',SETUP_INVALIDATED:'⚠️',DATA_NOT_READY:'⚠️',SYSTEM_RECOVERED:'✅',MISSED:'⏭️'
 };
 const ALERT_SEEN_STORAGE_KEY='dgos.seenAlertDedupeKeys';

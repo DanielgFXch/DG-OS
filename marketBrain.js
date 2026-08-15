@@ -178,17 +178,27 @@ function extractLevelRaw(def,data){
 // "Touched" zone width, as a % of current price - close enough to the level
 // to matter, without price having actually traded through it yet.
 const LIQUIDITY_TOUCH_PERCENT=0.05;
+// V1 priority (Daniel's "Liquidity zuerst" reorder): a wider early heads-up
+// band before a relevant level is actually tested — 'approaching' sits
+// between 'active' and 'touched'. Wider than the touch zone on purpose,
+// otherwise it would never fire before 'touched' does.
+const LIQUIDITY_APPROACH_PERCENT=0.3;
 
 function computeLiquidityStatus(levelPrice,type,currentPrice){
   if(typeof levelPrice!=='number'||typeof currentPrice!=='number') return'invalid';
   const toleranceAbs=currentPrice*(LIQUIDITY_TOUCH_PERCENT/100);
+  const approachToleranceAbs=currentPrice*(LIQUIDITY_APPROACH_PERCENT/100);
   if(type==='high'){
     if(currentPrice>levelPrice) return'sweeped';
-    if(levelPrice-currentPrice<=toleranceAbs) return'touched';
+    const dist=levelPrice-currentPrice;
+    if(dist<=toleranceAbs) return'touched';
+    if(dist<=approachToleranceAbs) return'approaching';
     return'active';
   }else{
     if(currentPrice<levelPrice) return'sweeped';
-    if(currentPrice-levelPrice<=toleranceAbs) return'touched';
+    const dist=currentPrice-levelPrice;
+    if(dist<=toleranceAbs) return'touched';
+    if(dist<=approachToleranceAbs) return'approaching';
     return'active';
   }
 }
@@ -204,7 +214,10 @@ function computeLiquidityEngine(data){
   });
 }
 
-const LIQUIDITY_STATUS_LABEL={active:'ACTIVE',touched:'TOUCHED',sweeped:'SWEEPED',invalid:'INVALID'};
+// V1 display vocabulary, Daniel's own literal enum: OPEN / APPROACHING /
+// TOUCHED / SWEPT (internal status keys stay 'active'/'sweeped' etc. so
+// nothing else in the engine needs renaming — this is the display layer only).
+const LIQUIDITY_STATUS_LABEL={active:'OPEN',approaching:'APPROACHING',touched:'TOUCHED',sweeped:'SWEPT',invalid:'INVALID'};
 
 // Module 7: POI Engine — Stage 2/4: Erkennung
 //
@@ -1234,6 +1247,114 @@ function swingLiquidityFrom(tfBrainsByOutputKey,currentPrice){
   return levels;
 }
 
+// ---------------------------------------------------------------------------
+// V1 Priorities (Daniel's explicit reorder): "Relevante Liquidity sauber
+// erkennen" is now the #1 priority — above Premium/Discount, complex Bias
+// scoring or fine POI ranking. Concretely, only these levels count as
+// PRIMARY liquidity for the briefing, Targets (Kapitel 10) and Entry sweep
+// support (Kapitel 9): Previous/current Daily High/Low, relevant external
+// Daily/4H swings, and the three session highs/lows. Weekly/Monthly current
+// H/L and Weekly/Monthly/H1 swing liquidity keep being detected (Bias still
+// reads them as context) but are never a PRIMARY target/sweep-support
+// source in V1 — small H1 internal noise never was included at all
+// (swingLiquidityFrom already only emits external swings).
+// ---------------------------------------------------------------------------
+const V1_PRIMARY_LIQUIDITY_IDS=new Set(['dailyHigh','dailyLow','prevDayHigh','prevDayLow','asiaHigh','asiaLow','londonHigh','londonLow','nyHigh','nyLow']);
+const V1_PRIMARY_SWING_TIMEFRAMES=new Set(['Daily','4H']);
+
+function isV1PrimaryLiquidity(level){
+  if(!level) return false;
+  if(V1_PRIMARY_LIQUIDITY_IDS.has(level.id)) return true;
+  return level.structureType==='external'&&V1_PRIMARY_SWING_TIMEFRAMES.has(level.timeframe);
+}
+
+// Liquidity Memory (V1 "nicht immer wieder als neu melden"): a level's
+// sweep must be remembered, not re-observed as fresh on every recompute.
+// The memory key includes the level's own `period` (bar date / session
+// date / swing creation time) so a NEW Daily/Session instance of the same
+// id (tomorrow's Asia High is a different level than today's) starts with
+// a clean slate — only genuinely the same physical level stays sticky.
+function liquidityMemoryKey(level){
+  return`${level.id}:${level.period||''}`;
+}
+
+// Reaction check after a relevant sweep (Kapitel 2 V1 priority #3): exactly
+// Daniel's five checks — Rejection, Engulfing, Displacement, BOS/CHOCH, a
+// freshly formed FVG — run on H1 (the timeframe he named for reaction/
+// confirmation context), in a lookahead window starting at the sweep. Pure
+// correlation of already-existing detectors, no new pattern logic.
+const LIQUIDITY_REACTION_LOOKAHEAD_CANDLES=8;
+
+function detectLiquidityReaction(level,h1Series){
+  if(!level||!level.sweptAt||!Array.isArray(h1Series)||!h1Series.length){
+    return{status:'NO_REACTION_YET',reasons:['Noch keine H1-Daten für eine Reaktionsprüfung.']};
+  }
+  const expectedDirection=level.type==='high'?'bearish':'bullish'; // Buyside taken -> bearish reaction expected, Sellside taken -> bullish
+  const sweptTime=new Date(level.sweptAt).getTime();
+  const startIndex=h1Series.findIndex(c=>new Date(candleTimeToIso(c.datetime)).getTime()>=sweptTime);
+  if(startIndex===-1){
+    return{status:'NO_REACTION_YET',reasons:['H1-Historie reicht noch nicht bis zum Sweep-Zeitpunkt.']};
+  }
+  const windowSlice=h1Series.slice(Math.max(0,startIndex-1),startIndex+LIQUIDITY_REACTION_LOOKAHEAD_CANDLES);
+
+  const structureShift=detectStructure(windowSlice,STRUCTURE_INTERNAL_WINDOW,'internal','H1').elements
+    .find(el=>(el.type==='BOS'||el.type==='CHOCH')&&el.direction===expectedDirection);
+  if(structureShift){
+    return{status:'REACTED',reasons:[`H1 ${structureShift.type} in Richtung ${expectedDirection} bei ${fmtPrice(structureShift.price)}`]};
+  }
+  const engulfing=detectEngulfingCandles(windowSlice).find(e=>e.direction===expectedDirection);
+  if(engulfing){
+    return{status:'REACTED',reasons:[`H1 ${expectedDirection} Engulfing bei ${engulfing.at}`]};
+  }
+  const displacement=detectDisplacementCandles(windowSlice).find(d=>d.direction===expectedDirection);
+  if(displacement){
+    return{status:'REACTED',reasons:[`H1 Displacement (${expectedDirection}) bei ${displacement.at}`]};
+  }
+  const freshFvg=detectFairValueGaps(windowSlice,'H1').find(f=>f.direction===expectedDirection);
+  if(freshFvg){
+    return{status:'REACTED',reasons:[`Neue H1 FVG (${expectedDirection}) nach dem Sweep entstanden`]};
+  }
+  const rejection=windowSlice.slice(1).find(c=>isRejectionCandle(c,expectedDirection));
+  if(rejection){
+    return{status:'REACTED',reasons:[`H1 Rejection-Kerze (${expectedDirection}) bei ${rejection.datetime} UTC`]};
+  }
+  return{status:'NO_REACTION_YET',reasons:['Sweep erkannt, aber noch keine deutliche Rejection/Engulfing/Displacement/BOS-CHOCH/FVG danach.']};
+}
+
+// Ties Liquidity Status together with Liquidity Memory: makes a sweep
+// sticky (once observed, stays SWEPT even if price re-enters the zone —
+// a taken pool doesn't become "open" again), stamps the FIRST time DG OS
+// actually observed the sweep as `sweptAt` (never a fabricated retroactive
+// time), and runs the Reaction check once per level until it resolves to
+// REACTED. `priorMemory` is optional — stateless callers (browser/tests)
+// simply never get sticky sweeps or reaction memory, which is honest (no
+// history = nothing to remember), exactly like `priorSetupContext` above.
+function enrichLiquidityWithMemory(levels,priorMemory,h1Series,nowIso){
+  const memory={};
+  const enriched=(levels||[]).map(level=>{
+    const key=liquidityMemoryKey(level);
+    const prior=priorMemory&&priorMemory[key];
+    let status=level.status;
+    let sweptAt=(prior&&prior.sweptAt)||null;
+    if(status==='sweeped'){
+      if(!sweptAt) sweptAt=nowIso;
+    }else if(sweptAt){
+      status='sweeped'; // sticky — already-taken liquidity stays taken
+    }
+    let reaction=(prior&&prior.reaction)||null;
+    if(status==='sweeped'&&(!reaction||reaction.status!=='REACTED')){
+      reaction=detectLiquidityReaction(Object.assign({},level,{sweptAt}),h1Series);
+    }
+    if(status==='sweeped') memory[key]={sweptAt,reaction};
+    return Object.assign({},level,{
+      status,
+      sweptAt:status==='sweeped'?sweptAt:null,
+      reaction:status==='sweeped'?reaction:null
+    });
+  });
+  return{levels:enriched,memory};
+}
+
 // DG Liquidity Relevance (Kapitel 2) — Daniel's explicit V1 answer to "was
 // macht einen Swing relevant": reuse Structure Engine (Modul 9) as-is,
 // external > internal, HTF > LTF, and additional relevance when a level
@@ -1569,8 +1690,14 @@ function computeTargets(liquidity,pois,poisAll,currentPrice,tradingBiasState){
   if(typeof currentPrice!=='number') return[];
   const candidates=[];
 
+  // V1 priority: only PRIMARY liquidity (Daily/4H swings, Previous/current
+  // Daily H/L, Session H/L) becomes a liquidity-based target — a
+  // Weekly/Monthly/H1 level stays Bias context only. A level DG OS has
+  // already TOUCHED or SWEPT is, by definition, no longer a fresh forward
+  // target ("dürfen nicht erneut als frisches Primary Target behandelt werden").
   (liquidity||[]).forEach(lv=>{
-    if(typeof lv.price!=='number'||lv.status==='invalid'||lv.status==='sweeped') return; // sweeped = already taken, not a forward target
+    if(typeof lv.price!=='number'||lv.status==='invalid'||lv.status==='sweeped'||lv.status==='touched') return;
+    if(!isV1PrimaryLiquidity(lv)) return;
     candidates.push({
       direction:lv.price>currentPrice?'up':'down',price:lv.price,type:'liquidity',timeframe:lv.timeframe,
       reason:`${lv.label} (${lv.timeframe})`,_dist:Math.abs(lv.price-currentPrice),_tfRank:LIQUIDITY_TIMEFRAME_RANK[lv.timeframe]||1
@@ -1623,7 +1750,11 @@ const ENTRY_SL_BUFFER_PERCENT_OF_ZONE=10;
 
 function liquiditySweepSupport(direction,liquidity){
   const wantType=direction==='bullish'?'low':'high'; // bullish setup needs Sellside (low) liquidity taken first
-  return(liquidity||[]).filter(l=>l.type===wantType&&l.status==='sweeped'&&l.relevance&&l.relevance.tier!=='low');
+  // V1 priority: only a sweep of PRIMARY liquidity (Daily/4H swings,
+  // Previous/current Daily H/L, Session H/L) counts as real sweep support
+  // for an Entry — a Weekly/Monthly/H1 swing sweep is still visible as
+  // Bias context elsewhere, but never drives WATCH/CONFIRMATION/READY.
+  return(liquidity||[]).filter(l=>l.type===wantType&&l.status==='sweeped'&&l.relevance&&l.relevance.tier!=='low'&&isV1PrimaryLiquidity(l));
 }
 
 // DG No-Trade Rules (Kapitel 12) — "MISSED": "Wenn das erwartete Szenario
@@ -1659,34 +1790,33 @@ function detectMissedMove(priorSetupContext,currentPrice){
   };
 }
 
-function computeEntryDecision(tradingBiasState,poisAll,liquidity,currentPrice,priorSetupContext){
-  if(!DG_RULES_DEFINED.entry){
-    return{status:'AWAITING_DG_RULE',direction:null,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:null,reasons:['DG Entry (Kapitel 9) ist noch nicht definiert.']};
-  }
-  if(tradingBiasState!=='BULLISH'&&tradingBiasState!=='BEARISH'){
-    return{status:'WAIT',direction:null,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:null,reasons:['DG Trading Bias ist NEUTRAL/MIXED oder noch nicht verfügbar — kein Entry-Kontext (Kapitel 12: Mixed Context).']};
-  }
-
-  const direction=tradingBiasState==='BULLISH'?'bullish':'bearish';
-  const buyOrSell=direction==='bullish'?'BUY':'SELL';
-
-  const candidates=(poisAll||[])
+function entryCandidatesFor(direction,poisAll){
+  return(poisAll||[])
     .filter(p=>p.direction===direction&&p.status==='fresh'&&ENTRY_CANDIDATE_MIN_QUALITY.has(p.quality))
     .sort((a,b)=>(b.score-a.score)||((typeof a.distanceToPrice==='number'?a.distanceToPrice:Infinity)-(typeof b.distanceToPrice==='number'?b.distanceToPrice:Infinity)));
+}
+
+// V1 status rank, used to compare bullish vs. bearish progress when Bias is
+// neutral/mixed and doesn't pick a direction itself (see below).
+const ENTRY_STATUS_RANK={WAIT:0,WATCH_BUY:1,WATCH_SELL:1,BUY_CONFIRMATION:2,SELL_CONFIRMATION:2,BUY_READY:3,SELL_READY:3};
+
+// Pure Liquidity -> Sweep -> Reaction -> Confirmation chain for ONE
+// direction, independent of Bias — this is what Kapitel 9 actually checks
+// once a direction is being considered, whether that direction came from
+// Trading Bias or (V1 priority) from Liquidity/POI/Reaction facts alone.
+function evaluateEntryForDirection(direction,poisAll,liquidity,currentPrice){
+  const buyOrSell=direction==='bullish'?'BUY':'SELL';
+  const candidates=entryCandidatesFor(direction,poisAll);
 
   if(!candidates.length){
-    const missed=detectMissedMove(priorSetupContext,currentPrice);
-    if(missed){
-      return{status:'MISSED',direction:missed.direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:null,reasons:[missed.reason]};
-    }
-    return{status:'WAIT',direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:null,reasons:[`Kein relevanter POI in Trading-Bias-Richtung (${direction}) — Kapitel 12.`]};
+    return{status:'WAIT',direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:null,reasons:[`Kein relevanter POI in ${direction==='bullish'?'bullisher':'bearisher'} Richtung — Kapitel 12.`]};
   }
 
   const sweepSupport=liquiditySweepSupport(direction,liquidity);
   const primary=candidates[0];
 
   if(!sweepSupport.length){
-    return{status:'WAIT',direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:primary.id,reasons:[`Kein unterstützender Liquidity Sweep für ein ${direction} Setup vorhanden — Kapitel 9.`]};
+    return{status:'WAIT',direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:primary.id,reasons:[`Kein unterstützender Liquidity Sweep (relevantes Level) für ein ${direction} Setup vorhanden — Kapitel 9.`]};
   }
 
   if(!primary.reaction){
@@ -1710,6 +1840,55 @@ function computeEntryDecision(tradingBiasState,poisAll,liquidity,currentPrice,pr
     status:`${buyOrSell}_READY`,direction,entryZone:confirmation.entryZone,stopLoss,primaryPOI:primary.id,
     reasons:[`Liquidity Sweep (${nearestSweep.label}) + relevanter POI (${primary.type}, ${primary.timeframe}, Qualität ${primary.quality}) + ${confirmation.status} auf 15M.`]
   };
+}
+
+function computeEntryDecision(tradingBiasState,poisAll,liquidity,currentPrice,priorSetupContext){
+  if(!DG_RULES_DEFINED.entry){
+    return{status:'AWAITING_DG_RULE',direction:null,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:null,reasons:['DG Entry (Kapitel 9) ist noch nicht definiert.']};
+  }
+
+  // MISSED (Kapitel 12) is checked independent of the current Bias — if the
+  // market ran away from a previously-progressed setup and no new candidate
+  // has taken its place, that's true regardless of what Bias says right now.
+  if(priorSetupContext&&priorSetupContext.direction&&!entryCandidatesFor(priorSetupContext.direction,poisAll).length){
+    const missed=detectMissedMove(priorSetupContext,currentPrice);
+    if(missed){
+      return{status:'MISSED',direction:missed.direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:null,reasons:[missed.reason]};
+    }
+  }
+
+  if(tradingBiasState==='BULLISH'||tradingBiasState==='BEARISH'){
+    return evaluateEntryForDirection(tradingBiasState==='BULLISH'?'bullish':'bearish',poisAll,liquidity,currentPrice);
+  }
+
+  // V1 priority: "Bias ist Context, nicht zwingender Gatekeeper." A
+  // NEUTRAL_MIXED (or not-yet-available) Bias must no longer force an
+  // automatic WAIT — if a relevant Liquidity Sweep + POI + Reaction chain
+  // exists in EITHER direction on its own merits, WATCH/CONFIRMATION/READY
+  // may still form. Both directions are evaluated on pure facts and
+  // whichever progressed further wins; a tie at the highest rank breaks on
+  // primary POI quality score (disclosed V1 choice, not a Daniel number).
+  const bullish=evaluateEntryForDirection('bullish',poisAll,liquidity,currentPrice);
+  const bearish=evaluateEntryForDirection('bearish',poisAll,liquidity,currentPrice);
+  const bullishRank=ENTRY_STATUS_RANK[bullish.status]||0;
+  const bearishRank=ENTRY_STATUS_RANK[bearish.status]||0;
+  let winner;
+  if(bullishRank>bearishRank) winner=bullish;
+  else if(bearishRank>bullishRank) winner=bearish;
+  else if(bullishRank===0) winner=null; // both WAIT — genuinely no direction, not a tie to break
+  else{
+    const bullishPoi=(poisAll||[]).find(p=>p.id===bullish.primaryPOI);
+    const bearishPoi=(poisAll||[]).find(p=>p.id===bearish.primaryPOI);
+    winner=((bullishPoi&&bullishPoi.score)||0)>=((bearishPoi&&bearishPoi.score)||0)?bullish:bearish;
+  }
+
+  if(!winner){
+    return{
+      status:'WAIT',direction:null,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:null,
+      reasons:['DG Trading Bias ist NEUTRAL/MIXED — und weder bullish noch bearish liegt aktuell ein unterstützender Liquidity Sweep + Reaktion vor (Kapitel 12: Mixed Context).']
+    };
+  }
+  return winner;
 }
 
 // DG Risk Management (Kapitel 11) — R:R is pure arithmetic once Entry
@@ -1817,46 +1996,74 @@ function waitingForText(decision){
   return'—';
 }
 
+function formatTimeHHMM(iso){
+  if(!iso) return null;
+  try{ return new Date(iso).toISOString().slice(11,16); }catch(err){ return null; }
+}
+
+// V1 priority: "RECENT EVENTS" is built from the snapshot's own honest
+// facts (a swept level's real sweptAt timestamp + its Reaction memory), not
+// a fabricated timeline — generateDGBriefing stays a pure function of the
+// current brain, so it never claims an order of events it can't verify.
+function recentLiquidityEventLines(primaryLiquidity){
+  const lines=[];
+  primaryLiquidity
+    .filter(l=>l.status==='sweeped'&&l.sweptAt)
+    .sort((a,b)=>new Date(b.sweptAt)-new Date(a.sweptAt))
+    .slice(0,3)
+    .forEach(l=>{
+      lines.push(`${l.label} swept at ${formatTimeHHMM(l.sweptAt)} UTC`);
+      if(l.reaction&&l.reaction.status==='REACTED'){
+        lines.push(`${l.type==='high'?'Bearish':'Bullish'} reaction detected`);
+      }
+    });
+  return lines;
+}
+
+// DG Market Report V1 — Daniel's explicit reprioritization ("DG OS – V1
+// PRIORITÄTEN VEREINFACHEN"): Liquidity -> Sweep -> Reaction -> FVG/OB
+// context -> report, NOT a Premium/Discount-heavy or 30-level briefing.
+// Exact section layout from his spec: STATUS / LIQUIDITY (Oben/Unten,
+// status per level) / RECENT EVENTS / RELEVANT POIs (Bullish/Bearish) /
+// WAITING FOR. No artificial trade direction is ever forced.
 function generateDGBriefing(brain,now){
   const decision=brain.decision,report=brain.report,liquidity=brain.liquidity||[];
   const greeting=`${timeOfDayGreeting(now)} Gomes.`;
 
-  const openBuyside=liquidity.filter(l=>l.type==='high'&&l.status==='active').sort((a,b)=>a.price-b.price).slice(0,3);
-  const openSellside=liquidity.filter(l=>l.type==='low'&&l.status==='active').sort((a,b)=>b.price-a.price).slice(0,3);
-  const recentlySwept=liquidity.filter(l=>l.status==='sweeped').slice(0,3);
+  const primaryLiquidity=liquidity.filter(isV1PrimaryLiquidity);
+  const above=primaryLiquidity.filter(l=>l.type==='high'&&l.status!=='invalid').sort((a,b)=>a.price-b.price).slice(0,4);
+  const below=primaryLiquidity.filter(l=>l.type==='low'&&l.status!=='invalid').sort((a,b)=>b.price-a.price).slice(0,4);
+  const liquidityLine=l=>{
+    const base=`- ${l.label}: ${fmtPrice(l.price)} – ${LIQUIDITY_STATUS_LABEL[l.status]||l.status}`;
+    if(l.status==='sweeped'&&l.reaction) return`${base}\n  → Reaction ${l.reaction.status==='REACTED'?'detected':'not yet detected'}`;
+    return base;
+  };
 
-  const poiLine=p=>`${p.range} (${p.timeframe}, ${p.quality})`; // p.range is already the pre-formatted "X–Y" string from report.freshBullish/BearishPOIs
+  const recentEvents=recentLiquidityEventLines(primaryLiquidity);
+
+  const poiLine=p=>`- ${p.type==='fvg'?'FVG':p.type==='orderBlock'?'Order Block':p.type==='ifvg'?'iFVG':'Breaker'} ${p.range} (${p.timeframe}) – ${p.quality.toUpperCase()}`;
   const buyAreas=(report.freshBullishPOIs||[]).slice(0,3);
   const sellAreas=(report.freshBearishPOIs||[]).slice(0,3);
 
   const lines=[];
+  lines.push(`🧠 DG OS – XAUUSD`,'');
   lines.push(greeting,'');
-  lines.push('MARKET STATUS');
+  lines.push('STATUS');
   lines.push(ENTRY_STATUS_HEADLINE[decision.status]||decision.status,'');
-  lines.push('HTF');
-  lines.push(`Macro: ${decision.macroBias||'—'}`);
-  lines.push(`Trading: ${decision.tradingBias||'—'}`,'');
-  lines.push('LIQUIDITY');
-  lines.push(`Buyside offen: ${openBuyside.length?openBuyside.map(l=>`${l.label} ${fmtPrice(l.price)}`).join(' · '):'keine'}`);
-  lines.push(`Sellside offen: ${openSellside.length?openSellside.map(l=>`${l.label} ${fmtPrice(l.price)}`).join(' · '):'keine'}`);
-  lines.push(`Bereits gesweept: ${recentlySwept.length?recentlySwept.map(l=>`${l.label} ${fmtPrice(l.price)}`).join(' · '):'keine'}`,'');
-  lines.push('TOP BUY AREAS');
-  lines.push(buyAreas.length?buyAreas.map((p,i)=>`${i+1}. ${poiLine(p)}`).join('\n'):'keine','');
-  lines.push('TOP SELL AREAS');
-  lines.push(sellAreas.length?sellAreas.map((p,i)=>`${i+1}. ${poiLine(p)}`).join('\n'):'keine','');
-  lines.push('CURRENT SCENARIO');
-  lines.push(decision.reasons[0]||'—','');
-  lines.push('WAITING FOR');
-  lines.push(waitingForText(decision),'');
-  lines.push('TARGETS');
-  const primaryTarget=decision.targets.find(t=>t.priority==='PRIMARY');
-  const secondaryTarget=decision.targets.find(t=>t.priority==='SECONDARY');
-  lines.push(`Primary: ${primaryTarget?`${fmtPrice(primaryTarget.price)} (${primaryTarget.reason})`:'—'}`);
-  lines.push(`Secondary: ${secondaryTarget?`${fmtPrice(secondaryTarget.price)} (${secondaryTarget.reason})`:'—'}`,'');
-  lines.push('INVALIDATION');
-  lines.push(typeof decision.invalidation==='number'?fmtPrice(decision.invalidation):'—','');
-  lines.push('WHY');
-  lines.push(decision.reasons.join(' · ')||'—');
+  lines.push('LIQUIDITY','');
+  lines.push('Oben:');
+  lines.push(above.length?above.map(liquidityLine).join('\n'):'- keine relevante Liquidity oberhalb.','');
+  lines.push('Unten:');
+  lines.push(below.length?below.map(liquidityLine).join('\n'):'- keine relevante Liquidity unterhalb.','');
+  lines.push('RECENT EVENTS','');
+  lines.push(recentEvents.length?recentEvents.map(e=>`- ${e}`).join('\n'):'- keine.','');
+  lines.push('RELEVANT POIs','');
+  lines.push('Bullish:');
+  lines.push(buyAreas.length?buyAreas.map(poiLine).join('\n'):'- keine.','');
+  lines.push('Bearish:');
+  lines.push(sellAreas.length?sellAreas.map(poiLine).join('\n'):'- keine.','');
+  lines.push('WAITING FOR','');
+  lines.push(`- ${waitingForText(decision)}`);
 
   return lines.join('\n');
 }
@@ -1887,6 +2094,11 @@ function summarizeTimeframeContext(tf,pd){
   return`Struktur ${bias}${zone?`, Preis im ${zone}`:''} (Range ${fmtPrice(tf.range.low)}–${fmtPrice(tf.range.high)})`;
 }
 
+// V1 priority: FVG/Order Block spotlight timeframes for the briefing —
+// Daniel's explicit list ("auf Daily/4H/1H liegen"). Monthly/Weekly POIs
+// still exist in poisAll for Bias/quality purposes, just never featured here.
+const V1_POI_BRIEFING_TIMEFRAMES=new Set(['Daily','4H','H1']);
+
 // DG Market Report — assembles every Market Fact + DG Interpretation
 // result computed above into one report. `status` is exactly the DG Entry
 // Status from Kapitel 9 (never BUY/SELL READY without a real Setup) —
@@ -1896,15 +2108,33 @@ function generateMarketReport(input){
   const{biasResult,tfBrainsByOutputKey,premiumDiscountByOutputKey,liquidity,poisAll,targets,entryDecision,risk,sessionNotes}=input;
   const{overallBias,confidence,reasoning,macro,trading}=biasResult;
 
+  // V1 priority: the briefing's Liquidity line only ever names PRIMARY
+  // levels (Daily/4H swings, Previous/current Daily H/L, Session H/L) —
+  // Weekly/Monthly/H1 levels stay Bias context, never clutter the report.
   const notableLiquidity=(liquidity||[])
-    .filter(l=>l.status==='sweeped'||l.status==='touched')
-    .map(l=>`${l.label} (${l.timeframe}) — ${LIQUIDITY_STATUS_LABEL[l.status]||l.status} bei ${fmtPrice(l.price)}${l.relevance?` [${l.relevance.tier}]`:''}`);
+    .filter(l=>(l.status==='sweeped'||l.status==='touched'||l.status==='approaching')&&isV1PrimaryLiquidity(l))
+    .map(l=>{
+      const reactionText=l.status==='sweeped'?(l.reaction&&l.reaction.status==='REACTED'?'YES':'NO'):null;
+      return`${l.label} (${l.timeframe}) — ${LIQUIDITY_STATUS_LABEL[l.status]||l.status} bei ${fmtPrice(l.price)}`
+        +(l.sweptAt?` [Swept At ${l.sweptAt}]`:'')
+        +(reactionText?` [Reaction: ${reactionText}]`:'');
+    });
 
+  // V1 priority: FVG/Order Block briefing spotlight is Daily/4H/1H only
+  // ("nicht hunderte alte FVGs im Hauptbriefing"), fresh, prioritizing zones
+  // already linked to a Reaction/Structure Shift, nearest to price first.
   const poiFact=p=>({timeframe:p.timeframe,type:p.type,range:`${fmtPrice(p.priceLow)}–${fmtPrice(p.priceHigh)}`,status:p.status,quality:p.quality,score:p.score});
-  const freshBullishPOIs=(poisAll||[]).filter(p=>p.direction==='bullish'&&p.status==='fresh')
-    .sort((a,b)=>(b.score||0)-(a.score||0)).slice(0,5).map(poiFact);
-  const freshBearishPOIs=(poisAll||[]).filter(p=>p.direction==='bearish'&&p.status==='fresh')
-    .sort((a,b)=>(b.score||0)-(a.score||0)).slice(0,5).map(poiFact);
+  const poiBriefingSort=(a,b)=>{
+    const reactionDiff=(b.reaction?1:0)-(a.reaction?1:0);
+    if(reactionDiff) return reactionDiff;
+    const aDist=typeof a.distanceToPrice==='number'?a.distanceToPrice:Infinity;
+    const bDist=typeof b.distanceToPrice==='number'?b.distanceToPrice:Infinity;
+    return aDist-bDist;
+  };
+  const freshBullishPOIs=(poisAll||[]).filter(p=>p.direction==='bullish'&&p.status==='fresh'&&V1_POI_BRIEFING_TIMEFRAMES.has(p.timeframe))
+    .sort(poiBriefingSort).slice(0,5).map(poiFact);
+  const freshBearishPOIs=(poisAll||[]).filter(p=>p.direction==='bearish'&&p.status==='fresh'&&V1_POI_BRIEFING_TIMEFRAMES.has(p.timeframe))
+    .sort(poiBriefingSort).slice(0,5).map(poiFact);
 
   const status=entryDecision.status;
 
@@ -1967,8 +2197,9 @@ function summarizeHTFContextEntry(tf,pd){
 // NO_ENTRY. Stateless callers (browser, tests) simply omit it, in which
 // case MISSED can never fire — an honest consequence of having no history,
 // not a bug.
-function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,priorSetupContext){
+function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,priorSetupContext,priorLiquidityMemory){
   candlesByTimeframe=candlesByTimeframe||{};
+  const nowIso=new Date().toISOString();
 
   // (1) Per-timeframe Market Facts
   const tfBrainsByOutputKey={};
@@ -1986,7 +2217,17 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,pri
 
   const dailyEntry=candlesByTimeframe.daily;
   const prevDayLiquidity=previousDayLiquidityFrom(dailyEntry&&dailyEntry.series);
-  const combinedLiquidity=[...(liquidityBase||[]),...prevDayLiquidity,...swingLiquidityFrom(tfBrainsByOutputKey,currentPrice)];
+  const rawLiquidity=[...(liquidityBase||[]),...prevDayLiquidity,...swingLiquidityFrom(tfBrainsByOutputKey,currentPrice)];
+
+  // Liquidity Memory (V1 priority: sweep persistence + Reaction tracking,
+  // "nicht immer wieder als neu melden"). h1Series is the timeframe Daniel
+  // named for Reaction context. Stateless callers (browser/tests) simply
+  // never get sticky sweeps/reaction memory — honest, same pattern as
+  // priorSetupContext/MISSED above.
+  const h1SeriesForReaction=(candlesByTimeframe['1h']&&candlesByTimeframe['1h'].series)||[];
+  const liquidityMemoryResult=enrichLiquidityWithMemory(rawLiquidity,priorLiquidityMemory,h1SeriesForReaction,nowIso);
+  const combinedLiquidity=liquidityMemoryResult.levels;
+  const liquidityMemory=liquidityMemoryResult.memory;
 
   // Facts-only POIs per timeframe (no quality/confirmation yet — those
   // need Bias, computed next, and Bias needs these facts, so this must
@@ -2063,9 +2304,9 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,pri
   const decision=buildDecisionSummary(entryDecision,biasResult,risk,targets,poisAll);
 
   return{
-    symbol:'XAUUSD',timestamp:new Date().toISOString(),htfContext,
+    symbol:'XAUUSD',timestamp:nowIso,htfContext,
     structure:{monthly:tfBrainsByOutputKey.monthly.structure,weekly:tfBrainsByOutputKey.weekly.structure,daily:tfBrainsByOutputKey.daily.structure,h4:tfBrainsByOutputKey.h4.structure,h1:tfBrainsByOutputKey.h1.structure},
-    liquidity:combinedLiquidity,premiumDiscount:premiumDiscountByOutputKey,
+    liquidity:combinedLiquidity,liquidityMemory,premiumDiscount:premiumDiscountByOutputKey,
     pois:poisAll,targets,entry:entryDecision,risk,decision,report,status:finalStatus,
     sessionNotes,newsStatus:NEWS_STATUS,
     // Machine-readable pointer to which rules/strategy.md chapters still
@@ -2119,6 +2360,8 @@ return{
   HTF_TIMEFRAME_DEFS,MACRO_BIAS_TIMEFRAME_KEYS,TRADING_BIAS_TIMEFRAME_KEYS,LTF_CONFIRMATION_TIMEFRAME_KEY,
   seriesRange,computeTimeframeBrain,relatedStructureFor,computeTimeframePOIs,
   previousDayLiquidityFrom,swingLiquidityFrom,
+  V1_PRIMARY_LIQUIDITY_IDS,V1_PRIMARY_SWING_TIMEFRAMES,isV1PrimaryLiquidity,
+  LIQUIDITY_APPROACH_PERCENT,liquidityMemoryKey,LIQUIDITY_REACTION_LOOKAHEAD_CANDLES,detectLiquidityReaction,enrichLiquidityWithMemory,
   zoneMitigationPercent,mitigationStateFromPercent,MITIGATION_STATE_LABEL,
   LIQUIDITY_TIMEFRAME_RANK,LIQUIDITY_EQUAL_LEVEL_TOLERANCE_PERCENT,computeLiquidityRelevance,
   externalStructureRangeFrom,fibZoneFromPercent,computePremiumDiscountForRange,
@@ -2127,10 +2370,10 @@ return{
   CONFIRMATION_STATES,CONFIRMATION_LOOKAHEAD_CANDLES,isRejectionCandle,computeConfirmation,
   TARGET_MAX_PER_DIRECTION,hasCounterPOIInPath,computeTargets,
   ENTRY_CANDIDATE_MIN_QUALITY,ENTRY_SL_BUFFER_PERCENT_OF_ZONE,liquiditySweepSupport,
-  MISSED_MOVE_PROGRESSED_STATUSES,detectMissedMove,computeEntryDecision,
+  MISSED_MOVE_PROGRESSED_STATUSES,detectMissedMove,entryCandidatesFor,ENTRY_STATUS_RANK,evaluateEntryForDirection,computeEntryDecision,
   computeRiskManagement,NEWS_STATUS,SESSION_LIQUIDITY_TIMEFRAMES,computeSessionNotes,
   buildDecisionSummary,timeOfDayGreeting,ENTRY_STATUS_HEADLINE,waitingForText,generateDGBriefing,
-  summarizeTimeframeContext,generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1
+  summarizeTimeframeContext,V1_POI_BRIEFING_TIMEFRAMES,generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1
 };
 
 });

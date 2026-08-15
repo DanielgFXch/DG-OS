@@ -166,7 +166,7 @@
         </div>
       </div>
       <div class="overview-block">
-        <div class="ov-block-title">Liquidity (touched/sweeped, Kapitel 2)</div>
+        <div class="ov-block-title">Liquidity — Daily/4H/Session (Approaching/Touched/Swept, Kapitel 2)</div>
         <div id="brainLiquidity" class="liq-table"><div class="liq-row"><span class="liq-label">Nicht verbunden.</span></div></div>
       </div>
       <div class="overview-block">
@@ -369,10 +369,10 @@
           </div>
           <div class="field-settings">
             <div class="ov-block-title">Live-Alerts (nur mit Always-On Server)</div>
+            <label class="tg-auto"><input id="alertLiquidity" type="checkbox" checked /> Liquidity: Approaching / Swept / Reaction / POI nähert sich / Target erreicht</label>
+            <label class="tg-auto"><input id="alertConfirmation" type="checkbox" checked /> Confirmation (Reaktion/Engulfing/Structure)</label>
             <label class="tg-auto"><input id="alertReady" type="checkbox" checked /> BUY/SELL READY</label>
-            <label class="tg-auto"><input id="alertConfirmation" type="checkbox" /> Confirmation (Reaktion/Engulfing/Structure)</label>
             <label class="tg-auto"><input id="alertWatch" type="checkbox" /> WATCH BUY/SELL</label>
-            <label class="tg-auto"><input id="alertLiquidity" type="checkbox" /> POI nähert sich / Target erreicht</label>
             <label class="tg-auto"><input id="alertSystem" type="checkbox" checked /> System-/Datenprobleme &amp; Setup verpasst/ungültig</label>
             <p class="hint">Sendet kurze Alerts automatisch an Telegram, sobald ein echtes Event dieser Art auftritt (dedupliziert, kein Spam). Nur aktiv, solange diese Seite offen und ein Always-On Server verbunden ist.</p>
           </div>

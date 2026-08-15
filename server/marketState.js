@@ -219,9 +219,14 @@ class MarketState {
     // one piece of cross-call memory that function needs and only the
     // server (not the stateless browser/test callers) actually has.
     const priorSetupContext = this._prevTradingBrainState && this._prevTradingBrainState.activeSetup;
-    this.tradingBrain = MB.computeTradingBrainV1(this.candlesByTimeframe, this.brain.liquidity, this._currentPrice(), priorSetupContext);
+    // Liquidity Memory (V1 priority: sweep persistence + Reaction tracking)
+    // — same cross-restart pattern as the Active Setup above: the prior
+    // recompute's memory feeds back in so a sweep already observed doesn't
+    // get reported as brand-new again ("nicht immer wieder als neu melden").
+    const priorLiquidityMemory = this._prevTradingBrainState && this._prevTradingBrainState.liquidityMemory;
+    this.tradingBrain = MB.computeTradingBrainV1(this.candlesByTimeframe, this.brain.liquidity, this._currentPrice(), priorSetupContext, priorLiquidityMemory);
     const decision = this.tradingBrain.decision;
-    const { events: tbEvents, statusEventEmitted, approachEventEmitted } = classifyTradingBrainEvents(this._prevTradingBrainState, this.tradingBrain, this._currentPrice());
+    const { events: tbEvents, statusEventEmitted, approachEventEmitted, liquidityApproachEventEmitted } = classifyTradingBrainEvents(this._prevTradingBrainState, this.tradingBrain, this._currentPrice());
     if (tbEvents.length) this._pendingEvents.push(...tbEvents);
     this.activeSetup = buildActiveSetup(decision, this._prevTradingBrainState && this._prevTradingBrainState.activeSetup, this._currentPrice());
     // Each cooldown timestamp only advances when ITS OWN event type was
@@ -231,8 +236,10 @@ class MarketState {
     this._prevTradingBrainState = {
       entryStatus: decision.status,
       activeSetup: this.activeSetup,
+      liquidityMemory: this.tradingBrain.liquidityMemory,
       lastStatusEventAt: statusEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastStatusEventAt) || null),
-      lastApproachEventAt: approachEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastApproachEventAt) || null)
+      lastApproachEventAt: approachEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastApproachEventAt) || null),
+      lastLiquidityApproachEventAt: liquidityApproachEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastLiquidityApproachEventAt) || null)
     };
   }
 

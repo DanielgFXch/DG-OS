@@ -1149,12 +1149,41 @@ function assistantLogMessage(role,text){
   log.scrollTop=log.scrollHeight;
 }
 
+// Pure, testable: pulls the actual question out of an utterance that
+// starts with (or contains) the wake word "Gomez" — "Hey Gomez, wie sieht
+// der Markt aus?" -> "wie sieht der Markt aus?". Returns null when the
+// wake word isn't present at all, so continuous-listening mode can ignore
+// ordinary background speech instead of answering every stray sentence it
+// picks up. A bare "Gomez" with nothing meaningful after it still asks
+// something (falls back to the full transcript) rather than silently
+// doing nothing — same "never a silent non-answer" rule as
+// answerMarketQuestion() itself.
+function extractQuestionAfterWakeWord(transcript){
+  if(!transcript) return null;
+  const lower=transcript.toLowerCase();
+  const wakeIdx=lower.indexOf('gomez');
+  if(wakeIdx===-1) return null;
+  const after=transcript.slice(wakeIdx+5).replace(/^[\s,.:!-]+/,'').trim();
+  return after.length?after:transcript.trim();
+}
+
 function assistantSpeak(text){
-  if(!$('assistantSpeak').checked||!('speechSynthesis'in window)) return;
+  if(!$('assistantSpeak').checked||!('speechSynthesis'in window)){
+    if(assistantContinuousMode) assistantResumeContinuousListening();
+    return;
+  }
   try{
     window.speechSynthesis.cancel(); // don't stack overlapping replies
     const utter=new SpeechSynthesisUtterance(text);
     utter.lang='de-DE';
+    // Pause wake-word listening while DG OS talks so it never hears (and
+    // reacts to) its own voice — a classic voice-assistant feedback loop.
+    if(assistantContinuousMode&&assistantContinuousRecognition){
+      assistantPausedForSpeech=true;
+      try{ assistantContinuousRecognition.stop(); }catch(err){ /* already stopped */ }
+      utter.addEventListener('end',()=>{ assistantPausedForSpeech=false; assistantResumeContinuousListening(); });
+      utter.addEventListener('error',()=>{ assistantPausedForSpeech=false; assistantResumeContinuousListening(); });
+    }
     window.speechSynthesis.speak(utter);
   }catch(err){ /* voice output is a nice-to-have, never block on failure */ }
 }
@@ -1169,6 +1198,11 @@ function assistantAsk(question){
 
 const AssistantSpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
 let assistantListening=false;
+let assistantContinuousMode=false;
+let assistantContinuousRecognition=null;
+let assistantPausedForSpeech=false;
+let assistantResumeContinuousListening=()=>{}; // reassigned below once/if SpeechRecognition support is confirmed
+
 if(AssistantSpeechRecognition){
   const recognition=new AssistantSpeechRecognition();
   recognition.lang='de-DE';
@@ -1182,7 +1216,7 @@ if(AssistantSpeechRecognition){
   recognition.addEventListener('end',()=>{
     assistantListening=false;
     $('assistantMicBtn').classList.remove('listening');
-    $('assistantStatus').textContent='Tippe auf das Mikrofon und frag z.B. „Gomez, wie sieht der Markt aus?"';
+    $('assistantStatus').textContent=assistantContinuousMode?'Dauer-Zuhören aktiv — sag "Gomez, ..." gefolgt von deiner Frage.':'Tippe auf das Mikrofon und frag z.B. „Gomez, wie sieht der Markt aus?"';
   });
   recognition.addEventListener('error',e=>{
     assistantListening=false;
@@ -1191,6 +1225,7 @@ if(AssistantSpeechRecognition){
   });
 
   $('assistantMicBtn').addEventListener('click',()=>{
+    if(assistantContinuousMode) return; // continuous mode already owns the microphone
     if(assistantListening){ recognition.stop(); return; }
     try{
       recognition.start();
@@ -1199,8 +1234,65 @@ if(AssistantSpeechRecognition){
       $('assistantStatus').textContent='Ich höre zu…';
     }catch(err){ /* recognition already running — ignore, next click stops it via the listening branch above */ }
   });
+
+  // Wake-word ("Hey Gomez") continuous mode — Daniel's actual ask: hands-
+  // free, no button press. Opt-in (off by default): `continuous:true`
+  // SpeechRecognition behaves inconsistently across browsers/OSes (auto-
+  // stops after a pause on most), so this restarts itself on every 'end'
+  // unless the mode was explicitly turned off or DG OS is mid-reply (see
+  // assistantSpeak's pause/resume above, which prevents it hearing itself).
+  assistantResumeContinuousListening=function(){
+    if(!assistantContinuousMode||assistantPausedForSpeech||!assistantContinuousRecognition) return;
+    try{ assistantContinuousRecognition.start(); }catch(err){ /* already running — ignore */ }
+  };
+
+  function assistantStartContinuousListening(){
+    assistantContinuousRecognition=new AssistantSpeechRecognition();
+    assistantContinuousRecognition.lang='de-DE';
+    assistantContinuousRecognition.continuous=true;
+    assistantContinuousRecognition.interimResults=false;
+    assistantContinuousRecognition.maxAlternatives=1;
+
+    assistantContinuousRecognition.addEventListener('result',e=>{
+      const transcript=e.results[e.results.length-1][0].transcript;
+      const question=extractQuestionAfterWakeWord(transcript);
+      if(question) assistantAsk(question); // no wake word heard -> ignored, never answers background speech
+    });
+    assistantContinuousRecognition.addEventListener('end',()=>{
+      if(assistantContinuousMode&&!assistantPausedForSpeech) assistantResumeContinuousListening();
+    });
+    assistantContinuousRecognition.addEventListener('error',e=>{
+      if(e.error==='not-allowed'){
+        // Setting .checked programmatically does NOT fire 'change', so the
+        // toggle handler's cleanup never runs on its own here — undo
+        // everything it would have undone (mic button, status text) explicitly.
+        assistantContinuousMode=false;
+        $('assistantContinuous').checked=false;
+        $('assistantMicBtn').disabled=false;
+        $('assistantStatus').textContent='Mikrofon-Zugriff verweigert — Dauer-Zuhören deaktiviert.';
+      }
+      // other errors (no-speech/network) are routine in continuous mode — the 'end' handler above restarts.
+    });
+    assistantResumeContinuousListening();
+  }
+
+  $('assistantContinuous').addEventListener('change',()=>{
+    if($('assistantContinuous').checked){
+      if(assistantListening) recognition.stop(); // hand the mic over to continuous mode
+      assistantContinuousMode=true;
+      $('assistantStatus').textContent='Dauer-Zuhören aktiv — sag "Gomez, ..." gefolgt von deiner Frage.';
+      $('assistantMicBtn').disabled=true;
+      assistantStartContinuousListening();
+    }else{
+      assistantContinuousMode=false;
+      if(assistantContinuousRecognition){ try{ assistantContinuousRecognition.stop(); }catch(err){} assistantContinuousRecognition=null; }
+      $('assistantMicBtn').disabled=false;
+      $('assistantStatus').textContent='Tippe auf das Mikrofon und frag z.B. „Gomez, wie sieht der Markt aus?"';
+    }
+  });
 }else{
   $('assistantMicBtn').disabled=true;
+  $('assistantContinuous').disabled=true;
   $('assistantStatus').textContent='Sprach-Eingabe wird von diesem Browser nicht unterstützt — Text-Eingabe unten nutzen.';
 }
 

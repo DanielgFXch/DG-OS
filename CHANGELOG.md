@@ -8,6 +8,41 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.33.0] — DG OS Assistant: Dauer-Zuhören ("Hey Gomez", hands-free)
+
+Direkte Umsetzung von Daniels beschriebenem Ablauf: "ich steh auf und
+sage: Hey Gomez, wie ist der heutige Tag?" — ohne eine Taste zu drücken.
+Opt-in-Checkbox "Dauer-Zuhören" im DG OS Assistant.
+
+### Neu (`app.js`, `index.html`)
+- `extractQuestionAfterWakeWord()`: erkennt das Wort "Gomez" in einem
+  laufend erkannten Sprachstrom und extrahiert alles danach als Frage
+  ("Hey Gomez, wie sieht der Markt aus?" → "wie sieht der Markt aus?").
+  Ohne das Wake-Word wird der Satz ignoriert — DG OS Assistant reagiert
+  nie auf zufälliges Hintergrundgespräch. Eine reine "Gomez"-Aussage ohne
+  weiteren Text fragt trotzdem etwas (fällt auf den vollen Transkript-Text
+  zurück) statt gar nicht zu reagieren.
+- Kontinuierliche `SpeechRecognition` mit automatischem Neustart (die
+  meisten Browser stoppen `continuous:true` nach kurzer Stille) — pausiert
+  sauber während DG OS selbst spricht, damit der Assistant sich nicht
+  selbst als neue Anfrage hört (klassische Feedback-Loop-Falle bei
+  Sprachassistenten).
+- Fail-safe bei verweigerter Mikrofon-Berechtigung: Dauer-Zuhören schaltet
+  sich selbst ab, Status-Text erklärt warum, manuelle Mikrofon-Taste bleibt
+  nutzbar (ein beim Debuggen gefundener Bug — die Taste blieb vorher
+  dauerhaft deaktiviert, jetzt korrekt gefixt).
+
+### Getestet
+Playwright: alle Wake-Word-Extraktionsfälle korrekt (mit/ohne Satzzeichen,
+alleinstehendes "Gomez", kein Wake-Word im Satz, leere/null Eingabe),
+Mikrofon-Taste wird bei aktivem Dauer-Zuhören korrekt deaktiviert und bei
+verweigerter Berechtigung wieder korrekt freigegeben.
+
+### Geänderte Dateien
+`app.js`, `index.html`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.32.1] — DG OS Assistant: Bias- und Risiko-Fragen
 
 Erweitert den in v0.32.0 gebauten Jarvis-Assistenten (Dashboard = Hauptding,

@@ -2051,6 +2051,15 @@ function computeRiskManagement(entryDecision,targets,currentPrice){
 // computed above. `missingRequirements` is only populated for WAIT/
 // DATA_NOT_READY (there IS something missing); once a setup is active
 // there's nothing missing by definition, so it stays empty.
+function presentDecisionStatus(status,direction){
+  const mappedDirection=status&&status.includes('BUY')?'BUY':status&&status.includes('SELL')?'SELL':null;
+  if(status==='BUY_READY'||status==='SELL_READY') return{decisionStage:'READY',decisionDirection:mappedDirection,detailStatus:status};
+  if(status==='WATCH_BUY'||status==='WATCH_SELL'||status==='BUY_CONFIRMATION'||status==='SELL_CONFIRMATION') return{decisionStage:'WATCH',decisionDirection:mappedDirection,detailStatus:status};
+  if(status==='MISSED') return{decisionStage:'MISSED',decisionDirection:mappedDirection,detailStatus:status};
+  if(status==='DATA_NOT_READY'||status==='AWAITING_DG_RULE') return{decisionStage:'DATA_NOT_READY',decisionDirection:mappedDirection,detailStatus:status};
+  return{decisionStage:'WAIT',decisionDirection:mappedDirection,detailStatus:status||'WAIT'};
+}
+
 function buildDecisionSummary(entryDecision,biasResult,risk,targets,poisAll){
   const primaryPoi=entryDecision.primaryPOI?(poisAll||[]).find(p=>p.id===entryDecision.primaryPOI)||null:null;
   const primaryPoiSummary=primaryPoi?{
@@ -2064,7 +2073,9 @@ function buildDecisionSummary(entryDecision,biasResult,risk,targets,poisAll){
 
   return{
     status:entryDecision.status,
+    ...presentDecisionStatus(entryDecision.status,entryDecision.direction),
     direction:entryDecision.direction,
+    counterBias:!!entryDecision.counterBias,
     confidence:null, // Kapitel 1 defines no confidence formula — never fabricated
     macroBias:biasResult.macro?biasResult.macro.state:null,
     tradingBias:biasResult.trading?biasResult.trading.state:biasResult.overallBias,
@@ -2130,6 +2141,12 @@ const ENTRY_STATUS_HEADLINE={
   BUY_READY:'🟢 BUY READY',SELL_READY:'🔴 SELL READY'
 };
 
+function presentationHeadline(decision){
+  const stage=decision.decisionStage||presentDecisionStatus(decision.status,decision.direction).decisionStage;
+  const direction=decision.decisionDirection===undefined?presentDecisionStatus(decision.status,decision.direction).decisionDirection:decision.decisionDirection;
+  return`${stage.replaceAll('_',' ')}${direction?` ${direction}`:''}`;
+}
+
 function waitingForText(decision){
   if(decision.status==='DATA_NOT_READY') return'Marktdaten (ein HTF-Timeframe fehlt noch).';
   if(decision.status==='MISSED') return'Das nächste valide Setup — dieses ist ohne Entry gelaufen (Kapitel 12).';
@@ -2187,7 +2204,7 @@ function buildLiquiditySection(liquidity){
     if(l.status==='sweeped'&&l.reaction) return`${base}\n  → Reaction ${l.reaction.status==='REACTED'?'detected':'not yet detected'}`;
     return base;
   };
-  const lines=['LIQUIDITY','','Oben:'];
+  const lines=['LIQUIDITY NOW','','Oben:'];
   lines.push(above.length?above.map(liquidityLine).join('\n'):'- keine relevante Liquidity oberhalb.','');
   lines.push('Unten:');
   lines.push(below.length?below.map(liquidityLine).join('\n'):'- keine relevante Liquidity unterhalb.');
@@ -2200,7 +2217,7 @@ function buildRecentEventsSection(primaryLiquidity){
 }
 
 function buildPOISection(report){
-  const poiLine=p=>`- ${p.type==='fvg'?'FVG':p.type==='orderBlock'?'Order Block':p.type==='ifvg'?'iFVG':'Breaker'} ${p.range} (${p.timeframe}) – ${p.quality.toUpperCase()}`;
+  const poiLine=p=>`- ${p.type==='fvg'?'FVG':p.type==='orderBlock'?'Order Block':p.type==='ifvg'?'iFVG':'Breaker'} ${p.range} (${p.timeframe}) – ${p.quality.toUpperCase()} · getestet ${p.tested?'JA':'NEIN'} · Mitigation ${p.mitigationPercent}% · Reaktion ${p.reaction?'JA':'NEIN'}`;
   const buyAreas=(report.freshBullishPOIs||[]).slice(0,3);
   const sellAreas=(report.freshBearishPOIs||[]).slice(0,3);
   const lines=['RELEVANT POIs','','Bullish:'];
@@ -2219,7 +2236,25 @@ function buildTargetsSection(decision){
 }
 
 function buildStatusSection(decision){
-  return`STATUS\n\n${ENTRY_STATUS_HEADLINE[decision.status]||decision.status}\n${decision.reasons&&decision.reasons.length?decision.reasons[0]:''}`.trim();
+  return`STATUS\n\n${presentationHeadline(decision)}\nDetail: ${decision.detailStatus||decision.status}\n${decision.reasons&&decision.reasons.length?decision.reasons[0]:''}`.trim();
+}
+
+function buildSetupSection(decision){
+  const lines=['SETUP','',`- Primary POI: ${decision.primaryPoi?`${decision.primaryPoi.type} ${decision.primaryPoi.priceLow}–${decision.primaryPoi.priceHigh} (${decision.primaryPoi.timeframe})`:'—'}`];
+  lines.push(`- Direction: ${decision.decisionDirection||'—'}`);
+  lines.push(`- Confirmation: ${decision.confirmation?decision.confirmation.status:'—'}`);
+  const zone=decision.entryZone;
+  lines.push(`- Entry Zone: ${zone&&zone!=='UNDEFINED'&&typeof zone==='object'?`${fmtPrice(zone.priceLow)}–${fmtPrice(zone.priceHigh)}`:'—'}`);
+  lines.push(`- Invalidation: ${typeof decision.invalidation==='number'?fmtPrice(decision.invalidation):'—'}`);
+  const targets=(decision.targets||[]).filter(t=>t.status!=='sweeped').slice(0,3);
+  lines.push(`- Targets: ${targets.length?targets.map(t=>fmtPrice(t.price)).join(', '):'—'}`);
+  return lines.join('\n');
+}
+
+function buildContextSection(decision){
+  const lines=['CONTEXT','',`- Trading Bias: ${decision.tradingBias||'—'}`,`- Macro Bias: ${decision.macroBias||'—'}`];
+  if(decision.counterBias) lines.push('- Counter-Bias: JA');
+  return lines.join('\n');
 }
 
 function generateDGBriefing(brain,now){
@@ -2230,11 +2265,12 @@ function generateDGBriefing(brain,now){
   const lines=[];
   lines.push(`🧠 DG OS – XAUUSD`,'');
   lines.push(greeting,'');
-  lines.push('STATUS');
-  lines.push(ENTRY_STATUS_HEADLINE[decision.status]||decision.status,'');
-  lines.push(liquiditySection.text,'');
+  lines.push(buildStatusSection(decision),'');
   lines.push(buildRecentEventsSection(liquiditySection.primaryLiquidity),'');
   lines.push(buildPOISection(report),'');
+  lines.push(liquiditySection.text,'');
+  lines.push(buildSetupSection(decision),'');
+  lines.push(buildContextSection(decision),'');
   lines.push('WAITING FOR','');
   lines.push(`- ${waitingForText(decision)}`);
 
@@ -2652,8 +2688,8 @@ return{
   ENTRY_CANDIDATE_MIN_QUALITY,ENTRY_SL_BUFFER_PERCENT_OF_ZONE,liquiditySweepSupport,
   MISSED_MOVE_PROGRESSED_STATUSES,detectMissedMove,entryCandidatesFor,ENTRY_STATUS_RANK,evaluateEntryForDirection,computeEntryDecision,
   computeRiskManagement,NEWS_STATUS,computeNewsContext,SESSION_LIQUIDITY_TIMEFRAMES,computeSessionNotes,
-  buildDecisionSummary,timeOfDayGreeting,zurichDateString,zurichTimeString,shouldSendScheduledBriefing,ENTRY_STATUS_HEADLINE,waitingForText,
-  buildLiquiditySection,buildRecentEventsSection,buildPOISection,buildTargetsSection,buildStatusSection,buildBiasSection,buildRiskSection,generateDGBriefing,
+  presentDecisionStatus,buildDecisionSummary,timeOfDayGreeting,zurichDateString,zurichTimeString,shouldSendScheduledBriefing,ENTRY_STATUS_HEADLINE,presentationHeadline,waitingForText,
+  buildLiquiditySection,buildRecentEventsSection,buildPOISection,buildTargetsSection,buildStatusSection,buildSetupSection,buildContextSection,buildBiasSection,buildRiskSection,generateDGBriefing,
   CHAT_INTENTS,detectChatIntent,answerNewsQuestion,answerMarketQuestion,
   summarizeTimeframeContext,V1_POI_BRIEFING_TIMEFRAMES,generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1
 };

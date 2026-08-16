@@ -107,7 +107,7 @@ function buildRealityReport(input){
     generatedAt:new Date().toISOString(),source:input.source,symbol:market.symbol,price:market.quote.price,
     dataHealth:{server:input.health||null,timeframes:TIMEFRAMES.map(def=>candleHealth(market,def))},
     relevantPois,keyLiquidity,confirmations,
-    decision:{internalStatus:brain.decision.status,direction:brain.decision.direction,counterBias:!!brain.entry.counterBias,waitingFor:(brain.entry.reasons&&brain.entry.reasons[0])||null},
+    decision:{internalStatus:brain.decision.detailStatus,stage:brain.decision.decisionStage,direction:brain.decision.decisionDirection,counterBias:brain.decision.counterBias,waitingFor:MB.waitingForText(brain.decision)},
     ruleQuestions:[],localBrainVersion:require('../package.json').version
   };
 }
@@ -122,7 +122,7 @@ function formatText(report){
   });
   lines.push('','KEY LIQUIDITY',...report.keyLiquidity.map(l=>`- ${l.label}: ${l.price} · ${l.status}${l.reaction?` · ${l.reaction}`:''}`));
   lines.push('','CONFIRMATION',...(report.confirmations.length?report.confirmations.map(c=>`- ${c.poi}: touch ${c.touchedAt} → ${c.status}`):['- none']));
-  lines.push('','DECISION',`- ${report.decision.internalStatus}${report.decision.direction?` · ${report.decision.direction}`:''}`,`- Waiting for: ${report.decision.waitingFor||'—'}`);
+  lines.push('','DECISION',`- ${report.decision.stage}${report.decision.direction?` ${report.decision.direction}`:''}`,`- Detail: ${report.decision.internalStatus}`,`- Counter-Bias: ${report.decision.counterBias?'YES':'NO'}`,`- Waiting for: ${report.decision.waitingFor||'—'}`);
   lines.push('','RULE QUESTIONS',...(report.ruleQuestions.length?report.ruleQuestions.map(q=>`- ${q}`):['- none']));
   return lines.join('\n');
 }

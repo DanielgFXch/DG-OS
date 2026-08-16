@@ -23,6 +23,9 @@ const { createApiServer } = require('./api.js');
 const { TwelveDataSocket } = require('./lib/twelveDataSocket.js');
 const { scheduleTimeframeRefresh } = require('./lib/candleRefreshScheduler.js');
 const { TIMEFRAME_DEFS } = require('./lib/timeframes.js');
+const { sendTelegramMessage } = require('./lib/telegramAssistant.js');
+const scheduledBriefingStore = require('./lib/scheduledBriefingStore.js');
+const MB = require('../marketBrain.js');
 
 const PORT = parseInt(process.env.PORT, 10) || 8080;
 const QUOTE_REFRESH_MS = 15 * 60 * 1000; // modest — previousClose/isMarketOpen don't need WS-level freshness
@@ -124,20 +127,44 @@ async function main() {
   // Railway env vars (separate from the GitHub Actions secrets of the same
   // name used by .github/workflows/telegram-heartbeat.yml) — the webhook
   // route still responds, it just can't send a reply without a token yet.
+  const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
+  const telegramChatId = process.env.TELEGRAM_CHAT_ID;
   const apiServer = createApiServer(marketState, {
-    token: process.env.TELEGRAM_BOT_TOKEN,
-    chatId: process.env.TELEGRAM_CHAT_ID,
+    token: telegramToken,
+    chatId: telegramChatId,
     webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET
   });
   apiServer.listen(PORT, () => {
     console.log(`[server] API listening on :${PORT} — GET /api/health, /api/market/XAUUSD, /api/events/XAUUSD, /api/brain/XAUUSD, POST /api/telegram/webhook`);
   });
 
+  // Proactive morning briefing — "ich will einfach immer up to date
+  // werden", not only when Daniel asks. Off by default (honest opt-in): only
+  // active once TELEGRAM_MORNING_BRIEFING_TIME (e.g. "07:00", Europe/Zurich)
+  // is set alongside a token+chatId. A 60s check is coarse enough to never
+  // matter for a once-a-day send, and cheap enough to just always run.
+  const morningBriefingTime = process.env.TELEGRAM_MORNING_BRIEFING_TIME;
+  const scheduledBriefingInterval = setInterval(() => {
+    if (!morningBriefingTime || !telegramToken || !telegramChatId) return;
+    const lastSentDate = scheduledBriefingStore.readLastBriefingSentDate();
+    if (!MB.shouldSendScheduledBriefing(new Date(), lastSentDate, morningBriefingTime)) return;
+    const brain = marketState.getTradingBrain();
+    if (!brain || !brain.decision || !brain.report) return; // not ready yet — retries next tick, doesn't mark as sent
+    const text = MB.generateDGBriefing(brain, new Date());
+    sendTelegramMessage(telegramToken, telegramChatId, text)
+      .then(() => {
+        scheduledBriefingStore.writeLastBriefingSentDate(MB.zurichDateString(new Date()));
+        console.log('[server] sent scheduled morning briefing');
+      })
+      .catch(err => console.error('[server] scheduled morning briefing send failed:', err.message));
+  }, 60 * 1000);
+
   function shutdown() {
     console.log('[server] shutting down...');
     socket.disconnect();
     stopFns.forEach(stop => stop());
     clearInterval(quoteInterval);
+    clearInterval(scheduledBriefingInterval);
     apiServer.close(() => process.exit(0));
     setTimeout(() => process.exit(0), 2000).unref();
   }

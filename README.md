@@ -4,7 +4,7 @@ DG OS Alpha - AI Trading Assistant
 Projektvision & Leitplanken: [`docs/VISION.md`](docs/VISION.md).
 Daniels Trading-Regelwerk (Grundlage der Entscheidungslogik): [`rules/strategy.md`](rules/strategy.md).
 
-## Aktueller V1-Stand (v0.36.0)
+## Aktueller V1-Stand (v0.36.1)
 
 DG OS läuft als Always-On XAUUSD-Server auf Railway und stellt Health,
 Market- und Trading-Brain-Daten bereit. Trading Brain V1 wendet die 14
@@ -13,6 +13,11 @@ einem realen POI-Touch zur Confirmation und präsentiert den Zustand getrennt
 als `WAIT`, `WATCH BUY/SELL`, `READY BUY/SELL`, `MISSED` oder
 `DATA_NOT_READY`. DG OS bleibt reines Decision Support: keine Broker-Orders,
 kein Auto-Trading und keine automatische Regeländerung.
+
+Das Dashboard verbindet sich standardmäßig read-only mit dem öffentlichen
+DG-OS-Server. Der DG OS Assistant unterstützt Text, Browser-Sprache, Wake Word
+und ein einmaliges persönliches Tages-Briefing. Dashboard, Sprache und
+Telegram verwenden dieselben deterministischen Brain-Fakten.
 
 Lokaler read-only Reality Check mit echten Server-Candles und dem aktuellen
 lokalen Brain-Code:
@@ -49,9 +54,14 @@ Im Bereich "🤖 Telegram" der App kannst du deinen eigenen Bot verbinden:
 2. Deine Chat-ID ermitteln (z. B. über [@userinfobot](https://t.me/userinfobot)).
 3. Token und Chat-ID in der App eintragen und auf "Speichern & testen" klicken.
 
-Token und Chat-ID werden ausschließlich lokal im Browser (`localStorage`) gespeichert und direkt vom Client an die Telegram Bot API gesendet — es gibt kein eigenes Backend. Da der Token dadurch im Browser des Geräts liegt, sollte DG OS nur auf vertrauenswürdigen, eigenen Geräten genutzt werden.
+Für die ältere manuelle Browser-Sendefunktion werden Token und Chat-ID lokal
+im Browser gespeichert und direkt an Telegram gesendet. Der Always-On Server
+besitzt zusätzlich die bevorzugte allowlist-geschützte Chat-/Push-Anbindung;
+Secrets liegen dort ausschließlich in Umgebungsvariablen und nie im Repository.
 
-Mit der Option "Auto-Senden bei SELL-Signal" schickt DG OS das Briefing automatisch an Telegram, sobald Sweep + Bearish Engulfing gleichzeitig erkannt werden.
+Live-Alerts werden aus echten, serverseitig gespeicherten Trading-Brain-Events
+erzeugt. Ein neuer Browser legt beim ersten Abruf nur einen Event-Cursor an und
+sendet keinen historischen Rückstau als vermeintlich neue Meldungen.
 
 ### DG OS Chat — mit dem Bot reden (braucht den Always-On Server)
 

@@ -127,7 +127,8 @@ async function main() {
       if (id === 'daily' || id === '1h') await marketState.refreshSessions();
       console.log(`[server] refreshed ${id} candles (candle close)`);
     },
-    (id, err) => console.error(`[server] refresh failed for ${id}:`, err.message)
+    (id, err) => console.error(`[server] refresh failed for ${id}:`, err.message),
+    id => marketState.getLatestCandleOpen(id)
   ));
 
   const quoteInterval = setInterval(() => {

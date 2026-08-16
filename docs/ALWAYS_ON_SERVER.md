@@ -116,7 +116,7 @@ aktuell KEINE Priorität."
 | 4H | `4h` | 180 | ~30 days | Rank 4, part of the HTF core — previously not fetched *at all* |
 | 1H | `1h` | 168 | ~7 days | Rank 5, last HTF-core timeframe — more history than the previous 72h/3-day fetch |
 | 30M | `30min` | 192 | ~4 days | Rank 6 — finer reactions/structure, not the main analysis |
-| 15M | `15min` | 192 | ~2 days | Rank 7 — confirmation/entry-timing groundwork |
+| 15M | `15min` | 384 | ~4 calendar days | Rank 7 — confirmation/entry timing; preserves usable trading history across a placeholder-filled weekend without increasing request frequency |
 
 **Important scope boundary:** this is data *preparation*, not new
 detection. `computeAllDerivedModules()` still only consumes the `1h`

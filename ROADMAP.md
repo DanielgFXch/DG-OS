@@ -75,7 +75,11 @@ automatically to every module below, and is documented identically in
 | System Status (Version/Freshness/Source) | done (v0.21.0, extended v0.22.0) — `package.json` as version single source of truth; Price and Candle freshness now tracked separately (LIVE only when the WebSocket is actually connected, never off a stale timestamp), optionally sourced from a deployed Always-On Market Server. See `docs/MARKET_BRAIN.md`'s "System Status" section and `docs/ALWAYS_ON_SERVER.md`'s "Phase D" |
 | Always-On Market Server | **deployed and live on Railway** — TwelveData REST (7 HTF-priority timeframes, Monthly→15M), WebSocket price, shared `marketBrain.js`/`events.js`, persistent memory and read-only Health/Market/Events/Brain APIs. Full architecture: `docs/ALWAYS_ON_SERVER.md` |
 | TradingView Integration | plan only (v0.21.0), webhook route stubbed (`501`) in the Always-On Server (v0.22.0) — hybrid architecture (TwelveData = continuous OHLC, TradingView = strategic events via webhook) designed and documented, no validation/schema/event-store logic built yet: blocked on Daniel choosing and deploying a host. Full plan: [`docs/TRADINGVIEW_INTEGRATION_PLAN.md`](docs/TRADINGVIEW_INTEGRATION_PLAN.md) |
-| Alerts, Reports, Learning, Statistics | not started — Alerts is the first natural consumer of the Event Store above |
+| Market Story / Explainability | V1 active — deterministic WAIT/WATCH/READY story plus met/missing/invalidating/context factors |
+| Text & Voice Assistant | V1 foundation active — dashboard text chat, wake word, browser speech input/output and one daily spoken briefing; deterministic Brain facts, no fabricated LLM opinion |
+| Telegram | V1 foundation active — allowlisted server chat, event pushes and optional daily morning briefing; Production configuration remains an operational step |
+| News / Fundamentals | partial / blocked by provider access — Finnhub client exists, current configured account returns an access error; no fallback facts are invented |
+| Daniel Feedback / Learning | review-export tooling active; persistent feedback loop, statistics and recommendations still planned; rules never self-modify |
 
 (Module numbers track build order, not architectural layer — see the note
 above the system tree in `docs/MARKET_BRAIN.md`.)
@@ -87,14 +91,12 @@ longer placeholder architecture or digitizing empty chapters; it is validating
 the implemented interpretation against real XAUUSD situations and comparing
 DG OS output with Daniel's judgement.
 
-New modules are only built from now on when they are directly required to
-implement a DG rule Daniel has actually defined — not proactively, not
-because an architecture "would be nice to have ahead of time." **No further
-architecture-only modules will be built until Daniel defines new
-requirements.** The "Next phases" list below still describes the intended
-future shape of the system, but every item on it is on hold under this
-gate — it happens only as a direct consequence of rule-by-rule activation,
-never as a standalone build.
+New trading behavior is only built when Daniel has defined the corresponding
+rule. Daniel has now explicitly defined the wider product goal as a personal
+text- and voice-capable XAUUSD Jarvis with Telegram, sourced fundamentals and
+a controlled feedback loop. These product layers may therefore progress
+incrementally, provided they reuse the verified Brain facts and never invent
+or silently modify a trading rule.
 
 Permanent priority order for this phase, every session:
 
@@ -134,15 +136,20 @@ and [`docs/MARKET_BRAIN.md`](docs/MARKET_BRAIN.md).
 
 ## Next phases
 
-1. Build a Daniel-reviewed library of compact real XAUUSD cases.
-2. Turn Daniel's review feedback into explicit rule questions or approved
-   corrections—never automatic rule changes.
-3. Strengthen replay/no-look-ahead and data-health invariants.
-4. Add further POI types or lower timeframes only after Daniel explicitly
+1. Continue the Daniel-reviewed library of compact real XAUUSD cases,
+   especially positive 15M Confirmation, READY, MISSED and Counter-Bias.
+2. Complete the single Market Story contract across dashboard, voice and
+   Telegram; remove remaining Alpha/demo prominence from the live path.
+3. Confirm closed-candle/data-health behavior and provider semantics.
+4. Restore a permitted economic-calendar/news source and expose source time,
+   freshness and failure state without turning News into automatic Bias.
+5. Build Daniel Feedback Memory: reviewed case, Daniel verdict, reason and
+   recommendation; never automatic rule changes.
+6. Add statistics and learning recommendations only after enough reviewed
+   real cases exist.
+7. Add further POI types or lower timeframes only after Daniel explicitly
    defines and prioritizes them.
-5. Reports/Learning remain later phases: recommendations only, never rule
-   changes or automatic execution.
-5. **v1.0 DG OS Alpha** — once the above is real, tested, and running on
+8. **v1.0 DG OS Alpha** — once the above is real, tested, and running on
    live data with at least the core `rules/strategy.md` chapters (DG
    Philosophy, DG HTF Bias, DG Liquidity, DG Order Block, DG Valid FVG, DG
    Confirmation) defined and wired in.

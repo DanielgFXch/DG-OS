@@ -12,14 +12,14 @@ test('weekend and carried-forward placeholder candles never feed structure/FVG',
     c('2026-08-14 08:00:00', 100, 102, 99, 101),
     c('2026-08-14 09:00:00', 101, 103, 100, 102),
     c('2026-08-15 10:00:00', 102, 120, 110, 115), // Saturday and would create a false gap
-    c('2026-08-16 21:00:00', 102, 102.001, 101.999, 102), // Sunday before market open
-    c('2026-08-16 22:00:00', 102, 104, 101, 103), // genuine Sunday-open candle
+    c('2026-08-16 20:00:00', 102, 102.001, 101.999, 102), // H1 entirely before summer market open
+    c('2026-08-16 21:00:00', 102, 104, 101, 103), // genuine Sunday-open candle (17:00 New York)
     c('2026-08-17 09:00:00', 103, 103.001, 102.999, 103), // genuine quiet trading candle
     c('2026-08-17 10:00:00', 103, 106, 102, 105)
   ];
   const clean = MB.filterUsableMarketCandles(candles, 'H1');
   assert.equal(clean.length, 5);
-  assert.ok(clean.some(bar => bar.datetime === '2026-08-16 22:00:00'));
+  assert.ok(clean.some(bar => bar.datetime === '2026-08-16 21:00:00'));
   assert.ok(clean.some(bar => bar.datetime === '2026-08-17 09:00:00'));
   assert.equal(MB.computeTimeframeBrain(candles, 'H1').candleCount, 5);
   assert.equal(MB.detectFairValueGaps(candles, 'H1').length, 0);
@@ -69,7 +69,7 @@ test('fetchCandles production path filters the full series and preserves latestR
   ] }) });
   try {
     const result = await rest.fetchCandles('test-key', '1h', 3, 'https://mock.invalid');
-    assert.deepEqual(result.series.map(bar => bar.datetime), ['2026-08-17 09:00:00','2026-08-17 10:00:00']);
+    assert.deepEqual(result.series.map(bar => bar.datetime), ['2026-08-16 21:00:00','2026-08-17 09:00:00','2026-08-17 10:00:00']);
     assert.equal(result.latestRealBar.datetime, '2026-08-17 09:00:00');
   } finally {
     global.fetch = originalFetch;
@@ -79,8 +79,15 @@ test('fetchCandles production path filters the full series and preserves latestR
 test('current Daily Sunday placeholder is excluded before open and retained after open', () => {
   const sunday = c('2026-08-16', 4375.59, 4379.85, 4375.53, 4375.69);
   assert.equal(MB.isUsableMarketCandle(sunday, 'Daily', '2026-08-16T19:30:00Z'), false);
-  assert.equal(MB.isUsableMarketCandle(sunday, 'Daily', '2026-08-16T22:30:00Z'), true);
+  assert.equal(MB.isUsableMarketCandle(sunday, 'Daily', '2026-08-16T21:30:00Z'), true);
   assert.equal(MB.isUsableMarketCandle(c('2026-08-09',4300,4350,4290,4340), 'Daily', '2026-08-16T19:30:00Z'), true, 'historical Sunday-open Daily remains real');
+});
+
+test('Sunday open follows New York DST instead of a fixed UTC hour', () => {
+  assert.equal(MB.isUsableMarketCandle(c('2026-08-16 20:45:00',100,101,99,100.5),'15M'),false);
+  assert.equal(MB.isUsableMarketCandle(c('2026-08-16 21:00:00',100,101,99,100.5),'15M'),true);
+  assert.equal(MB.isUsableMarketCandle(c('2026-01-18 21:00:00',100,101,99,100.5),'1H'),false);
+  assert.equal(MB.isUsableMarketCandle(c('2026-01-18 22:00:00',100,101,99,100.5),'1H'),true);
 });
 
 test('Previous Day liquidity ignores Saturday and pre-open Sunday placeholders', () => {

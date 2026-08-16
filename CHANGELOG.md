@@ -8,6 +8,36 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.36.1] — Jarvis Presentation & Provider Timing
+
+### Verbessert
+- Dashboard und Hero verwenden die gemeinsame WAIT/WATCH/READY-Presentation,
+  Explainability-Faktoren und die aktuelle DG Market Story statt interner
+  Statusnamen beziehungsweise der alten technischen Summary.
+- Persönliches Text-/Voice-Briefing begrüßt „Meister Gomes", nennt den echten
+  Goldpreis und verwendet ausschließlich vorhandene Brain-Fakten.
+- Das Dashboard verbindet sich standardmäßig read-only mit dem öffentlichen
+  DG-OS-Railway-Server; eine explizit geleerte Konfiguration bleibt aus.
+- Neue Alert-Clients baseline den vorhandenen Eventbestand und liefern danach
+  nur neue Events, statt beim ersten Start historische Meldungen abzuspielen.
+
+### Data Quality & Reliability
+- Intraday-Sunday-Open folgt `America/New_York` und damit automatisch DST,
+  statt ganzjährig eine falsche feste UTC-Öffnung anzunehmen.
+- Der Candle-Scheduler leitet Intraday-Closes aus der echten Provider-Candle-
+  Öffnungszeit ab; XAUUSD-4H wird nicht mehr fälschlich auf 00/04/... UTC
+  terminiert.
+- 15M-Historie wurde bei unveränderter Request-Frequenz auf vier Kalendertage
+  erweitert, damit Weekend-Platzhalter nicht alle verwertbaren Confirmation-
+  Candles verdrängen.
+- Legacy-Brain-Antworten erscheinen ohne `undefined%`- oder `null`-Status.
+
+### Validiert
+- Echte Sunday-Open-15M-Candles ab 21:00 UTC am 16.08.2026 bleiben erhalten;
+  unmittelbar vorherige Placeholder-Candles werden weiterhin ausgeschlossen.
+- Frischer Browserstart gegen Railway: genau ein Tages-Briefing, kein Alert-
+  Rückstau, keine JavaScript-Fehler.
+
 ## [0.36.0] — Reality Harness, Market Story & Reliability
 
 ### Neu

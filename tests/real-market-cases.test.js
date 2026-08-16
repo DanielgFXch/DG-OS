@@ -38,3 +38,12 @@ test('real single 15M touch remains NO_CONFIRMATION',()=>{
   assert.equal(confirmation.status,'NO_CONFIRMATION');
   assert.equal(confirmation.reactionDetected,false);
 });
+
+test('real summer Sunday open keeps 21:00 UTC 15M candles and removes the prior placeholder',()=>{
+  const sample=cases.cases.sundayOpen15M;
+  const clean=MB.filterUsableMarketCandles(sample.candles,'15M','2026-08-16T21:30:00Z');
+  assert.deepEqual(clean.map(candle=>candle.datetime),[
+    '2026-08-16 21:00:00',
+    '2026-08-16 21:15:00'
+  ]);
+});

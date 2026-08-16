@@ -19,6 +19,12 @@
 
 const MINUTE_MS = 60 * 1000;
 const HOUR_MS = 60 * MINUTE_MS;
+const INTRADAY_DURATION_MS = {
+  '4h': 4 * HOUR_MS,
+  '1h': HOUR_MS,
+  '30min': 30 * MINUTE_MS,
+  '15min': 15 * MINUTE_MS
+};
 
 // Buffer after the theoretical close before refetching — gives the
 // provider a moment to finalize/publish the bar. Intraday timeframes need
@@ -73,18 +79,46 @@ function nextBoundaryUtc(timeframeId, from) {
   }
 }
 
+// TwelveData documents intraday `datetime` as the bar OPEN time. XAUUSD's
+// real 4h grid is provider/session anchored (for example 01/05/09/13/17/21
+// UTC in the current real capture), so assuming a wall-clock 00/04/... grid
+// can refresh before close and then leave the finalized bar stale for hours.
+// Derive the next close from the provider's latest actual open whenever that
+// information is available. Daily+ timestamps carry no reliable intraday
+// close time, so those deliberately keep the conservative UTC fallback.
+function parseProviderOpen(datetime) {
+  if (!datetime) return null;
+  const raw = String(datetime);
+  const normalized = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}(:\d{2})?$/.test(raw)
+    ? `${raw.replace(' ', 'T')}${raw.length === 16 ? ':00' : ''}Z`
+    : raw;
+  const parsed = new Date(normalized);
+  return Number.isFinite(parsed.getTime()) ? parsed : null;
+}
+
+function nextBoundaryFromProviderOpen(timeframeId, from, latestOpen) {
+  const duration = INTRADAY_DURATION_MS[timeframeId];
+  const open = parseProviderOpen(latestOpen);
+  if (!duration || !open) return nextBoundaryUtc(timeframeId, from);
+
+  const elapsed = from.getTime() - open.getTime();
+  const intervals = Math.max(1, Math.floor(elapsed / duration) + 1);
+  return new Date(open.getTime() + intervals * duration);
+}
+
 // onDue(timeframeId) is called once per boundary, after the buffer. Returns
 // a stop() function. Errors from onDue are caught and logged (via
 // onError), never allowed to break the recursive scheduling chain — a
 // single failed refresh must not silently stop future refreshes forever.
-function scheduleTimeframeRefresh(timeframeId, onDue, onError) {
+function scheduleTimeframeRefresh(timeframeId, onDue, onError, getLatestOpen) {
   let stopped = false;
   let timer = null;
 
   function scheduleNext() {
     if (stopped) return;
     const now = new Date();
-    const boundary = nextBoundaryUtc(timeframeId, now);
+    const latestOpen = getLatestOpen ? getLatestOpen(timeframeId) : null;
+    const boundary = nextBoundaryFromProviderOpen(timeframeId, now, latestOpen);
     const dueAt = new Date(boundary.getTime() + bufferMsFor(timeframeId));
     const delay = Math.max(1000, dueAt.getTime() - now.getTime());
     timer = setTimeout(async () => {
@@ -102,4 +136,10 @@ function scheduleTimeframeRefresh(timeframeId, onDue, onError) {
   return function stop() { stopped = true; if (timer) clearTimeout(timer); };
 }
 
-module.exports = { scheduleTimeframeRefresh, nextBoundaryUtc, bufferMsFor };
+module.exports = {
+  scheduleTimeframeRefresh,
+  nextBoundaryUtc,
+  nextBoundaryFromProviderOpen,
+  parseProviderOpen,
+  bufferMsFor
+};

@@ -40,6 +40,31 @@ Es soll die Story des Marktes erzählen.
 
 -------------------------------------------------------
 
+ENDZIEL: DER PERSÖNLICHE XAUUSD-JARVIS
+
+DG OS soll nicht bei einem Dashboard enden. Das Endprodukt ist Daniels
+persönlicher, dauerhaft erreichbarer Trading-Assistent für Gold:
+
+• Daniel kann mit DG OS schreiben und sprechen.
+• DG OS antwortet in Text und mit einer auswählbaren Stimme.
+• Beim ersten Kontakt des Tages begrüßt es „Meister Gomes", nennt den
+  aktuellen Goldpreis und erklärt Status, HTF-Kontext und Waiting For.
+• Dashboard, Sprache, Telegram und spätere Kanäle verwenden dieselben
+  belegbaren Market-Brain-Fakten.
+• DG OS meldet wichtige Änderungen proaktiv, aber niemals als Alert-Flut.
+• News und Fundamentals werden mit Quelle, Veröffentlichungszeit und
+  Datenstatus getrennt von der technischen Analyse erklärt.
+• Daniels Feedback wird als Review- und Lernmaterial gespeichert. Das
+  System darf daraus Vorschläge und Tests erzeugen, aber niemals selbst
+  eine Tradingregel aktivieren oder verändern.
+
+Die Oberfläche soll wie ein ruhiges futuristisches KI-Cockpit wirken, das
+für Trading gebaut wurde: Market Story zuerst, technische Details bei Bedarf.
+Design darf niemals unvollständige Daten oder einen unsicheren Zustand als
+READY erscheinen lassen.
+
+-------------------------------------------------------
+
 DAS SYSTEM HANDELT NICHT.
 
 Es unterstützt.

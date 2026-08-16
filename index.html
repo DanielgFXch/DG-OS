@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DG OS" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
   <title>DG OS Alpha</title>
 </head>
@@ -165,14 +165,19 @@
       <div class="eyebrow">Kapitel 0-16 in <code>rules/strategy.md</code> von Daniel definiert · Regelanwendung läuft nach Regel → Implementierung → Tests → Deploy · nur mit Always-On Server · Decision-Support, niemals automatische Order-Ausführung</div>
       <div class="overview-grid">
         <div class="overview-block">
-          <div class="ov-block-title">Entry Status (Kapitel 9)</div>
+          <div class="ov-block-title">Decision Stage</div>
           <div id="brainStatus" class="brain-status">Nicht verbunden</div>
+          <div id="brainDetailStatus" class="muted">Detail: —</div>
         </div>
         <div class="overview-block">
           <div class="ov-block-title">HTF Bias (Kapitel 1) — Macro / Trading</div>
           <div id="brainBias" class="bias-value">—</div>
           <div class="rows"><div class="row"><span>Confidence</span><strong id="brainConfidence">—</strong></div></div>
         </div>
+      </div>
+      <div class="overview-block">
+        <div class="ov-block-title">Warum?</div>
+        <div id="brainDecisionFactors" class="decision-explainability"><div class="poi-empty">Nicht verbunden.</div></div>
       </div>
       <div class="overview-block">
         <div class="ov-block-title">Entry / Risk (Kapitel 9/11)</div>
@@ -201,7 +206,7 @@
         <div id="brainSessionNews" class="liq-table"><div class="liq-row"><span class="liq-label">Nicht verbunden.</span></div></div>
       </div>
       <div class="overview-block">
-        <div class="ov-block-title">Market Report</div>
+        <div class="ov-block-title">DG Market Story</div>
         <pre id="brainSummary" class="brain-summary">Verbinde einen Always-On Server, um den Report zu sehen.</pre>
       </div>
     </section>
@@ -417,6 +422,7 @@
   </nav>
 
   <script src="./marketBrain.js"></script>
+  <script src="./events.js"></script>
   <script src="./app.js"></script>
 </body>
 </html>

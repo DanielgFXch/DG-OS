@@ -27,6 +27,7 @@ const state={asia:false,sweep:false,engulf:false};
 const $=id=>document.getElementById(id);
 
 const TRADER_NAME='Daniel Gomes';
+const DEFAULT_MARKET_SERVER_URL='https://dg-os-production.up.railway.app';
 
 function greetingWord(localHour){
   if(localHour>=5 && localHour<11) return 'Guten Morgen';
@@ -313,13 +314,16 @@ const BIAS_STATE_CLASS={BULLISH:'bullish',BEARISH:'bearish',NEUTRAL_MIXED:'',AWA
 function renderTradingBrain(brain){
   const statusEl=$('brainStatus'),biasEl=$('brainBias'),confEl=$('brainConfidence'),entryEl=$('brainEntry');
   const buyEl=$('brainBuyPOIs'),sellEl=$('brainSellPOIs'),liqEl=$('brainLiquidity'),targetsEl=$('brainTargets');
-  const sessionNewsEl=$('brainSessionNews'),summaryEl=$('brainSummary');
+  const sessionNewsEl=$('brainSessionNews'),summaryEl=$('brainSummary'),detailStatusEl=$('brainDetailStatus');
+  const factorsEl=$('brainDecisionFactors');
   if(!statusEl) return;
 
   if(!brain||!brain.report){
     statusEl.textContent='Nicht verbunden';statusEl.className='brain-status';
     biasEl.textContent='—';biasEl.className='bias-value';
     confEl.textContent='—';
+    if(detailStatusEl) detailStatusEl.textContent='Detail: —';
+    if(factorsEl) factorsEl.innerHTML='<div class="poi-empty">Nicht verbunden.</div>';
     const emptyMsg='<div class="poi-empty">Kein Always-On Server verbunden — siehe „XAUUSD Live" Karte.</div>';
     buyEl.innerHTML=emptyMsg;sellEl.innerHTML=emptyMsg;
     liqEl.innerHTML='<div class="liq-row"><span class="liq-label">Nicht verbunden.</span></div>';
@@ -330,10 +334,26 @@ function renderTradingBrain(brain){
     return;
   }
 
-  const report=brain.report,htf=brain.htfContext,entry=brain.entry||report.entry,risk=brain.risk||report.risk;
-  const dataNotReady=report.status==='DATA_NOT_READY';
-  statusEl.textContent=report.status;
-  statusEl.className=`brain-status brain-status-${ENTRY_STATUS_CLASS[report.status]||''}`;
+  const report=brain.report,htf=brain.htfContext,decision=brain.decision||{},entry=decision,risk=brain.risk||report.risk;
+  const presentation=presentDecisionStatus(decision.detailStatus||decision.status,decision.direction);
+  const stage=decision.decisionStage||presentation.decisionStage;
+  const direction=decision.decisionDirection===undefined?presentation.decisionDirection:decision.decisionDirection;
+  const detailStatus=decision.detailStatus||decision.status||report.status;
+  const dataNotReady=stage==='DATA_NOT_READY';
+  statusEl.textContent=`${stage.replaceAll('_',' ')}${direction?` ${direction}`:''}`;
+  statusEl.className=`brain-status brain-status-${ENTRY_STATUS_CLASS[detailStatus]||''}`;
+  if(detailStatusEl) detailStatusEl.textContent=`Detail: ${detailStatus}`;
+
+  if(factorsEl){
+    const factorGroup=(title,items,cls)=>items&&items.length
+      ?`<div class="decision-factor-group decision-factor-${cls}"><strong>${title}</strong>${items.map(item=>`<span>${item}</span>`).join('')}</div>`
+      :'';
+    factorsEl.innerHTML=
+      factorGroup('Erfüllt',decision.metFactors,'met')+
+      factorGroup('Fehlt',decision.missingFactors,'missing')+
+      factorGroup('Ungültig',decision.invalidatingFactors,'invalid')+
+      factorGroup('Kontext',decision.contextFactors,'context')||'<div class="poi-empty">Keine Entscheidungsfaktoren vorhanden.</div>';
+  }
 
   const macroState=htf.macro?htf.macro.state:null,tradingState=htf.trading?htf.trading.state:htf.overallBias;
   biasEl.textContent=macroState?`Macro ${macroState} / Trading ${tradingState}`:(htf.overallBias||'—');
@@ -349,8 +369,8 @@ function renderTradingBrain(brain){
     if(entry.entryZone&&typeof entry.entryZone==='object'){
       entryRows.push(`<div class="liq-row"><span class="liq-label">Entry Zone: ${fmtPrice(entry.entryZone.priceLow)}–${fmtPrice(entry.entryZone.priceHigh)}</span></div>`);
     }
-    if(typeof entry.stopLoss==='number'){
-      entryRows.push(`<div class="liq-row"><span class="liq-label">Stop Loss: ${fmtPrice(entry.stopLoss)}</span></div>`);
+    if(typeof entry.invalidation==='number'){
+      entryRows.push(`<div class="liq-row"><span class="liq-label">Invalidation: ${fmtPrice(entry.invalidation)}</span></div>`);
     }
     if(risk&&typeof risk.entryPrice==='number'){
       entryRows.push(`<div class="liq-row"><span class="liq-label">Risk-Distanz: ${risk.riskDistance} · Position Size: MANUAL</span></div>`);
@@ -364,11 +384,14 @@ function renderTradingBrain(brain){
 
   const qualityLabel={high:'HOCH',medium:'MITTEL',low:'NIEDRIG'};
   const typeLabel={fvg:'FVG',orderBlock:'Order Block',breaker:'Breaker',ifvg:'iFVG'};
-  const poiRow=p=>`
+  const poiRow=p=>{
+    const mitigation=typeof p.mitigationPercent==='number'?`${p.mitigationPercent}%`:'nicht verfügbar';
+    return`
     <div class="poi-row">
-      <span class="poi-label">${typeLabel[p.type]||p.type}<span class="poi-meta">${p.timeframe} · ${p.status} · ${p.mitigationPercent}% · getestet ${p.tested?'JA':'NEIN'} · Reaktion ${p.reaction?'JA':'NEIN'}</span></span>
+      <span class="poi-label">${typeLabel[p.type]||p.type}<span class="poi-meta">${p.timeframe} · ${p.status||'STATUS NICHT VERFÜGBAR'} · Mitigation ${mitigation} · getestet ${p.tested?'JA':'NEIN'} · Reaktion ${p.reaction?'JA':'NEIN'}</span></span>
       <span class="poi-price">${p.range}<span class="poi-confidence">Qualität: ${qualityLabel[p.quality]||p.quality} (${p.score})</span></span>
     </div>`;
+  };
   buyEl.innerHTML=(report.freshBullishPOIs&&report.freshBullishPOIs.length)?report.freshBullishPOIs.map(poiRow).join(''):'<div class="poi-empty">Keine frischen Bullish-POIs erkannt.</div>';
   sellEl.innerHTML=(report.freshBearishPOIs&&report.freshBearishPOIs.length)?report.freshBearishPOIs.map(poiRow).join(''):'<div class="poi-empty">Keine frischen Bearish-POIs erkannt.</div>';
 
@@ -376,7 +399,7 @@ function renderTradingBrain(brain){
     ?report.notableLiquidity.map(text=>`<div class="liq-row"><span class="liq-label">${text}</span></div>`).join('')
     :'<div class="liq-row"><span class="liq-label">Aktuell keine auffälligen Level.</span></div>';
 
-  const targets=(brain.targets||[]).slice(0,6);
+  const targets=(decision.targets||[]).slice(0,6);
   const priorityBadge={PRIMARY:'①',SECONDARY:'②',EXTENDED:'③'};
   targetsEl.innerHTML=targets.length?targets.map(t=>`
     <div class="poi-row">
@@ -388,7 +411,12 @@ function renderTradingBrain(brain){
   sessionNewsRows.push(`<div class="liq-row"><span class="liq-label">News: ${report.newsStatus||'DATA_SOURCE_NOT_CONNECTED'}</span></div>`);
   sessionNewsEl.innerHTML=sessionNewsRows.join('');
 
-  summaryEl.textContent=report.summary||'';
+  const storyBrain=Object.assign({},brain,{
+    currentPrice:typeof brain.currentPrice==='number'
+      ?brain.currentPrice
+      :(marketServerState&&marketServerState.quote&&typeof marketServerState.quote.price==='number'?marketServerState.quote.price:null)
+  });
+  summaryEl.textContent=generateDGBriefing(storyBrain,new Date());
 }
 
 // Hero card ("AKTUELLE HANDLUNG") — historically driven entirely by the
@@ -413,13 +441,17 @@ function renderHeroAction(brain){
   if(badge){ badge.textContent='LIVE'; badge.className='badge-live'; }
 
   const d=brain.decision;
-  const cls=HERO_ACTION_CLASS[d.status]||'wait';
+  const presentation=presentDecisionStatus(d.detailStatus||d.status,d.direction);
+  const stage=d.decisionStage||presentation.decisionStage;
+  const direction=d.decisionDirection===undefined?presentation.decisionDirection:d.decisionDirection;
+  const detailStatus=d.detailStatus||d.status;
+  const cls=stage==='READY'?(direction==='BUY'?'buy':'sell'):(stage==='WATCH'?'watch':'wait');
   $('action').className=`action ${cls}`;
-  $('action').innerHTML=`<svg class="ic ic-action"><use href="#${HERO_ACTION_ICON[cls]}"></use></svg><span>${HERO_ACTION_LABEL[d.status]||d.status}</span>`;
+  $('action').innerHTML=`<svg class="ic ic-action"><use href="#${HERO_ACTION_ICON[cls]}"></use></svg><span>${stage.replaceAll('_',' ')}${direction?` ${direction}`:''}</span>`;
   $('tradeType').textContent=d.reasons&&d.reasons.length?d.reasons[0]:'—';
-  $('decisionReason').textContent=(d.missingRequirements&&d.missingRequirements.length)
-    ?`Fehlt: ${d.missingRequirements.join(', ')}`
-    :((d.reasons||[]).join(' · ')||'—');
+  $('decisionReason').textContent=(d.missingFactors&&d.missingFactors.length)
+    ?`Fehlt: ${d.missingFactors.join(' · ')}`
+    :`Detail: ${detailStatus}`;
 
   // Kapitel 1 defines no confidence formula, so the ring never shows a
   // fabricated percentage for real data — it shows the POI quality score
@@ -485,7 +517,8 @@ const DISPLAY_TIMEZONE=(function(){
 // (15-min JSON baseline + optional browser WebSocket) until Daniel points
 // it at a real, reachable server. Same UX pattern as the existing
 // TwelveData WS key field: a URL saved in localStorage, never committed.
-let marketServerUrl=localStorage.getItem('dgos.marketServerUrl')||'';
+const storedMarketServerUrl=localStorage.getItem('dgos.marketServerUrl');
+let marketServerUrl=storedMarketServerUrl===null?DEFAULT_MARKET_SERVER_URL:storedMarketServerUrl;
 let marketServerState=null;      // last successful /api/market/XAUUSD response, or null
 let marketServerReachable=false;
 let tradingBrainState=null;      // last successful /api/brain/XAUUSD response, or null — DG Trading Brain V1, only reachable via the Always-On Server
@@ -517,6 +550,7 @@ async function pollMarketServer(){
   }
   renderFreshness();
   renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
+  maybeDeliverDailyJarvisGreeting();
   pollAndSendEventAlerts();
 }
 
@@ -1016,6 +1050,7 @@ const ALERT_TYPE_ICON={
   IMPORTANT_POI_APPROACHING:'📍',PRIMARY_TARGET_REACHED:'🎯',SETUP_INVALIDATED:'⚠️',DATA_NOT_READY:'⚠️',SYSTEM_RECOVERED:'✅',MISSED:'⏭️'
 };
 const ALERT_SEEN_STORAGE_KEY='dgos.seenAlertDedupeKeys';
+const ALERT_CURSOR_STORAGE_KEY='dgos.alertCursorAt';
 const ALERT_SEEN_MAX=300;
 
 ALERT_CHECKBOX_IDS.forEach(id=>{
@@ -1064,11 +1099,18 @@ async function pollAndSendEventAlerts(){
     const res=await fetch(`${base}/api/events/XAUUSD?limit=25`,{cache:'no-store'});
     if(!res.ok) return;
     const{events}=await res.json();
-    const tradingEvents=(events||[]).filter(e=>e.source==='tradingBrainV1'&&enabledTypes.has(e.type));
+    const selection=selectNewTradingEvents(events,localStorage.getItem(ALERT_CURSOR_STORAGE_KEY),enabledTypes);
+    if(selection.cursor) localStorage.setItem(ALERT_CURSOR_STORAGE_KEY,selection.cursor);
+    const tradingEvents=selection.events;
+    const seen=loadSeenAlertKeys();
+    if(!selection.initialized){
+      (events||[]).filter(e=>e.source==='tradingBrainV1').forEach(e=>seen.add(e.dedupeKey||`${e.type}-${e.at}`));
+      saveSeenAlertKeys(seen);
+      return;
+    }
     if(!tradingEvents.length) return;
 
-    const seen=loadSeenAlertKeys();
-    const unseen=tradingEvents.filter(e=>!seen.has(e.dedupeKey+'-'+e.at));
+    const unseen=tradingEvents.filter(e=>!seen.has(e.dedupeKey||`${e.type}-${e.at}`));
     if(!unseen.length) return;
 
     for(const event of unseen){
@@ -1082,7 +1124,7 @@ async function pollAndSendEventAlerts(){
           setTelegramStatus(`Alert-Senden fehlgeschlagen: ${err.message}`);
         }
       }
-      seen.add(event.dedupeKey+'-'+event.at);
+      seen.add(event.dedupeKey||`${event.type}-${event.at}`);
     }
     saveSeenAlertKeys(seen);
   }catch(err){ /* server unreachable this tick — next poll retries, nothing to surface here */ }
@@ -1265,6 +1307,23 @@ function assistantSpeak(text){
     }
     window.speechSynthesis.speak(utter);
   }catch(err){ /* voice output is a nice-to-have, never block on failure */ }
+}
+
+const ASSISTANT_DAILY_GREETING_KEY='dgos.jarvisGreetingDate';
+
+function maybeDeliverDailyJarvisGreeting(){
+  if(!marketServerReachable||!tradingBrainState||!tradingBrainState.decision) return;
+  const today=zurichDateString(new Date());
+  if(localStorage.getItem(ASSISTANT_DAILY_GREETING_KEY)===today) return;
+  const brain=Object.assign({},tradingBrainState,{
+    currentPrice:typeof tradingBrainState.currentPrice==='number'
+      ?tradingBrainState.currentPrice
+      :(marketServerState&&marketServerState.quote&&typeof marketServerState.quote.price==='number'?marketServerState.quote.price:null)
+  });
+  const text=generateJarvisWakeUp(brain,new Date());
+  assistantLogMessage('assistant',text);
+  localStorage.setItem(ASSISTANT_DAILY_GREETING_KEY,today);
+  assistantSpeak(text);
 }
 
 function assistantAsk(question){

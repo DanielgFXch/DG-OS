@@ -284,6 +284,30 @@ function candleTimeToIso(datetime){
   return parsed?parsed.toISOString():null;
 }
 
+function newYorkMarketClock(date){
+  try{
+    const parts=new Intl.DateTimeFormat('en-US',{
+      timeZone:'America/New_York',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'
+    }).formatToParts(date).reduce((acc,part)=>{ acc[part.type]=part.value; return acc; },{});
+    return{weekday:parts.weekday,minutes:Number(parts.hour)*60+Number(parts.minute)};
+  }catch(err){
+    return null;
+  }
+}
+
+// XAUUSD's weekly closure follows New York market time. Expressing it in
+// UTC directly breaks twice a year: Sunday 17:00 New York is 21:00 UTC in
+// summer and 22:00 UTC in winter. Keeping the boundary in America/New_York
+// makes Sunday-open handling deterministic across DST.
+function isForexWeekendClosed(date){
+  const clock=newYorkMarketClock(date);
+  if(!clock) return false;
+  if(clock.weekday==='Sat') return true;
+  if(clock.weekday==='Fri'&&clock.minutes>=17*60) return true;
+  if(clock.weekday==='Sun'&&clock.minutes<17*60) return true;
+  return false;
+}
+
 // One data-quality gate for every Market Brain consumer. XAUUSD does not
 // produce legitimate weekend candles; TwelveData can nevertheless return
 // calendar placeholders there. We also reject malformed/zero-range bars.
@@ -302,13 +326,11 @@ function marketCandleQualityReason(candle,timeframe,nowInput){
     const calendarAnchored=tf==='monthly'||tf==='weekly'||tf==='1month'||tf==='1week';
     const now=nowInput===undefined?new Date():(nowInput instanceof Date?nowInput:new Date(nowInput));
     const currentSundayDailyPlaceholder=(tf==='daily'||tf==='1day')&&day===0&&hour===0
-      &&!Number.isNaN(now.getTime())&&now.getUTCDay()===0&&now.getUTCHours()<22
+      &&!Number.isNaN(now.getTime())&&now.getUTCDay()===0&&isForexWeekendClosed(now)
       &&at.getUTCFullYear()===now.getUTCFullYear()&&at.getUTCMonth()===now.getUTCMonth()&&at.getUTCDate()===now.getUTCDate();
     const durationMs={daily:86400000,'1day':86400000,'4h':4*3600000,h1:3600000,'1h':3600000,'30m':1800000,'30min':1800000,'15m':900000,'15min':900000}[tf]||0;
     const endsAt=new Date(at.getTime()+durationMs);
-    const entirelyClosed=day===6
-      ||(day===5&&hour>=21)
-      ||(day===0&&hour<22&&endsAt.getUTCDay()===0&&endsAt.getUTCHours()<=22);
+    const entirelyClosed=isForexWeekendClosed(at)&&isForexWeekendClosed(new Date(endsAt.getTime()-1));
     if(currentSundayDailyPlaceholder) return'CURRENT_SUNDAY_DAILY_PLACEHOLDER';
     if(!calendarAnchored&&entirelyClosed) return'WEEKEND_CLOSED_PLACEHOLDER';
   }else return'MISSING_TIMESTAMP';
@@ -2263,7 +2285,7 @@ function buildLiquiditySection(liquidity){
   const above=currentLiquidity.filter(l=>l.type==='high'&&l.status!=='invalid').sort((a,b)=>a.price-b.price).slice(0,4);
   const below=currentLiquidity.filter(l=>l.type==='low'&&l.status!=='invalid').sort((a,b)=>b.price-a.price).slice(0,4);
   const liquidityLine=l=>{
-    const base=`- ${l.label}: ${fmtPrice(l.price)} – ${LIQUIDITY_STATUS_LABEL[l.status]||l.status}`;
+    const base=`- ${l.label}: ${fmtPrice(l.price)} – ${LIQUIDITY_STATUS_LABEL[l.status]||l.status||'STATUS NICHT VERFÜGBAR'}`;
     if(l.status==='sweeped'&&l.reaction) return`${base}\n  → Reaction ${l.reaction.status==='REACTED'?'detected':'not yet detected'}`;
     return base;
   };
@@ -2280,7 +2302,10 @@ function buildRecentEventsSection(primaryLiquidity){
 }
 
 function buildPOISection(report){
-  const poiLine=p=>`- ${p.type==='fvg'?'FVG':p.type==='orderBlock'?'Order Block':p.type==='ifvg'?'iFVG':'Breaker'} ${p.range} (${p.timeframe}) – ${p.quality.toUpperCase()} · getestet ${p.tested?'JA':'NEIN'} · Mitigation ${p.mitigationPercent}% · Reaktion ${p.reaction?'JA':'NEIN'}`;
+  const poiLine=p=>{
+    const mitigation=typeof p.mitigationPercent==='number'?`${p.mitigationPercent}%`:'nicht verfügbar';
+    return`- ${p.type==='fvg'?'FVG':p.type==='orderBlock'?'Order Block':p.type==='ifvg'?'iFVG':'Breaker'} ${p.range} (${p.timeframe}) – ${p.quality.toUpperCase()} · getestet ${p.tested?'JA':'NEIN'} · Mitigation ${mitigation} · Reaktion ${p.reaction?'JA':'NEIN'}`;
+  };
   const buyAreas=(report.freshBullishPOIs||[]).slice(0,3);
   const sellAreas=(report.freshBearishPOIs||[]).slice(0,3);
   const lines=['RELEVANT POIs','','Bullish:'];
@@ -2324,12 +2349,15 @@ function buildContextSection(decision){
 
 function generateDGBriefing(brain,now){
   const decision=brain.decision,report=brain.report,liquidity=brain.liquidity||[];
-  const greeting=`${timeOfDayGreeting(now)} Gomes.`;
+  const greeting=`${timeOfDayGreeting(now)}, Meister Gomes.`;
   const liquiditySection=buildLiquiditySection(liquidity);
 
   const lines=[];
   lines.push(`🧠 DG OS – XAUUSD`,'');
   lines.push(greeting,'');
+  lines.push(typeof brain.currentPrice==='number'
+    ?`Gold liegt aktuell bei ${fmtPrice(brain.currentPrice)}.`
+    :'Aktueller Goldpreis ist in diesem Brain-Snapshot nicht verfügbar.','');
   lines.push(buildStatusSection(decision),'');
   lines.push(buildRecentEventsSection(liquiditySection.primaryLiquidity),'');
   lines.push(buildPOISection(report),'');
@@ -2340,6 +2368,27 @@ function generateDGBriefing(brain,now){
   lines.push(`- ${waitingForText(decision)}`);
 
   return lines.join('\n');
+}
+
+// Short spoken overview for the first dashboard connection of the day.
+// It deliberately uses only the same current price, HTF context and
+// decision fields as the full briefing; this is a voice presentation, not
+// a second analysis engine.
+function generateJarvisWakeUp(brain,now){
+  if(!brain||!brain.decision||!brain.report){
+    return`${timeOfDayGreeting(now)}, Meister Gomes. Ich habe aktuell keine verlässlichen Marktdaten und bleibe bei DATA NOT READY.`;
+  }
+  const decision=brain.decision;
+  const daily=brain.htfContext&&brain.htfContext.daily&&brain.htfContext.daily.externalBias;
+  const h4=brain.htfContext&&brain.htfContext.h4&&brain.htfContext.h4.externalBias;
+  const lines=[`${timeOfDayGreeting(now)}, Meister Gomes.`];
+  lines.push(typeof brain.currentPrice==='number'
+    ?`Gold liegt aktuell bei ${fmtPrice(brain.currentPrice)}.`
+    :'Der aktuelle Goldpreis ist in diesem Snapshot nicht verfügbar.');
+  lines.push(`Daily ist ${daily?daily.toUpperCase():'noch nicht eindeutig'}, 4H ist ${h4?h4.toUpperCase():'noch nicht eindeutig'}.`);
+  lines.push(`Aktueller Status: ${presentationHeadline(decision)}.`);
+  lines.push(`Wir warten auf: ${waitingForText(decision)}`);
+  return lines.join(' ');
 }
 
 // ---------------------------------------------------------------------------
@@ -2685,7 +2734,7 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,pri
   const decision=buildDecisionSummary(entryDecision,biasResult,risk,targets,poisAll);
 
   return{
-    symbol:'XAUUSD',timestamp:nowIso,htfContext,
+    symbol:'XAUUSD',timestamp:nowIso,currentPrice:typeof currentPrice==='number'?currentPrice:null,htfContext,
     structure:{monthly:tfBrainsByOutputKey.monthly.structure,weekly:tfBrainsByOutputKey.weekly.structure,daily:tfBrainsByOutputKey.daily.structure,h4:tfBrainsByOutputKey.h4.structure,h1:tfBrainsByOutputKey.h1.structure},
     liquidity:combinedLiquidity,liquidityMemory,premiumDiscount:premiumDiscountByOutputKey,
     pois:poisAll,targets,entry:entryDecision,risk,decision,report,status:finalStatus,
@@ -2722,7 +2771,7 @@ return{
   EQUILIBRIUM_BAND_PERCENT,computeZoneForRange,computePremiumDiscount,PD_ZONE_LABEL,
   computeHTFBias,BIAS_LABEL,
   LIQUIDITY_LEVEL_DEFS,extractLevelRaw,LIQUIDITY_TOUCH_PERCENT,computeLiquidityStatus,computeLiquidityEngine,LIQUIDITY_STATUS_LABEL,
-  createPOI,candleTimeToIso,marketCandleQualityReason,isUsableMarketCandle,filterUsableMarketCandles,POI_ATR_WINDOW,localAverageRange,isZoneMitigatedAfter,
+  createPOI,candleTimeToIso,newYorkMarketClock,isForexWeekendClosed,marketCandleQualityReason,isUsableMarketCandle,filterUsableMarketCandles,POI_ATR_WINDOW,localAverageRange,isZoneMitigatedAfter,
   detectFairValueGaps,candleDirection,closeStrength,detectOrderBlocks,OB_DISPLACEMENT_RATIO,OB_CLOSE_STRENGTH_MIN,
   detectBreakers,detectInverseFairValueGaps,detectMitigationBlocks,detectRejectionBlocks,detectSupplyZones,detectDemandZones,
   POI_TYPE_DEFS,POI_LIQUIDITY_TOLERANCE_PERCENT,relatedLiquidityFor,detectZoneReaction,enrichPOIContext,computePOIEngine,
@@ -2754,7 +2803,7 @@ return{
   MISSED_MOVE_PROGRESSED_STATUSES,detectMissedMove,entryCandidatesFor,ENTRY_STATUS_RANK,evaluateEntryForDirection,computeEntryDecision,
   computeRiskManagement,NEWS_STATUS,computeNewsContext,SESSION_LIQUIDITY_TIMEFRAMES,computeSessionNotes,
   presentDecisionStatus,buildDecisionFactors,buildDecisionSummary,timeOfDayGreeting,zurichDateString,zurichTimeString,shouldSendScheduledBriefing,ENTRY_STATUS_HEADLINE,presentationHeadline,waitingForText,
-  recentLiquidityEventLines,buildLiquiditySection,buildRecentEventsSection,buildPOISection,buildTargetsSection,buildStatusSection,buildSetupSection,buildContextSection,buildBiasSection,buildRiskSection,generateDGBriefing,
+  recentLiquidityEventLines,buildLiquiditySection,buildRecentEventsSection,buildPOISection,buildTargetsSection,buildStatusSection,buildSetupSection,buildContextSection,buildBiasSection,buildRiskSection,generateDGBriefing,generateJarvisWakeUp,
   CHAT_INTENTS,detectChatIntent,answerNewsQuestion,answerMarketQuestion,
   summarizeTimeframeContext,V1_POI_BRIEFING_TIMEFRAMES,generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1
 };

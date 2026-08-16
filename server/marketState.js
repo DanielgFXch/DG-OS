@@ -154,6 +154,14 @@ class MarketState {
     }
   }
 
+  getLatestCandleOpen(timeframeId) {
+    const candles = this.candlesByTimeframe[timeframeId];
+    if (!candles) return null;
+    const series = candles.series || [];
+    const latest = series.length ? series[series.length - 1] : candles.latestRealBar;
+    return latest ? latest.datetime : null;
+  }
+
   async refreshQuote() {
     try {
       this.quote = await rest.fetchQuote(this.apiKey, this.restBaseUrl);
@@ -260,7 +268,7 @@ class MarketState {
     const priorLiquidityMemory = this._prevTradingBrainState && this._prevTradingBrainState.liquidityMemory;
     this.tradingBrain = MB.computeTradingBrainV1(this.candlesByTimeframe, this.brain.liquidity, this._currentPrice(), priorSetupContext, priorLiquidityMemory, this.newsEvents);
     const decision = this.tradingBrain.decision;
-    const { events: tbEvents, statusEventEmitted, approachEventEmitted, liquidityApproachEventEmitted } = classifyTradingBrainEvents(this._prevTradingBrainState, this.tradingBrain, this._currentPrice());
+    const { events: tbEvents, statusEventEmitted, approachEventEmitted, liquidityApproachEventEmitted, liquidityApproachKey } = classifyTradingBrainEvents(this._prevTradingBrainState, this.tradingBrain, this._currentPrice());
     if (tbEvents.length) this._pendingEvents.push(...tbEvents);
     this.activeSetup = buildActiveSetup(decision, this._prevTradingBrainState && this._prevTradingBrainState.activeSetup, this._currentPrice());
     // Each cooldown timestamp only advances when ITS OWN event type was
@@ -274,7 +282,8 @@ class MarketState {
       lastPrice: this._currentPrice(),
       lastStatusEventAt: statusEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastStatusEventAt) || null),
       lastApproachEventAt: approachEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastApproachEventAt) || null),
-      lastLiquidityApproachEventAt: liquidityApproachEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastLiquidityApproachEventAt) || null)
+      lastLiquidityApproachEventAt: liquidityApproachEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastLiquidityApproachEventAt) || null),
+      lastLiquidityApproachKey: liquidityApproachKey
     };
   }
 

@@ -331,6 +331,16 @@ body{
   border:1px solid var(--line);border-radius:8px;padding:12px;margin:0
 }
 
+.decision-explainability{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.decision-factor-group{display:grid;gap:5px;padding:10px;border:1px solid var(--line);border-radius:9px;background:rgba(4,9,13,.55)}
+.decision-factor-group strong{font-family:var(--hud-font);font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.decision-factor-group span{font-size:12px;color:var(--muted);line-height:1.4}
+.decision-factor-met strong{color:var(--green)}
+.decision-factor-missing strong{color:var(--gold)}
+.decision-factor-invalid strong{color:var(--red)}
+.decision-factor-context strong{color:var(--cyan)}
+@media(max-width:680px){.decision-explainability{grid-template-columns:1fr}}
+
 .status-card{margin-bottom:22px}
 .status-price-row{display:flex;align-items:baseline;gap:12px;margin-bottom:14px;flex-wrap:wrap}
 .status-symbol{font-family:var(--hud-font);font-size:12px;color:var(--muted);letter-spacing:.08em}

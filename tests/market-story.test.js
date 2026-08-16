@@ -34,6 +34,28 @@ test('market story presents WAIT, WATCH and READY states in trader language',()=
   }
 });
 
+test('market story greets Meister Gomes and includes the real current gold price',()=>{
+  const brain=brainFor('WAIT');
+  brain.currentPrice=4375.60165;
+  const story=MB.generateDGBriefing(brain,new Date('2026-08-17T06:00:00Z'));
+  assert.match(story,/Guten Morgen, Meister Gomes\./);
+  assert.match(story,/Gold liegt aktuell bei 4375\.60\./);
+});
+
+test('Jarvis wake-up uses only current brain facts',()=>{
+  const brain=brainFor('WATCH_SELL');
+  brain.currentPrice=4375.60165;
+  brain.htfContext={};
+  brain.htfContext.daily={externalBias:'bullish'};
+  brain.htfContext.h4={externalBias:'bearish'};
+  const spoken=MB.generateJarvisWakeUp(brain,new Date('2026-08-17T06:00:00Z'));
+  assert.match(spoken,/Guten Morgen, Meister Gomes\./);
+  assert.match(spoken,/Gold liegt aktuell bei 4375\.60\./);
+  assert.match(spoken,/Daily ist BULLISH, 4H ist BEARISH\./);
+  assert.match(spoken,/Aktueller Status: WATCH SELL\./);
+  assert.match(spoken,/Wir warten auf: Reaktion am relevanten POI\./);
+});
+
 test('market story keeps counter-bias explicit and puts facts in V1 order',()=>{
   const story=MB.generateDGBriefing(brainFor('WATCH_SELL',{counterBias:true}),new Date('2026-08-17T06:00:00Z'));
   const headings=['STATUS','RECENT EVENTS','RELEVANT POIs','LIQUIDITY NOW','SETUP','CONTEXT','WAITING FOR'];
@@ -64,6 +86,13 @@ test('POI story excludes absent low/full zones and reports tested mitigation rea
   const story=MB.generateDGBriefing(brainFor('WAIT',{pois:[relevant]}),new Date('2026-08-17T06:00:00Z'));
   assert.match(story,/getestet JA · Mitigation 25% · Reaktion JA/);
   assert.doesNotMatch(story,/LOW|FULLY_MITIGATED/);
+});
+
+test('legacy POI facts never render undefined mitigation text',()=>{
+  const legacy={type:'fvg',range:'100.00–102.00',timeframe:'4H',quality:'medium',tested:false,reaction:false};
+  const story=MB.generateDGBriefing(brainFor('WAIT',{pois:[legacy]}),new Date('2026-08-17T06:00:00Z'));
+  assert.match(story,/Mitigation nicht verfügbar/);
+  assert.doesNotMatch(story,/undefined|null/);
 });
 
 test('market story displays no more than three recent liquidity events',()=>{

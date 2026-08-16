@@ -50,8 +50,8 @@ const TIMEFRAME_DEFS = [
     reason: 'Rang 5, letzte HTF-Kern-Timeframe. 168 Balken (~7 Tage) — mehr Historie als die bisherigen 72h/3 Tage, weiterhin bescheiden.' },
   { id: '30min', tdInterval: '30min', outputsize: 192, durationSeconds: 30 * MINUTE,
     reason: 'Rang 6, für feinere Reaktionen/Struktur unterhalb des HTF-Kerns, nicht für die Hauptanalyse. 192 Balken (~4 Tage).' },
-  { id: '15min', tdInterval: '15min', outputsize: 192, durationSeconds: 15 * MINUTE,
-    reason: 'Rang 7, für Confirmation/Entry-Timing später. 192 Balken (~2 Tage).' }
+  { id: '15min', tdInterval: '15min', outputsize: 384, durationSeconds: 15 * MINUTE,
+    reason: 'Rang 7, für Confirmation/Entry-Timing. 384 Balken (~4 Kalendertage), damit die von TwelveData gelieferten Weekend-Platzhalter nach dem Filter nicht die gesamte verwertbare 15M-Handelshistorie verdrängen.' }
 ];
 
 const TIMEFRAME_DEFS_DOCUMENTED = TIMEFRAME_DEFS.map(tf => Object.assign({}, tf, {

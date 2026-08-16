@@ -74,6 +74,28 @@ function makeEvent(type,at,payload){
   return{type,category:EVENT_CATEGORY[type]||'trading',at:at||new Date().toISOString(),payload:payload||{}};
 }
 
+// A fresh alert client establishes the newest existing event as a baseline
+// instead of replaying historical server events as if they had just
+// happened. Later calls return only genuinely newer events, oldest first.
+function selectNewTradingEvents(events,cursorIso,enabledTypes){
+  const trading=(events||[])
+    .filter(event=>event&&event.source==='tradingBrainV1'&&Number.isFinite(new Date(event.at).getTime()));
+  if(!trading.length) return{events:[],cursor:cursorIso||null,initialized:!!cursorIso};
+
+  const latestMs=Math.max(...trading.map(event=>new Date(event.at).getTime()));
+  const latestIso=new Date(latestMs).toISOString();
+  if(!cursorIso||!Number.isFinite(new Date(cursorIso).getTime())){
+    return{events:[],cursor:latestIso,initialized:false};
+  }
+
+  const cursorMs=new Date(cursorIso).getTime();
+  const enabled=enabledTypes instanceof Set?enabledTypes:new Set(enabledTypes||[]);
+  const selected=trading
+    .filter(event=>new Date(event.at).getTime()>cursorMs&&(!enabled.size||enabled.has(event.type)))
+    .sort((a,b)=>new Date(a.at)-new Date(b.at));
+  return{events:selected,cursor:latestIso,initialized:true};
+}
+
 // Session-level lifecycle: creation (context, silent) and status
 // transitions (trading). Daily/Weekly/Monthly levels are diffed for
 // LIQUIDITY_SWEPT (the generic catch-all) but never get a *_CREATED event —
@@ -296,11 +318,12 @@ function classifyTradingBrainEvents(prevState,brain,currentPrice,now){
   now=typeof now==='number'?now:Date.now();
   const events=[];
   let statusEventEmitted=false,approachEventEmitted=false,liquidityApproachEventEmitted=false;
-  if(!brain||!brain.decision) return{events,statusEventEmitted,approachEventEmitted,liquidityApproachEventEmitted};
+  let liquidityApproachKey=(prevState&&prevState.lastLiquidityApproachKey)||null;
+  if(!brain||!brain.decision) return{events,statusEventEmitted,approachEventEmitted,liquidityApproachEventEmitted,liquidityApproachKey};
   const decision=brain.decision;
   const prevStatus=prevState&&prevState.entryStatus;
   const prevActiveSetup=prevState&&prevState.activeSetup;
-  if(!prevState) return{events,statusEventEmitted,approachEventEmitted,liquidityApproachEventEmitted}; // cold start: seed only, no fabricated "just happened" events
+  if(!prevState) return{events,statusEventEmitted,approachEventEmitted,liquidityApproachEventEmitted,liquidityApproachKey}; // cold start: seed only, no fabricated "just happened" events
 
   const lastStatusEventAt=prevState.lastStatusEventAt?new Date(prevState.lastStatusEventAt).getTime():0;
   const inCooldown=(now-lastStatusEventAt)<STATUS_EVENT_COOLDOWN_MS;
@@ -396,16 +419,18 @@ function classifyTradingBrainEvents(prevState,brain,currentPrice,now){
   // doesn't compete with POI-approach or status-transition alerts.
   const lastLiquidityApproachEventAt=prevState.lastLiquidityApproachEventAt?new Date(prevState.lastLiquidityApproachEventAt).getTime():0;
   const liquidityApproachInCooldown=(now-lastLiquidityApproachEventAt)<STATUS_EVENT_COOLDOWN_MS;
-  if(!liquidityApproachInCooldown){
-    const approaching=(brain.liquidity||[]).find(lv=>lv.status==='approaching'&&MB.isV1PrimaryLiquidity(lv));
-    if(approaching){
+  const approaching=(brain.liquidity||[]).find(lv=>lv.status==='approaching'&&MB.isV1PrimaryLiquidity(lv));
+  const currentLiquidityApproachKey=approaching?MB.liquidityMemoryKey(approaching):null;
+  if(!approaching){
+    liquidityApproachKey=null;
+  }else if(currentLiquidityApproachKey!==liquidityApproachKey&&!liquidityApproachInCooldown){
       events.push(tbEvent('LIQUIDITY_APPROACHING',{
         direction:approaching.type==='high'?'bearish':'bullish',price:currentPrice,timeframe:approaching.timeframe,
         explanation:`Preis nähert sich ${approaching.label} (${approaching.timeframe}) bei ${approaching.price}.`,
-        dedupeKey:`LIQUIDITY_APPROACHING-${MB.liquidityMemoryKey(approaching)}`
+        dedupeKey:`LIQUIDITY_APPROACHING-${currentLiquidityApproachKey}`
       }));
       liquidityApproachEventEmitted=true;
-    }
+      liquidityApproachKey=currentLiquidityApproachKey;
   }
 
   // IMPORTANT_POI_APPROACHING — SYSTEM_THRESHOLD only, see constant above.
@@ -438,13 +463,13 @@ function classifyTradingBrainEvents(prevState,brain,currentPrice,now){
     }
   }
 
-  return{events,statusEventEmitted,approachEventEmitted,liquidityApproachEventEmitted};
+  return{events,statusEventEmitted,approachEventEmitted,liquidityApproachEventEmitted,liquidityApproachKey};
 }
 
 return{
   EVENT_CATEGORY,classifyMarketEvents,diffLiquidityEvents,diffPOIEvents,diffStructureEvents,diffCandlePatternEvents,
   POI_APPROACH_THRESHOLD_PERCENT,CONFIRMATION_RANK,ACTIVE_ENTRY_STATUSES,STATUS_EVENT_COOLDOWN_MS,
-  buildActiveSetup,classifyTradingBrainEvents
+  buildActiveSetup,classifyTradingBrainEvents,selectNewTradingEvents
 };
 
 });

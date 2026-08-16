@@ -47,3 +47,41 @@ test('primary target event requires a new price crossing and does not repeat aft
   const repeated=Events.classifyTradingBrainEvents(afterRestart,brain,106,Date.parse('2026-08-17T10:01:00Z'));
   assert.equal(repeated.events.filter(event=>event.type==='PRIMARY_TARGET_REACHED').length,0);
 });
+
+test('fresh alert client baselines history and only receives later enabled events',()=>{
+  const history=[
+    {source:'tradingBrainV1',type:'LIQUIDITY_SWEPT',at:'2026-08-17T08:00:00Z'},
+    {source:'tradingBrainV1',type:'BUY_READY',at:'2026-08-17T09:00:00Z'}
+  ];
+  const baseline=Events.selectNewTradingEvents(history,null,new Set(['LIQUIDITY_SWEPT','BUY_READY']));
+  assert.deepEqual(baseline.events,[]);
+  assert.equal(baseline.cursor,'2026-08-17T09:00:00.000Z');
+
+  const next=Events.selectNewTradingEvents([
+    ...history,
+    {source:'tradingBrainV1',type:'WATCH_BUY',at:'2026-08-17T09:30:00Z'},
+    {source:'tradingBrainV1',type:'LIQUIDITY_SWEPT',at:'2026-08-17T10:00:00Z'}
+  ],baseline.cursor,new Set(['LIQUIDITY_SWEPT']));
+  assert.deepEqual(next.events.map(event=>event.at),['2026-08-17T10:00:00Z']);
+  assert.equal(next.cursor,'2026-08-17T10:00:00.000Z');
+});
+
+test('same approaching liquidity identity does not emit every cooldown minute',()=>{
+  const level={id:'nyLow',label:'New York Low',period:'2026-08-17',price:100,type:'low',timeframe:'New York Session',status:'approaching'};
+  const key=MB.liquidityMemoryKey(level);
+  const brain={decision:decision(),liquidity:[level],liquidityMemory:{}};
+  const prev={entryStatus:'WAIT',activeSetup:null,liquidityMemory:{},lastLiquidityApproachKey:key,lastLiquidityApproachEventAt:'2026-08-17T08:00:00Z'};
+  const result=Events.classifyTradingBrainEvents(prev,brain,101,Date.parse('2026-08-17T10:00:00Z'));
+  assert.equal(result.events.filter(event=>event.type==='LIQUIDITY_APPROACHING').length,0);
+  assert.equal(result.liquidityApproachKey,key);
+});
+
+test('changed approaching liquidity identity emits as a new market level',()=>{
+  const previous={id:'nyLow',label:'New York Low',period:'2026-08-16',price:100,type:'low',timeframe:'New York Session',status:'approaching'};
+  const current={...previous,period:'2026-08-17',price:101};
+  const brain={decision:decision(),liquidity:[current],liquidityMemory:{}};
+  const prev={entryStatus:'WAIT',activeSetup:null,liquidityMemory:{},lastLiquidityApproachKey:MB.liquidityMemoryKey(previous),lastLiquidityApproachEventAt:'2026-08-17T08:00:00Z'};
+  const result=Events.classifyTradingBrainEvents(prev,brain,101.1,Date.parse('2026-08-17T10:00:00Z'));
+  assert.equal(result.events.filter(event=>event.type==='LIQUIDITY_APPROACHING').length,1);
+  assert.equal(result.liquidityApproachKey,MB.liquidityMemoryKey(current));
+});

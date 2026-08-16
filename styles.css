@@ -42,7 +42,7 @@
   --body-font:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Arial,sans-serif;
 }
 *{box-sizing:border-box}
-html{background:var(--bg);scrollbar-color:rgba(47,217,242,.35) transparent;scrollbar-width:thin}
+html{background:var(--bg);scrollbar-color:rgba(47,217,242,.35) transparent;scrollbar-width:thin;overflow-x:hidden}
 ::-webkit-scrollbar{width:10px;height:10px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(47,217,242,.28);border-radius:8px;border:2px solid var(--bg)}
@@ -64,7 +64,7 @@ html{background:var(--bg);scrollbar-color:rgba(47,217,242,.35) transparent;scrol
 }
 
 body{
-  margin:0;color:var(--text);font-family:var(--body-font);min-height:100vh;padding-bottom:88px;
+  margin:0;color:var(--text);font-family:var(--body-font);min-height:100vh;padding-bottom:88px;overflow-x:hidden;
   font-variant-numeric:tabular-nums;
   background:
     radial-gradient(1100px 700px at 82% -10%,rgba(47,217,242,.10),transparent 60%),
@@ -95,7 +95,7 @@ body{
 
 .ticker{background:rgba(6,10,14,.85);border-bottom:1px solid var(--line)}
 .ticker-inner{
-  max-width:1280px;margin:0 auto;padding:6px 16px;display:flex;align-items:center;gap:10px;
+  width:100%;max-width:1280px;margin:0 auto;padding:6px 16px;display:flex;align-items:center;gap:10px;
   font-family:var(--hud-font);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);
   overflow-x:auto;scrollbar-width:none;
 }

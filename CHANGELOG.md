@@ -8,6 +8,38 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.33.2] — Mobile: horizontales Scrollen/Wackeln behoben
+
+Beim Mobile-Check des neuen DG OS Assistant (der wahrscheinlichste
+Nutzungsort für "ich steh auf und sage Hey Gomez" ist das Handy) ein
+echtes, vorbestehendes Layout-Problem gefunden: die ganze Seite ließ sich
+auf schmalen Bildschirmen ein Stück nach rechts wegwischen/scrollen
+(Ticker-Leiste ohne feste Breite ließ den gesamten Body etwas breiter
+werden als der Viewport). Betraf die gesamte App, nicht nur die neue
+Assistant-Karte.
+
+### Behoben (`styles.css`)
+- `.ticker-inner` bekommt jetzt explizit `width:100%` (statt nur
+  `max-width`), damit der Flex-Container sich nicht an seinem eigenen
+  nicht umbrechenden Inhalt aufbläht.
+- `html`/`body` zusätzlich mit `overflow-x:hidden` abgesichert — die App
+  ist eine Single-Page-Oberfläche, seitliches Scrollen war nie gewollt.
+
+Restliche Pixel-Differenz bei einzelnen Karten (Grid-Sizing-Detail,
+vorbestehend, nicht durch heutige Arbeit verursacht) bleibt als bekannte
+kleine Kosmetik-Unschärfe — das eigentliche Problem (Seite lässt sich
+wegwischen) ist behoben und verifiziert.
+
+### Getestet
+Playwright: `window.scrollX` bleibt nach einem Scroll-Versuch bei 0,
+`document.documentElement.scrollWidth` entspricht wieder der Viewport-
+Breite. Alle bestehenden Assistant-/Wake-Word-/Event-Tests weiterhin grün.
+
+### Geänderte Dateien
+`styles.css`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.33.1] — Live-Ereignisse jetzt auch im Dashboard, nicht nur Telegram
 
 Daniels explizite Prioritäts-Klarstellung: "Hauptding ist das Dashboard

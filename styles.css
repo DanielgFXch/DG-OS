@@ -184,6 +184,11 @@ body{
 .assistant-controls-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
 .assistant-voice-toggle{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer}
 .assistant-voice-toggle input{width:14px;height:14px;accent-color:var(--cyan)}
+.assistant-voice-select{
+  font:inherit;font-family:var(--hud-font);font-size:11px;color:var(--text);background:var(--panel2);
+  border:1px solid var(--line);border-radius:8px;padding:6px 8px;max-width:100%;
+}
+.assistant-voice-select:focus{outline:none;border-color:var(--cyan)}
 .assistant-log{margin-top:12px;max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
 .assistant-log:empty{display:none}
 .assistant-clear-btn{

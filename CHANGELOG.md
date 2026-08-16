@@ -8,6 +8,34 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.33.1] — Live-Ereignisse jetzt auch im Dashboard, nicht nur Telegram
+
+Daniels explizite Prioritäts-Klarstellung: "Hauptding ist das Dashboard
+Jarvis-System, Telegram nur Hintergrund für wichtige Ereignisse." Bisher
+lief `pollAndSendEventAlerts()` komplett leer, wenn kein Telegram-Token
+konfiguriert war — das Dashboard selbst bekam nie ein Live-Ereignis zu
+sehen. Jetzt zwei unabhängige Kanäle für dieselben echten Ereignisse:
+
+### Geändert (`app.js`)
+- Neue Ereignisse (Liquidity Swept/Reaction/Approaching, Confirmation,
+  BUY_READY/SELL_READY etc., je nach aktivierten Alert-Kategorien)
+  erscheinen jetzt immer im DG OS Assistant Log und werden — sofern
+  "Antwort vorlesen" aktiv ist — automatisch vorgelesen, komplett ohne
+  Telegram-Konfiguration.
+- Telegram-Versand bleibt ein zusätzlicher, optionaler zweiter Kanal
+  (nur wenn Token+Chat-ID gesetzt sind) — beide teilen sich dieselbe
+  Dedupe-Logik (localStorage), ein Ereignis wird nie doppelt zugestellt.
+
+### Getestet
+Playwright: ein gemocktes Live-Ereignis erscheint im Assistant-Log auch
+ganz ohne konfiguriertes Telegram; ein zweiter Poll desselben Ereignisses
+(gleicher dedupeKey+Zeitstempel) erzeugt keinen doppelten Log-Eintrag.
+
+### Geänderte Dateien
+`app.js`, `index.html`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.33.0] — DG OS Assistant: Dauer-Zuhören ("Hey Gomez", hands-free)
 
 Direkte Umsetzung von Daniels beschriebenem Ablauf: "ich steh auf und

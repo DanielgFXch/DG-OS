@@ -2133,6 +2133,8 @@ function generateDGBriefing(brain,now){
 // ---------------------------------------------------------------------------
 const CHAT_INTENTS=[
   {id:'news',keywords:['news','nachrichten','fundamental','welt','krieg','wirtschaft','kalender','ereignis']},
+  {id:'bias',keywords:['bias','trend','htf','makro','richtung']},
+  {id:'risk',keywords:['risk','risiko','r:r','stop loss','stopp loss','invalidation']},
   {id:'liquidity',keywords:['liquidity','liquiditat','liquidität','sweep','level']},
   {id:'poi',keywords:['poi','fvg','order block','orderblock','zone','zonen']},
   {id:'targets',keywords:['target','ziel','ziele','tp']},
@@ -2152,6 +2154,21 @@ function answerNewsQuestion(){
   return`NEWS / FUNDAMENTAL\n\n${NEWS_STATUS} — DG OS hat noch keine echte News-/Wirtschaftskalender-Quelle angebunden (Kapitel 14). Keine erfundene Einschätzung zur Weltlage. Technisch (Liquidity/POI/Reaktion) arbeitet DG OS trotzdem normal weiter.`;
 }
 
+function buildBiasSection(decision){
+  return`HTF BIAS\n\nMacro (Monthly/Weekly): ${decision.macroBias||'—'}\nTrading (Daily/4H): ${decision.tradingBias||'—'}\n\nBias ist Context, kein zwingender Gatekeeper (Kapitel 1) — ein Setup kann trotzdem entstehen, wenn Liquidity+POI+Reaktion real vorliegen.`;
+}
+
+function buildRiskSection(decision){
+  const lines=['RISK MANAGEMENT','',`Invalidation (SL): ${typeof decision.invalidation==='number'?fmtPrice(decision.invalidation):'—'}`];
+  if(decision.riskReward&&decision.riskReward.length){
+    lines.push(...decision.riskReward.map(t=>`R:R ${t.priority}: ${fmtPrice(t.price)} (${t.rr})`));
+  }else{
+    lines.push('Noch kein R:R berechenbar — kein aktiver Entry-Kontext.');
+  }
+  lines.push('Position Size: MANUAL (Kapitel 11) — nie automatisch.');
+  return lines.join('\n');
+}
+
 // The one entry point for the DG OS Chat. `question` is Daniel's raw
 // message text (from Telegram or any future chat surface); `brain` is the
 // exact same computeTradingBrainV1() output every other V1 consumer reads.
@@ -2166,6 +2183,8 @@ function answerMarketQuestion(question,brain,now){
   const intent=detectChatIntent(question);
 
   if(intent==='news') return answerNewsQuestion();
+  if(intent==='bias') return buildBiasSection(decision);
+  if(intent==='risk') return buildRiskSection(decision);
   if(intent==='liquidity') return buildLiquiditySection(liquidity).text;
   if(intent==='poi') return buildPOISection(report);
   if(intent==='targets') return buildTargetsSection(decision);
@@ -2481,7 +2500,7 @@ return{
   MISSED_MOVE_PROGRESSED_STATUSES,detectMissedMove,entryCandidatesFor,ENTRY_STATUS_RANK,evaluateEntryForDirection,computeEntryDecision,
   computeRiskManagement,NEWS_STATUS,SESSION_LIQUIDITY_TIMEFRAMES,computeSessionNotes,
   buildDecisionSummary,timeOfDayGreeting,zurichDateString,zurichTimeString,shouldSendScheduledBriefing,ENTRY_STATUS_HEADLINE,waitingForText,
-  buildLiquiditySection,buildRecentEventsSection,buildPOISection,buildTargetsSection,buildStatusSection,generateDGBriefing,
+  buildLiquiditySection,buildRecentEventsSection,buildPOISection,buildTargetsSection,buildStatusSection,buildBiasSection,buildRiskSection,generateDGBriefing,
   CHAT_INTENTS,detectChatIntent,answerNewsQuestion,answerMarketQuestion,
   summarizeTimeframeContext,V1_POI_BRIEFING_TIMEFRAMES,generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1
 };

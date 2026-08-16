@@ -7,9 +7,9 @@ architectural decision; everything below is a condensed, actionable summary of i
 
 ## Non-negotiable build rule
 
-Every change should do two things:
-1. Visibly improve the interface.
-2. Add one real, working feature.
+Every change must materially improve accuracy, relevance, reliability,
+explainability, testability, or the user-facing interface. Bug fixes and
+regression tests do not need an unrelated UI change or feature.
 
 No dummy features. No fabricated data when real data is available — if data isn't
 connected yet, the UI must say so honestly (e.g. the "OFFLINE DEMO" badge) rather
@@ -17,29 +17,23 @@ than presenting invented numbers as real.
 
 ## Decision system
 
-DG OS never guesses. Every setup status is one of **WAIT / WATCH / READY**, always
-with an explicit, itemized reason (which criteria are met/unmet) — see
-`computeDecision()` in `app.js`. Never collapse this back to a plain boolean.
+DG OS never guesses. Internal V1 states remain detailed, while the presentation
+layer exposes **WAIT / WATCH / READY / MISSED / DATA_NOT_READY** plus BUY/SELL
+direction where applicable — see `presentDecisionStatus()` and
+`buildDecisionSummary()` in `marketBrain.js`. Never collapse this to a boolean.
 
 ## Strategy rules
 
 Daniel's exact trading rules live in [`rules/strategy.md`](rules/strategy.md) —
-the central knowledge base of DG OS, structured into chapter 0 (DG Philosophy —
-his underlying view of the market, not a rule; the lens all other chapters are
-read through) plus 16 rule chapters (DG HTF Bias, DG Liquidity, DG
-Premium/Discount, DG Order Block, DG Valid FVG, DG Inverse FVG, DG Breaker, DG
-Confirmation, Entry, Exit, Risk Management, No Trades, Session-Regeln, News,
-Beispiele, Edge Cases), each with a status marker and guiding questions but
-currently no actual content — awaiting his input, chapter by chapter. DG OS is
-permanently in **Knowledge Mode** (see the section below) for this reason: no
-new features are built until a chapter is filled in — strictly Regel →
-Implementierung → Tests → Deploy → BUILD FERTIG, one chapter at a time, and a
-module is only switched to DG rules once its chapter is complete. The system
-must never invent or silently change trading rules; only Daniel edits that
-file. A chapter still marked TODO means DG OS applies no rule for it and
-waits — see the "DG methodology" section below. Code may get smarter at
-*applying* the rules (statistics, pattern recognition) — never at redefining
-them.
+the central knowledge base of DG OS. Daniel has defined its 17 chapters; the
+14 runtime chapters are implemented in Trading Brain V1, while Philosophy,
+Examples, and Edge Cases remain non-runtime reference chapters. The
+implementation-mapping table near the top of `rules/strategy.md` contains old
+engineering status text and must not be treated as current code documentation;
+the chapter bodies remain the trading source of truth and only Daniel edits
+them. Runtime coverage is represented by `DG_RULES_DEFINED` in
+`marketBrain.js`. Code may get smarter at *applying* Daniel's rules—never at
+redefining them.
 
 ## DG methodology — not ICT, not generic Smart Money
 
@@ -161,9 +155,9 @@ feature; it governs how the assistant behaves. Documented identically in
 - Frontend: static PWA (`index.html`, `app.js`, `styles.css`), Jarvis-style dark HUD theme, self-hosted fonts (Chakra Petch for display/chrome, JetBrains Mono for data — see `fonts/`).
 - Architecture split (v0.20.0, Phase 1 "Core Foundation"): every pure Market Brain / Daniel Brain computation (Premium/Discount, HTF Bias, Liquidity, POI, Structure, DG Confidence, Decision Engine, DG Overview) lives in `marketBrain.js`, not `app.js` — loaded as a plain `<script>` before `app.js` in the browser, and via `require()` in the Node ingest script (`scripts/ingest.js`). One implementation, two runtimes, so they can never drift apart. `app.js` is DOM/rendering + app-only logic now (greeting, sessions clock, Alpha Simulation, Telegram, WebSocket streaming).
 - Event Store & Ingest Pipeline (v0.20.0): `scripts/ingest.js`, run by `market-data.yml` after the existing TwelveData fetch, computes the next Market Brain snapshot and diffs it (`events.js`) against the previous one to detect events, persisting both to git-committed `state/latest.json` (current snapshot, restart-safe) and `state/events.jsonl` (append-only event log, capped at the last 2000 entries). Classifies every event as **Market Context** (a session level merely coming into existence — silent, never notified) or **Trading Event** (something happening to a level/zone — touched/swept/reacted to/confirmed — persisted and notify-worthy), per Daniel's explicit correction. Full writeup: `docs/MARKET_BRAIN.md`'s "Event Store & Ingest Pipeline" section. Honest limitation: still the same 15-min cron as `data/market.json` always used — not yet a continuous always-on watcher, which needs its own future infrastructure decision.
-- Decision engine: WAIT/WATCH/READY with explainable checklist, still driven by the simulated Alpha buttons — the checks in `computeDecision()` are placeholders until `rules/strategy.md` is filled in. Do not wire real market data into the decision checks until then.
-- Market Brain modules (Liquidity Engine, Fair Value Gap detector, Order Block detector, HTF Bias, Premium/Discount): real, working technical infrastructure on real data — but generic/structural definitions, not yet Daniel's DG-specific rules. Per the "DG methodology" section above, these are the foundation to be adapted into DG Liquidity / DG Valid FVG / DG Order Block / DG HTF Bias once he defines the exact rules — not a finished DG version of any of these concepts yet.
-- DG Overview: a dashboard card, not a new module — aggregates existing Liquidity/Structure/POI Engine output into an at-a-glance view (session/day/week High-Low levels, structure bias, open high-confidence H1 zones, and a text feed for level sweeps + zone reactions). "Zone reaction" (`detectZoneReaction()` in `app.js`) is a purely mechanical check — price traded into a fresh zone and a later candle closed back outside it — deliberately not named "DG Confirmation" since that DG rule isn't defined yet. "Open zones" are explicitly labeled H1, not Daily — DG OS doesn't fetch Daily-candle history yet, so it never claims to.
+- Decision engine: Trading Brain V1 consumes real multi-timeframe candles and exposes detailed internal states plus the WAIT/WATCH/READY/MISSED/DATA_NOT_READY presentation layer. The old Alpha simulation remains UI-only legacy and is not the production V1 decision source.
+- Market Brain modules: shared real-data fact detectors plus DG-specific V1 relevance/decision application. Mechanical facts remain distinct from DG interpretation; undefined choices are `DG_RULE_QUESTION`, never guessed.
+- DG Overview: a dashboard aggregation of existing Liquidity/Structure/POI facts. `detectZoneReaction()` remains mechanical and separate from the defined 15M `computeConfirmation()` timeline.
 - Live market data: XAUUSD price/Daily Open/High/Low is real, via `.github/workflows/market-data.yml` (TwelveData free tier, cron every 15 min, deploys `data/market.json` straight to Pages without git commits). Needs a `TWELVEDATA_API_KEY` repo secret to run — see README. Frontend (`loadMarketData()` in `app.js`) only shows "LIVE" and real numbers when that file is fresh (<45 min old); otherwise it honestly falls back to "OFFLINE DEMO", never fabricated numbers. `data/` is gitignored — it's a generated artifact, not a source file.
 - True real-time price: on top of the 15-min baseline, the browser can open a direct TwelveData WebSocket stream (`openTdSocket()` in `app.js`) once Daniel enters his API key client-side in the "XAUUSD Live" card. This is a deliberate, explicitly-approved trade-off (his call, asked and confirmed) — the key is then visible in frontend code, in exchange for real sub-minute updates instead of the 5-minute ceiling GitHub Actions cron allows. Key lives only in `localStorage`, never committed. Has reconnect-with-backoff and falls back to the 15-min JSON baseline if the stream can't stay connected.
 - Telegram: client-side manual send/auto-send works; server-side heartbeat workflow (`.github/workflows/telegram-heartbeat.yml`) is ready but needs `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` repo secrets to run.
@@ -171,7 +165,7 @@ feature; it governs how the assistant behaves. Documented identically in
 - Git workflow on this project: open a PR, then merge it directly — don't leave PRs sitting open waiting for manual approval, per explicit instruction from Daniel.
 - Communication: whenever a piece of work is finished (a module, a fix, a merged PR), give Daniel a clear completion signal plus a short summary of what changed and what's next — written so he can forward it as-is. Don't just merge silently and move on.
 - Versioning: DG OS uses Semantic Versioning (MAJOR.MINOR.PATCH — MAJOR for big milestones/architecture changes, MINOR for new modules or larger features, PATCH for bugfixes/small improvements). Since v0.21.0, the current version lives in `package.json`'s `version` field — the single source of truth, read client-side (`loadVersion()` in `app.js`, fetched at startup, shown in both the UI footer and the System Status card) and server-side (`scripts/ingest.js`, stamped into `state/latest.json` as `dgOsVersion`). Never hardcode the version as a string anywhere else. Must be bumped on every completed build, with a matching entry added to the top of `CHANGELOG.md` (New / Improved / Bugfixes / Changed files). Do this before committing, not as an afterthought.
-- System Status card (v0.21.0, extended v0.22.0): shows Version, Timezone, and — since v0.22.0 — Price and Candle freshness tracked *separately* (Last Price/HTF Candles/Price Source/Candles), each computed from `computeDataFreshness()` (`marketBrain.js`) against thresholds tied to DG OS's own known feed intervals. Never claims LIVE off a stale timestamp — `isPriceLive` requires the WebSocket to be actually connected, not just recently-timestamped data. Optionally connects to a deployed Always-On Market Server (see below); falls back to the pre-v0.22.0 behavior (both rows equal, sourced from the 15-min JSON baseline) when none is configured — which is what production actually runs today, since no server is hosted yet. Full writeup: `docs/MARKET_BRAIN.md`'s "System Status" section and `docs/ALWAYS_ON_SERVER.md`'s "Phase D".
+- System Status card: shows Version, Timezone, separate Price/Candle freshness and source. Production uses the deployed Always-On Railway server; the static JSON path remains a fallback only.
 - Always-On Market Server (v0.22.0, `server/`, **deployed and live on Railway** as of this build, service `dg-os-production`): a small, dependency-free Node.js service (Node 22's built-in `fetch`/`WebSocket`, no npm packages) that reuses `marketBrain.js`/`events.js` exactly as-is — no parallel engine. Fetches 7 HTF-priority timeframes from TwelveData REST (Monthly→15M, deliberately no 5M/1M yet per Daniel's explicit priority), holds a continuous server-side TwelveData WebSocket connection for live price (reconnect-with-backoff, tested against a local mock), refreshes each timeframe's candles shortly after it actually closes rather than on a fixed poll (`server/lib/candleRefreshScheduler.js`), and exposes `/api/health`, `/api/market/XAUUSD`, `/api/events/XAUUSD`, `/api/brain/XAUUSD` (plus a stubbed, non-functional `/api/tradingview/webhook` — architecture-ready, not implemented). Every price tick is diffed against the previous one immediately in-memory (only the disk write is debounced) — this closes the sweep-and-reversal blind spot the Market Data Reality Check found in the old point-in-time-only Liquidity Engine check, verified by test. Persistence (`state/latest.json`/`state/events.jsonl`) is shared with `scripts/ingest.js` via `server/lib/marketStateStore.js` — one persistence implementation, two callers, backed by a Railway Persistent Volume, verified to survive a real restart. `/api/health` reports an honest `restStatus` (`ok`/`partial`/`error`) plus `expectedTimeframes`/`loadedTimeframes`/`missingTimeframes`/`htfReady` (v0.22.1) — the initial startup fetch retries once for any timeframe that fails, after an earlier production restart revealed HTF timeframes could silently stay missing with no retry.
 - DG Trading Brain V1 (v0.24.0, "Module 11" in `marketBrain.js`): Daniel defined all 17 `rules/strategy.md` chapters directly in one session, and this build implements the real rule-application for the 14 of them that map to an actual runtime module (Philosophy/Examples/Edge Cases are non-code reference chapters — see `DG_RULES_DEFINED`, now `true` for every implemented chapter). HTF Context now spans Monthly → Weekly → Daily → 4H → 1H, plus 15M used only for Confirmation timing. **DG HTF Bias** (Kapitel 1) is a disclosed confluence-vote across Structure/Premium-Discount/Liquidity-Sweeps/fresh-POIs, computed separately for Macro (Monthly/Weekly) and Trading (Daily/4H) per Daniel's own split. **DG Liquidity** (Kapitel 2) adds a relevance tier (external structure + HTF + confluence bonuses, per Daniel's explicit swing-relevance answer — reuses the Structure Engine as-is, no second detection model). **DG Premium/Discount** (Kapitel 3) now derives its range from the most recent external structure swing instead of the full candle series, plus OTE/deep Fibonacci bands. **DG Order Block/Valid FVG/Breaker/Inverse FVG** (Kapitel 4/5/6/7) get a real confluence-count quality score/tier (`low`/`medium`/`high`) using exactly the factor lists from each chapter — Breaker and Inverse FVG detectors are newly implemented (previously stubs). **DG Confirmation** (Kapitel 8) checks 15M engulfing/structure-shift/rejection candles after a POI reaction. **DG Entry** (Kapitel 9) is a real state machine (WAIT/WATCH_BUY/WATCH_SELL/BUY_CONFIRMATION/SELL_CONFIRMATION/BUY_READY/SELL_READY) combining all of the above, with an entry zone from the confirming FVG and a stop loss beyond the supporting liquidity sweep. **DG Exit/Targets** (Kapitel 10) get real PRIMARY/SECONDARY/EXTENDED priority; **DG Risk Management** (Kapitel 11) computes R:R arithmetically once a real entry+SL exist, `positionSize` is always the literal `'MANUAL'` constant. **DG No-Trade** (Kapitel 12) is the WAIT/DATA_NOT_READY logic threaded through all of the above. **DG Sessions** (Kapitel 13) surfaces session-sweep context notes; **DG News** (Kapitel 14) is Daniel's own literal `DATA_SOURCE_NOT_CONNECTED` answer (no economic-calendar source exists yet). Exposed via `GET /api/brain/XAUUSD` and the "DG Trading Brain V1" dashboard card (only populated when an Always-On Server is connected). Still and permanently: no trade execution, no automatic position sizing, no order placement — Decision-Support only, exactly as Kapitel 9/11 require.
 

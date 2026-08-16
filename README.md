@@ -4,6 +4,29 @@ DG OS Alpha - AI Trading Assistant
 Projektvision & Leitplanken: [`docs/VISION.md`](docs/VISION.md).
 Daniels Trading-Regelwerk (Grundlage der Entscheidungslogik): [`rules/strategy.md`](rules/strategy.md).
 
+## Aktueller V1-Stand (v0.36.0)
+
+DG OS läuft als Always-On XAUUSD-Server auf Railway und stellt Health,
+Market- und Trading-Brain-Daten bereit. Trading Brain V1 wendet die 14
+laufzeitrelevanten Kapitel aus `rules/strategy.md` an, nutzt 15M erst nach
+einem realen POI-Touch zur Confirmation und präsentiert den Zustand getrennt
+als `WAIT`, `WATCH BUY/SELL`, `READY BUY/SELL`, `MISSED` oder
+`DATA_NOT_READY`. DG OS bleibt reines Decision Support: keine Broker-Orders,
+kein Auto-Trading und keine automatische Regeländerung.
+
+Lokaler read-only Reality Check mit echten Server-Candles und dem aktuellen
+lokalen Brain-Code:
+
+```sh
+npm run reality-check -- --server https://dg-os-production.up.railway.app
+```
+
+Alternativ akzeptiert das Tool mit `--snapshot <datei>` einen zuvor
+gespeicherten Market-Snapshot. Ein kompakter manueller Daniel-Review-Pack
+entsteht mit `npm run review-export -- --server <url>` standardmäßig unter
+dem gitignorierten `tmp/dg-review/`. Feedback aus diesem Pack wird niemals
+automatisch in Tradingregeln übernommen.
+
 ## Live-Vorschau (Progress)
 
 **https://danielgfxch.github.io/DG-OS/**

@@ -8,6 +8,36 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.36.0] — Reality Harness, Market Story & Reliability
+
+### Neu
+- Dependency-freier Reality Harness für echte Railway-XAUUSD-Candles oder
+  lokale Snapshots; Analyse erfolgt immer mit dem lokalen `marketBrain.js`.
+- Trader-lesbare Presentation-Layer mit `decisionStage`, Direction und
+  unverändertem internem Detailstatus sowie kompakter DG Market Story.
+- Manueller Daniel-Review-Export unter `tmp/dg-review/`; Feedback verändert
+  niemals automatisch Tradingregeln.
+
+### Accuracy & Reliability
+- Candle-Grenze sortiert und dedupliziert Provider-Bars und erklärt entfernte
+  Weekend-/OHLC-/Timestamp-Candles, ohne ruhige echte Bars zu verwerfen.
+- Sweep-Reaction muss strikt nach der Sweep-Kerze liegen; POI-Quality und
+  Entry-Support akzeptieren nur zeitlich belegte vorherige Sweeps.
+- Unbekannte `OBSERVED_AT_START`-Timelines erzeugen weder Setup-Confluence
+  noch neue Live-Sweep-Alerts; rekonstruierte Sweeps bleiben historisch.
+- Dynamische Session-Level erben keine Statusänderung eines alten Preises;
+  Target-Reached-Events benötigen ein echtes Crossing und duplizieren sich
+  nach Restart nicht.
+- Geometrisch widersprüchliche Invalidationswerte werden nicht ausgegeben.
+  Eine alternative kontextspezifische SL-Auswahl bleibt `DG_RULE_QUESTION`.
+
+### Getestet
+- 44 Node-Regressionstests plus Syntax- und Diff-Prüfungen.
+- Read-only Real-Market-Scan gegen den laufenden DG-OS-Railway-Server auf
+  15M, H1, 4H und Daily.
+
+---
+
 ## [0.35.1] — DG Trading Brain V1 Accuracy
 
 ### Verbessert

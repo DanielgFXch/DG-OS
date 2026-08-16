@@ -1,30 +1,33 @@
 # DG OS Market Brain — Architecture
 
-The Market Brain is the **data layer** of DG OS. It knows real, live facts
-about XAUUSD — price, session, ranges, opens — and makes **no trading
-decisions**. The Daniel Decision Engine (built later, once
-[`rules/strategy.md`](../rules/strategy.md) is filled in with Daniel's actual
-rules) will consume Market Brain output. It never talks to the data provider
-directly, and the Market Brain never invents a trading opinion.
+The Market Brain contains the shared XAUUSD fact detectors and DG Trading
+Brain V1 rule application. The Always-On server supplies real candles; both
+server and local Reality Harness use the same `marketBrain.js`. The engine is
+deterministic decision support and never places an order or invents missing
+market facts.
+
+> Current-status note (v0.36.0): Daniel has defined all strategy chapters and
+> the 14 runtime chapters are implemented. Older historical sections below
+> that say “all chapters TODO”, “always WAIT”, “Confirmation not built”, or
+> “Always-On not deployed” describe pre-v0.24 milestones and are superseded by
+> this note, `CLAUDE.md`, and the current code. `rules/strategy.md` remains the
+> trading source of truth and is never rewritten by engineering automation.
 
 Full vision context: [`VISION.md`](VISION.md).
 
 ## DG methodology — technical foundation, not the finished DG version
 
-**Every module below is currently a generic/structural implementation, not
-Daniel's DG-specific version of that concept.** Per the permanent project
+The fact detectors remain mechanical, while DG-specific relevance, context,
+confirmation, entry, target, risk and no-trade interpretation is applied by
+Trading Brain V1. Per the permanent project
 rule in [`CLAUDE.md`](../CLAUDE.md#dg-methodology--not-ict-not-generic-smart-money):
 DG OS digitizes Daniel Gomes' own way of reading the market — not ICT, not
 generic Smart Money Concepts, not a TradingView-style indicator set. The
 Liquidity Engine, Fair Value Gap detector, Order Block detector, and HTF
-Bias documented here are real, working technical infrastructure — genuine
-detection on genuine data — built so each one can be adapted step by step
-into **DG Liquidity**, **DG Valid FVG**, **DG Order Block**, and **DG HTF
-Bias** once Daniel defines the exact rules for each in
-[`rules/strategy.md`](../rules/strategy.md). Until then: never invent or
-approximate a generic trading rule as a stand-in for an undefined DG rule —
-prepare the architecture and wait, same as the Decision Engine already
-does.
+Bias documented here are real, working technical infrastructure. Their DG
+interpretation must stay traceable to [`rules/strategy.md`](../rules/strategy.md).
+If a required threshold or choice is not defined, mark `DG_RULE_QUESTION`
+instead of tuning or guessing.
 
 ## DG Learning Philosophy — not a trading AI
 
@@ -93,19 +96,20 @@ Market Brain              (data layer — this document)
 ├── Premium / Discount     done   — Module 4
 ├── HTF Bias               done   — Module 5 (structural proxy only)
 ├── Liquidity              done   — Module 6 (level status, no decision/alert)
-├── POIs                   in progress — Module 7, Stage 2/4 (Fair Value Gap + Order Block detection; 6 types still planned)
-└── Structure              in progress — Module 9 (Swing High/Low, HH/HL/LH/LL, BOS/CHOCH, internal + external; pure detection, no decision)
+├── POIs                   V1 — FVG, Order Block, Breaker and iFVG with relevance/mitigation/reaction
+└── Structure              done — Swing High/Low, HH/HL/LH/LL, BOS/CHOCH, internal + external
 
-Daniel Brain               (applies rules/strategy.md — in progress)
-├── DG Confidence Engine   in progress — Module 8 (contribution-score architecture; no decision/alerts/entries yet)
-├── Decision Engine        in progress — Module 10, "Daniel Decision Engine" (WAIT/WATCH/READY/INVALID architecture; always WAIT today, zero DG rules defined)
+Daniel Brain               (applies rules/strategy.md — V1 active)
+├── DG Relevance           V1 — disclosed factor counts and LOW/MEDIUM/HIGH tiers
+├── Decision Engine        V1 — WAIT/WATCH/READY/MISSED/DATA_NOT_READY plus detailed internal status
 ├── Scenario Engine        planned
 └── Risk Engine            planned
 
 System
 ├── Event Store            done — Phase 1, "Core Foundation" (git-committed state/ + typed event log, see below)
-├── Alerts                 planned — server-side push, beyond the manual Telegram button
-├── Reports                planned
+├── Alerts                 V1 — transition/dedupe/cooldown event engine
+├── Market Story           V1 — deterministic trader-readable briefing
+├── Reality/Review tools   V1 — real-server replay plus manual Daniel review packs
 ├── Learning                planned
 └── Statistics              planned
 ```
@@ -228,12 +232,10 @@ happening *to* a level or a zone — touched, swept, reacted to, confirmed —
 is a trading event. `events.js`'s `EVENT_CATEGORY` map is the single place
 that decides this, so a consumer (the future Alert Layer, or any "show me
 the relevant stream" query) filters by category instead of a hand-maintained
-exclusion list. Every event type Daniel listed is implemented except
-`SETUP_FORMING`/`SETUP_CONFIRMED`/`SETUP_INVALIDATED`/`TARGET_REACHED` —
-those are registered in the vocabulary (so the schema is complete) but have
-no emitter, because a "setup" is inherently a `rules/strategy.md` concept
-and every chapter is still TODO; emitting them today would mean inventing
-the rule that decides what a setup is.
+exclusion list. The V1 event path additionally emits actual status
+transitions, confirmation progression, setup invalidation, liquidity
+sweep/reaction and primary-target crossing. Cold-start historical sweeps are
+context only and never advertised as new live events.
 
 **Two new generic candle-pattern detectors**, added to `marketBrain.js`
 under the same "structural fact, not a DG rule" precedent as the existing
@@ -277,26 +279,20 @@ and `state/events.jsonl` are real, queryable, git-tracked files (and
 incidentally end up deployed to Pages alongside `data/market.json`, same
 trust model), but nothing in the dashboard reads them yet.
 
-## Robustness pattern: "scan forward for a real candle"
+## Robustness pattern: one central candle-quality boundary
 
 TwelveData emits a daily/weekly/monthly bar for every calendar period,
 **including periods with no real trading** (e.g. weekend days get a flat,
 carried-forward placeholder candle instead of being omitted). Naively trusting
 `values[0]` produces a misleadingly flat range around any period boundary.
 
-Every OHLC fetch in the Market Brain instead fetches a few recent bars
-(`outputsize` > 1) and scans forward for the first one whose range is a
-meaningful fraction of price:
-
-```
-(high - low) / close > 0.001   # i.e. > 0.1% — anything under this is treated
-                                # as a non-trading placeholder, not a real bar
-```
-
-This is intentionally provider-agnostic and period-agnostic — the same jq
-filter is reused for daily, weekly, and monthly candles (see
-`market-data.yml`). Any future module that fetches a new OHLC period should
-reuse this exact pattern rather than assuming index 0 is always valid.
+All production detectors use `filterUsableMarketCandles()` in
+`marketBrain.js`. It validates timestamp/OHLC geometry, removes closed-weekend
+and current pre-open Sunday placeholders, preserves the real Sunday open and
+legitimate quiet candles, then sorts and deduplicates timestamps. It does not
+use a fixed minimum-range threshold. `server/lib/twelveDataRest.js` applies
+the same boundary immediately after fetch; detectors apply it defensively as
+well. Any future candle consumer must reuse this boundary.
 
 ## Session Engine (Module 3) — reusable session model
 
@@ -578,7 +574,7 @@ build-order note above the system tree) but a peer of Liquidity/POIs, not
 part of Daniel Brain. Foundation for DG HTF Bias, the Daniel Decision
 Engine, the Learning Engine, Reports, and Alerts — but this build is
 **exclusively structure detection**. No trading decision, no alert, no DG
-rule (every `rules/strategy.md` chapter is still TODO).
+rule. Trading interpretation is performed later by Trading Brain V1.
 
 **Structure object shape** — every element, uniform regardless of type,
 assembled by `createStructureElement()`:
@@ -651,19 +647,18 @@ detected element — label, price, confidence, session/bias context, status
 pill — most recent first. "Noch keine Struktur erkannt." only appears when
 genuinely empty.
 
-## DG Confidence Engine (Module 8) — architecture only, the first piece of Daniel Brain
+## DG Confidence Engine (Module 8) — legacy pre-V1 architecture
 
 Sits directly above the Market Brain, not inside it — the first module of
 the "Daniel Brain" tier from the system tree. Per the permanent [DG
 methodology rule](../CLAUDE.md#dg-methodology--not-ict-not-generic-smart-money),
-this is explicitly **not** a trading decision, **not** an alert, **not** an
-entry, and it does not invent a weighting scheme pretending to be Daniel's
-real rules — those don't exist yet. What it does today: give every Market
+this legacy layer is explicitly **not** a trading decision, **not** an alert,
+and **not** an entry. Trading Brain V1 now applies Daniel's defined runtime
+rules separately. This older module gives every Market
 Brain module one uniform way to report *"how much clear, usable structural
 signal do I currently have"* — nothing about a trade direction, nothing
-about buy/sell. That's honestly answerable with zero DG rules defined, and
-it's exactly the shape the later Daniel Decision Engine
-(WAIT/WATCH/READY/HIGH PROBABILITY) will consume once those rules exist.
+about buy/sell. It remains for compatibility and should not be mistaken for
+the current V1 decision output.
 
 **Contribution shape** — every module's contribution, uniform regardless of
 source:
@@ -759,17 +754,16 @@ conditions met), INVALID (a previously-tracked setup the rules ruled out) —
 without ever computing WATCH/READY/INVALID today, since no chapter of
 `rules/strategy.md` is defined yet to justify them.
 
-### Why the state is always WAIT right now
+### Historical note: why the pre-V1 state was always WAIT
 
 The Decision Engine must never own a trading rule — it only reads
 `rules/strategy.md` (via `DG_RULES_DEFINED`, a hand-maintained mirror of
 that file's Status-Übersicht — flip a chapter to `true` only when Daniel
 has actually filled it in, exactly like `POI_TYPE_DEFS.implemented`) and
 the mechanical output of the other modules. Since every chapter is still
-`TODO`, there is currently no rule to apply — so the engine can only ever
-honestly output `WAIT`, with `unmetConditions` explicitly naming
-`rules/strategy.md` as the reason. That is not a placeholder shortcut; with
-zero DG rules defined, `WAIT` is the only truthful answer.
+`TODO`, the engine could only output `WAIT`. This section describes the
+legacy Module-10 state. Current Trading Brain V1 uses the defined chapters
+and exposes its result under `/api/brain/XAUUSD`.
 
 ### Module orchestration
 
@@ -853,9 +847,8 @@ computes nothing new about the market itself, and invents no DG rule.
     outside it in the zone's own direction. Stored as `poi.reaction`
     (`{at, reason}` or `null`). Deliberately **not** named "DG Confirmation"
     or any other DG term — that would imply a defined `rules/strategy.md`
-    rule, and the Confirmation chapter is still TODO. It's the same honesty
-    level as `status` (fresh/mitigated): a structural fact DG OS can observe
-    mechanically, with no claim about what it means.
+    rule. It remains a structural fact; `computeConfirmation()` separately
+    applies the defined 15M confirmation timeline after actual POI touch.
 
 ### UI
 
@@ -871,8 +864,8 @@ Meldungen. `renderOverview()` populates `#overviewLevels`,
 > tick and a REST candle refresh are genuinely different events), and the
 > card can optionally connect to a deployed Always-On Market Server. Full
 > detail: [`docs/ALWAYS_ON_SERVER.md`](ALWAYS_ON_SERVER.md)'s "Phase D"
-> section. The description below still applies to the fallback path (no
-> server configured), which is what production actually runs today.
+> section. The description below still applies to the fallback path when no
+> server is configured; production now uses the Always-On Railway server.
 
 New "System Status" card, placed at the very top of the dashboard —
 Daniel's explicit ask, before starting the DG Trading Brain phase: always
@@ -987,27 +980,27 @@ Modules 4-10.
 | 4 — Premium/Discount | done | *(client-derived, not in market.json — see above)* |
 | 5 — HTF Bias | done | *(client-derived, not in market.json — see above)* |
 | 6 — Liquidity | done | *(client-derived, not in market.json — see above)* |
-| 7 — POI Engine | Stage 2/4 (Fair Value Gap + Order Block detection) | `candles.h1` (array of `{datetime, open, high, low, close}`, reused from the Session Engine fetch) |
-| 8 — DG Confidence Engine | architecture only | *(client-derived, not in market.json — see above)* |
+| 7 — POI Engine | V1 FVG/OB/Breaker/iFVG with mitigation/reaction/relevance | Multi-timeframe candles, Daily→H1 |
+| 8 — DG Confidence Engine | legacy compatibility layer | *(client-derived, not in market.json — see above)* |
 | 9 — Structure Engine | pure structure detection | *(client-derived from `candles.h1`, not in market.json — see above)* |
-| 10 — Daniel Decision Engine | architecture only, always WAIT | *(client-derived, not in market.json — see above)* |
+| 10/11 — DG Trading Brain V1 | active WAIT/WATCH/READY/MISSED/DATA_NOT_READY | `/api/brain/XAUUSD` |
 
 Every field is either real (fetched, with a freshness check) or absent —
 never fabricated. The frontend must keep showing "OFFLINE DEMO" / `—` for
 anything it can't back with real data, per the project's non-negotiable
 build rule (see `CLAUDE.md`).
 
-## Engine roadmap (future modules, not yet built)
+## Engine roadmap after V1 validation
 
 Once the Market Brain is complete and stable, later engines will be built
 **on top of it**, never bypassing it to fetch data on their own:
 
-- **POI Engine**: remaining Stage 2 detectors (Breaker, iFVG, Mitigation Block, Rejection Block, Supply/Demand Zone), then Stage 3 (Bewertung) and Stage 4 (Verbindung mit der Daniel Decision Engine) — see the Module 7 section above
+- **POI Engine**: improve only through Daniel-reviewed real cases; remaining zone types are not automatic V1 scope
 - **DG Confidence Engine**: more contributors as new Market Brain modules ship (each just adds one `CONFIDENCE_CONTRIBUTORS` entry) — Structure Engine is a natural next contributor, not wired in yet — see the Module 8 section above
 - **Structure Engine**: DG HTF Bias will eventually be able to read `MarketBrain.structure.internalBias`/`externalBias` directly once its `rules/strategy.md` chapter is defined — see the Module 9 section above
-- **Daniel Decision Engine**: the actual rule-application logic — once a `rules/strategy.md` chapter flips to defined, `DG_RULES_DEFINED` is updated and `computeDecisionEngine()` gains real `metConditions`/`unmetConditions` evaluation for that chapter, moving the state beyond permanent WAIT for the first time — see the Module 10 section above
-- **Confirmation Engine** — entry-trigger detection (engulfing, displacement, structure breaks from Module 9, …)
-- **Alert Engine** — decides *when* something is worth a Telegram push (not just "sends messages") — a future consumer of `MarketBrain.decision`
+- **Decision explainability**: expose existing factors consistently as met/missing/context without changing rule logic
+- **Confirmation**: expand only when Daniel defines additional timeframe rules; 15M V1 exists
+- **Alert Engine**: continue reducing fatigue and contradictions on the existing event path
 - **Learning Engine** — statistics/pattern recognition over historical performance, recommendations only, never redefines rules itself — a future consumer of `MarketBrain.decision`, governed by the "DG Learning Philosophy" section above
 - **Performance Engine** — win-rate, RR, reports (daily/weekly/monthly/quarterly/yearly)
 

@@ -39,6 +39,13 @@ automatically to every module below, and is documented identically in
 
 ## Where things stand
 
+> **Current v0.36.0 status:** The tables and milestone narrative below were
+> originally written before Trading Brain V1. Today all 17 strategy chapters
+> are defined, 14 runtime chapters are implemented, the Always-On Railway
+> server is live, and the V1 Decision Engine can produce WAIT/WATCH/READY/
+> MISSED/DATA_NOT_READY. The current priority is real-market accuracy,
+> relevance, explainability and Daniel review—not architecture-only modules.
+
 **Market Brain (data layer) — done or in progress, real data throughout:**
 
 | Module | Status |
@@ -49,15 +56,15 @@ automatically to every module below, and is documented identically in
 | 4 — Premium/Discount | done |
 | 5 — HTF Bias | done (structural proxy) |
 | 6 — Liquidity Engine | done (level status, no decision) |
-| 7 — POI Engine | in progress — Fair Value Gap + Order Block detection (Stage 2/4); Breaker, iFVG, Mitigation Block, Rejection Block, Supply/Demand Zone still to build |
+| 7 — POI Engine | V1 — FVG, Order Block, Breaker and iFVG with mitigation/reaction/relevance; remaining zone types are not V1 priorities |
 | 9 — Structure Engine | done — Swing High/Low, HH/HL/LH/LL, BOS/CHOCH, internal + external |
 
-**Daniel Brain (applies `rules/strategy.md`) — architecture built, zero DG rules defined yet:**
+**Daniel Brain (applies `rules/strategy.md`) — V1 active:**
 
 | Module | Status |
 |---|---|
 | 8 — DG Confidence Engine | architecture done — contribution-score aggregation, no trading opinion |
-| 10 — Daniel Decision Engine | architecture done — WAIT/WATCH/READY/INVALID data model, always WAIT today since `rules/strategy.md` is entirely `TODO` |
+| 10 — Daniel Decision Engine | V1 — detailed internal states plus WAIT/WATCH/READY/MISSED/DATA_NOT_READY presentation |
 
 **System layer:**
 
@@ -66,20 +73,19 @@ automatically to every module below, and is documented identically in
 | DG Overview (dashboard aggregation) | done — at-a-glance session/day/week levels, structure bias, open H1 zones, text feed for sweeps + zone reactions; reads existing modules only, no new detection |
 | Event Store & Ingest Pipeline | done — Phase 1 "Core Foundation" (v0.20.0): `marketBrain.js`/`events.js`/`scripts/ingest.js`, git-committed `state/latest.json` + `state/events.jsonl`, Market-Context-vs-Trading-Event classification. GitHub Actions remains a periodic fallback — see the Always-On Market Server row below for the primary path |
 | System Status (Version/Freshness/Source) | done (v0.21.0, extended v0.22.0) — `package.json` as version single source of truth; Price and Candle freshness now tracked separately (LIVE only when the WebSocket is actually connected, never off a stale timestamp), optionally sourced from a deployed Always-On Market Server. See `docs/MARKET_BRAIN.md`'s "System Status" section and `docs/ALWAYS_ON_SERVER.md`'s "Phase D" |
-| Always-On Market Server | **built and tested locally, not deployed (v0.22.0)** — `server/`: TwelveData REST (7 HTF-priority timeframes, Monthly→15M) + TwelveData WebSocket (continuous price, server-side) + the existing `marketBrain.js`/`events.js` engine (no parallel engine) + HTTP API (`/api/health`, `/api/market/XAUUSD`, `/api/events/XAUUSD`) + candle-close-aligned refresh scheduling. Closes the sweep-and-reversal blind spot found in the Market Data Reality Check by diffing every price tick immediately. Hosting comparison (no booking done): `docs/ALWAYS_ON_HOSTING.md`. Full architecture: `docs/ALWAYS_ON_SERVER.md` |
+| Always-On Market Server | **deployed and live on Railway** — TwelveData REST (7 HTF-priority timeframes, Monthly→15M), WebSocket price, shared `marketBrain.js`/`events.js`, persistent memory and read-only Health/Market/Events/Brain APIs. Full architecture: `docs/ALWAYS_ON_SERVER.md` |
 | TradingView Integration | plan only (v0.21.0), webhook route stubbed (`501`) in the Always-On Server (v0.22.0) — hybrid architecture (TwelveData = continuous OHLC, TradingView = strategic events via webhook) designed and documented, no validation/schema/event-store logic built yet: blocked on Daniel choosing and deploying a host. Full plan: [`docs/TRADINGVIEW_INTEGRATION_PLAN.md`](docs/TRADINGVIEW_INTEGRATION_PLAN.md) |
 | Alerts, Reports, Learning, Statistics | not started — Alerts is the first natural consumer of the Event Store above |
 
 (Module numbers track build order, not architectural layer — see the note
 above the system tree in `docs/MARKET_BRAIN.md`.)
 
-## Current phase: Knowledge Mode
+## Current phase: V1 accuracy and Daniel validation
 
-DG OS's technical infrastructure (Market Brain Modules 1-9, Daniel Brain
-Modules 8 and 10) is now largely complete. As of this build, the project has
-permanently entered **Phase 2: Knowledge Mode** — the formal name for what
-was previously called "Wissensmodus." **The focus is no longer new modules.
-The focus is digitizing Daniel's trading knowledge.**
+DG OS's core V1 infrastructure and rule application exist. The focus is no
+longer placeholder architecture or digitizing empty chapters; it is validating
+the implemented interpretation against real XAUUSD situations and comparing
+DG OS output with Daniel's judgement.
 
 New modules are only built from now on when they are directly required to
 implement a DG rule Daniel has actually defined — not proactively, not
@@ -92,18 +98,15 @@ never as a standalone build.
 
 Permanent priority order for this phase, every session:
 
-1. Document Daniel's thinking (`rules/strategy.md`, starting with Chapter 0 — DG Philosophy).
-2. Digitize his rules (fill in the remaining chapters).
-3. Implement his rules (adapt the corresponding module — see "Rule-by-rule activation" below).
-4. Test against real market data.
-5. Measure performance.
-6. Generate improvement recommendations (per the DG Learning Philosophy above — recommendations only).
-7. Never change a rule on DG OS's own initiative.
+1. Run the Reality Harness against real candles.
+2. Review a small set of relevant POIs, sweeps and confirmations with Daniel.
+3. Record unclear decisions as `DG_RULE_QUESTION`.
+4. Correct only objective implementation errors or Daniel-approved rules.
+5. Keep reports quiet, current and internally consistent.
+6. Never change a rule on DG OS's own initiative.
 
-The goal: DG OS gets more intelligent every week — not because new features
-appear, but because its understanding of how Daniel actually trades gets
-more precise. See `rules/strategy.md`'s Status-Übersicht for exactly which
-of its 17 chapters (0-16) are still `TODO`.
+The goal remains that DG OS gets more precise through Daniel-vs-DG-OS review,
+not through self-modifying rules or feature volume.
 
 ## DG Knowledge Assistant — active support while digitizing Daniel's rules
 
@@ -129,30 +132,16 @@ identically in
 [`CLAUDE.md`](CLAUDE.md#dg-knowledge-assistant--active-support-while-digitizing-daniels-rules)
 and [`docs/MARKET_BRAIN.md`](docs/MARKET_BRAIN.md).
 
-## Next phases (gated behind Knowledge Mode — see above)
+## Next phases
 
-1. **Rule-by-rule activation** — as each `rules/strategy.md` chapter is
-   filled in, the corresponding Market Brain module is adapted from its
-   generic/structural placeholder to Daniel's real DG rule (e.g. DG Valid
-   FVG replacing the current generic Fair Value Gap detector), and
-   `DG_RULES_DEFINED` in `app.js` is updated so the Daniel Decision Engine
-   can evaluate that chapter's conditions for the first time.
-2. **Remaining POI Engine detectors** — Breaker, Inverse FVG, Mitigation
-   Block, Rejection Block, Supply/Demand Zone (Stage 2), then Stage 3
-   (Bewertung) and Stage 4 (wiring into the Decision Engine) — built only
-   once the corresponding DG rule needs them, per Knowledge Mode.
-3. **Confirmation Engine** — entry-trigger detection, once its
-   `rules/strategy.md` chapter exists.
-4. **System layer**, once the Decision Engine can reach a real (non-WAIT)
-   state for at least one chapter:
-   - **Alert Engine** — decides *when* something is worth a Telegram push,
-     reading `MarketBrain.decision`.
-   - **Reports** — daily/weekly/monthly/quarterly/yearly performance
-     reports, win-rate & RR statistics.
-   - **Learning Engine** — pattern recognition and performance analysis per
-     the DG Learning Philosophy above: statistics and recommendations only,
-     never rule changes.
-   - **Replay** — historical `DecisionState` playback for review.
+1. Build a Daniel-reviewed library of compact real XAUUSD cases.
+2. Turn Daniel's review feedback into explicit rule questions or approved
+   corrections—never automatic rule changes.
+3. Strengthen replay/no-look-ahead and data-health invariants.
+4. Add further POI types or lower timeframes only after Daniel explicitly
+   defines and prioritizes them.
+5. Reports/Learning remain later phases: recommendations only, never rule
+   changes or automatic execution.
 5. **v1.0 DG OS Alpha** — once the above is real, tested, and running on
    live data with at least the core `rules/strategy.md` chapters (DG
    Philosophy, DG HTF Bias, DG Liquidity, DG Order Block, DG Valid FVG, DG

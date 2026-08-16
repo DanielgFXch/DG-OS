@@ -8,6 +8,61 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.31.0] — DG OS Chat: Konversationelle Telegram-Anbindung
+
+Auf Daniels Vision ("ich steh auf und sage: Gomez, wie sieht der aktuelle
+Markt aus im Gold?"): ein erster echter Konversations-Layer. Daniel schreibt
+dem Telegram-Bot eine Frage, DG OS antwortet mit real berechneten Daten aus
+dem DG Trading Brain V1 — kein LLM-Call, keine erfundene Markteinschätzung,
+exakt dieselbe Ehrlichkeits-Regel wie überall sonst im System. Push-Alerts
+(bestehender Mechanismus) bleiben unverändert zusätzlich bestehen.
+
+### Neu: `answerMarketQuestion()` (`marketBrain.js`)
+- Deterministisches Keyword-Routing (kein LLM) auf real bereits vorhandene
+  Report-Sektionen: Liquidity, POIs/FVG/Order Blocks, Targets, Entry-
+  Status/Signal, News/Fundamental (ehrlich `DATA_SOURCE_NOT_CONNECTED`,
+  Kapitel 14 — keine erfundene Einschätzung zur Weltlage), Fallback auf
+  das volle Briefing bei unerkannter Frage — nie stille Nicht-Antwort.
+- `generateDGBriefing()` intern in wiederverwendbare Sektionen zerlegt
+  (`buildLiquiditySection`, `buildRecentEventsSection`, `buildPOISection`,
+  `buildTargetsSection`, `buildStatusSection`) — eine Wahrheitsquelle pro
+  Sektion für Briefing UND Chat, keine Duplikation.
+
+### Neu: Telegram-Webhook (`server/lib/telegramAssistant.js`, `server/api.js`)
+- `POST /api/telegram/webhook` — empfängt eingehende Telegram-Nachrichten,
+  antwortet über `answerMarketQuestion()` gegen den echten, aktuellen
+  Trading-Brain-Snapshot.
+- **Datenschutz: fail closed, nicht fail open.** Ohne konfigurierte
+  `TELEGRAM_CHAT_ID` antwortet der Bot niemandem — echte Marktdaten gehen
+  nie an einen fremden Chat, der den Bot zufällig findet. Optionaler
+  `TELEGRAM_WEBHOOK_SECRET`-Header-Check gegen gefälschte Aufrufe.
+- Antwortet Telegram immer mit 200 (auch bei kaputtem Body/Sende-Fehler) —
+  Telegram würde eine Nicht-200-Antwort sonst endlos wiederholt zustellen.
+- `scripts/setTelegramWebhook.js` — einmaliges Setup-Skript, das Telegram
+  die Server-URL mitteilt (README dokumentiert die genauen Schritte).
+
+### Bewusst NICHT gebaut (siehe Ansage an Daniel)
+- **Fundamentale/News-Analyse**: braucht eine echte, ggf. kostenpflichtige
+  News-/Wirtschaftskalender-Quelle — Daniels Entscheidung, nicht heute
+  Nacht autonom festgelegt. Bleibt ehrlich `DATA_SOURCE_NOT_CONNECTED`.
+- **Automatisierte Order-Ausführung**: laut Daniel selbst "nur für die
+  Zukunft gedacht" — bleibt komplett außen vor, passt zur permanenten
+  Regel, dass DG OS nie selbst Trades platziert.
+
+### Getestet
+77 Tests in `test_dg_rules_v1.js` (8 neu: Chat-Intent-Routing, ehrliche
+Nicht-Antworten), 12 neue Tests in `test_telegram_chat.js` (Privacy-
+Fail-Closed, Chat-ID-Filter, Non-Text-Updates, HTTP-Route inkl. Secret-
+Header und kaputtem JSON-Body), voller End-to-End-Servertest weiterhin
+grün.
+
+### Geänderte/neue Dateien
+`marketBrain.js`, `server/api.js`, `server/index.js`,
+`server/lib/telegramAssistant.js` (neu), `scripts/setTelegramWebhook.js`
+(neu), `README.md`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.30.0] — V1 Prioritäten: Liquidity → Sweep → Reaction → FVG/OB → Meldung
 
 Auf Daniels expliziten Auftrag "DG OS – V1 PRIORITÄTEN VEREINFACHEN":

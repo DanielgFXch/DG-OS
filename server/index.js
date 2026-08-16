@@ -119,9 +119,18 @@ async function main() {
     marketState.refreshQuote().catch(err => console.error('[server] quote refresh failed:', err.message));
   }, QUOTE_REFRESH_MS);
 
-  const apiServer = createApiServer(marketState);
+  // DG OS Chat (Telegram) — optional, same "configure once it's available"
+  // pattern as TWELVEDATA_API_KEY. Undefined until Daniel adds these as
+  // Railway env vars (separate from the GitHub Actions secrets of the same
+  // name used by .github/workflows/telegram-heartbeat.yml) — the webhook
+  // route still responds, it just can't send a reply without a token yet.
+  const apiServer = createApiServer(marketState, {
+    token: process.env.TELEGRAM_BOT_TOKEN,
+    chatId: process.env.TELEGRAM_CHAT_ID,
+    webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET
+  });
   apiServer.listen(PORT, () => {
-    console.log(`[server] API listening on :${PORT} — GET /api/health, /api/market/XAUUSD, /api/events/XAUUSD, /api/brain/XAUUSD`);
+    console.log(`[server] API listening on :${PORT} — GET /api/health, /api/market/XAUUSD, /api/events/XAUUSD, /api/brain/XAUUSD, POST /api/telegram/webhook`);
   });
 
   function shutdown() {

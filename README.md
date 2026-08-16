@@ -24,6 +24,21 @@ Token und Chat-ID werden ausschließlich lokal im Browser (`localStorage`) gespe
 
 Mit der Option "Auto-Senden bei SELL-Signal" schickt DG OS das Briefing automatisch an Telegram, sobald Sweep + Bearish Engulfing gleichzeitig erkannt werden.
 
+### DG OS Chat — mit dem Bot reden (braucht den Always-On Server)
+
+Zusätzlich zu den Push-Alerts kannst du dem Bot direkt Fragen schreiben ("Gomez, wie sieht der Markt aus?", "wie sieht die Liquidity aus?", "was ist mein Ziel?") und bekommst eine Antwort, die ausschließlich aus den echten, aktuellen DG Trading Brain V1 Daten gebaut wird (`marketBrain.js`'s `answerMarketQuestion()`) — kein LLM-Call, keine erfundene Markteinschätzung. Fragen zu News/Weltlage/Fundamentaldaten beantwortet DG OS ehrlich mit `DATA_SOURCE_NOT_CONNECTED` (Kapitel 14), solange keine echte News-Quelle angebunden ist.
+
+Das braucht den [Always-On Market Server](docs/ALWAYS_ON_SERVER.md) (nicht die statische GitHub-Pages-Seite). Einmaliger Setup, sobald der Server läuft:
+
+1. Auf Railway (oder wo auch immer der Server läuft) die Umgebungsvariablen `TELEGRAM_BOT_TOKEN` und `TELEGRAM_CHAT_ID` setzen (eigene Werte, unabhängig von den GitHub-Actions-Secrets gleichen Namens). Optional zusätzlich `TELEGRAM_WEBHOOK_SECRET` (ein selbst gewähltes Geheimwort) für zusätzliche Absicherung.
+2. Einmalig lokal ausführen, um Telegram die Server-URL mitzuteilen:
+   ```
+   TELEGRAM_BOT_TOKEN=... node scripts/setTelegramWebhook.js https://<deine-server-url> [dasselbe TELEGRAM_WEBHOOK_SECRET, falls gesetzt]
+   ```
+3. Fertig — Nachrichten an den Bot werden ab sofort beantwortet.
+
+Aus Datenschutzgründen antwortet DG OS Chat ausschließlich auf Nachrichten aus der konfigurierten `TELEGRAM_CHAT_ID` — ist sie nicht gesetzt, antwortet der Bot niemandem (fail closed, nie ein öffentlicher Bot mit echten Marktdaten).
+
 ## Live-Marktdaten (XAUUSD)
 
 Die Karte "XAUUSD Live" zeigt echten Kurs, Daily Open/High/Low und Change – gespeist über [TwelveData](https://twelvedata.com/) (kostenloser Tarif reicht).

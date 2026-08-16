@@ -2026,11 +2026,12 @@ function recentLiquidityEventLines(primaryLiquidity){
 // Exact section layout from his spec: STATUS / LIQUIDITY (Oben/Unten,
 // status per level) / RECENT EVENTS / RELEVANT POIs (Bullish/Bearish) /
 // WAITING FOR. No artificial trade direction is ever forced.
-function generateDGBriefing(brain,now){
-  const decision=brain.decision,report=brain.report,liquidity=brain.liquidity||[];
-  const greeting=`${timeOfDayGreeting(now)} Gomes.`;
-
-  const primaryLiquidity=liquidity.filter(isV1PrimaryLiquidity);
+// Section builders — factored out of generateDGBriefing so the DG OS Chat
+// (answerMarketQuestion(), below) can answer a narrow question ("wie sieht
+// die Liquidity aus?") with exactly the same real section instead of always
+// dumping the full briefing. One source of truth per section, two callers.
+function buildLiquiditySection(liquidity){
+  const primaryLiquidity=(liquidity||[]).filter(isV1PrimaryLiquidity);
   const above=primaryLiquidity.filter(l=>l.type==='high'&&l.status!=='invalid').sort((a,b)=>a.price-b.price).slice(0,4);
   const below=primaryLiquidity.filter(l=>l.type==='low'&&l.status!=='invalid').sort((a,b)=>b.price-a.price).slice(0,4);
   const liquidityLine=l=>{
@@ -2038,34 +2039,116 @@ function generateDGBriefing(brain,now){
     if(l.status==='sweeped'&&l.reaction) return`${base}\n  → Reaction ${l.reaction.status==='REACTED'?'detected':'not yet detected'}`;
     return base;
   };
+  const lines=['LIQUIDITY','','Oben:'];
+  lines.push(above.length?above.map(liquidityLine).join('\n'):'- keine relevante Liquidity oberhalb.','');
+  lines.push('Unten:');
+  lines.push(below.length?below.map(liquidityLine).join('\n'):'- keine relevante Liquidity unterhalb.');
+  return{text:lines.join('\n'),primaryLiquidity};
+}
 
+function buildRecentEventsSection(primaryLiquidity){
   const recentEvents=recentLiquidityEventLines(primaryLiquidity);
+  return`RECENT EVENTS\n\n${recentEvents.length?recentEvents.map(e=>`- ${e}`).join('\n'):'- keine.'}`;
+}
 
+function buildPOISection(report){
   const poiLine=p=>`- ${p.type==='fvg'?'FVG':p.type==='orderBlock'?'Order Block':p.type==='ifvg'?'iFVG':'Breaker'} ${p.range} (${p.timeframe}) – ${p.quality.toUpperCase()}`;
   const buyAreas=(report.freshBullishPOIs||[]).slice(0,3);
   const sellAreas=(report.freshBearishPOIs||[]).slice(0,3);
+  const lines=['RELEVANT POIs','','Bullish:'];
+  lines.push(buyAreas.length?buyAreas.map(poiLine).join('\n'):'- keine.','');
+  lines.push('Bearish:');
+  lines.push(sellAreas.length?sellAreas.map(poiLine).join('\n'):'- keine.');
+  return lines.join('\n');
+}
+
+function buildTargetsSection(decision){
+  const targets=(decision.targets||[]).slice(0,4);
+  const priorityBadge={PRIMARY:'①',SECONDARY:'②',EXTENDED:'③'};
+  const lines=['TARGETS',''];
+  lines.push(targets.length?targets.map(t=>`- ${t.direction==='up'?'▲':'▼'} ${priorityBadge[t.priority]||''} ${fmtPrice(t.price)} — ${t.reason}`).join('\n'):'- keine erkannt.');
+  return lines.join('\n');
+}
+
+function buildStatusSection(decision){
+  return`STATUS\n\n${ENTRY_STATUS_HEADLINE[decision.status]||decision.status}\n${decision.reasons&&decision.reasons.length?decision.reasons[0]:''}`.trim();
+}
+
+function generateDGBriefing(brain,now){
+  const decision=brain.decision,report=brain.report,liquidity=brain.liquidity||[];
+  const greeting=`${timeOfDayGreeting(now)} Gomes.`;
+  const liquiditySection=buildLiquiditySection(liquidity);
 
   const lines=[];
   lines.push(`🧠 DG OS – XAUUSD`,'');
   lines.push(greeting,'');
   lines.push('STATUS');
   lines.push(ENTRY_STATUS_HEADLINE[decision.status]||decision.status,'');
-  lines.push('LIQUIDITY','');
-  lines.push('Oben:');
-  lines.push(above.length?above.map(liquidityLine).join('\n'):'- keine relevante Liquidity oberhalb.','');
-  lines.push('Unten:');
-  lines.push(below.length?below.map(liquidityLine).join('\n'):'- keine relevante Liquidity unterhalb.','');
-  lines.push('RECENT EVENTS','');
-  lines.push(recentEvents.length?recentEvents.map(e=>`- ${e}`).join('\n'):'- keine.','');
-  lines.push('RELEVANT POIs','');
-  lines.push('Bullish:');
-  lines.push(buyAreas.length?buyAreas.map(poiLine).join('\n'):'- keine.','');
-  lines.push('Bearish:');
-  lines.push(sellAreas.length?sellAreas.map(poiLine).join('\n'):'- keine.','');
+  lines.push(liquiditySection.text,'');
+  lines.push(buildRecentEventsSection(liquiditySection.primaryLiquidity),'');
+  lines.push(buildPOISection(report),'');
   lines.push('WAITING FOR','');
   lines.push(`- ${waitingForText(decision)}`);
 
   return lines.join('\n');
+}
+
+// ---------------------------------------------------------------------------
+// DG OS Chat — "ich steh auf und sage: Gomes, wie sieht der Markt aus?"
+// Daniel's explicit ask: a conversational layer, reachable over Telegram
+// (see server/lib/telegramAssistant.js), that answers in his own trading
+// language. Deliberately NOT an LLM call — DG OS never fabricates a market
+// opinion, so every answer here is built from the exact same real,
+// already-computed DG Trading Brain V1 facts as generateDGBriefing/report,
+// just routed to the section the question actually asked about. An
+// unrecognized question still gets the full honest briefing, never silence
+// and never a guess. Fundamentale/News-Fragen bekommen ehrlich
+// DATA_SOURCE_NOT_CONNECTED (Kapitel 14) — DG OS hat keine echte
+// Nachrichten-/Wirtschaftskalender-Quelle, bis Daniel eine anbindet.
+// ---------------------------------------------------------------------------
+const CHAT_INTENTS=[
+  {id:'news',keywords:['news','nachrichten','fundamental','welt','krieg','wirtschaft','kalender','ereignis']},
+  {id:'liquidity',keywords:['liquidity','liquiditat','liquidität','sweep','level']},
+  {id:'poi',keywords:['poi','fvg','order block','orderblock','zone','zonen']},
+  {id:'targets',keywords:['target','ziel','ziele','tp']},
+  {id:'signal',keywords:['signal','wann','einstieg','entry','setup','bereit','ready']},
+  {id:'status',keywords:['markt','lage','status','gold','xauusd','wie sieht','update']}
+];
+
+function detectChatIntent(question){
+  const q=(question||'').toLowerCase();
+  for(const intent of CHAT_INTENTS){
+    if(intent.keywords.some(k=>q.includes(k))) return intent.id;
+  }
+  return null;
+}
+
+function answerNewsQuestion(){
+  return`NEWS / FUNDAMENTAL\n\n${NEWS_STATUS} — DG OS hat noch keine echte News-/Wirtschaftskalender-Quelle angebunden (Kapitel 14). Keine erfundene Einschätzung zur Weltlage. Technisch (Liquidity/POI/Reaktion) arbeitet DG OS trotzdem normal weiter.`;
+}
+
+// The one entry point for the DG OS Chat. `question` is Daniel's raw
+// message text (from Telegram or any future chat surface); `brain` is the
+// exact same computeTradingBrainV1() output every other V1 consumer reads.
+// Pure function — no network calls, no state — so it's testable with a
+// plain fixture and reusable from any transport (Telegram now, a future
+// dashboard chat box later) without duplicating a single fact.
+function answerMarketQuestion(question,brain,now){
+  if(!brain||!brain.decision||!brain.report){
+    return'Kein Always-On Server verbunden — DG OS hat aktuell keine echten Marktdaten (keine Alpha-/Fake-Werte).';
+  }
+  const decision=brain.decision,report=brain.report,liquidity=brain.liquidity||[];
+  const intent=detectChatIntent(question);
+
+  if(intent==='news') return answerNewsQuestion();
+  if(intent==='liquidity') return buildLiquiditySection(liquidity).text;
+  if(intent==='poi') return buildPOISection(report);
+  if(intent==='targets') return buildTargetsSection(decision);
+  if(intent==='signal') return`${buildStatusSection(decision)}\n\nWAITING FOR\n\n- ${waitingForText(decision)}`;
+
+  // 'status' intent or no match at all -> the full honest briefing, always
+  // grounded, never a silent non-answer.
+  return generateDGBriefing(brain,now);
 }
 
 // DG News (Kapitel 14) — Daniel's own explicit V1 answer: "Falls noch
@@ -2372,7 +2455,9 @@ return{
   ENTRY_CANDIDATE_MIN_QUALITY,ENTRY_SL_BUFFER_PERCENT_OF_ZONE,liquiditySweepSupport,
   MISSED_MOVE_PROGRESSED_STATUSES,detectMissedMove,entryCandidatesFor,ENTRY_STATUS_RANK,evaluateEntryForDirection,computeEntryDecision,
   computeRiskManagement,NEWS_STATUS,SESSION_LIQUIDITY_TIMEFRAMES,computeSessionNotes,
-  buildDecisionSummary,timeOfDayGreeting,ENTRY_STATUS_HEADLINE,waitingForText,generateDGBriefing,
+  buildDecisionSummary,timeOfDayGreeting,ENTRY_STATUS_HEADLINE,waitingForText,
+  buildLiquiditySection,buildRecentEventsSection,buildPOISection,buildTargetsSection,buildStatusSection,generateDGBriefing,
+  CHAT_INTENTS,detectChatIntent,answerNewsQuestion,answerMarketQuestion,
   summarizeTimeframeContext,V1_POI_BRIEFING_TIMEFRAMES,generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1
 };
 

@@ -986,10 +986,12 @@ async function sendTelegramMessage(token,chatId,text){
 // Live Event Alerts (Phase 5/6/7/8 of the autonomous night build) — polls
 // the Always-On Server's real /api/events/XAUUSD (populated by
 // events.js's classifyTradingBrainEvents(), server-side deduped + cooldown-
-// gated already) and forwards NEW, category-enabled events to Telegram as
-// short alerts. A SEPARATE mechanism from the Alpha Simulation's
-// maybeAutoSend() above — this one only ever reacts to real
-// source:'tradingBrainV1' events, never to Alpha test-button clicks.
+// gated already) and delivers NEW, category-enabled events to TWO channels:
+// the DG OS Assistant log/voice on the dashboard (always, Daniel's "Haupt-
+// ding") and Telegram (background push, only once configured). A SEPARATE
+// mechanism from the Alpha Simulation's maybeAutoSend() above — this one
+// only ever reacts to real source:'tradingBrainV1' events, never to Alpha
+// test-button clicks.
 // Client-side dedup (localStorage) on top of the server's own cooldown
 // covers page reloads. V1 priority reorder (Daniel's explicit instruction):
 // 1. Relevant Liquidity approaching, 2. Liquidity swept, 3. Reaction
@@ -1041,8 +1043,15 @@ function alertText(event){
   return lines.join('\n');
 }
 
+// Two independent delivery channels for the exact same real events, per
+// Daniel's explicit priority: the DASHBOARD (DG OS Assistant log + optional
+// TTS, respecting the same "Antwort vorlesen" toggle Q&A replies use) is
+// the main surface and needs no configuration at all; Telegram is a
+// background push, only sent additionally once token+chatId are set. A
+// shared "seen" set (localStorage) dedupes across both channels and across
+// page reloads — an event is delivered once, not once per channel.
 async function pollAndSendEventAlerts(){
-  if(!marketServerUrl||!marketServerReachable||!tg.token||!tg.chatId) return;
+  if(!marketServerUrl||!marketServerReachable) return;
   const enabledTypes=new Set();
   ALERT_CHECKBOX_IDS.forEach(id=>{
     const el=$(id);
@@ -1063,12 +1072,17 @@ async function pollAndSendEventAlerts(){
     if(!unseen.length) return;
 
     for(const event of unseen){
-      try{
-        await sendTelegramMessage(tg.token,tg.chatId,alertText(event));
-        seen.add(event.dedupeKey+'-'+event.at);
-      }catch(err){
-        setTelegramStatus(`Alert-Senden fehlgeschlagen: ${err.message}`);
+      const text=alertText(event);
+      assistantLogMessage('assistant',text);
+      assistantSpeak(text);
+      if(tg.token&&tg.chatId){
+        try{
+          await sendTelegramMessage(tg.token,tg.chatId,text);
+        }catch(err){
+          setTelegramStatus(`Alert-Senden fehlgeschlagen: ${err.message}`);
+        }
       }
+      seen.add(event.dedupeKey+'-'+event.at);
     }
     saveSeenAlertKeys(seen);
   }catch(err){ /* server unreachable this tick — next poll retries, nothing to surface here */ }

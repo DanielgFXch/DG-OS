@@ -1210,6 +1210,37 @@ function extractQuestionAfterWakeWord(transcript){
   return after.length?after:transcript.trim();
 }
 
+// Voice picker — browser TTS voices load asynchronously (often empty on
+// first call, populated once 'voiceschanged' fires), so this re-populates
+// whenever the browser actually has a list ready. German voices are
+// listed first since that's what DG OS speaks, but every installed voice
+// stays selectable (some devices only have English voices installed).
+const ASSISTANT_VOICE_STORAGE_KEY='dgos.assistantVoiceURI';
+
+function populateAssistantVoiceOptions(){
+  if(!('speechSynthesis'in window)) return;
+  const voices=window.speechSynthesis.getVoices();
+  if(!voices.length) return;
+  const select=$('assistantVoiceSelect');
+  const saved=localStorage.getItem(ASSISTANT_VOICE_STORAGE_KEY)||'';
+  const sorted=[...voices].sort((a,b)=>{
+    const aDe=a.lang.toLowerCase().startsWith('de')?0:1;
+    const bDe=b.lang.toLowerCase().startsWith('de')?0:1;
+    return aDe-bDe||a.name.localeCompare(b.name);
+  });
+  select.innerHTML='<option value="">Standard-Stimme</option>'+sorted.map(v=>`<option value="${v.voiceURI}">${v.name} (${v.lang})</option>`).join('');
+  select.value=sorted.some(v=>v.voiceURI===saved)?saved:'';
+}
+if('speechSynthesis'in window){
+  populateAssistantVoiceOptions();
+  window.speechSynthesis.addEventListener('voiceschanged',populateAssistantVoiceOptions);
+  $('assistantVoiceSelect').addEventListener('change',()=>{
+    localStorage.setItem(ASSISTANT_VOICE_STORAGE_KEY,$('assistantVoiceSelect').value);
+  });
+}else{
+  $('assistantVoiceSelect').disabled=true;
+}
+
 function assistantSpeak(text){
   if(!$('assistantSpeak').checked||!('speechSynthesis'in window)){
     if(assistantContinuousMode) assistantResumeContinuousListening();
@@ -1219,6 +1250,11 @@ function assistantSpeak(text){
     window.speechSynthesis.cancel(); // don't stack overlapping replies
     const utter=new SpeechSynthesisUtterance(text);
     utter.lang='de-DE';
+    const selectedVoiceURI=$('assistantVoiceSelect').value;
+    if(selectedVoiceURI){
+      const voice=window.speechSynthesis.getVoices().find(v=>v.voiceURI===selectedVoiceURI);
+      if(voice){ utter.voice=voice; utter.lang=voice.lang; }
+    }
     // Pause wake-word listening while DG OS talks so it never hears (and
     // reacts to) its own voice — a classic voice-assistant feedback loop.
     if(assistantContinuousMode&&assistantContinuousRecognition){

@@ -8,6 +8,33 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.34.0] — DG OS Assistant ganz oben + Stimmenauswahl
+
+Direktes Feedback nach dem ersten Live-Test: Jarvis soll das Erste sein,
+was man sieht — sprechen können, bevor die Zahlen kommen.
+
+### Geändert (`index.html`)
+- Reihenfolge der Dashboard-Karten neu: **DG OS Assistant → Begrüßung →
+  System Status → Rest** (vorher: System Status → Begrüßung → Assistant).
+  Reine Reihenfolgeänderung, keine Karte entfernt/verändert.
+
+### Neu (`app.js`, `index.html`, `styles.css`)
+- Stimmenauswahl für die Vorlese-Funktion: `<select>` mit allen vom
+  Browser installierten Stimmen (Deutsch zuerst sortiert), Auswahl in
+  `localStorage` gespeichert. Browser laden ihre Stimmenliste asynchron
+  (`voiceschanged`-Event) — wird korrekt nachgeladen, sobald verfügbar.
+
+### Getestet
+Playwright: Kartenreihenfolge korrekt, Stimmenauswahl-Logik lädt/speichert
+ohne Fehler (tatsächliche Stimmenliste hängt vom Gerät/Browser ab — in der
+Test-Umgebung ohne Audio-Subsystem naturgemäß leer, Populate-Logik selbst
+verifiziert fehlerfrei).
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.33.3] — DG OS Assistant: Gesprächsverlauf bleibt erhalten
 
 Kleine Politur am Jarvis-Dashboard: der Chat-Verlauf ging bisher bei jedem

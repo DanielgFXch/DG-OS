@@ -62,6 +62,34 @@
   </div>
 
   <main class="app">
+    <section class="card assistant-card">
+      <div class="section-title"><svg class="ic"><use href="#ic-mic"></use></svg>DG OS Assistant</div>
+      <div class="eyebrow">Sprich oder tippe mit DG OS — jede Antwort kommt ausschließlich aus echten Trading-Brain-Daten, kein LLM, keine erfundene Einschätzung. Wichtige Ereignisse (Sweep/Reaktion/Signal) erscheinen hier automatisch, mit Always-On Server.</div>
+      <div class="assistant-controls">
+        <button id="assistantMicBtn" class="assistant-mic" type="button" aria-label="Sprachaufnahme starten">
+          <svg class="ic"><use href="#ic-mic"></use></svg>
+        </button>
+        <div class="assistant-controls-text">
+          <div id="assistantStatus" class="muted">Tippe auf das Mikrofon und frag z.B. „Gomez, wie sieht der Markt aus?"</div>
+          <label class="assistant-voice-toggle"><input id="assistantSpeak" type="checkbox" checked /> Antwort vorlesen</label>
+          <label class="assistant-voice-toggle"><input id="assistantContinuous" type="checkbox" /> Dauer-Zuhören ("Hey Gomez", ohne Tippen)</label>
+          <select id="assistantVoiceSelect" class="assistant-voice-select"><option value="">Standard-Stimme</option></select>
+        </div>
+      </div>
+      <div id="assistantLog" class="assistant-log"></div>
+      <button id="assistantClearBtn" type="button" class="assistant-clear-btn">Verlauf löschen</button>
+      <form id="assistantTextForm" class="assistant-text-form">
+        <input id="assistantTextInput" type="text" placeholder="...oder tippen, z.B. wie sieht die Liquidity aus?" autocomplete="off" />
+        <button type="submit" class="secondary">Senden</button>
+      </form>
+    </section>
+
+    <section class="greeting card">
+      <div class="eyebrow"><span class="live-dot"></span><span id="sessionName">—</span></div>
+      <div id="greetingText" class="greetingText">Guten Morgen, Daniel Gomes</div>
+      <div class="muted" id="sessionSub">—</div>
+    </section>
+
     <section class="card status-card">
       <div class="section-title"><svg class="ic"><use href="#ic-broadcast"></use></svg>System Status</div>
       <div class="eyebrow">Preis &amp; Kerzen getrennt bewertet · aus echten Zeitstempeln berechnet, „LIVE" nur wenn der WebSocket wirklich verbunden ist</div>
@@ -85,33 +113,6 @@
         </div>
         <div class="muted" id="marketServerStatus">Kein Always-On Server konfiguriert · nutzt den 15-Min-Feed + optionalen Browser-WebSocket.</div>
       </div>
-    </section>
-
-    <section class="greeting card">
-      <div class="eyebrow"><span class="live-dot"></span><span id="sessionName">—</span></div>
-      <div id="greetingText" class="greetingText">Guten Morgen, Daniel Gomes</div>
-      <div class="muted" id="sessionSub">—</div>
-    </section>
-
-    <section class="card assistant-card">
-      <div class="section-title"><svg class="ic"><use href="#ic-mic"></use></svg>DG OS Assistant</div>
-      <div class="eyebrow">Sprich oder tippe mit DG OS — jede Antwort kommt ausschließlich aus echten Trading-Brain-Daten, kein LLM, keine erfundene Einschätzung. Wichtige Ereignisse (Sweep/Reaktion/Signal) erscheinen hier automatisch, mit Always-On Server.</div>
-      <div class="assistant-controls">
-        <button id="assistantMicBtn" class="assistant-mic" type="button" aria-label="Sprachaufnahme starten">
-          <svg class="ic"><use href="#ic-mic"></use></svg>
-        </button>
-        <div class="assistant-controls-text">
-          <div id="assistantStatus" class="muted">Tippe auf das Mikrofon und frag z.B. „Gomez, wie sieht der Markt aus?"</div>
-          <label class="assistant-voice-toggle"><input id="assistantSpeak" type="checkbox" checked /> Antwort vorlesen</label>
-          <label class="assistant-voice-toggle"><input id="assistantContinuous" type="checkbox" /> Dauer-Zuhören ("Hey Gomez", ohne Tippen)</label>
-        </div>
-      </div>
-      <div id="assistantLog" class="assistant-log"></div>
-      <button id="assistantClearBtn" type="button" class="assistant-clear-btn">Verlauf löschen</button>
-      <form id="assistantTextForm" class="assistant-text-form">
-        <input id="assistantTextInput" type="text" placeholder="...oder tippen, z.B. wie sieht die Liquidity aus?" autocomplete="off" />
-        <button type="submit" class="secondary">Senden</button>
-      </form>
     </section>
 
     <section class="hero card">

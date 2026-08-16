@@ -28,6 +28,38 @@ test('weekend and carried-forward placeholder candles never feed structure/FVG',
   assert.equal(MB.filterUsableMarketCandles([{open:103,high:104,low:102,close:103.5}],'H1').length,0,'missing timestamp is unusable');
 });
 
+test('central candle boundary sorts timestamps and deterministically deduplicates provider bars',()=>{
+  const input=[
+    c('2026-08-17 10:00:00',102,104,101,103),
+    c('2026-08-17 08:00:00',100,102,99,101),
+    c('2026-08-17 09:00:00',101,103,100,102),
+    c('2026-08-17 09:00:00',101,103.5,100,102.5)
+  ];
+  const clean=MB.filterUsableMarketCandles(input,'H1');
+  assert.deepEqual(clean.map(bar=>bar.datetime),['2026-08-17 08:00:00','2026-08-17 09:00:00','2026-08-17 10:00:00']);
+  assert.equal(clean[1].close,102.5);
+  assert.equal(MB.computeTimeframeBrain(input,'H1').candleCount,3);
+});
+
+test('HTF series containing only unusable candles produces DATA_NOT_READY',()=>{
+  const valid=[c('2026-08-17 08:00:00',100,102,99,101)];
+  const invalid=[c('2026-08-15 08:00:00',100,102,99,101)];
+  const brain=MB.computeTradingBrainV1({weekly:{series:valid},daily:{series:valid},'4h':{series:invalid},'1h':{series:valid},'15min':{series:valid}},[],101);
+  assert.equal(brain.status,'DATA_NOT_READY');
+  assert.equal(brain.decision.decisionStage,'DATA_NOT_READY');
+});
+
+test('liquidity reaction must occur strictly after the sweep candle',()=>{
+  const level={type:'high',sweptAt:'2026-08-17T09:00:00.000Z'};
+  const sweepEngulfing=[
+    c('2026-08-17 08:00:00',100,102,99,101.5),
+    c('2026-08-17 09:00:00',102,103,99,100)
+  ];
+  assert.equal(MB.detectLiquidityReaction(level,sweepEngulfing).status,'NO_REACTION_YET');
+  const later=[...sweepEngulfing,c('2026-08-17 10:00:00',99.5,102,98,98.5)];
+  assert.equal(MB.detectLiquidityReaction(level,later).status,'REACTED');
+});
+
 test('fetchCandles production path filters the full series and preserves latestRealBar safeguard', async () => {
   const originalFetch = global.fetch;
   global.fetch = async () => ({ json: async () => ({ values: [

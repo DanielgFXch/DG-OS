@@ -315,7 +315,12 @@ function isUsableMarketCandle(candle,timeframe,nowInput){
 
 function filterUsableMarketCandles(candles,timeframe,nowInput){
   if(!Array.isArray(candles)) return[];
-  return candles.filter(c=>isUsableMarketCandle(c,timeframe,nowInput));
+  const byTimestamp=new Map();
+  candles.forEach(c=>{
+    if(!isUsableMarketCandle(c,timeframe,nowInput)) return;
+    byTimestamp.set(candleTimeToIso(c.datetime),c);
+  });
+  return[...byTimestamp.entries()].sort((a,b)=>new Date(a[0])-new Date(b[0])).map(entry=>entry[1]);
 }
 
 // Small candle-math utilities shared by any detector that needs them.
@@ -478,8 +483,9 @@ function detectOrderBlocks(candles,timeframe){
 // exactly like Daniel's explicit instruction for the swing-relevance
 // answer ("erfinde kein neues Erkennungsmodell").
 function detectBreakers(candles,timeframe){
-  if(!Array.isArray(candles)||candles.length<2) return[];
   timeframe=timeframe||'H1';
+  candles=filterUsableMarketCandles(candles,timeframe);
+  if(candles.length<2) return[];
   const obs=detectOrderBlocks(candles,timeframe);
   const zones=[];
   obs.forEach(ob=>{
@@ -507,8 +513,9 @@ function detectBreakers(candles,timeframe){
 // DG Inverse FVG (Kapitel 6) — the same invalidation-then-reversal logic
 // as Breaker above, applied to Fair Value Gaps instead of Order Blocks.
 function detectInverseFairValueGaps(candles,timeframe){
-  if(!Array.isArray(candles)||candles.length<3) return[];
   timeframe=timeframe||'H1';
+  candles=filterUsableMarketCandles(candles,timeframe);
+  if(candles.length<3) return[];
   const fvgs=detectFairValueGaps(candles,timeframe);
   const zones=[];
   fvgs.forEach(fvg=>{
@@ -589,6 +596,7 @@ function relatedLiquidityFor(poi,liquidityLevels){
 // definition, already clear of the zone it displaced away from.
 function detectZoneReaction(poi,candles){
   if(!Array.isArray(candles)||poi.priceLow===null||poi.priceHigh===null||!poi.direction) return null;
+  candles=filterUsableMarketCandles(candles,poi.timeframe||'H1');
   const startIndex=candles.indexOf(poi.formedThroughCandle||poi.sourceCandle);
   if(startIndex===-1) return null;
 
@@ -647,8 +655,9 @@ const SESSION_LABEL_BY_ID={asia:'Asia',london:'London',ny:'New York'};
 // candle-shape math, not a DG rule. Exists so the event pipeline can emit
 // DISPLACEMENT_DETECTED independent of whether that displacement also
 // happened to form an Order Block.
-function detectDisplacementCandles(candles){
-  if(!Array.isArray(candles)||candles.length<2) return[];
+function detectDisplacementCandles(candles,timeframe){
+  candles=filterUsableMarketCandles(candles,timeframe||'H1');
+  if(candles.length<2) return[];
   const results=[];
   for(let i=1;i<candles.length;i++){
     const c=candles[i];
@@ -667,8 +676,9 @@ function detectDisplacementCandles(candles){
 // Engulfing candle detector — classic 2-candle body-engulfing pattern.
 // Same category/precedent as FVG/Order Block above: mechanical candle-shape
 // geometry, no entry/exit/risk judgement attached, not "DG Confirmation."
-function detectEngulfingCandles(candles){
-  if(!Array.isArray(candles)||candles.length<2) return[];
+function detectEngulfingCandles(candles,timeframe){
+  candles=filterUsableMarketCandles(candles,timeframe||'H1');
+  if(candles.length<2) return[];
   const results=[];
   for(let i=1;i<candles.length;i++){
     const prev=candles[i-1],cur=candles[i];
@@ -1201,7 +1211,7 @@ function computeTimeframeBrain(candles,timeframeLabel){
     structure:{list:[...internal.elements,...external.elements],internalBias:internal.finalBias,externalBias:external.finalBias},
     rawFvgs:detectFairValueGaps(candles,timeframeLabel),
     rawOrderBlocks:detectOrderBlocks(candles,timeframeLabel),
-    rawDisplacementCandles:detectDisplacementCandles(candles)
+    rawDisplacementCandles:detectDisplacementCandles(candles,timeframeLabel)
   };
 }
 
@@ -1345,6 +1355,7 @@ function detectLiquidityReaction(level,h1Series){
   if(!level||!level.sweptAt||!Array.isArray(h1Series)||!h1Series.length){
     return{status:'NO_REACTION_YET',reasons:['Noch keine H1-Daten für eine Reaktionsprüfung.']};
   }
+  h1Series=filterUsableMarketCandles(h1Series,'H1');
   const expectedDirection=level.type==='high'?'bearish':'bullish'; // Buyside taken -> bearish reaction expected, Sellside taken -> bullish
   const sweptTime=new Date(level.sweptAt).getTime();
   const startIndex=h1Series.findIndex(c=>new Date(candleTimeToIso(c.datetime)).getTime()>=sweptTime);
@@ -1354,23 +1365,23 @@ function detectLiquidityReaction(level,h1Series){
   const windowSlice=h1Series.slice(Math.max(0,startIndex-1),startIndex+LIQUIDITY_REACTION_LOOKAHEAD_CANDLES);
 
   const structureShift=detectStructure(windowSlice,STRUCTURE_INTERNAL_WINDOW,'internal','H1').elements
-    .find(el=>(el.type==='BOS'||el.type==='CHOCH')&&el.direction===expectedDirection);
+    .find(el=>(el.type==='BOS'||el.type==='CHOCH')&&el.direction===expectedDirection&&new Date(el.createdAt).getTime()>sweptTime);
   if(structureShift){
     return{status:'REACTED',reasons:[`H1 ${structureShift.type} in Richtung ${expectedDirection} bei ${fmtPrice(structureShift.price)}`]};
   }
-  const engulfing=detectEngulfingCandles(windowSlice).find(e=>e.direction===expectedDirection);
+  const engulfing=detectEngulfingCandles(windowSlice,'H1').find(e=>e.direction===expectedDirection&&new Date(e.at).getTime()>sweptTime);
   if(engulfing){
     return{status:'REACTED',reasons:[`H1 ${expectedDirection} Engulfing bei ${engulfing.at}`]};
   }
-  const displacement=detectDisplacementCandles(windowSlice).find(d=>d.direction===expectedDirection);
+  const displacement=detectDisplacementCandles(windowSlice,'H1').find(d=>d.direction===expectedDirection&&new Date(d.at).getTime()>sweptTime);
   if(displacement){
     return{status:'REACTED',reasons:[`H1 Displacement (${expectedDirection}) bei ${displacement.at}`]};
   }
-  const freshFvg=detectFairValueGaps(windowSlice,'H1').find(f=>f.direction===expectedDirection);
+  const freshFvg=detectFairValueGaps(windowSlice,'H1').find(f=>f.direction===expectedDirection&&poiAvailableAtMs(f)>sweptTime);
   if(freshFvg){
     return{status:'REACTED',reasons:[`Neue H1 FVG (${expectedDirection}) nach dem Sweep entstanden`]};
   }
-  const rejection=windowSlice.slice(1).find(c=>isRejectionCandle(c,expectedDirection));
+  const rejection=windowSlice.find(c=>new Date(candleTimeToIso(c.datetime)).getTime()>sweptTime&&isRejectionCandle(c,expectedDirection));
   if(rejection){
     return{status:'REACTED',reasons:[`H1 Rejection-Kerze (${expectedDirection}) bei ${rejection.datetime} UTC`]};
   }
@@ -1754,7 +1765,7 @@ function computeConfirmation(poi,ltf15mSeries){
   }
   const touchedAt=candleTimeToIso(clean15m[startIndex].datetime);
   const windowSlice=clean15m.slice(startIndex,startIndex+CONFIRMATION_LOOKAHEAD_CANDLES);
-  const engulfings=detectEngulfingCandles(windowSlice).filter(e=>e.direction===poi.direction);
+  const engulfings=detectEngulfingCandles(windowSlice,'15M').filter(e=>e.direction===poi.direction);
   const matchingEngulfing=engulfings[0]||null;
 
   const internalStructure=detectStructure(windowSlice,STRUCTURE_INTERNAL_WINDOW,'internal','15M');
@@ -2606,7 +2617,7 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,pri
   // = DATA_NOT_READY" — overrides Entry Status when a required HTF core
   // timeframe (Weekly/Daily/4H/1H) has no candle data at all, regardless of
   // what the (necessarily degraded) computation above produced.
-  const htfCoreMissing=['weekly','daily','4h','1h'].filter(key=>!((candlesByTimeframe[key]&&candlesByTimeframe[key].series)||[]).length);
+  const htfCoreMissing=HTF_TIMEFRAME_DEFS.filter(def=>['weekly','daily','4h','1h'].includes(def.key)&&tfBrainsByOutputKey[def.outputKey].candleCount===0).map(def=>def.key);
   const finalStatus=htfCoreMissing.length?'DATA_NOT_READY':report.status;
   if(htfCoreMissing.length){
     report.status=finalStatus;

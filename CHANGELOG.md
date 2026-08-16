@@ -8,6 +8,30 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.32.1] — DG OS Assistant: Bias- und Risiko-Fragen
+
+Erweitert den in v0.32.0 gebauten Jarvis-Assistenten (Dashboard = Hauptding,
+Telegram nur Hintergrund-Push, laut Daniels expliziter Priorität) um zwei
+weitere direkt beantwortbare Fragetypen — Teil der "wie ich analysiere"-
+Anforderung, die vorher nur über das volle Briefing erreichbar war.
+
+### Neu (`marketBrain.js`)
+- `buildBiasSection()`: Macro-/Trading-Bias direkt abfragbar ("was ist der
+  Bias?", "wie ist der Trend?").
+- `buildRiskSection()`: Invalidation/SL, R:R pro Target, Position Size
+  (immer `MANUAL`) direkt abfragbar ("wie ist mein Risiko?", "R:R?").
+- Beide über `answerMarketQuestion()` erreichbar — Dashboard-Jarvis und
+  Telegram-Chat nutzen automatisch dieselbe erweiterte Logik.
+
+### Getestet
+85 Tests in `test_dg_rules_v1.js` (2 neu), voller End-to-End-Servertest
+weiterhin grün.
+
+### Geänderte Dateien
+`marketBrain.js`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.32.0] — DG OS Assistant: Jarvis-Sprachinterface im Dashboard
 
 Korrektur nach Daniels Rückmeldung: nicht Telegram-Chat, sondern ein

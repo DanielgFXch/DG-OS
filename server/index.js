@@ -29,6 +29,7 @@ const MB = require('../marketBrain.js');
 
 const PORT = parseInt(process.env.PORT, 10) || 8080;
 const QUOTE_REFRESH_MS = 15 * 60 * 1000; // modest — previousClose/isMarketOpen don't need WS-level freshness
+const NEWS_REFRESH_MS = 30 * 60 * 1000; // economic calendar changes rarely — 30 min is plenty
 
 // Initial-burst spacing + one bounded retry pass. Root cause (see
 // docs/ALWAYS_ON_SERVER.md's "Initial fetch reliability" section): firing 8
@@ -75,10 +76,21 @@ async function main() {
   const restBaseUrl = process.env.TWELVEDATA_REST_BASE_URL; // test-only override, undefined in real use
   const wsUrl = process.env.TWELVEDATA_WS_URL; // test-only override, undefined in real use
 
-  const marketState = new MarketState({ apiKey, restBaseUrl });
+  // DG News (Kapitel 14) — Daniel's picked free source. Optional: server
+  // runs exactly as before if FINNHUB_API_KEY isn't set, computeNewsContext()
+  // just honestly reports DATA_SOURCE_NOT_CONNECTED.
+  const newsApiKey = process.env.FINNHUB_API_KEY;
+  const newsBaseUrl = process.env.FINNHUB_BASE_URL; // test-only override, undefined in real use
+
+  const marketState = new MarketState({ apiKey, restBaseUrl, newsApiKey, newsBaseUrl });
 
   console.log('[server] starting — initial REST fetch for all timeframes...');
   await marketState.refreshQuote().catch(err => console.error('[server] initial quote fetch failed:', err.message));
+  if (newsApiKey) {
+    await marketState.refreshNews().catch(err => console.error('[server] initial news fetch failed:', err.message));
+  } else {
+    console.log('[server] FINNHUB_API_KEY not set — DG News (Kapitel 14) stays DATA_SOURCE_NOT_CONNECTED.');
+  }
 
   const failedFirstPass = await fetchTimeframes(marketState, TIMEFRAME_DEFS);
 
@@ -122,6 +134,14 @@ async function main() {
     marketState.refreshQuote().catch(err => console.error('[server] quote refresh failed:', err.message));
   }, QUOTE_REFRESH_MS);
 
+  // DG News (Kapitel 14) refresh — economic calendar doesn't need WS-level
+  // freshness, 30 min is plenty. No-op (never fires a request) if
+  // FINNHUB_API_KEY isn't set, same "configure once available" pattern.
+  const newsInterval = setInterval(() => {
+    if (!newsApiKey) return;
+    marketState.refreshNews().catch(err => console.error('[server] news refresh failed:', err.message));
+  }, NEWS_REFRESH_MS);
+
   // DG OS Chat (Telegram) — optional, same "configure once it's available"
   // pattern as TWELVEDATA_API_KEY. Undefined until Daniel adds these as
   // Railway env vars (separate from the GitHub Actions secrets of the same
@@ -164,6 +184,7 @@ async function main() {
     socket.disconnect();
     stopFns.forEach(stop => stop());
     clearInterval(quoteInterval);
+    clearInterval(newsInterval);
     clearInterval(scheduledBriefingInterval);
     apiServer.close(() => process.exit(0));
     setTimeout(() => process.exit(0), 2000).unref();

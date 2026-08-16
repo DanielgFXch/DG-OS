@@ -186,6 +186,12 @@ body{
 .assistant-voice-toggle input{width:14px;height:14px;accent-color:var(--cyan)}
 .assistant-log{margin-top:12px;max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
 .assistant-log:empty{display:none}
+.assistant-clear-btn{
+  background:none;border:0;color:var(--muted);font-family:var(--hud-font);font-size:10.5px;
+  letter-spacing:.04em;text-decoration:underline;text-underline-offset:2px;cursor:pointer;padding:8px 0 0;
+}
+.assistant-clear-btn:hover{color:var(--cyan)}
+.assistant-log:empty+.assistant-clear-btn{display:none}
 .assistant-msg{padding:8px 11px;border-radius:8px;font-size:12.5px;line-height:1.5;white-space:pre-wrap;border:1px solid var(--line)}
 .assistant-msg-role{display:block;font-family:var(--hud-font);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
 .assistant-msg-user{background:rgba(47,217,242,.06);border-color:var(--line-strong)}

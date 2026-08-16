@@ -8,6 +8,24 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.33.3] — DG OS Assistant: Gesprächsverlauf bleibt erhalten
+
+Kleine Politur am Jarvis-Dashboard: der Chat-Verlauf ging bisher bei jedem
+Neuladen der Seite verloren. Jetzt in `localStorage` persistiert (max. 50
+Nachrichten, älteste fällt zuerst raus), wird beim nächsten Öffnen wieder
+angezeigt. Neuer "Verlauf löschen"-Link, erscheint nur wenn tatsächlich
+ein Verlauf vorhanden ist.
+
+### Getestet
+Playwright: eine gestellte Frage übersteht einen Seiten-Reload, "Verlauf
+löschen" leert sowohl Anzeige als auch `localStorage` und blendet sich
+danach selbst wieder aus.
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.33.2] — Mobile: horizontales Scrollen/Wackeln behoben
 
 Beim Mobile-Check des neuen DG OS Assistant (der wahrscheinlichste

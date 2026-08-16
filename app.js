@@ -1147,7 +1147,20 @@ async function maybeAutoSend(){
 // Text input always works too — SpeechRecognition isn't supported on every
 // browser (notably Safari/iOS), and this must never be voice-only.
 // ---------------------------------------------------------------------------
-function assistantLogMessage(role,text){
+// Chat history persistence — a page refresh (or reopening the dashboard
+// later) must not silently lose the conversation with DG OS. Capped so
+// localStorage never grows unbounded; oldest entries drop off first.
+const ASSISTANT_HISTORY_KEY='dgos.assistantHistory';
+const ASSISTANT_HISTORY_MAX=50;
+
+function loadAssistantHistory(){
+  try{ return JSON.parse(localStorage.getItem(ASSISTANT_HISTORY_KEY)||'[]'); }catch(err){ return[]; }
+}
+function saveAssistantHistory(history){
+  try{ localStorage.setItem(ASSISTANT_HISTORY_KEY,JSON.stringify(history.slice(-ASSISTANT_HISTORY_MAX))); }catch(err){ /* storage full/unavailable — history just won't persist this time */ }
+}
+
+function assistantRenderMessage(role,text){
   const log=$('assistantLog');
   const row=document.createElement('div');
   row.className=`assistant-msg assistant-msg-${role}`;
@@ -1162,6 +1175,22 @@ function assistantLogMessage(role,text){
   log.appendChild(row);
   log.scrollTop=log.scrollHeight;
 }
+
+function assistantLogMessage(role,text){
+  assistantRenderMessage(role,text);
+  const history=loadAssistantHistory();
+  history.push({role,text});
+  saveAssistantHistory(history);
+}
+
+// Restore the conversation from the last session, oldest first, purely
+// visual (does not re-speak or re-persist anything already stored).
+loadAssistantHistory().forEach(m=>assistantRenderMessage(m.role,m.text));
+
+$('assistantClearBtn').addEventListener('click',()=>{
+  $('assistantLog').innerHTML='';
+  saveAssistantHistory([]);
+});
 
 // Pure, testable: pulls the actual question out of an utterance that
 // starts with (or contains) the wake word "Gomez" — "Hey Gomez, wie sieht

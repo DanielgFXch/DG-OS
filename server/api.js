@@ -16,6 +16,8 @@
 
 const http = require('http');
 const { URL } = require('url');
+const MB = require('../marketBrain.js');
+const { handleTelegramUpdate } = require('./lib/telegramAssistant.js');
 
 function sendJson(res, status, body) {
   const json = JSON.stringify(body, null, 2);
@@ -40,7 +42,14 @@ function readBody(req) {
   });
 }
 
-function createApiServer(marketState) {
+// `telegram` (optional) — { token, chatId, webhookSecret } read from
+// process.env by server/index.js. Undefined/absent in local dev or before
+// Daniel configures the Railway env vars — the webhook route still exists
+// and responds, it just can't actually send a reply without a token (see
+// telegramAssistant.js's sendTelegramMessage), same "honestly degraded, not
+// silently broken" pattern as every other optional integration here.
+function createApiServer(marketState, telegram) {
+  telegram = telegram || {};
   return http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') { sendJson(res, 204, {}); return; }
 
@@ -80,6 +89,31 @@ function createApiServer(marketState) {
           error: 'not_implemented',
           message: 'TradingView webhook receiver is planned, not built — see docs/TRADINGVIEW_INTEGRATION_PLAN.md.'
         });
+        return;
+      }
+
+      // DG OS Chat (Telegram webhook) — see server/lib/telegramAssistant.js.
+      // Always responds 200 (Telegram retries aggressively on non-2xx,
+      // which would just resend the same message repeatedly) — a
+      // malformed body or a send failure is logged, never surfaced as an
+      // HTTP error to Telegram itself.
+      if (req.method === 'POST' && url.pathname === '/api/telegram/webhook') {
+        const raw = await readBody(req);
+        if (telegram.webhookSecret) {
+          const secretHeader = req.headers['x-telegram-bot-api-secret-token'];
+          if (secretHeader !== telegram.webhookSecret) { sendJson(res, 401, { error: 'unauthorized' }); return; }
+        }
+        let update = null;
+        try { update = JSON.parse(raw); } catch (err) { /* ignore malformed body */ }
+        if (update) {
+          handleTelegramUpdate(update, {
+            MB,
+            getBrain: () => marketState.getTradingBrain(),
+            token: telegram.token,
+            allowedChatId: telegram.chatId
+          }).catch(err => console.error('[server] Telegram webhook handling failed:', err.message));
+        }
+        sendJson(res, 200, { ok: true });
         return;
       }
 

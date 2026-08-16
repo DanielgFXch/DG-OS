@@ -17,6 +17,8 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
   unverändertem internem Detailstatus sowie kompakter DG Market Story.
 - Manueller Daniel-Review-Export unter `tmp/dg-review/`; Feedback verändert
   niemals automatisch Tradingregeln.
+- Candle-by-Candle-Replay, das pro Schritt nur bereits geschlossene und
+  verfügbare Timeframe-Candles an den lokalen Brain-Code übergibt.
 
 ### Accuracy & Reliability
 - Candle-Grenze sortiert und dedupliziert Provider-Bars und erklärt entfernte
@@ -35,8 +37,8 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
   keine Entry-, Invalidation-, Target- oder R:R-Idee aus.
 
 ### Getestet
-- 56 Node-Regressionstests inklusive systemweiter Konsistenz-Invarianten,
-  plus Syntax- und Diff-Prüfungen.
+- 59 Node-Regressionstests inklusive systemweiter Konsistenz-Invarianten
+  und No-Look-Ahead-Replay, plus Syntax- und Diff-Prüfungen.
 - Read-only Real-Market-Scan gegen den laufenden DG-OS-Railway-Server auf
   15M, H1, 4H und Daily.
 - Kompakte echte XAUUSD-Fallbibliothek für OPEN/PARTIAL FVG, Sunday-Open,

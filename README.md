@@ -27,6 +27,12 @@ entsteht mit `npm run review-export -- --server <url>` standardmäßig unter
 dem gitignorierten `tmp/dg-review/`. Feedback aus diesem Pack wird niemals
 automatisch in Tradingregeln übernommen.
 
+Für einen Candle-by-Candle-No-Look-Ahead-Check:
+
+```sh
+npm run replay -- --server https://dg-os-production.up.railway.app
+```
+
 ## Live-Vorschau (Progress)
 
 **https://danielgfxch.github.io/DG-OS/**

@@ -366,7 +366,7 @@ function renderTradingBrain(brain){
   const typeLabel={fvg:'FVG',orderBlock:'Order Block',breaker:'Breaker',ifvg:'iFVG'};
   const poiRow=p=>`
     <div class="poi-row">
-      <span class="poi-label">${typeLabel[p.type]||p.type}<span class="poi-meta">${p.timeframe} · ${p.status}</span></span>
+      <span class="poi-label">${typeLabel[p.type]||p.type}<span class="poi-meta">${p.timeframe} · ${p.status} · ${p.mitigationPercent}% · getestet ${p.tested?'JA':'NEIN'} · Reaktion ${p.reaction?'JA':'NEIN'}</span></span>
       <span class="poi-price">${p.range}<span class="poi-confidence">Qualität: ${qualityLabel[p.quality]||p.quality} (${p.score})</span></span>
     </div>`;
   buyEl.innerHTML=(report.freshBullishPOIs&&report.freshBullishPOIs.length)?report.freshBullishPOIs.map(poiRow).join(''):'<div class="poi-empty">Keine frischen Bullish-POIs erkannt.</div>';

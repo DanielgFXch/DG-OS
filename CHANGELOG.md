@@ -8,6 +8,35 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.35.1] — DG Trading Brain V1 Accuracy
+
+### Verbessert
+- Zentraler Candle-Qualitätsfilter entfernt ungültige, Intraday-Weekend- und
+  carried-forward Placeholder-Bars vor Structure-, FVG-, OB- und Bias-Logik,
+  ohne echte ruhige Candles über eine starre Markt-Range zu verwerfen.
+- FVG/POI-Mitigation unterscheidet OPEN, PARTIALLY MITIGATED und FULLY
+  MITIGATED. Teilmitigierte Zonen bleiben evaluierbar; Order Blocks behalten
+  den definierten 65%-Qualitätsfaktor.
+- 15M-Confirmation startet am tatsächlichen POI-Touch, auch bei 4H-POIs;
+  zeitlich frühere Confirmations werden ausgeschlossen.
+- Liquidity Memory bindet dynamische Session-/Daily-Level zusätzlich an den
+  physischen Preis. Veränderte Levels erben keinen alten Sweep.
+- Bullish/bearish Bias ist Kontext statt Gatekeeper; weiter entwickelte
+  Counter-Bias-Setups bleiben sichtbar und werden explizit gekennzeichnet.
+- Hauptreport zeigt pro relevantem Daily/4H/H1-POI Mitigation, Test und
+  Reaction und beschränkt sich weiterhin auf die priorisierten Zonen.
+
+### Getestet
+- 14 gezielte Node-Regressionstests für Candle-Qualität, Partial/Full
+  Mitigation, POI-Touch-Timing, Liquidity Memory und Counter-Bias-Evaluation.
+- Syntax-, Diff- und Trading-Brain-Smoke-Test.
+
+### Geänderte Dateien
+`marketBrain.js`, `server/lib/twelveDataRest.js`, `app.js`, `tests/v1-accuracy.test.js`,
+`package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.35.0] — DG News (Kapitel 14): Finnhub-Anbindung
 
 Erste echte Datenquelle für Kapitel 14. Bisher war `newsStatus` immer der

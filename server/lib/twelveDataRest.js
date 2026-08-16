@@ -16,6 +16,7 @@
 // ---------------------------------------------------------------------------
 
 const DEFAULT_BASE_URL = 'https://api.twelvedata.com';
+const { filterUsableMarketCandles } = require('../../marketBrain.js');
 
 // "Scan forward for a real candle" (see docs/MARKET_BRAIN.md): TwelveData
 // emits a bar for every calendar period, including ones with no real
@@ -78,11 +79,18 @@ async function fetchCandles(apiKey, tdInterval, outputsize, baseUrl) {
   const url = `${baseUrl || DEFAULT_BASE_URL}/time_series?symbol=XAU/USD&interval=${encodeURIComponent(tdInterval)}&outputsize=${outputsize}&timezone=UTC&apikey=${encodeURIComponent(apiKey)}`;
   const body = await fetchJson(url);
   const values = Array.isArray(body.values) ? body.values : [];
-  const latestRealBar = normalizeBar(firstRealBar(values));
-  const series = values
+  const normalized = values
     .filter(v => [v.open, v.high, v.low, v.close].every(x => toNumberOrNull(x) !== null))
     .map(normalizeBar)
     .sort((a, b) => (a.datetime < b.datetime ? -1 : a.datetime > b.datetime ? 1 : 0));
+  const series = filterUsableMarketCandles(normalized, tdInterval);
+  // Preserve the established latest-bar safeguard: the full series uses the
+  // central quality filter, while the display/latest bar additionally skips
+  // a suspiciously flat newest value exactly as firstRealBar() always did.
+  const latestCandidate = normalizeBar(firstRealBar(values));
+  const latestRealBar = latestCandidate&&series.some(c=>c.datetime===latestCandidate.datetime)
+    ? latestCandidate
+    : (series.length?series[series.length-1]:null);
   return { latestRealBar, series };
 }
 

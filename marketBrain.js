@@ -270,8 +270,52 @@ function createPOI({type,direction,priceHigh,priceLow,timeframe,createdAt,status
   };
 }
 
+function candleDate(datetime){
+  if(!datetime) return null;
+  const raw=String(datetime);
+  const hasZone=/Z$|[+-]\d\d:\d\d$/.test(raw);
+  const iso=raw.includes('T')?(hasZone?raw:`${raw}Z`):`${raw.replace(' ','T')}Z`;
+  const parsed=new Date(iso);
+  return Number.isNaN(parsed.getTime())?null:parsed;
+}
+
 function candleTimeToIso(datetime){
-  return datetime?new Date(datetime.replace(' ','T')+'Z').toISOString():null;
+  const parsed=candleDate(datetime);
+  return parsed?parsed.toISOString():null;
+}
+
+// One data-quality gate for every Market Brain consumer. XAUUSD does not
+// produce legitimate weekend candles; TwelveData can nevertheless return
+// calendar placeholders there. We also reject malformed/zero-range bars.
+// No fixed absolute/minimum market range is used, so genuine quiet candles
+// remain valid.
+function isUsableMarketCandle(candle,timeframe,nowInput){
+  if(!candle) return false;
+  const o=Number(candle.open),h=Number(candle.high),l=Number(candle.low),c=Number(candle.close);
+  if(![o,h,l,c].every(Number.isFinite)||h<=l||h<Math.max(o,c)||l>Math.min(o,c)) return false;
+  if(candle.datetime){
+    const at=candleDate(candle.datetime);
+    if(!at) return false;
+    const day=at.getUTCDay(),hour=at.getUTCHours();
+    const tf=String(timeframe||'').toLowerCase();
+    const calendarAnchored=tf==='monthly'||tf==='weekly'||tf==='1month'||tf==='1week';
+    const now=nowInput===undefined?new Date():(nowInput instanceof Date?nowInput:new Date(nowInput));
+    const currentSundayDailyPlaceholder=(tf==='daily'||tf==='1day')&&day===0&&hour===0
+      &&!Number.isNaN(now.getTime())&&now.getUTCDay()===0&&now.getUTCHours()<22
+      &&at.getUTCFullYear()===now.getUTCFullYear()&&at.getUTCMonth()===now.getUTCMonth()&&at.getUTCDate()===now.getUTCDate();
+    const durationMs={daily:86400000,'1day':86400000,'4h':4*3600000,h1:3600000,'1h':3600000,'30m':1800000,'30min':1800000,'15m':900000,'15min':900000}[tf]||0;
+    const endsAt=new Date(at.getTime()+durationMs);
+    const entirelyClosed=day===6
+      ||(day===5&&hour>=21)
+      ||(day===0&&hour<22&&endsAt.getUTCDay()===0&&endsAt.getUTCHours()<=22);
+    if(currentSundayDailyPlaceholder||(!calendarAnchored&&entirelyClosed)) return false;
+  }else return false;
+  return true;
+}
+
+function filterUsableMarketCandles(candles,timeframe,nowInput){
+  if(!Array.isArray(candles)) return[];
+  return candles.filter(c=>isUsableMarketCandle(c,timeframe,nowInput));
 }
 
 // Small candle-math utilities shared by any detector that needs them.
@@ -305,7 +349,7 @@ function zoneMitigationPercent(candles,fromIndex,priceLow,priceHigh,direction){
     ? Math.max(...after.map(c=>c.high))
     : Math.min(...after.map(c=>c.low));
   const penetrated=direction==='bearish'?(deepest-nearEdge):(nearEdge-deepest);
-  return Math.max(0,Math.min(100,Math.round((penetrated/height)*100)));
+  return Math.max(0,Math.min(100,(penetrated/height)*100));
 }
 
 const MITIGATION_STATE_LABEL={OPEN_UNMITIGATED:'OPEN / UNMITIGATED',PARTIALLY_MITIGATED:'PARTIALLY MITIGATED',FULLY_MITIGATED:'FULLY MITIGATED'};
@@ -322,7 +366,8 @@ function mitigationStateFromPercent(percent){
 // bullish FVG exists when c0.high < c2.low (the untraded space between them
 // is the gap); a bearish FVG is the mirror case, c0.low > c2.high.
 function detectFairValueGaps(candles,timeframe){
-  if(!Array.isArray(candles)||candles.length<3) return[];
+  candles=filterUsableMarketCandles(candles,timeframe);
+  if(candles.length<3) return[];
   timeframe=timeframe||'H1';
   const zones=[];
 
@@ -335,7 +380,9 @@ function detectFairValueGaps(candles,timeframe){
 
     const avgRange=localAverageRange(candles,i,POI_ATR_WINDOW);
     const confidence=avgRange>0?Math.max(0,Math.min(100,Math.round(((priceHigh-priceLow)/avgRange)*100))):0;
-    const status=isZoneMitigatedAfter(candles,i+1,priceLow,priceHigh)?'mitigated':'fresh';
+    const mitigationPercent=zoneMitigationPercent(candles,i+1,priceLow,priceHigh,direction);
+    const mitigationState=mitigationStateFromPercent(mitigationPercent);
+    const status=mitigationState==='FULLY_MITIGATED'?'mitigated':'fresh';
 
     const reason=direction==='bullish'
       ? `Bullische Preislücke: Low der Kerze ${c2.datetime} UTC liegt über dem High der Kerze ${c0.datetime} UTC`
@@ -344,7 +391,8 @@ function detectFairValueGaps(candles,timeframe){
     zones.push(createPOI({
       type:'fvg',direction,priceHigh,priceLow,timeframe,
       createdAt:candleTimeToIso(c1.datetime),
-      status,confidence,reason,sourceCandle:c1,formedThroughCandle:c2
+      status,confidence,reason,sourceCandle:c1,formedThroughCandle:c2,
+      mitigationDetail:{percent:mitigationPercent,state:mitigationState}
     }));
   }
   return zones;
@@ -370,7 +418,8 @@ function closeStrength(candle,direction){
 }
 
 function detectOrderBlocks(candles,timeframe){
-  if(!Array.isArray(candles)||candles.length<2) return[];
+  candles=filterUsableMarketCandles(candles,timeframe);
+  if(candles.length<2) return[];
   timeframe=timeframe||'H1';
   const zones=[];
 
@@ -402,7 +451,9 @@ function detectOrderBlocks(candles,timeframe){
 
     const rangeScore=Math.min(ratio/3,1);
     const confidence=Math.round(((rangeScore+strength)/2)*100);
-    const status=isZoneMitigatedAfter(candles,i+1,priceLow,priceHigh)?'mitigated':'fresh';
+    const mitigationPercent=zoneMitigationPercent(candles,i+1,priceLow,priceHigh,direction);
+    const mitigationState=mitigationStateFromPercent(mitigationPercent);
+    const status=mitigationState==='FULLY_MITIGATED'?'mitigated':'fresh';
 
     const reason=direction==='bullish'
       ? `Bullischer Order Block: Kerze ${obCandle.datetime} UTC (bearish) vor Displacement-Kerze ${displacementCandle.datetime} UTC (${ratio.toFixed(1)}x Ø-Range, Close bei ${Math.round(strength*100)}% der Kerze)`
@@ -412,7 +463,8 @@ function detectOrderBlocks(candles,timeframe){
       type:'orderBlock',direction,priceHigh,priceLow,timeframe,
       createdAt:candleTimeToIso(obCandle.datetime),
       status,confidence,reason,sourceCandle:obCandle,formedThroughCandle:displacementCandle,
-      impulseSize,displacement:{candle:displacementCandle,range,avgRange,ratio}
+      impulseSize,displacement:{candle:displacementCandle,range,avgRange,ratio},
+      mitigationDetail:{percent:mitigationPercent,state:mitigationState}
     }));
   }
   return zones;
@@ -1135,6 +1187,7 @@ function seriesRange(candles){
 // the legacy H1 pipeline, pointed at a different candle series with an
 // explicit timeframe label instead of the hardcoded 'H1'.
 function computeTimeframeBrain(candles,timeframeLabel){
+  candles=filterUsableMarketCandles(candles,timeframeLabel);
   if(!Array.isArray(candles)||!candles.length){
     return{timeframe:timeframeLabel,candleCount:0,range:null,lastCandle:null,structure:{list:[],internalBias:null,externalBias:null},rawFvgs:[],rawOrderBlocks:[]};
   }
@@ -1180,6 +1233,7 @@ function relatedStructureFor(poi,structureList){
 // externalStructureRangeFrom()) — one range per timeframe, not a second
 // one recomputed here from the full candle series.
 function computeTimeframePOIs(candles,timeframeLabel,ctx){
+  candles=filterUsableMarketCandles(candles,timeframeLabel);
   const raw=[
     ...detectFairValueGaps(candles,timeframeLabel),
     ...detectOrderBlocks(candles,timeframeLabel),
@@ -1212,13 +1266,14 @@ function computeTimeframePOIs(candles,timeframeLabel,ctx){
 // asks for this "wenn Daten vorhanden"; the daily candle series (Phase B of
 // the Always-On Server) makes it available now, unlike liveData's single
 // most-recent daily bar.
-function previousDayLiquidityFrom(dailySeries){
-  if(!Array.isArray(dailySeries)||dailySeries.length<2) return[];
-  const prev=dailySeries[dailySeries.length-2];
+function previousDayLiquidityFrom(dailySeries,currentPrice,nowInput){
+  const usableDaily=filterUsableMarketCandles(dailySeries,'Daily',nowInput);
+  if(usableDaily.length<2) return[];
+  const prev=usableDaily[usableDaily.length-2];
   if(!prev) return[];
   return[
-    {id:'prevDayHigh',label:'Previous Day High',type:'high',timeframe:'Daily',period:prev.datetime,price:prev.high,status:null},
-    {id:'prevDayLow',label:'Previous Day Low',type:'low',timeframe:'Daily',period:prev.datetime,price:prev.low,status:null}
+    {id:'prevDayHigh',label:'Previous Day High',type:'high',timeframe:'Daily',period:prev.datetime,price:prev.high,status:computeLiquidityStatus(prev.high,'high',currentPrice)},
+    {id:'prevDayLow',label:'Previous Day Low',type:'low',timeframe:'Daily',period:prev.datetime,price:prev.low,status:computeLiquidityStatus(prev.low,'low',currentPrice)}
   ];
 }
 
@@ -1275,7 +1330,8 @@ function isV1PrimaryLiquidity(level){
 // id (tomorrow's Asia High is a different level than today's) starts with
 // a clean slate — only genuinely the same physical level stays sticky.
 function liquidityMemoryKey(level){
-  return`${level.id}:${level.period||''}`;
+  const physicalPrice=typeof level.price==='number'?String(level.price):'na';
+  return`${level.id}:${level.period||''}:${physicalPrice}`;
 }
 
 // Reaction check after a relevant sweep (Kapitel 2 V1 priority #3): exactly
@@ -1321,34 +1377,81 @@ function detectLiquidityReaction(level,h1Series){
   return{status:'NO_REACTION_YET',reasons:['Sweep erkannt, aber noch keine deutliche Rejection/Engulfing/Displacement/BOS-CHOCH/FVG danach.']};
 }
 
-// Ties Liquidity Status together with Liquidity Memory: makes a sweep
-// sticky (once observed, stays SWEPT even if price re-enters the zone —
-// a taken pool doesn't become "open" again), stamps the FIRST time DG OS
-// actually observed the sweep as `sweptAt` (never a fabricated retroactive
-// time), and runs the Reaction check once per level until it resolves to
-// REACTED. `priorMemory` is optional — stateless callers (browser/tests)
-// simply never get sticky sweeps or reaction memory, which is honest (no
-// history = nothing to remember), exactly like `priorSetupContext` above.
+function liquidityAvailableAtMs(level){
+  const at=candleDate(level&&level.period);
+  if(!at) return NaN;
+  const sessionEndHour={'Asia Session':8,'London Session':16,'New York Session':21}[level.timeframe];
+  if(sessionEndHour!==undefined) return Date.UTC(at.getUTCFullYear(),at.getUTCMonth(),at.getUTCDate(),sessionEndHour);
+  if(level.id==='dailyHigh'||level.id==='dailyLow'||level.id==='prevDayHigh'||level.id==='prevDayLow') return at.getTime()+86400000;
+  return at.getTime();
+}
+
+// A historical sweep is reconstructed only when the available H1 history
+// starts no later than the level itself became available. Otherwise an
+// earlier crossing could be missing, so claiming the first visible crossing
+// as the real one would be an invented timestamp.
+function reconstructLiquiditySweepAt(level,h1Series){
+  const candles=filterUsableMarketCandles(h1Series,'H1');
+  const availableAt=liquidityAvailableAtMs(level);
+  if(!candles.length||!Number.isFinite(availableAt)) return null;
+  const firstAt=new Date(candleTimeToIso(candles[0].datetime)).getTime();
+  if(!Number.isFinite(firstAt)||firstAt>availableAt) return null;
+  const crossing=candles.find(c=>{
+    const at=new Date(candleTimeToIso(c.datetime)).getTime();
+    if(!Number.isFinite(at)||at<availableAt) return false;
+    return level.type==='high'?Number(c.high)>level.price:Number(c.low)<level.price;
+  });
+  return crossing?candleTimeToIso(crossing.datetime):null;
+}
+
+// Ties Liquidity Status together with Liquidity Memory. At cold start a
+// real historical timestamp is used only when the available candles cover
+// the level from availability through its first crossing. Otherwise the
+// memory says OBSERVED_AT_START and keeps sweptAt null.
 function enrichLiquidityWithMemory(levels,priorMemory,h1Series,nowIso){
   const memory={};
+  const coldStart=priorMemory==null;
   const enriched=(levels||[]).map(level=>{
     const key=liquidityMemoryKey(level);
     const prior=priorMemory&&priorMemory[key];
     let status=level.status;
     let sweptAt=(prior&&prior.sweptAt)||null;
+    let sweepTimingSource=(prior&&prior.sweepTimingSource)||null;
+    let observedAt=(prior&&prior.observedAt)||null;
+    if(prior&&!sweepTimingSource){
+      sweepTimingSource='OBSERVED_AT_START';
+      observedAt=observedAt||sweptAt||nowIso;
+      sweptAt=null;
+    }
     if(status==='sweeped'){
-      if(!sweptAt) sweptAt=nowIso;
-    }else if(sweptAt){
+      if(!prior){
+        const reconstructed=coldStart?reconstructLiquiditySweepAt(level,h1Series):null;
+        if(reconstructed){
+          sweptAt=reconstructed;
+          sweepTimingSource='RECONSTRUCTED_FROM_CANDLES';
+        }else if(coldStart){
+          observedAt=nowIso;
+          sweepTimingSource='OBSERVED_AT_START';
+        }else{
+          sweptAt=nowIso;
+          sweepTimingSource='OBSERVED_LIVE';
+        }
+      }
+    }else if(prior){
       status='sweeped'; // sticky — already-taken liquidity stays taken
     }
     let reaction=(prior&&prior.reaction)||null;
     if(status==='sweeped'&&(!reaction||reaction.status!=='REACTED')){
-      reaction=detectLiquidityReaction(Object.assign({},level,{sweptAt}),h1Series);
+      reaction=sweptAt
+        ?detectLiquidityReaction(Object.assign({},level,{sweptAt}),h1Series)
+        :{status:'NO_REACTION_YET',reasons:['Beim Start bereits gesweept – exakter historischer Sweep-Zeitpunkt nicht verfügbar.']};
     }
-    if(status==='sweeped') memory[key]={sweptAt,reaction};
+    if(status==='sweeped') memory[key]={sweptAt,sweepTimingSource,observedAt,reaction};
     return Object.assign({},level,{
       status,
       sweptAt:status==='sweeped'?sweptAt:null,
+      sweepTimingSource:status==='sweeped'?sweepTimingSource:null,
+      observedAt:status==='sweeped'?observedAt:null,
       reaction:status==='sweeped'?reaction:null
     });
   });
@@ -1562,7 +1665,7 @@ function computePOIQuality(poi,ctx){
   const{liquidityById,tradingBiasDirection,sameTimeframePOIs}=ctx;
   const factors=[
     {ok:poiHasSweepSupport(poi,liquidityById),label:'Vorheriger relevanter Liquidity Sweep/Grab'},
-    {ok:!!poi.reaction,label:'Deutliche Reaktion vom Bereich'},
+    {ok:!!poi.reaction||!!(poi.confirmation&&poi.confirmation.reactionDetected),label:'Deutliche Reaktion vom Bereich'},
     {ok:!!poi.relatedStructure,label:'Structure Break / BOS / CHOCH in Verbindung'},
     {ok:tradingBiasDirection!=null&&poi.direction===tradingBiasDirection,label:'Passt zum aktuellen DG Trading Bias'},
     {ok:poiFavorablePDLocation(poi),label:'Sinnvolle Premium/Discount-Lage'}
@@ -1605,6 +1708,23 @@ function computePOIQuality(poi,ctx){
 const CONFIRMATION_LOOKAHEAD_CANDLES=12; // 15M candles (~3h) — "zeitnah nach dem Sweep bzw. POI-Touch"
 const CONFIRMATION_STATES=['NO_CONFIRMATION','REACTION_DETECTED','CONFIRMATION_DEVELOPING','ENGULFING_CONFIRMED','STRUCTURE_CONFIRMED'];
 
+// TwelveData timestamps candles at their OPEN. A POI defined through that
+// candle cannot exist until the candle closes; allowing 15M bars from inside
+// its formation candle would introduce historical look-ahead. This is only
+// availability timing, not a trading threshold.
+function poiAvailableAtMs(poi){
+  const source=poi.formedThroughCandle?candleTimeToIso(poi.formedThroughCandle.datetime):poi.createdAt;
+  if(!source) return NaN;
+  const openedAt=new Date(source);
+  const openedMs=openedAt.getTime();
+  if(Number.isNaN(openedMs)) return NaN;
+  if(poi.timeframe==='Monthly'){
+    return Date.UTC(openedAt.getUTCFullYear(),openedAt.getUTCMonth()+1,1);
+  }
+  const durationMs={Weekly:7*86400000,Daily:86400000,'4H':4*3600000,H1:3600000}[poi.timeframe]||0;
+  return openedMs+durationMs;
+}
+
 // Secondary Confirmation (Kapitel 8: Hammer/Pinbar/Doji-artige Rejection)
 // — a candle whose close sits in the outer 30% of its own range in the
 // expected direction (reuses closeStrength(), already used by the Order
@@ -1623,20 +1743,17 @@ function computeConfirmation(poi,ltf15mSeries){
   if(!DG_RULES_DEFINED.confirmation){
     return{status:'AWAITING_DG_RULE',entryZone:'UNDEFINED',reasons:['DG Confirmation (Kapitel 8) ist noch nicht definiert.']};
   }
-  if(!poi.reaction){
-    return{status:'NO_CONFIRMATION',entryZone:'UNDEFINED',reasons:['Noch keine Reaktion am POI erkannt — Confirmation setzt eine Reaktion voraus.']};
-  }
   if(!Array.isArray(ltf15mSeries)||!ltf15mSeries.length){
-    return{status:'REACTION_DETECTED',entryZone:'UNDEFINED',reasons:['Reaktion erkannt, aber keine 15M-Daten für Confirmation verfügbar (DATA_NOT_READY für 15M).']};
+    return{status:'NO_CONFIRMATION',entryZone:'UNDEFINED',reasons:['Keine 15M-Daten für POI-Touch und Confirmation verfügbar.']};
   }
-
-  const reactionTime=new Date(poi.reaction.at).getTime();
-  const startIndex=ltf15mSeries.findIndex(c=>new Date(candleTimeToIso(c.datetime)).getTime()>=reactionTime);
+  const clean15m=filterUsableMarketCandles(ltf15mSeries,'15M');
+  const formedAt=poiAvailableAtMs(poi);
+  const startIndex=clean15m.findIndex(c=>new Date(candleTimeToIso(c.datetime)).getTime()>=formedAt&&c.low<=poi.priceHigh&&c.high>=poi.priceLow);
   if(startIndex===-1){
-    return{status:'REACTION_DETECTED',entryZone:'UNDEFINED',reasons:['Reaktion erkannt, 15M-Historie reicht noch nicht bis zum Reaktionszeitpunkt.']};
+    return{status:'NO_CONFIRMATION',entryZone:'UNDEFINED',reasons:['POI wurde in der verfügbaren 15M-Historie noch nicht tatsächlich getestet.']};
   }
-
-  const windowSlice=ltf15mSeries.slice(Math.max(0,startIndex-1),startIndex+CONFIRMATION_LOOKAHEAD_CANDLES);
+  const touchedAt=candleTimeToIso(clean15m[startIndex].datetime);
+  const windowSlice=clean15m.slice(startIndex,startIndex+CONFIRMATION_LOOKAHEAD_CANDLES);
   const engulfings=detectEngulfingCandles(windowSlice).filter(e=>e.direction===poi.direction);
   const matchingEngulfing=engulfings[0]||null;
 
@@ -1652,19 +1769,19 @@ function computeConfirmation(poi,ltf15mSeries){
 
   if(structureConfirm){
     return{
-      status:'STRUCTURE_CONFIRMED',entryZone:findEntryZone(),
-      reasons:[`15M ${structureConfirm.type} in Richtung ${poi.direction} bei ${fmtPrice(structureConfirm.price)} (${structureConfirm.createdAt})`,
+      status:'STRUCTURE_CONFIRMED',entryZone:findEntryZone(),touchedAt,reactionDetected:true,
+      reasons:[`POI auf 15M tatsächlich getestet (${touchedAt}).`,`15M ${structureConfirm.type} in Richtung ${poi.direction} bei ${fmtPrice(structureConfirm.price)} (${structureConfirm.createdAt})`,
         matchingEngulfing?`Zusätzlich ${poi.direction} Engulfing bei ${matchingEngulfing.at}`:null].filter(Boolean)
     };
   }
   if(matchingEngulfing){
-    return{status:'ENGULFING_CONFIRMED',entryZone:findEntryZone(),reasons:[`15M ${poi.direction} Engulfing bei ${matchingEngulfing.at}`]};
+    return{status:'ENGULFING_CONFIRMED',entryZone:findEntryZone(),touchedAt,reactionDetected:true,reasons:[`POI auf 15M tatsächlich getestet (${touchedAt}).`,`15M ${poi.direction} Engulfing bei ${matchingEngulfing.at}`]};
   }
   const rejection=windowSlice.slice(1).find(c=>isRejectionCandle(c,poi.direction));
   if(rejection){
-    return{status:'CONFIRMATION_DEVELOPING',entryZone:'UNDEFINED',reasons:[`15M Rejection-Kerze (${poi.direction}) bei ${rejection.datetime} UTC — schwächer als ein Engulfing (Secondary Confirmation, Kapitel 8).`]};
+    return{status:'CONFIRMATION_DEVELOPING',entryZone:'UNDEFINED',touchedAt,reactionDetected:true,reasons:[`POI auf 15M tatsächlich getestet (${touchedAt}).`,`15M Rejection-Kerze (${poi.direction}) bei ${rejection.datetime} UTC — schwächer als ein Engulfing (Secondary Confirmation, Kapitel 8).`]};
   }
-  return{status:'REACTION_DETECTED',entryZone:'UNDEFINED',reasons:['Reaktion erkannt, aber noch kein 15M Engulfing/Structure Shift/Rejection in die erwartete Richtung.']};
+  return{status:'NO_CONFIRMATION',entryZone:'UNDEFINED',touchedAt,reactionDetected:false,reasons:[`POI auf 15M tatsächlich getestet (${touchedAt}), aber noch keine Reaktion durch Engulfing/Structure Shift/Rejection.`]};
 }
 
 // DG Targets (Kapitel 10) — the candidate list itself (which liquidity/POI
@@ -1819,11 +1936,10 @@ function evaluateEntryForDirection(direction,poisAll,liquidity,currentPrice){
     return{status:'WAIT',direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:primary.id,reasons:[`Kein unterstützender Liquidity Sweep (relevantes Level) für ein ${direction} Setup vorhanden — Kapitel 9.`]};
   }
 
-  if(!primary.reaction){
+  const confirmation=primary.confirmation||{status:'NO_CONFIRMATION',entryZone:'UNDEFINED'};
+  if(!primary.reaction&&!confirmation.reactionDetected){
     return{status:`WATCH_${buyOrSell}`,direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:primary.id,reasons:['Relevanter POI + unterstützender Liquidity Sweep vorhanden, aber noch keine Reaktion am POI.']};
   }
-
-  const confirmation=primary.confirmation||{status:'NO_CONFIRMATION',entryZone:'UNDEFINED'};
   const nearestSweep=[...sweepSupport].sort((a,b)=>Math.abs(a.price-currentPrice)-Math.abs(b.price-currentPrice))[0];
   const zoneHeight=primary.priceHigh-primary.priceLow;
   const buffer=zoneHeight*(ENTRY_SL_BUFFER_PERCENT_OF_ZONE/100);
@@ -1857,10 +1973,6 @@ function computeEntryDecision(tradingBiasState,poisAll,liquidity,currentPrice,pr
     }
   }
 
-  if(tradingBiasState==='BULLISH'||tradingBiasState==='BEARISH'){
-    return evaluateEntryForDirection(tradingBiasState==='BULLISH'?'bullish':'bearish',poisAll,liquidity,currentPrice);
-  }
-
   // V1 priority: "Bias ist Context, nicht zwingender Gatekeeper." A
   // NEUTRAL_MIXED (or not-yet-available) Bias must no longer force an
   // automatic WAIT — if a relevant Liquidity Sweep + POI + Reaction chain
@@ -1879,16 +1991,26 @@ function computeEntryDecision(tradingBiasState,poisAll,liquidity,currentPrice,pr
   else{
     const bullishPoi=(poisAll||[]).find(p=>p.id===bullish.primaryPOI);
     const bearishPoi=(poisAll||[]).find(p=>p.id===bearish.primaryPOI);
-    winner=((bullishPoi&&bullishPoi.score)||0)>=((bearishPoi&&bearishPoi.score)||0)?bullish:bearish;
+    const bullishScore=(bullishPoi&&bullishPoi.score)||0;
+    const bearishScore=(bearishPoi&&bearishPoi.score)||0;
+    if(bullishScore>bearishScore) winner=bullish;
+    else if(bearishScore>bullishScore) winner=bearish;
+    else if(tradingBiasState==='BULLISH') winner=bullish;
+    else if(tradingBiasState==='BEARISH') winner=bearish;
+    else winner=null;
   }
 
   if(!winner){
     return{
       status:'WAIT',direction:null,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:null,
-      reasons:['DG Trading Bias ist NEUTRAL/MIXED — und weder bullish noch bearish liegt aktuell ein unterstützender Liquidity Sweep + Reaktion vor (Kapitel 12: Mixed Context).']
+      reasons:['Bullish und bearish sind aktuell entweder beide nicht ausreichend entwickelt oder exakt gleich weit entwickelt — kein willkürlicher Richtungsentscheid (Kapitel 12: Mixed Context).']
     };
   }
-  return winner;
+  const winnerBias=winner.direction==='bullish'?'BULLISH':'BEARISH';
+  if((tradingBiasState==='BULLISH'||tradingBiasState==='BEARISH')&&winnerBias!==tradingBiasState){
+    return Object.assign({},winner,{counterBias:true,reasons:[...(winner.reasons||[]),`Counter-Bias-Kontext: Trading Bias ${tradingBiasState}, Setup-Fakten ${winnerBias}.`]});
+  }
+  return Object.assign({},winner,{counterBias:false});
 }
 
 // DG Risk Management (Kapitel 11) — R:R is pure arithmetic once Entry
@@ -2031,18 +2153,18 @@ function formatTimeHHMM(iso){
 // a fabricated timeline — generateDGBriefing stays a pure function of the
 // current brain, so it never claims an order of events it can't verify.
 function recentLiquidityEventLines(primaryLiquidity){
-  const lines=[];
-  primaryLiquidity
-    .filter(l=>l.status==='sweeped'&&l.sweptAt)
-    .sort((a,b)=>new Date(b.sweptAt)-new Date(a.sweptAt))
+  return primaryLiquidity
+    .filter(l=>l.status==='sweeped'&&(l.sweptAt||l.observedAt))
+    .sort((a,b)=>new Date(b.sweptAt||b.observedAt)-new Date(a.sweptAt||a.observedAt))
     .slice(0,3)
-    .forEach(l=>{
-      lines.push(`${l.label} swept at ${formatTimeHHMM(l.sweptAt)} UTC`);
-      if(l.reaction&&l.reaction.status==='REACTED'){
-        lines.push(`${l.type==='high'?'Bearish':'Bullish'} reaction detected`);
-      }
+    .map(l=>{
+      const timing=l.sweepTimingSource==='OBSERVED_AT_START'
+        ?`${l.label}: Beim Start bereits gesweept – exakter historischer Sweep-Zeitpunkt nicht verfügbar.`
+        :`${l.label} swept at ${formatTimeHHMM(l.sweptAt)} UTC`;
+      return l.reaction&&l.reaction.status==='REACTED'
+        ?`${timing} · ${l.type==='high'?'Bearish':'Bullish'} reaction detected`
+        :timing;
     });
-  return lines;
 }
 
 // DG Market Report V1 — Daniel's explicit reprioritization ("DG OS – V1
@@ -2057,8 +2179,9 @@ function recentLiquidityEventLines(primaryLiquidity){
 // dumping the full briefing. One source of truth per section, two callers.
 function buildLiquiditySection(liquidity){
   const primaryLiquidity=(liquidity||[]).filter(isV1PrimaryLiquidity);
-  const above=primaryLiquidity.filter(l=>l.type==='high'&&l.status!=='invalid').sort((a,b)=>a.price-b.price).slice(0,4);
-  const below=primaryLiquidity.filter(l=>l.type==='low'&&l.status!=='invalid').sort((a,b)=>b.price-a.price).slice(0,4);
+  const currentLiquidity=primaryLiquidity.filter(l=>!(l.status==='sweeped'&&l.structureType==='external'&&V1_PRIMARY_SWING_TIMEFRAMES.has(l.timeframe)));
+  const above=currentLiquidity.filter(l=>l.type==='high'&&l.status!=='invalid').sort((a,b)=>a.price-b.price).slice(0,4);
+  const below=currentLiquidity.filter(l=>l.type==='low'&&l.status!=='invalid').sort((a,b)=>b.price-a.price).slice(0,4);
   const liquidityLine=l=>{
     const base=`- ${l.label}: ${fmtPrice(l.price)} – ${LIQUIDITY_STATUS_LABEL[l.status]||l.status}`;
     if(l.status==='sweeped'&&l.reaction) return`${base}\n  → Reaction ${l.reaction.status==='REACTED'?'detected':'not yet detected'}`;
@@ -2259,45 +2382,51 @@ function generateMarketReport(input){
   // Weekly/Monthly/H1 levels stay Bias context, never clutter the report.
   const notableLiquidity=(liquidity||[])
     .filter(l=>(l.status==='sweeped'||l.status==='touched'||l.status==='approaching')&&isV1PrimaryLiquidity(l))
+    .filter(l=>!(l.status==='sweeped'&&l.structureType==='external'&&V1_PRIMARY_SWING_TIMEFRAMES.has(l.timeframe)))
     .map(l=>{
       const reactionText=l.status==='sweeped'?(l.reaction&&l.reaction.status==='REACTED'?'YES':'NO'):null;
       return`${l.label} (${l.timeframe}) — ${LIQUIDITY_STATUS_LABEL[l.status]||l.status} bei ${fmtPrice(l.price)}`
         +(l.sweptAt?` [Swept At ${l.sweptAt}]`:'')
         +(reactionText?` [Reaction: ${reactionText}]`:'');
     });
+  const recentEvents=recentLiquidityEventLines((liquidity||[]).filter(isV1PrimaryLiquidity));
 
   // V1 priority: FVG/Order Block briefing spotlight is Daily/4H/1H only
   // ("nicht hunderte alte FVGs im Hauptbriefing"), fresh, prioritizing zones
   // already linked to a Reaction/Structure Shift, nearest to price first.
-  const poiFact=p=>({timeframe:p.timeframe,type:p.type,range:`${fmtPrice(p.priceLow)}–${fmtPrice(p.priceHigh)}`,status:p.status,quality:p.quality,score:p.score});
+  const poiFact=p=>({marketFact:true,timeframe:p.timeframe,type:p.type,range:`${fmtPrice(p.priceLow)}–${fmtPrice(p.priceHigh)}`,status:p.mitigationState||'OPEN_UNMITIGATED',mitigationPercent:Math.round((p.mitigationPercent||0)*100)/100,tested:(p.mitigationPercent||0)>0||!!(p.confirmation&&p.confirmation.touchedAt),reaction:!!p.reaction||!!(p.confirmation&&p.confirmation.reactionDetected),dgRelevance:{quality:p.quality,matchedFactors:p.score,maxFactors:p.maxScore},quality:p.quality,score:p.score});
   const poiBriefingSort=(a,b)=>{
-    const reactionDiff=(b.reaction?1:0)-(a.reaction?1:0);
+    const reactionDiff=((b.confirmation&&b.confirmation.reactionDetected)||b.reaction?1:0)-((a.confirmation&&a.confirmation.reactionDetected)||a.reaction?1:0);
     if(reactionDiff) return reactionDiff;
+    const relevanceDiff=(b.score||0)-(a.score||0);
+    if(relevanceDiff) return relevanceDiff;
     const aDist=typeof a.distanceToPrice==='number'?a.distanceToPrice:Infinity;
     const bDist=typeof b.distanceToPrice==='number'?b.distanceToPrice:Infinity;
     return aDist-bDist;
   };
-  const freshBullishPOIs=(poisAll||[]).filter(p=>p.direction==='bullish'&&p.status==='fresh'&&V1_POI_BRIEFING_TIMEFRAMES.has(p.timeframe))
+  const freshBullishPOIs=(poisAll||[]).filter(p=>p.direction==='bullish'&&p.mitigationState!=='FULLY_MITIGATED'&&ENTRY_CANDIDATE_MIN_QUALITY.has(p.quality)&&V1_POI_BRIEFING_TIMEFRAMES.has(p.timeframe))
     .sort(poiBriefingSort).slice(0,5).map(poiFact);
-  const freshBearishPOIs=(poisAll||[]).filter(p=>p.direction==='bearish'&&p.status==='fresh'&&V1_POI_BRIEFING_TIMEFRAMES.has(p.timeframe))
+  const freshBearishPOIs=(poisAll||[]).filter(p=>p.direction==='bearish'&&p.mitigationState!=='FULLY_MITIGATED'&&ENTRY_CANDIDATE_MIN_QUALITY.has(p.quality)&&V1_POI_BRIEFING_TIMEFRAMES.has(p.timeframe))
     .sort(poiBriefingSort).slice(0,5).map(poiFact);
 
   const status=entryDecision.status;
 
   const lines=[];
-  lines.push(`HTF Bias — Macro (Monthly/Weekly): ${macro?macro.state:overallBias} · Trading (Daily/4H): ${trading?trading.state:overallBias}`);
-  lines.push(`Weekly: ${summarizeTimeframeContext(tfBrainsByOutputKey.weekly,premiumDiscountByOutputKey.weekly)}`);
-  lines.push(`Daily: ${summarizeTimeframeContext(tfBrainsByOutputKey.daily,premiumDiscountByOutputKey.daily)}`);
-  lines.push(`4H: ${summarizeTimeframeContext(tfBrainsByOutputKey.h4,premiumDiscountByOutputKey.h4)}`);
+  const poiSummary=p=>`${p.range} (${p.timeframe}, ${p.quality}) · ${p.status} · Mitigation ${p.mitigationPercent}% · getestet ${p.tested?'JA':'NEIN'} · Reaktion ${p.reaction?'JA':'NEIN'}`;
+  lines.push(freshBullishPOIs.length?`Fresh Bullish POIs: ${freshBullishPOIs.map(poiSummary).join(', ')}`:'Fresh Bullish POIs: keine.');
+  lines.push(freshBearishPOIs.length?`Fresh Bearish POIs: ${freshBearishPOIs.map(poiSummary).join(', ')}`:'Fresh Bearish POIs: keine.');
   lines.push(notableLiquidity.length?`Liquidity (touched/sweeped): ${notableLiquidity.join(' · ')}`:'Liquidity (touched/sweeped): aktuell keine.');
-  lines.push(freshBullishPOIs.length?`Fresh Bullish POIs: ${freshBullishPOIs.map(p=>`${p.range} (${p.timeframe}, ${p.quality})`).join(', ')}`:'Fresh Bullish POIs: keine.');
-  lines.push(freshBearishPOIs.length?`Fresh Bearish POIs: ${freshBearishPOIs.map(p=>`${p.range} (${p.timeframe}, ${p.quality})`).join(', ')}`:'Fresh Bearish POIs: keine.');
+  lines.push(recentEvents.length?`Recent Events: ${recentEvents.join(' · ')}`:'Recent Events: keine.');
   const primaryUp=(targets||[]).find(t=>t.priority==='PRIMARY'&&t.direction==='up');
   const primaryDown=(targets||[]).find(t=>t.priority==='PRIMARY'&&t.direction==='down');
   if(primaryUp) lines.push(`Primary Target aufwärts: ${fmtPrice(primaryUp.price)} (${primaryUp.reason})`);
   if(primaryDown) lines.push(`Primary Target abwärts: ${fmtPrice(primaryDown.price)} (${primaryDown.reason})`);
   if(sessionNotes&&sessionNotes.length) lines.push(`Sessions: ${sessionNotes.join(' · ')}`);
   lines.push(`Entry Status: ${status}${entryDecision.reasons&&entryDecision.reasons.length?` — ${entryDecision.reasons[0]}`:''}`);
+  lines.push(`HTF Bias — Macro (Monthly/Weekly): ${macro?macro.state:overallBias} · Trading (Daily/4H): ${trading?trading.state:overallBias}`);
+  lines.push(`Weekly: ${summarizeTimeframeContext(tfBrainsByOutputKey.weekly,premiumDiscountByOutputKey.weekly)}`);
+  lines.push(`Daily: ${summarizeTimeframeContext(tfBrainsByOutputKey.daily,premiumDiscountByOutputKey.daily)}`);
+  lines.push(`4H: ${summarizeTimeframeContext(tfBrainsByOutputKey.h4,premiumDiscountByOutputKey.h4)}`);
   if(risk&&typeof risk.entryPrice==='number') lines.push(`Entry ${fmtPrice(risk.entryPrice)} · SL ${fmtPrice(entryDecision.stopLoss)} · Risk-Distanz ${risk.riskDistance} · Position Size: MANUAL`);
   lines.push(news.status==='CONNECTED'&&news.events.length
     ?`News: ${news.events.length} High-Impact Event(s) bevorstehend, nächstes: ${news.events[0].event} (${news.events[0].time})`
@@ -2308,7 +2437,7 @@ function generateMarketReport(input){
     weeklyContext:summarizeTimeframeContext(tfBrainsByOutputKey.weekly,premiumDiscountByOutputKey.weekly),
     dailyContext:summarizeTimeframeContext(tfBrainsByOutputKey.daily,premiumDiscountByOutputKey.daily),
     h4Context:summarizeTimeframeContext(tfBrainsByOutputKey.h4,premiumDiscountByOutputKey.h4),
-    notableLiquidity,freshBullishPOIs,freshBearishPOIs,targets:targets||[],
+    notableLiquidity,recentEvents,freshBullishPOIs,freshBearishPOIs,targets:targets||[],
     entry:entryDecision,risk:risk||null,sessionNotes:sessionNotes||[],newsStatus:news.status,newsEvents:news.events,
     status,summary:lines.join('\n')
   };
@@ -2365,7 +2494,7 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,pri
   });
 
   const dailyEntry=candlesByTimeframe.daily;
-  const prevDayLiquidity=previousDayLiquidityFrom(dailyEntry&&dailyEntry.series);
+  const prevDayLiquidity=previousDayLiquidityFrom(dailyEntry&&dailyEntry.series,currentPrice);
   const rawLiquidity=[...(liquidityBase||[]),...prevDayLiquidity,...swingLiquidityFrom(tfBrainsByOutputKey,currentPrice)];
 
   // Liquidity Memory (V1 priority: sweep persistence + Reaction tracking,
@@ -2403,16 +2532,18 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,pri
   poisAll.forEach(p=>{ p.relatedHTFBias=biasResult.overallBias; });
   const tradingDirectionLower=biasResult.overallBias==='BULLISH'?'bullish':(biasResult.overallBias==='BEARISH'?'bearish':null);
 
-  // (5) DG POI Quality (Kapitel 4/5/6/7)
+  // (5) DG Confirmation (Kapitel 8) starts at the actual 15M POI touch.
+  // It runs before quality so an immediate LTF reaction is usable without
+  // waiting for a full candle close on the POI's own timeframe.
+  const ltf15mSeries=(candlesByTimeframe[LTF_CONFIRMATION_TIMEFRAME_KEY]&&candlesByTimeframe[LTF_CONFIRMATION_TIMEFRAME_KEY].series)||[];
+  poisAll.forEach(poi=>{ poi.confirmation=computeConfirmation(poi,ltf15mSeries); });
+
+  // (6) DG POI Quality (Kapitel 4/5/6/7)
   poisAll.forEach(poi=>{
     const sameTimeframePOIs=poisAll.filter(p=>p.timeframe===poi.timeframe);
     const quality=computePOIQuality(poi,{liquidityById,tradingBiasDirection:tradingDirectionLower,sameTimeframePOIs});
     Object.assign(poi,quality);
   });
-
-  // (6) DG Confirmation (Kapitel 8) — 15M series, one confirmation check per POI
-  const ltf15mSeries=(candlesByTimeframe[LTF_CONFIRMATION_TIMEFRAME_KEY]&&candlesByTimeframe[LTF_CONFIRMATION_TIMEFRAME_KEY].series)||[];
-  poisAll.forEach(poi=>{ poi.confirmation=computeConfirmation(poi,ltf15mSeries); });
 
   // (7) DG Entry (Kapitel 9)
   const entryDecision=computeEntryDecision(biasResult.overallBias,poisAll,combinedLiquidity,currentPrice,priorSetupContext);
@@ -2490,7 +2621,7 @@ return{
   EQUILIBRIUM_BAND_PERCENT,computeZoneForRange,computePremiumDiscount,PD_ZONE_LABEL,
   computeHTFBias,BIAS_LABEL,
   LIQUIDITY_LEVEL_DEFS,extractLevelRaw,LIQUIDITY_TOUCH_PERCENT,computeLiquidityStatus,computeLiquidityEngine,LIQUIDITY_STATUS_LABEL,
-  createPOI,candleTimeToIso,POI_ATR_WINDOW,localAverageRange,isZoneMitigatedAfter,
+  createPOI,candleTimeToIso,isUsableMarketCandle,filterUsableMarketCandles,POI_ATR_WINDOW,localAverageRange,isZoneMitigatedAfter,
   detectFairValueGaps,candleDirection,closeStrength,detectOrderBlocks,OB_DISPLACEMENT_RATIO,OB_CLOSE_STRENGTH_MIN,
   detectBreakers,detectInverseFairValueGaps,detectMitigationBlocks,detectRejectionBlocks,detectSupplyZones,detectDemandZones,
   POI_TYPE_DEFS,POI_LIQUIDITY_TOLERANCE_PERCENT,relatedLiquidityFor,detectZoneReaction,enrichPOIContext,computePOIEngine,

@@ -30,6 +30,7 @@
 const MB = require('../marketBrain.js');
 const { classifyMarketEvents, classifyTradingBrainEvents, buildActiveSetup } = require('../events.js');
 const rest = require('./lib/twelveDataRest.js');
+const finnhub = require('./lib/finnhubClient.js');
 const store = require('./lib/marketStateStore.js');
 const tbStore = require('./lib/tradingBrainStore.js');
 const { TIMEFRAME_DEFS } = require('./lib/timeframes.js');
@@ -52,7 +53,7 @@ const BRAIN_CANDLE_TIMEFRAME = '1h'; // the only series computeAllDerivedModules
 const HTF_CORE_TIMEFRAMES = ['weekly', 'daily', '4h', '1h'];
 
 class MarketState {
-  constructor({ apiKey, restBaseUrl }) {
+  constructor({ apiKey, restBaseUrl, newsApiKey, newsBaseUrl }) {
     this.apiKey = apiKey;
     this.restBaseUrl = restBaseUrl;
 
@@ -60,6 +61,19 @@ class MarketState {
     this.candlesByTimeframe = {}; // id -> {latestRealBar, series}
     this.sessions = null;
     this.brain = MB.createMarketBrainState();
+
+    // DG News (Kapitel 14) — Daniel's picked free source, Finnhub's
+    // economic calendar. Optional: undefined/absent newsApiKey means this
+    // stays [] forever and computeNewsContext() honestly reports
+    // DATA_SOURCE_NOT_CONNECTED, same "configure once it's available"
+    // pattern as apiKey/TWELVEDATA_API_KEY above. `newsBaseUrl` is the
+    // same test-only override pattern as restBaseUrl.
+    this.newsApiKey = newsApiKey;
+    this.newsBaseUrl = newsBaseUrl;
+    this.newsEvents = [];
+    this.lastNewsUpdateAt = null;
+    this.newsStatus = 'never'; // 'never' | 'ok' | 'error'
+    this.lastNewsError = null;
 
     this.lastPriceUpdateAt = null;
     this.lastQuoteUpdateAt = null;
@@ -95,6 +109,26 @@ class MarketState {
   }
 
   setWebsocketStatus(status) { this.websocketStatus = status; }
+
+  // ---- DG News (Kapitel 14) ------------------------------------------------
+
+  // Economic calendars don't change intraday the way price does — callers
+  // (server/index.js) refresh this on a coarse interval (e.g. every 30
+  // min), not on every tick. A fetch failure never throws out of this
+  // method and never clears previously-known events — a transient outage
+  // should degrade to "stale but real", not "suddenly no news at all".
+  async refreshNews() {
+    if (!this.newsApiKey) return; // not configured — computeNewsContext() stays honestly DATA_SOURCE_NOT_CONNECTED
+    try {
+      this.newsEvents = await finnhub.fetchEconomicCalendar(this.newsApiKey, { baseUrl: this.newsBaseUrl });
+      this.lastNewsUpdateAt = new Date();
+      this.newsStatus = 'ok';
+      this.lastNewsError = null;
+    } catch (err) {
+      this.newsStatus = 'error';
+      this.lastNewsError = err.message;
+    }
+  }
 
   // ---- REST candle refresh (Phase B/E) ------------------------------------
 
@@ -224,7 +258,7 @@ class MarketState {
     // recompute's memory feeds back in so a sweep already observed doesn't
     // get reported as brand-new again ("nicht immer wieder als neu melden").
     const priorLiquidityMemory = this._prevTradingBrainState && this._prevTradingBrainState.liquidityMemory;
-    this.tradingBrain = MB.computeTradingBrainV1(this.candlesByTimeframe, this.brain.liquidity, this._currentPrice(), priorSetupContext, priorLiquidityMemory);
+    this.tradingBrain = MB.computeTradingBrainV1(this.candlesByTimeframe, this.brain.liquidity, this._currentPrice(), priorSetupContext, priorLiquidityMemory, this.newsEvents);
     const decision = this.tradingBrain.decision;
     const { events: tbEvents, statusEventEmitted, approachEventEmitted, liquidityApproachEventEmitted } = classifyTradingBrainEvents(this._prevTradingBrainState, this.tradingBrain, this._currentPrice());
     if (tbEvents.length) this._pendingEvents.push(...tbEvents);
@@ -327,7 +361,11 @@ class MarketState {
       loadedTimeframes,
       missingTimeframes,
       htfReady,
-      freshness: this.getFreshness()
+      freshness: this.getFreshness(),
+      newsConfigured: !!this.newsApiKey,
+      newsStatus: this.newsStatus,
+      lastNewsError: this.lastNewsError,
+      lastNewsUpdateAt: this.lastNewsUpdateAt ? this.lastNewsUpdateAt.toISOString() : null
     };
   }
 

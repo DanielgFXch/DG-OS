@@ -8,6 +8,60 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.35.0] — DG News (Kapitel 14): Finnhub-Anbindung
+
+Erste echte Datenquelle für Kapitel 14. Bisher war `newsStatus` immer der
+feste String `DATA_SOURCE_NOT_CONNECTED` — jetzt kann DG OS optional einen
+echten Wirtschaftskalender laden, sobald ein `FINNHUB_API_KEY` gesetzt ist.
+Kostenlose Finnhub-Stufe, Daniels ausdrückliche Wahl ("machen wir erstmal
+das kostenlose"). Ohne Key läuft alles exakt wie vorher — ehrlicher
+Fallback, keine erfundenen News.
+
+**Weiterhin absolut:** News bleibt reiner Kontext, nie eine automatische
+Trade-Richtung (Kapitel 14) — der Events-Array fließt an keiner Stelle in
+Bias-Voting oder Entry-Logik ein, nur in Report/Briefing/Chat-Anzeige.
+
+### Neu (`server/lib/finnhubClient.js`)
+- Schlanker REST-Client für Finnhubs `/calendar/economic` — nur
+  High-Impact-Events, standardmäßig auf US gefiltert (optional), sortiert
+  chronologisch. Kein Key gesetzt → leeres Array, nie ein Fehler.
+
+### Geändert (`marketBrain.js`)
+- `computeNewsContext(newsEvents)` ersetzt die feste `NEWS_STATUS`-Konstante
+  durch eine echte Auswertung: `CONNECTED` sobald echte Events vorliegen,
+  sonst weiterhin ehrlich `DATA_SOURCE_NOT_CONNECTED`.
+- `answerNewsQuestion`, `generateMarketReport`, `computeTradingBrainV1`
+  geben bei `CONNECTED` die realen bevorstehenden High-Impact-Events aus
+  (inkl. des Kapitel-14-Hinweises "News ≠ automatische Trade-Richtung");
+  ohne Anbindung exakt wie vorher.
+
+### Geändert (`server/marketState.js`, `server/index.js`)
+- `MarketState` nimmt optional `newsApiKey`/`newsBaseUrl` entgegen, neue
+  Methode `refreshNews()`. `getHealth()` meldet zusätzlich
+  `newsConfigured`/`newsStatus`/`lastNewsError`/`lastNewsUpdateAt`.
+- Server lädt News einmal beim Start (falls Key gesetzt) und danach alle
+  30 Minuten (`newsInterval`, sauber gestoppt in `shutdown()`) — ein
+  Wirtschaftskalender braucht keine WebSocket-Frische.
+- `FINNHUB_API_KEY` wird wie `TWELVEDATA_API_KEY`/`TELEGRAM_BOT_TOKEN`
+  direkt als Railway-Variable gesetzt, nie über den Code oder Chat.
+
+### Getestet
+Unit-Tests (`normalizeImpact`, `fetchEconomicCalendar` gegen einen lokalen
+Mock-Finnhub-Server, 14 Assertions) + 8 neue `computeNewsContext`/
+`answerNewsQuestion`-Assertions in der Haupt-Suite (92/92 bestanden) +
+volle End-to-End-Regression von `server/index.js` gegen Mock-TwelveData
+(alle Checks bestanden, Verhalten ohne `FINNHUB_API_KEY` unverändert).
+**Ehrlich offene Lücke:** Feldnamen/Response-Form von Finnhubs echter API
+sind aus Dokumentation übernommen, noch nicht gegen einen echten Key
+verifiziert — sollte nach dem ersten echten Aufruf kurz gegengecheckt
+werden.
+
+### Geänderte Dateien
+`marketBrain.js`, `server/marketState.js`, `server/index.js`,
+`server/lib/finnhubClient.js` (neu), `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.34.0] — DG OS Assistant ganz oben + Stimmenauswahl
 
 Direktes Feedback nach dem ersten Live-Test: Jarvis soll das Erste sein,

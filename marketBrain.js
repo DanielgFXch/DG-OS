@@ -2150,8 +2150,15 @@ function detectChatIntent(question){
   return null;
 }
 
-function answerNewsQuestion(){
-  return`NEWS / FUNDAMENTAL\n\n${NEWS_STATUS} — DG OS hat noch keine echte News-/Wirtschaftskalender-Quelle angebunden (Kapitel 14). Keine erfundene Einschätzung zur Weltlage. Technisch (Liquidity/POI/Reaktion) arbeitet DG OS trotzdem normal weiter.`;
+function answerNewsQuestion(newsContext){
+  const ctx=newsContext||{status:NEWS_STATUS,events:[]};
+  if(ctx.status!=='CONNECTED'||!ctx.events.length){
+    return`NEWS / FUNDAMENTAL\n\n${ctx.status} — DG OS hat noch keine echte News-/Wirtschaftskalender-Quelle angebunden (Kapitel 14). Keine erfundene Einschätzung zur Weltlage. Technisch (Liquidity/POI/Reaktion) arbeitet DG OS trotzdem normal weiter.`;
+  }
+  const lines=['NEWS / FUNDAMENTAL','','Bevorstehende High-Impact Events (US):',''];
+  lines.push(...ctx.events.slice(0,5).map(e=>`- ${e.event} — ${e.time}${e.estimate!=null?` (Erwartung: ${e.estimate})`:''}`));
+  lines.push('','News ist Kontext, keine automatische Trade-Richtung (Kapitel 14). Reaktion des Marktes auf Liquidity/POI/Structure bleibt entscheidend.');
+  return lines.join('\n');
 }
 
 function buildBiasSection(decision){
@@ -2182,7 +2189,7 @@ function answerMarketQuestion(question,brain,now){
   const decision=brain.decision,report=brain.report,liquidity=brain.liquidity||[];
   const intent=detectChatIntent(question);
 
-  if(intent==='news') return answerNewsQuestion();
+  if(intent==='news') return answerNewsQuestion(brain.newsContext);
   if(intent==='bias') return buildBiasSection(decision);
   if(intent==='risk') return buildRiskSection(decision);
   if(intent==='liquidity') return buildLiquiditySection(liquidity).text;
@@ -2197,10 +2204,21 @@ function answerMarketQuestion(question,brain,now){
 
 // DG News (Kapitel 14) — Daniel's own explicit V1 answer: "Falls noch
 // keine zuverlässige Live-News-/Economic-Calendar-Datenquelle angebunden
-// ist: NEWS_STATUS = DATA_SOURCE_NOT_CONNECTED." No such source exists in
-// DG OS yet, so this is a constant, not a computation — never invented,
-// never blocking the rest of V1.
+// ist: NEWS_STATUS = DATA_SOURCE_NOT_CONNECTED." Was a plain constant
+// (no source existed) — now a real computation once Daniel picked a free
+// source (Finnhub economic calendar, server/lib/finnhubClient.js), still
+// honestly falling back to the same constant when nothing is connected.
+// Purely informational either way: "News ≠ automatischer Direction Bias"
+// (Kapitel 14) — computeNewsContext() never feeds into Bias/Entry, it only
+// ever surfaces facts for the report/briefing/DG OS Chat to display.
 const NEWS_STATUS='DATA_SOURCE_NOT_CONNECTED';
+
+function computeNewsContext(newsEvents){
+  if(!Array.isArray(newsEvents)||!newsEvents.length){
+    return{status:NEWS_STATUS,events:[]};
+  }
+  return{status:'CONNECTED',events:newsEvents};
+}
 
 // DG Sessions & Timing (Kapitel 13) — purely informational notes, never a
 // directive: "Wenn London das Asia High sweeped, kann anschließend eine
@@ -2232,8 +2250,9 @@ const V1_POI_BRIEFING_TIMEFRAMES=new Set(['Daily','4H','H1']);
 // unless DATA_NOT_READY (Kapitel 12) overrides it in the orchestrator
 // below because a required HTF timeframe hasn't loaded yet.
 function generateMarketReport(input){
-  const{biasResult,tfBrainsByOutputKey,premiumDiscountByOutputKey,liquidity,poisAll,targets,entryDecision,risk,sessionNotes}=input;
+  const{biasResult,tfBrainsByOutputKey,premiumDiscountByOutputKey,liquidity,poisAll,targets,entryDecision,risk,sessionNotes,newsContext}=input;
   const{overallBias,confidence,reasoning,macro,trading}=biasResult;
+  const news=newsContext||{status:NEWS_STATUS,events:[]};
 
   // V1 priority: the briefing's Liquidity line only ever names PRIMARY
   // levels (Daily/4H swings, Previous/current Daily H/L, Session H/L) —
@@ -2280,7 +2299,9 @@ function generateMarketReport(input){
   if(sessionNotes&&sessionNotes.length) lines.push(`Sessions: ${sessionNotes.join(' · ')}`);
   lines.push(`Entry Status: ${status}${entryDecision.reasons&&entryDecision.reasons.length?` — ${entryDecision.reasons[0]}`:''}`);
   if(risk&&typeof risk.entryPrice==='number') lines.push(`Entry ${fmtPrice(risk.entryPrice)} · SL ${fmtPrice(entryDecision.stopLoss)} · Risk-Distanz ${risk.riskDistance} · Position Size: MANUAL`);
-  lines.push(`News: ${NEWS_STATUS}`);
+  lines.push(news.status==='CONNECTED'&&news.events.length
+    ?`News: ${news.events.length} High-Impact Event(s) bevorstehend, nächstes: ${news.events[0].event} (${news.events[0].time})`
+    :`News: ${news.status}`);
 
   return{
     htfBias:{overallBias,confidence,macro,trading,reasoning},
@@ -2288,7 +2309,7 @@ function generateMarketReport(input){
     dailyContext:summarizeTimeframeContext(tfBrainsByOutputKey.daily,premiumDiscountByOutputKey.daily),
     h4Context:summarizeTimeframeContext(tfBrainsByOutputKey.h4,premiumDiscountByOutputKey.h4),
     notableLiquidity,freshBullishPOIs,freshBearishPOIs,targets:targets||[],
-    entry:entryDecision,risk:risk||null,sessionNotes:sessionNotes||[],newsStatus:NEWS_STATUS,
+    entry:entryDecision,risk:risk||null,sessionNotes:sessionNotes||[],newsStatus:news.status,newsEvents:news.events,
     status,summary:lines.join('\n')
   };
 }
@@ -2324,9 +2345,10 @@ function summarizeHTFContextEntry(tf,pd){
 // NO_ENTRY. Stateless callers (browser, tests) simply omit it, in which
 // case MISSED can never fire — an honest consequence of having no history,
 // not a bug.
-function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,priorSetupContext,priorLiquidityMemory){
+function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,priorSetupContext,priorLiquidityMemory,newsEvents){
   candlesByTimeframe=candlesByTimeframe||{};
   const nowIso=new Date().toISOString();
+  const newsContext=computeNewsContext(newsEvents);
 
   // (1) Per-timeframe Market Facts
   const tfBrainsByOutputKey={};
@@ -2401,7 +2423,7 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,pri
 
   // (9) DG Sessions (Kapitel 13) + DG News (Kapitel 14) + Report
   const sessionNotes=computeSessionNotes(combinedLiquidity);
-  const report=generateMarketReport({biasResult,tfBrainsByOutputKey,premiumDiscountByOutputKey,liquidity:combinedLiquidity,poisAll,targets,entryDecision,risk,sessionNotes});
+  const report=generateMarketReport({biasResult,tfBrainsByOutputKey,premiumDiscountByOutputKey,liquidity:combinedLiquidity,poisAll,targets,entryDecision,risk,sessionNotes,newsContext});
 
   const htfContext={
     monthly:summarizeHTFContextEntry(tfBrainsByOutputKey.monthly,premiumDiscountByOutputKey.monthly),
@@ -2435,7 +2457,7 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,pri
     structure:{monthly:tfBrainsByOutputKey.monthly.structure,weekly:tfBrainsByOutputKey.weekly.structure,daily:tfBrainsByOutputKey.daily.structure,h4:tfBrainsByOutputKey.h4.structure,h1:tfBrainsByOutputKey.h1.structure},
     liquidity:combinedLiquidity,liquidityMemory,premiumDiscount:premiumDiscountByOutputKey,
     pois:poisAll,targets,entry:entryDecision,risk,decision,report,status:finalStatus,
-    sessionNotes,newsStatus:NEWS_STATUS,
+    sessionNotes,newsStatus:newsContext.status,newsContext,
     // Machine-readable pointer to which rules/strategy.md chapters still
     // gate a field somewhere in this output — cheap, honest, not a guess.
     awaitingDgRule:Object.keys(DG_RULES_DEFINED).filter(k=>!DG_RULES_DEFINED[k])
@@ -2498,7 +2520,7 @@ return{
   TARGET_MAX_PER_DIRECTION,hasCounterPOIInPath,computeTargets,
   ENTRY_CANDIDATE_MIN_QUALITY,ENTRY_SL_BUFFER_PERCENT_OF_ZONE,liquiditySweepSupport,
   MISSED_MOVE_PROGRESSED_STATUSES,detectMissedMove,entryCandidatesFor,ENTRY_STATUS_RANK,evaluateEntryForDirection,computeEntryDecision,
-  computeRiskManagement,NEWS_STATUS,SESSION_LIQUIDITY_TIMEFRAMES,computeSessionNotes,
+  computeRiskManagement,NEWS_STATUS,computeNewsContext,SESSION_LIQUIDITY_TIMEFRAMES,computeSessionNotes,
   buildDecisionSummary,timeOfDayGreeting,zurichDateString,zurichTimeString,shouldSendScheduledBriefing,ENTRY_STATUS_HEADLINE,waitingForText,
   buildLiquiditySection,buildRecentEventsSection,buildPOISection,buildTargetsSection,buildStatusSection,buildBiasSection,buildRiskSection,generateDGBriefing,
   CHAT_INTENTS,detectChatIntent,answerNewsQuestion,answerMarketQuestion,

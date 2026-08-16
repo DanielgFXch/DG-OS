@@ -8,6 +8,34 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.31.1] — Proaktives Morgen-Briefing
+
+Ergänzt v0.31.0's reaktiven DG OS Chat um eine proaktive Variante von
+Daniels "ich will einfach immer up to date werden" — DG OS schickt
+täglich von selbst ein echtes Briefing, ohne dass er fragen muss.
+
+### Neu
+- `shouldSendScheduledBriefing()` (`marketBrain.js`): reine Entscheidungs-
+  funktion (Europe/Zurich-Zeit), feuert einmal pro Kalendertag ab der
+  konfigurierten Uhrzeit — holt eine verpasste Sendezeit (Redeploy/Ausfall)
+  am selben Tag nach, sendet aber nie doppelt.
+- `server/lib/scheduledBriefingStore.js`: persistiert das letzte Sende-
+  Datum, gleiches Muster wie `tradingBrainStore.js`.
+- `server/index.js`: 60s-Check, sendet über `generateDGBriefing()` +
+  den bestehenden `sendTelegramMessage()`. Komplett aus (kein
+  ungefragtes Verhalten), solange `TELEGRAM_MORNING_BRIEFING_TIME` nicht
+  gesetzt ist — ehrliches Opt-in, kein Default-An.
+
+### Getestet
+83 Tests in `test_dg_rules_v1.js` (6 neu: Zeitfenster-Logik, Tages-Reset,
+Opt-in-Verhalten), voller End-to-End-Servertest weiterhin grün.
+
+### Geänderte/neue Dateien
+`marketBrain.js`, `server/index.js`, `server/lib/scheduledBriefingStore.js`
+(neu), `.gitignore`, `README.md`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.31.0] — DG OS Chat: Konversationelle Telegram-Anbindung
 
 Auf Daniels Vision ("ich steh auf und sage: Gomez, wie sieht der aktuelle

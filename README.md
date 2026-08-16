@@ -39,6 +39,10 @@ Das braucht den [Always-On Market Server](docs/ALWAYS_ON_SERVER.md) (nicht die s
 
 Aus Datenschutzgründen antwortet DG OS Chat ausschließlich auf Nachrichten aus der konfigurierten `TELEGRAM_CHAT_ID` — ist sie nicht gesetzt, antwortet der Bot niemandem (fail closed, nie ein öffentlicher Bot mit echten Marktdaten).
 
+#### Proaktives Morgen-Briefing (optional)
+
+Zusätzlich zum reaktiven Chat kann DG OS dir jeden Tag von selbst ein Briefing schicken, ohne dass du fragen musst. Dafür zusätzlich auf Railway `TELEGRAM_MORNING_BRIEFING_TIME` setzen (z. B. `07:00`, Europe/Zurich, 24h-Format). Ohne diese Variable bleibt das Feature aus — kein ungefragtes Verhalten ohne explizite Konfiguration. Läuft der Server um die eingestellte Zeit nicht (Redeploy, Ausfall), holt DG OS das Briefing beim nächsten Check noch am selben Tag nach; ein zweites Mal am selben Kalendertag (Europe/Zurich) wird nie gesendet.
+
 ## Live-Marktdaten (XAUUSD)
 
 Die Karte "XAUUSD Live" zeigt echten Kurs, Daily Open/High/Low und Change – gespeist über [TwelveData](https://twelvedata.com/) (kostenloser Tarif reicht).

@@ -1976,6 +1976,31 @@ function timeOfDayGreeting(date){
   return'Guten Abend';
 }
 
+// Proactive scheduled briefing (Daniel's "ich will einfach immer up to date
+// werden" — not just reactive DG OS Chat answers, a daily push he doesn't
+// have to ask for). Europe/Zurich, same timezone convention as
+// timeOfDayGreeting() above.
+function zurichDateString(date){
+  date=date||new Date();
+  try{ return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Zurich'}).format(date); }catch(err){ return date.toISOString().slice(0,10); } // en-CA -> YYYY-MM-DD
+}
+function zurichTimeString(date){
+  date=date||new Date();
+  try{ return new Intl.DateTimeFormat('en-GB',{hour:'2-digit',minute:'2-digit',hour12:false,timeZone:'Europe/Zurich'}).format(date); }catch(err){ return`${String(date.getHours()).padStart(2,'0')}:${String(date.getMinutes()).padStart(2,'0')}`; }
+}
+
+// Pure decision, no side effects, no I/O — the caller (server/index.js) is
+// responsible for actually sending + persisting lastSentDate once this
+// returns true. `sendTimeHHMM` is a plain "HH:MM" 24h string (Europe/
+// Zurich); fires the first check on/after that time each calendar day,
+// never twice the same day regardless of how often the caller polls.
+function shouldSendScheduledBriefing(now,lastSentDate,sendTimeHHMM){
+  if(!sendTimeHHMM) return false;
+  const today=zurichDateString(now);
+  if(today===lastSentDate) return false;
+  return zurichTimeString(now)>=sendTimeHHMM;
+}
+
 const ENTRY_STATUS_HEADLINE={
   WAIT:'⚪ WAIT',DATA_NOT_READY:'⚠️ DATA NOT READY',MISSED:'⏭️ MISSED / NO ENTRY',
   WATCH_BUY:'🟡 WATCH BUY',WATCH_SELL:'🟡 WATCH SELL',
@@ -2455,7 +2480,7 @@ return{
   ENTRY_CANDIDATE_MIN_QUALITY,ENTRY_SL_BUFFER_PERCENT_OF_ZONE,liquiditySweepSupport,
   MISSED_MOVE_PROGRESSED_STATUSES,detectMissedMove,entryCandidatesFor,ENTRY_STATUS_RANK,evaluateEntryForDirection,computeEntryDecision,
   computeRiskManagement,NEWS_STATUS,SESSION_LIQUIDITY_TIMEFRAMES,computeSessionNotes,
-  buildDecisionSummary,timeOfDayGreeting,ENTRY_STATUS_HEADLINE,waitingForText,
+  buildDecisionSummary,timeOfDayGreeting,zurichDateString,zurichTimeString,shouldSendScheduledBriefing,ENTRY_STATUS_HEADLINE,waitingForText,
   buildLiquiditySection,buildRecentEventsSection,buildPOISection,buildTargetsSection,buildStatusSection,generateDGBriefing,
   CHAT_INTENTS,detectChatIntent,answerNewsQuestion,answerMarketQuestion,
   summarizeTimeframeContext,V1_POI_BRIEFING_TIMEFRAMES,generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1

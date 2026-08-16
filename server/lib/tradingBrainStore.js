@@ -19,7 +19,16 @@ const TRADING_BRAIN_STATE_PATH = path.join(STATE_DIR, 'tradingBrainState.json');
 
 function readTradingBrainState() {
   if (!fs.existsSync(TRADING_BRAIN_STATE_PATH)) return null;
-  try { return JSON.parse(fs.readFileSync(TRADING_BRAIN_STATE_PATH, 'utf8')); } catch (err) { return null; }
+  return parseTradingBrainState(fs.readFileSync(TRADING_BRAIN_STATE_PATH, 'utf8'));
+}
+
+function parseTradingBrainState(raw) {
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+  } catch (err) {
+    return null;
+  }
 }
 
 function writeTradingBrainState(state) {
@@ -27,4 +36,4 @@ function writeTradingBrainState(state) {
   fs.writeFileSync(TRADING_BRAIN_STATE_PATH, JSON.stringify(state, null, 2) + '\n');
 }
 
-module.exports = { TRADING_BRAIN_STATE_PATH, readTradingBrainState, writeTradingBrainState };
+module.exports = { TRADING_BRAIN_STATE_PATH, parseTradingBrainState, readTradingBrainState, writeTradingBrainState };

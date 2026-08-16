@@ -37,9 +37,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - Order Blocks über dem definierten 65%-Mitigationsrichtwert werden nicht
   mehr als HIGH-Relevance dargestellt; DATA_NOT_READY/WAIT-Summaries geben
   keine Entry-, Invalidation-, Target- oder R:R-Idee aus.
+- Beschädigtes oder strukturell ungültiges Restart-Memory wird defensiv
+  verworfen; Provider-/Snapshot-Fehler bleiben fail-closed ohne Fake-Daten.
 
 ### Getestet
-- 60 Node-Regressionstests inklusive systemweiter Konsistenz-Invarianten
+- 65 Node-Regressionstests inklusive Failure Modes und Konsistenz-Invarianten
   und No-Look-Ahead-Replay, plus Syntax- und Diff-Prüfungen.
 - Read-only Real-Market-Scan gegen den laufenden DG-OS-Railway-Server auf
   15M, H1, 4H und Daily.

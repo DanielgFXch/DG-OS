@@ -289,13 +289,14 @@ function candleTimeToIso(datetime){
 // calendar placeholders there. We also reject malformed/zero-range bars.
 // No fixed absolute/minimum market range is used, so genuine quiet candles
 // remain valid.
-function isUsableMarketCandle(candle,timeframe,nowInput){
-  if(!candle) return false;
+function marketCandleQualityReason(candle,timeframe,nowInput){
+  if(!candle) return'MISSING_CANDLE';
   const o=Number(candle.open),h=Number(candle.high),l=Number(candle.low),c=Number(candle.close);
-  if(![o,h,l,c].every(Number.isFinite)||h<=l||h<Math.max(o,c)||l>Math.min(o,c)) return false;
+  if(![o,h,l,c].every(Number.isFinite)||h<Math.max(o,c)||l>Math.min(o,c)) return'INVALID_OHLC';
+  if(h<=l) return'ZERO_OR_NEGATIVE_RANGE';
   if(candle.datetime){
     const at=candleDate(candle.datetime);
-    if(!at) return false;
+    if(!at) return'INVALID_TIMESTAMP';
     const day=at.getUTCDay(),hour=at.getUTCHours();
     const tf=String(timeframe||'').toLowerCase();
     const calendarAnchored=tf==='monthly'||tf==='weekly'||tf==='1month'||tf==='1week';
@@ -308,9 +309,14 @@ function isUsableMarketCandle(candle,timeframe,nowInput){
     const entirelyClosed=day===6
       ||(day===5&&hour>=21)
       ||(day===0&&hour<22&&endsAt.getUTCDay()===0&&endsAt.getUTCHours()<=22);
-    if(currentSundayDailyPlaceholder||(!calendarAnchored&&entirelyClosed)) return false;
-  }else return false;
-  return true;
+    if(currentSundayDailyPlaceholder) return'CURRENT_SUNDAY_DAILY_PLACEHOLDER';
+    if(!calendarAnchored&&entirelyClosed) return'WEEKEND_CLOSED_PLACEHOLDER';
+  }else return'MISSING_TIMESTAMP';
+  return null;
+}
+
+function isUsableMarketCandle(candle,timeframe,nowInput){
+  return marketCandleQualityReason(candle,timeframe,nowInput)===null;
 }
 
 function filterUsableMarketCandles(candles,timeframe,nowInput){
@@ -1654,9 +1660,12 @@ function poiOverlapsFreshPOI(poi,sameTimeframePOIs,types){
 }
 function poiHasSweepSupport(poi,liquidityById){
   if(!Array.isArray(poi.relatedLiquidity)||!liquidityById) return false;
+  const availableAt=poiAvailableAtMs(poi);
   return poi.relatedLiquidity.some(id=>{
     const lv=liquidityById.get(id);
-    return lv&&lv.status==='sweeped'&&lv.relevance&&lv.relevance.tier!=='low';
+    const sweptAt=lv&&lv.sweptAt?new Date(lv.sweptAt).getTime():NaN;
+    return lv&&lv.status==='sweeped'&&Number.isFinite(sweptAt)&&Number.isFinite(availableAt)&&sweptAt<=availableAt
+      &&lv.relevance&&lv.relevance.tier!=='low';
   });
 }
 function poiFavorablePDLocation(poi){
@@ -1876,13 +1885,21 @@ const ENTRY_CANDIDATE_MIN_QUALITY=new Set(['medium','high']); // Kapitel 12: no 
 // arbitrary pip count) keeps the SL derived from real market structure.
 const ENTRY_SL_BUFFER_PERCENT_OF_ZONE=10;
 
-function liquiditySweepSupport(direction,liquidity){
+function liquiditySweepSupport(direction,liquidity,primaryPoi){
   const wantType=direction==='bullish'?'low':'high'; // bullish setup needs Sellside (low) liquidity taken first
   // V1 priority: only a sweep of PRIMARY liquidity (Daily/4H swings,
   // Previous/current Daily H/L, Session H/L) counts as real sweep support
   // for an Entry — a Weekly/Monthly/H1 swing sweep is still visible as
   // Bias context elsewhere, but never drives WATCH/CONFIRMATION/READY.
-  return(liquidity||[]).filter(l=>l.type===wantType&&l.status==='sweeped'&&l.relevance&&l.relevance.tier!=='low'&&isV1PrimaryLiquidity(l));
+  const contextAt=primaryPoi&&primaryPoi.confirmation&&primaryPoi.confirmation.touchedAt
+    ?new Date(primaryPoi.confirmation.touchedAt).getTime()
+    :(primaryPoi&&primaryPoi.reaction&&primaryPoi.reaction.at?new Date(primaryPoi.reaction.at).getTime():null);
+  return(liquidity||[]).filter(l=>{
+    const sweptAt=l.sweptAt?new Date(l.sweptAt).getTime():NaN;
+    return l.type===wantType&&l.status==='sweeped'&&Number.isFinite(sweptAt)
+      &&(!Number.isFinite(contextAt)||sweptAt<=contextAt)
+      &&l.relevance&&l.relevance.tier!=='low'&&isV1PrimaryLiquidity(l);
+  });
 }
 
 // DG No-Trade Rules (Kapitel 12) — "MISSED": "Wenn das erwartete Szenario
@@ -1940,8 +1957,8 @@ function evaluateEntryForDirection(direction,poisAll,liquidity,currentPrice){
     return{status:'WAIT',direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:null,reasons:[`Kein relevanter POI in ${direction==='bullish'?'bullisher':'bearisher'} Richtung — Kapitel 12.`]};
   }
 
-  const sweepSupport=liquiditySweepSupport(direction,liquidity);
   const primary=candidates[0];
+  const sweepSupport=liquiditySweepSupport(direction,liquidity,primary);
 
   if(!sweepSupport.length){
     return{status:'WAIT',direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:primary.id,reasons:[`Kein unterstützender Liquidity Sweep (relevantes Level) für ein ${direction} Setup vorhanden — Kapitel 9.`]};
@@ -1954,7 +1971,10 @@ function evaluateEntryForDirection(direction,poisAll,liquidity,currentPrice){
   const nearestSweep=[...sweepSupport].sort((a,b)=>Math.abs(a.price-currentPrice)-Math.abs(b.price-currentPrice))[0];
   const zoneHeight=primary.priceHigh-primary.priceLow;
   const buffer=zoneHeight*(ENTRY_SL_BUFFER_PERCENT_OF_ZONE/100);
-  const stopLoss=nearestSweep?Math.round((direction==='bullish'?nearestSweep.price-buffer:nearestSweep.price+buffer)*100)/100:null;
+  const stopCandidate=nearestSweep?Math.round((direction==='bullish'?nearestSweep.price-buffer:nearestSweep.price+buffer)*100)/100:null;
+  const stopLoss=typeof stopCandidate==='number'&&(
+    (direction==='bullish'&&stopCandidate<primary.priceLow)||(direction==='bearish'&&stopCandidate>primary.priceHigh)
+  )?stopCandidate:null;
 
   if(confirmation.status!=='ENGULFING_CONFIRMED'&&confirmation.status!=='STRUCTURE_CONFIRMED'){
     return{
@@ -2668,7 +2688,7 @@ return{
   EQUILIBRIUM_BAND_PERCENT,computeZoneForRange,computePremiumDiscount,PD_ZONE_LABEL,
   computeHTFBias,BIAS_LABEL,
   LIQUIDITY_LEVEL_DEFS,extractLevelRaw,LIQUIDITY_TOUCH_PERCENT,computeLiquidityStatus,computeLiquidityEngine,LIQUIDITY_STATUS_LABEL,
-  createPOI,candleTimeToIso,isUsableMarketCandle,filterUsableMarketCandles,POI_ATR_WINDOW,localAverageRange,isZoneMitigatedAfter,
+  createPOI,candleTimeToIso,marketCandleQualityReason,isUsableMarketCandle,filterUsableMarketCandles,POI_ATR_WINDOW,localAverageRange,isZoneMitigatedAfter,
   detectFairValueGaps,candleDirection,closeStrength,detectOrderBlocks,OB_DISPLACEMENT_RATIO,OB_CLOSE_STRENGTH_MIN,
   detectBreakers,detectInverseFairValueGaps,detectMitigationBlocks,detectRejectionBlocks,detectSupplyZones,detectDemandZones,
   POI_TYPE_DEFS,POI_LIQUIDITY_TOLERANCE_PERCENT,relatedLiquidityFor,detectZoneReaction,enrichPOIContext,computePOIEngine,
@@ -2700,7 +2720,7 @@ return{
   MISSED_MOVE_PROGRESSED_STATUSES,detectMissedMove,entryCandidatesFor,ENTRY_STATUS_RANK,evaluateEntryForDirection,computeEntryDecision,
   computeRiskManagement,NEWS_STATUS,computeNewsContext,SESSION_LIQUIDITY_TIMEFRAMES,computeSessionNotes,
   presentDecisionStatus,buildDecisionSummary,timeOfDayGreeting,zurichDateString,zurichTimeString,shouldSendScheduledBriefing,ENTRY_STATUS_HEADLINE,presentationHeadline,waitingForText,
-  buildLiquiditySection,buildRecentEventsSection,buildPOISection,buildTargetsSection,buildStatusSection,buildSetupSection,buildContextSection,buildBiasSection,buildRiskSection,generateDGBriefing,
+  recentLiquidityEventLines,buildLiquiditySection,buildRecentEventsSection,buildPOISection,buildTargetsSection,buildStatusSection,buildSetupSection,buildContextSection,buildBiasSection,buildRiskSection,generateDGBriefing,
   CHAT_INTENTS,detectChatIntent,answerNewsQuestion,answerMarketQuestion,
   summarizeTimeframeContext,V1_POI_BRIEFING_TIMEFRAMES,generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1
 };

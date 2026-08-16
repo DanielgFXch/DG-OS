@@ -64,7 +64,8 @@ function candleHealth(market,def){
     from:usable.length?MB.candleTimeToIso(usable[0].datetime):null,
     to:usable.length?MB.candleTimeToIso(usable[usable.length-1].datetime):null,
     fetchedAt:entry.fetchedAt||null,
-    removedExamples:removed.slice(0,3).map(c=>({timestamp:MB.candleTimeToIso(c.datetime),open:c.open,high:c.high,low:c.low,close:c.close,reason:'UNUSABLE_MARKET_CANDLE'}))
+    removedExamples:removed.slice(0,3).map(c=>({timestamp:MB.candleTimeToIso(c.datetime),open:c.open,high:c.high,low:c.low,close:c.close,reason:MB.marketCandleQualityReason(c,def.label)})),
+    quietRetainedExamples:[...usable].sort((a,b)=>(a.high-a.low)-(b.high-b.low)).slice(0,2).map(c=>({timestamp:MB.candleTimeToIso(c.datetime),open:c.open,high:c.high,low:c.low,close:c.close,reason:'VALID_QUIET_CANDLE'}))
   };
 }
 
@@ -95,7 +96,12 @@ function buildRealityReport(input){
       .sort((a,b)=>(b.score-a.score)||(a.distanceToPrice-b.distanceToPrice))
       .slice(0,5).map(poiFact);
   });
-  const keyLiquidity=brain.liquidity.filter(MB.isV1PrimaryLiquidity).map(l=>({
+  const primaryLiquidity=brain.liquidity.filter(MB.isV1PrimaryLiquidity)
+    .filter(l=>!(l.status==='sweeped'&&l.structureType==='external'&&(l.timeframe==='Daily'||l.timeframe==='4H')));
+  const fixedLiquidity=primaryLiquidity.filter(l=>!l.structureType);
+  const externalLiquidity=primaryLiquidity.filter(l=>l.structureType==='external')
+    .sort((a,b)=>((a.status==='approaching'||a.status==='touched')?-1:0)-((b.status==='approaching'||b.status==='touched')?-1:0)||Math.abs(a.price-market.quote.price)-Math.abs(b.price-market.quote.price)).slice(0,6);
+  const keyLiquidity=[...fixedLiquidity,...externalLiquidity].map(l=>({
     id:l.id,label:l.label,timeframe:l.timeframe,period:l.period,price:l.price,status:MB.LIQUIDITY_STATUS_LABEL[l.status]||l.status,
     sweptAt:l.sweptAt||null,sweepTimingSource:l.sweepTimingSource||null,reaction:l.reaction?l.reaction.status:null
   }));
@@ -103,27 +109,39 @@ function buildRealityReport(input){
     .filter(p=>p.confirmation&&p.confirmation.touchedAt)
     .sort((a,b)=>new Date(b.confirmation.touchedAt)-new Date(a.confirmation.touchedAt))
     .slice(0,5).map(p=>({poi:p.id,timeframe:p.timeframe,touchedAt:p.confirmation.touchedAt,status:p.confirmation.status,reactionDetected:!!p.confirmation.reactionDetected,reasons:p.confirmation.reasons||[]}));
+  const ruleQuestions=[];
+  if(['WATCH','READY'].includes(brain.decision.decisionStage)&&brain.decision.primaryPoi&&brain.decision.invalidation===null){
+    ruleQuestions.push('DG_RULE_QUESTION: Welcher logische Invalidationspunkt soll verwendet werden, wenn das relevante Sweep-Extreme nicht hinter dem Primary POI liegt?');
+  }
   return{
     generatedAt:new Date().toISOString(),source:input.source,symbol:market.symbol,price:market.quote.price,
     dataHealth:{server:input.health||null,timeframes:TIMEFRAMES.map(def=>candleHealth(market,def))},
-    relevantPois,keyLiquidity,confirmations,
+    relevantPois,keyLiquidity,recentEvents:MB.recentLiquidityEventLines(brain.liquidity.filter(MB.isV1PrimaryLiquidity)),confirmations,
     decision:{internalStatus:brain.decision.detailStatus,stage:brain.decision.decisionStage,direction:brain.decision.decisionDirection,counterBias:brain.decision.counterBias,waitingFor:MB.waitingForText(brain.decision)},
-    ruleQuestions:[],localBrainVersion:require('../package.json').version
+    marketStory:MB.generateDGBriefing(brain,new Date()),ruleQuestions,localBrainVersion:require('../package.json').version
   };
 }
 
 function formatText(report){
   const lines=[`DG REALITY CHECK – ${report.symbol}`,`Source: ${report.source}`,`Local Brain: v${report.localBrainVersion}`,`Price: ${report.price}`,'','DATA HEALTH'];
-  report.dataHealth.timeframes.forEach(tf=>lines.push(`- ${tf.timeframe}: ${tf.usableCount}/${tf.rawCount} usable, ${tf.removedCount} removed, ${tf.from||'—'} → ${tf.to||'—'}`));
+  const freshness=report.dataHealth.server&&report.dataHealth.server.freshness;
+  if(freshness) lines.push(`- Server: price ${freshness.priceStatus} (${freshness.priceDataAgeLabel}), candles ${freshness.candleStatus} (${freshness.candleDataAgeLabel}), REST ${freshness.restStatus}, WebSocket ${freshness.websocketStatus}`);
+  report.dataHealth.timeframes.forEach(tf=>{
+    lines.push(`- ${tf.timeframe}: ${tf.usableCount}/${tf.rawCount} usable, ${tf.removedCount} removed, ${tf.from||'—'} → ${tf.to||'—'} · fetched ${tf.fetchedAt||'—'}`);
+    tf.removedExamples.forEach(item=>lines.push(`  removed ${item.timestamp||'invalid time'} · O:${item.open} H:${item.high} L:${item.low} C:${item.close} · ${item.reason}`));
+    tf.quietRetainedExamples.forEach(item=>lines.push(`  retained ${item.timestamp} · O:${item.open} H:${item.high} L:${item.low} C:${item.close} · ${item.reason}`));
+  });
   lines.push('','RELEVANT POIs');
   Object.entries(report.relevantPois).forEach(([tf,pois])=>{
     lines.push(`${tf}:`);
     lines.push(...(pois.length?pois.map(p=>`- ${p.type} ${p.direction} ${p.range.low}–${p.range.high} · ${p.mitigationState} ${p.mitigationPercent}% · tested ${p.tested?'YES':'NO'} · reaction ${p.reaction?'YES':'NO'} · ${p.quality}`):['- none']));
   });
   lines.push('','KEY LIQUIDITY',...report.keyLiquidity.map(l=>`- ${l.label}: ${l.price} · ${l.status}${l.reaction?` · ${l.reaction}`:''}`));
+  lines.push('','RECENT EVENTS',...(report.recentEvents.length?report.recentEvents.map(item=>`- ${item}`):['- none']));
   lines.push('','CONFIRMATION',...(report.confirmations.length?report.confirmations.map(c=>`- ${c.poi}: touch ${c.touchedAt} → ${c.status}`):['- none']));
   lines.push('','DECISION',`- ${report.decision.stage}${report.decision.direction?` ${report.decision.direction}`:''}`,`- Detail: ${report.decision.internalStatus}`,`- Counter-Bias: ${report.decision.counterBias?'YES':'NO'}`,`- Waiting for: ${report.decision.waitingFor||'—'}`);
   lines.push('','RULE QUESTIONS',...(report.ruleQuestions.length?report.ruleQuestions.map(q=>`- ${q}`):['- none']));
+  lines.push('','MARKET STORY','',report.marketStory);
   return lines.join('\n');
 }
 

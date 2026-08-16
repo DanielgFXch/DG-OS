@@ -246,21 +246,45 @@ test('cold-start sweep without complete history is OBSERVED_AT_START with no inv
 });
 
 test('bullish bias does not gate a stronger bearish counter-setup', () => {
-  const bearishPoi = { id:'bear', direction:'bearish', status:'fresh', quality:'high', score:7, distanceToPrice:1, priceLow:104, priceHigh:106, type:'fvg', timeframe:'4H', reaction:{ at:'2026-08-17T09:00:00Z' }, confirmation:{ status:'ENGULFING_CONFIRMED', entryZone:{ priceLow:104, priceHigh:105 } } };
-  const liquidity = [{ id:'asiaHigh', label:'Asia High', type:'high', timeframe:'Asia Session', status:'sweeped', price:107, relevance:{ tier:'high' } }];
+  const bearishPoi = { id:'bear', direction:'bearish', status:'fresh', quality:'high', score:7, distanceToPrice:1, priceLow:104, priceHigh:106, type:'fvg', timeframe:'4H', reaction:{ at:'2026-08-17T09:00:00Z' }, confirmation:{ status:'ENGULFING_CONFIRMED', touchedAt:'2026-08-17T09:00:00Z', entryZone:{ priceLow:104, priceHigh:105 } } };
+  const liquidity = [{ id:'asiaHigh', label:'Asia High', type:'high', timeframe:'Asia Session', status:'sweeped', sweptAt:'2026-08-17T08:00:00Z', price:107, relevance:{ tier:'high' } }];
   const result = MB.computeEntryDecision('BULLISH', [bearishPoi], liquidity, 103);
   assert.equal(result.status, 'SELL_READY');
   assert.equal(result.counterBias, true);
 });
 
 test('exact bullish/bearish tie follows explicit bias and stays WAIT when mixed', () => {
-  const poi = direction => ({ id:direction, direction, status:'fresh', quality:'high', score:7, distanceToPrice:1, priceLow:direction==='bullish'?98:104, priceHigh:direction==='bullish'?100:106, type:'fvg', timeframe:'4H', reaction:{at:'2026-08-17T09:00:00Z'}, confirmation:{status:'ENGULFING_CONFIRMED',entryZone:{priceLow:100,priceHigh:101}} });
+  const poi = direction => ({ id:direction, direction, status:'fresh', quality:'high', score:7, distanceToPrice:1, priceLow:direction==='bullish'?98:104, priceHigh:direction==='bullish'?100:106, type:'fvg', timeframe:'4H', reaction:{at:'2026-08-17T09:00:00Z'}, confirmation:{status:'ENGULFING_CONFIRMED',touchedAt:'2026-08-17T09:00:00Z',entryZone:{priceLow:100,priceHigh:101}} });
   const liquidity = [
-    {id:'asiaLow',label:'Asia Low',type:'low',timeframe:'Asia Session',status:'sweeped',price:97,relevance:{tier:'high'}},
-    {id:'asiaHigh',label:'Asia High',type:'high',timeframe:'Asia Session',status:'sweeped',price:107,relevance:{tier:'high'}}
+    {id:'asiaLow',label:'Asia Low',type:'low',timeframe:'Asia Session',status:'sweeped',sweptAt:'2026-08-17T08:00:00Z',price:97,relevance:{tier:'high'}},
+    {id:'asiaHigh',label:'Asia High',type:'high',timeframe:'Asia Session',status:'sweeped',sweptAt:'2026-08-17T08:00:00Z',price:107,relevance:{tier:'high'}}
   ];
   assert.equal(MB.computeEntryDecision('BEARISH',[poi('bullish'),poi('bearish')],liquidity,103).direction,'bearish');
   assert.equal(MB.computeEntryDecision('NEUTRAL_MIXED',[poi('bullish'),poi('bearish')],liquidity,103).status,'WAIT');
+});
+
+test('OBSERVED_AT_START liquidity without a real sweep timestamp cannot drive an entry setup',()=>{
+  const poi={id:'bear',direction:'bearish',status:'fresh',quality:'high',score:7,distanceToPrice:1,priceLow:104,priceHigh:106,type:'fvg',timeframe:'4H',reaction:{at:'2026-08-17T09:00:00Z'},confirmation:{status:'NO_CONFIRMATION',touchedAt:'2026-08-17T09:00:00Z',entryZone:'UNDEFINED'}};
+  const liquidity=[{id:'asiaHigh',label:'Asia High',type:'high',timeframe:'Asia Session',status:'sweeped',sweptAt:null,sweepTimingSource:'OBSERVED_AT_START',price:107,relevance:{tier:'high'}}];
+  assert.equal(MB.computeEntryDecision('BEARISH',[poi],liquidity,103).status,'WAIT');
+});
+
+test('entry never exposes an invalidation on the wrong side of its primary POI',()=>{
+  const poi={id:'bear',direction:'bearish',status:'fresh',quality:'high',score:7,distanceToPrice:1,priceLow:104,priceHigh:106,type:'fvg',timeframe:'4H',reaction:{at:'2026-08-17T09:00:00Z'},confirmation:{status:'NO_CONFIRMATION',touchedAt:'2026-08-17T09:00:00Z',entryZone:'UNDEFINED'}};
+  const liquidity=[{id:'asiaHigh',label:'Asia High',type:'high',timeframe:'Asia Session',status:'sweeped',sweptAt:'2026-08-17T08:00:00Z',price:100,relevance:{tier:'high'}}];
+  const result=MB.computeEntryDecision('BEARISH',[poi],liquidity,103);
+  assert.equal(result.status,'SELL_CONFIRMATION');
+  assert.equal(result.stopLoss,null);
+});
+
+test('POI quality counts only a provably prior liquidity sweep',()=>{
+  const poi={timeframe:'4H',createdAt:'2026-08-17T08:00:00Z',formedThroughCandle:c('2026-08-17 08:00:00',100,102,99,101),relatedLiquidity:['level']};
+  const level={status:'sweeped',sweptAt:'2026-08-17T13:00:00Z',relevance:{tier:'high'}};
+  assert.equal(MB.poiHasSweepSupport(poi,new Map([['level',level]])),false);
+  level.sweptAt='2026-08-17T11:00:00Z';
+  assert.equal(MB.poiHasSweepSupport(poi,new Map([['level',level]])),true);
+  level.sweptAt=null;
+  assert.equal(MB.poiHasSweepSupport(poi,new Map([['level',level]])),false);
 });
 
 test('main report excludes FULLY_MITIGATED and low-relevance POIs', () => {

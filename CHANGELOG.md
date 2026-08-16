@@ -15,6 +15,8 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
   lokale Snapshots; Analyse erfolgt immer mit dem lokalen `marketBrain.js`.
 - Trader-lesbare Presentation-Layer mit `decisionStage`, Direction und
   unverändertem internem Detailstatus sowie kompakter DG Market Story.
+- Maschinenlesbare Decision-Erklärung mit `metFactors`, `missingFactors`,
+  `invalidatingFactors` und `contextFactors`, abgeleitet aus bestehenden Fakten.
 - Manueller Daniel-Review-Export unter `tmp/dg-review/`; Feedback verändert
   niemals automatisch Tradingregeln.
 - Candle-by-Candle-Replay, das pro Schritt nur bereits geschlossene und
@@ -37,7 +39,7 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
   keine Entry-, Invalidation-, Target- oder R:R-Idee aus.
 
 ### Getestet
-- 59 Node-Regressionstests inklusive systemweiter Konsistenz-Invarianten
+- 60 Node-Regressionstests inklusive systemweiter Konsistenz-Invarianten
   und No-Look-Ahead-Replay, plus Syntax- und Diff-Prüfungen.
 - Read-only Real-Market-Scan gegen den laufenden DG-OS-Railway-Server auf
   15M, H1, 4H und Daily.

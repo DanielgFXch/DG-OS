@@ -1966,10 +1966,11 @@ function evaluateEntryForDirection(direction,poisAll,liquidity,currentPrice){
   }
 
   const confirmation=primary.confirmation||{status:'NO_CONFIRMATION',entryZone:'UNDEFINED'};
-  if(!primary.reaction&&!confirmation.reactionDetected){
-    return{status:`WATCH_${buyOrSell}`,direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:primary.id,reasons:['Relevanter POI + unterstützender Liquidity Sweep vorhanden, aber noch keine Reaktion am POI.']};
-  }
   const nearestSweep=[...sweepSupport].sort((a,b)=>Math.abs(a.price-currentPrice)-Math.abs(b.price-currentPrice))[0];
+  const liquidityEvent={id:nearestSweep.id,label:nearestSweep.label,timeframe:nearestSweep.timeframe,price:nearestSweep.price,sweptAt:nearestSweep.sweptAt,sweepTimingSource:nearestSweep.sweepTimingSource||null};
+  if(!primary.reaction&&!confirmation.reactionDetected){
+    return{status:`WATCH_${buyOrSell}`,direction,entryZone:'UNDEFINED',stopLoss:null,primaryPOI:primary.id,liquidityEvent,reasons:['Relevanter POI + unterstützender Liquidity Sweep vorhanden, aber noch keine Reaktion am POI.']};
+  }
   const zoneHeight=primary.priceHigh-primary.priceLow;
   const buffer=zoneHeight*(ENTRY_SL_BUFFER_PERCENT_OF_ZONE/100);
   const stopCandidate=nearestSweep?Math.round((direction==='bullish'?nearestSweep.price-buffer:nearestSweep.price+buffer)*100)/100:null;
@@ -1979,13 +1980,13 @@ function evaluateEntryForDirection(direction,poisAll,liquidity,currentPrice){
 
   if(confirmation.status!=='ENGULFING_CONFIRMED'&&confirmation.status!=='STRUCTURE_CONFIRMED'){
     return{
-      status:`${buyOrSell}_CONFIRMATION`,direction,entryZone:'UNDEFINED',stopLoss,primaryPOI:primary.id,
+      status:`${buyOrSell}_CONFIRMATION`,direction,entryZone:'UNDEFINED',stopLoss,primaryPOI:primary.id,liquidityEvent,
       reasons:[`Reaktion erkannt, DG OS wartet konkret auf 15M Confirmation (aktuell: ${confirmation.status}).`]
     };
   }
 
   return{
-    status:`${buyOrSell}_READY`,direction,entryZone:confirmation.entryZone,stopLoss,primaryPOI:primary.id,
+    status:`${buyOrSell}_READY`,direction,entryZone:confirmation.entryZone,stopLoss,primaryPOI:primary.id,liquidityEvent,
     reasons:[`Liquidity Sweep (${nearestSweep.label}) + relevanter POI (${primary.type}, ${primary.timeframe}, Qualität ${primary.quality}) + ${confirmation.status} auf 15M.`]
   };
 }
@@ -2080,9 +2081,8 @@ function computeRiskManagement(entryDecision,targets,currentPrice){
 // consumer (dashboard, Telegram, future briefing) doesn't have to know the
 // internal shape of the engine. Nothing computed here is new — every field
 // is a direct read or trivial derivation of the interpretation results
-// computed above. `missingRequirements` is only populated for WAIT/
-// DATA_NOT_READY (there IS something missing); once a setup is active
-// there's nothing missing by definition, so it stays empty.
+// computed above. The factor arrays explain existing outcomes and never
+// participate in status selection.
 function presentDecisionStatus(status,direction){
   const mappedDirection=status&&status.includes('BUY')?'BUY':status&&status.includes('SELL')?'SELL':null;
   if(status==='BUY_READY'||status==='SELL_READY') return{decisionStage:'READY',decisionDirection:mappedDirection,detailStatus:status};
@@ -2090,6 +2090,32 @@ function presentDecisionStatus(status,direction){
   if(status==='MISSED') return{decisionStage:'MISSED',decisionDirection:mappedDirection,detailStatus:status};
   if(status==='DATA_NOT_READY'||status==='AWAITING_DG_RULE') return{decisionStage:'DATA_NOT_READY',decisionDirection:mappedDirection,detailStatus:status};
   return{decisionStage:'WAIT',decisionDirection:mappedDirection,detailStatus:status||'WAIT'};
+}
+
+function buildDecisionFactors(entryDecision,primaryPoi,biasResult){
+  const status=entryDecision.status;
+  const met=[];
+  if(primaryPoi) met.push(`Relevant ${primaryPoi.timeframe} ${primaryPoi.type} selected`);
+  if(entryDecision.liquidityEvent) met.push(`${entryDecision.liquidityEvent.label} swept at ${entryDecision.liquidityEvent.sweptAt}`);
+  if(primaryPoi&&(primaryPoi.reaction||(primaryPoi.confirmation&&primaryPoi.confirmation.reactionDetected))) met.push('POI reaction detected');
+  if(primaryPoi&&primaryPoi.confirmation&&(primaryPoi.confirmation.status==='ENGULFING_CONFIRMED'||primaryPoi.confirmation.status==='STRUCTURE_CONFIRMED')) met.push(`15M ${primaryPoi.confirmation.status}`);
+  if(entryDecision.entryZone&&entryDecision.entryZone!=='UNDEFINED') met.push('Entry zone available from confirmed market structure');
+
+  const missing=[];
+  if(status==='WATCH_BUY'||status==='WATCH_SELL') missing.push('POI reaction');
+  else if(status==='BUY_CONFIRMATION'||status==='SELL_CONFIRMATION') missing.push('15M primary confirmation');
+  else if(status==='WAIT'||status==='DATA_NOT_READY'||status==='AWAITING_DG_RULE') missing.push(...(entryDecision.reasons||[]));
+
+  const invalidating=[];
+  if(status==='MISSED') invalidating.push(...(entryDecision.reasons||[]));
+  if(status==='DATA_NOT_READY') invalidating.push('Required HTF market data unavailable');
+
+  const context=[
+    `Trading Bias: ${biasResult.trading?biasResult.trading.state:biasResult.overallBias}`,
+    `Macro Bias: ${biasResult.macro?biasResult.macro.state:'—'}`
+  ];
+  if(entryDecision.counterBias) context.push('Counter-Bias setup: YES');
+  return{metFactors:met,missingFactors:missing,invalidatingFactors:invalidating,contextFactors:context};
 }
 
 function buildDecisionSummary(entryDecision,biasResult,risk,targets,poisAll){
@@ -2104,12 +2130,15 @@ function buildDecisionSummary(entryDecision,biasResult,risk,targets,poisAll){
   const wantDirection=entryDecision.direction==='bullish'?'up':(entryDecision.direction==='bearish'?'down':null);
   const directionTargets=wantDirection?(targets||[]).filter(t=>t.direction===wantDirection):[];
   const isPending=entryDecision.status==='WAIT'||entryDecision.status==='DATA_NOT_READY'||entryDecision.status==='AWAITING_DG_RULE';
+  const factors=buildDecisionFactors(entryDecision,primaryPoi,biasResult);
 
   return{
     status:entryDecision.status,
     ...presentation,
     direction:entryDecision.direction,
     counterBias:!!entryDecision.counterBias,
+    liquidityEvent:isActionable?entryDecision.liquidityEvent||null:null,
+    ...factors,
     confidence:null, // Kapitel 1 defines no confidence formula — never fabricated
     macroBias:biasResult.macro?biasResult.macro.state:null,
     tradingBias:biasResult.trading?biasResult.trading.state:biasResult.overallBias,
@@ -2282,6 +2311,8 @@ function buildSetupSection(decision){
   lines.push(`- Invalidation: ${typeof decision.invalidation==='number'?fmtPrice(decision.invalidation):'—'}`);
   const targets=(decision.targets||[]).filter(t=>t.status!=='sweeped').slice(0,3);
   lines.push(`- Targets: ${targets.length?targets.map(t=>fmtPrice(t.price)).join(', '):'—'}`);
+  if(decision.metFactors&&decision.metFactors.length) lines.push(`- Met: ${decision.metFactors.join('; ')}`);
+  if(decision.missingFactors&&decision.missingFactors.length) lines.push(`- Missing: ${decision.missingFactors.join('; ')}`);
   return lines.join('\n');
 }
 
@@ -2722,7 +2753,7 @@ return{
   ENTRY_CANDIDATE_MIN_QUALITY,ENTRY_SL_BUFFER_PERCENT_OF_ZONE,liquiditySweepSupport,
   MISSED_MOVE_PROGRESSED_STATUSES,detectMissedMove,entryCandidatesFor,ENTRY_STATUS_RANK,evaluateEntryForDirection,computeEntryDecision,
   computeRiskManagement,NEWS_STATUS,computeNewsContext,SESSION_LIQUIDITY_TIMEFRAMES,computeSessionNotes,
-  presentDecisionStatus,buildDecisionSummary,timeOfDayGreeting,zurichDateString,zurichTimeString,shouldSendScheduledBriefing,ENTRY_STATUS_HEADLINE,presentationHeadline,waitingForText,
+  presentDecisionStatus,buildDecisionFactors,buildDecisionSummary,timeOfDayGreeting,zurichDateString,zurichTimeString,shouldSendScheduledBriefing,ENTRY_STATUS_HEADLINE,presentationHeadline,waitingForText,
   recentLiquidityEventLines,buildLiquiditySection,buildRecentEventsSection,buildPOISection,buildTargetsSection,buildStatusSection,buildSetupSection,buildContextSection,buildBiasSection,buildRiskSection,generateDGBriefing,
   CHAT_INTENTS,detectChatIntent,answerNewsQuestion,answerMarketQuestion,
   summarizeTimeframeContext,V1_POI_BRIEFING_TIMEFRAMES,generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1

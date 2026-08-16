@@ -117,7 +117,7 @@ function buildRealityReport(input){
     generatedAt:new Date().toISOString(),source:input.source,symbol:market.symbol,price:market.quote.price,
     dataHealth:{server:input.health||null,timeframes:TIMEFRAMES.map(def=>candleHealth(market,def))},
     relevantPois,keyLiquidity,recentEvents:MB.recentLiquidityEventLines(brain.liquidity.filter(MB.isV1PrimaryLiquidity)),confirmations,
-    decision:{internalStatus:brain.decision.detailStatus,stage:brain.decision.decisionStage,direction:brain.decision.decisionDirection,counterBias:brain.decision.counterBias,waitingFor:MB.waitingForText(brain.decision)},
+    decision:{internalStatus:brain.decision.detailStatus,stage:brain.decision.decisionStage,direction:brain.decision.decisionDirection,counterBias:brain.decision.counterBias,waitingFor:MB.waitingForText(brain.decision),metFactors:brain.decision.metFactors,missingFactors:brain.decision.missingFactors,invalidatingFactors:brain.decision.invalidatingFactors,contextFactors:brain.decision.contextFactors},
     marketStory:MB.generateDGBriefing(brain,new Date()),ruleQuestions,localBrainVersion:require('../package.json').version
   };
 }

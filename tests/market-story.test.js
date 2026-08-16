@@ -41,6 +41,17 @@ test('market story keeps counter-bias explicit and puts facts in V1 order',()=>{
   assert.match(story,/Counter-Bias: JA/);
 });
 
+test('decision explainability separates met, missing, invalidating and context factors',()=>{
+  const primary={id:'p1',type:'fvg',timeframe:'4H',reaction:{at:'2026-08-17T09:00:00Z'},confirmation:{status:'NO_CONFIRMATION'}};
+  const entry={status:'SELL_CONFIRMATION',direction:'bearish',primaryPOI:'p1',liquidityEvent:{label:'Asia High',sweptAt:'2026-08-17T08:00:00Z'},entryZone:'UNDEFINED',stopLoss:null,reasons:['waiting']};
+  const summary=MB.buildDecisionSummary(entry,{overallBias:'BULLISH',trading:{state:'BULLISH'},macro:{state:'BULLISH'}},null,[],[primary]);
+  assert.ok(summary.metFactors.some(item=>item.includes('Asia High swept')));
+  assert.ok(summary.metFactors.includes('POI reaction detected'));
+  assert.deepEqual(summary.missingFactors,['15M primary confirmation']);
+  assert.deepEqual(summary.invalidatingFactors,[]);
+  assert.ok(summary.contextFactors.includes('Trading Bias: BULLISH'));
+});
+
 test('DATA_NOT_READY story never presents a ready trade idea',()=>{
   const story=MB.generateDGBriefing(brainFor('DATA_NOT_READY',{noPoi:true,confirmation:false,pois:[]}),new Date('2026-08-17T06:00:00Z'));
   assert.match(story,/STATUS\n\nDATA NOT READY/);

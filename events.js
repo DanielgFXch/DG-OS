@@ -86,6 +86,7 @@ function diffLiquidityEvents(prevLiquidity,nextLiquidity){
   nextLiquidity.forEach(lv=>{
     const prev=prevById.get(lv.id);
     const prefix=SESSION_EVENT_PREFIX[lv.id];
+    const samePhysicalLevel=prev&&prev.period===lv.period&&prev.price===lv.price;
 
     if(prefix&&typeof lv.price==='number'){
       const isNewPeriod=!prev||prev.price===null||prev.period!==lv.period;
@@ -94,7 +95,7 @@ function diffLiquidityEvents(prevLiquidity,nextLiquidity){
       }
     }
 
-    if(prev&&prev.status!==lv.status&&typeof lv.price==='number'){
+    if(samePhysicalLevel&&prev.status!==lv.status&&typeof lv.price==='number'){
       if(lv.status==='touched'&&prev.status==='active'&&prefix){
         events.push(makeEvent(`${prefix}_TOUCHED`,null,{levelId:lv.id,label:lv.label,price:lv.price}));
       }
@@ -371,7 +372,8 @@ function classifyTradingBrainEvents(prevState,brain,currentPrice,now){
     const prev=prevLiquidityMemory[key];
     const level=levelByMemoryKey.get(key);
     if(!level||!MB.isV1PrimaryLiquidity(level)) return; // V1 priority: only primary liquidity gets its own sweep/reaction alert
-    if(!prev){
+    const observedLive=next.sweepTimingSource==='OBSERVED_LIVE';
+    if(!prev&&observedLive){
       events.push(tbEvent('LIQUIDITY_SWEPT',{
         direction:level.type==='high'?'bearish':'bullish',price:level.price,timeframe:level.timeframe,
         significance:'high',explanation:`${level.label} gesweept bei ${level.price} — relevantes Liquidity-Level (Kapitel 2).`,
@@ -380,7 +382,7 @@ function classifyTradingBrainEvents(prevState,brain,currentPrice,now){
     }
     const prevReaction=prev&&prev.reaction&&prev.reaction.status;
     const nextReaction=next.reaction&&next.reaction.status;
-    if(nextReaction==='REACTED'&&prevReaction!=='REACTED'){
+    if(nextReaction==='REACTED'&&prevReaction!=='REACTED'&&(prev||observedLive)){
       events.push(tbEvent('LIQUIDITY_REACTED',{
         direction:level.type==='high'?'bearish':'bullish',price:level.price,timeframe:level.timeframe,
         significance:'high',explanation:(next.reaction.reasons&&next.reaction.reasons[0])||`Reaktion nach Sweep von ${level.label} erkannt.`,
@@ -422,12 +424,16 @@ function classifyTradingBrainEvents(prevState,brain,currentPrice,now){
     approachEventEmitted=true;
   }
 
-  // PRIMARY_TARGET_REACHED — same target price still primary, price now crossed it.
-  if(decision.targets&&decision.targets.length&&typeof currentPrice==='number'&&prevActiveSetup&&prevActiveSetup.targets){
+  // PRIMARY_TARGET_REACHED — same target price still primary and the
+  // persisted prior price proves a new crossing. Merely restarting while
+  // already beyond the target is not a new market event.
+  if(decision.targets&&decision.targets.length&&typeof currentPrice==='number'&&typeof prevState.lastPrice==='number'&&prevActiveSetup&&prevActiveSetup.targets){
     const primary=decision.targets.find(t=>t.priority==='PRIMARY');
     const prevPrimary=prevActiveSetup.targets.find(t=>t.priority==='PRIMARY');
     if(primary&&prevPrimary&&primary.price===prevPrimary.price){
-      const reached=primary.direction==='up'?currentPrice>=primary.price:currentPrice<=primary.price;
+      const reached=primary.direction==='up'
+        ?prevState.lastPrice<primary.price&&currentPrice>=primary.price
+        :prevState.lastPrice>primary.price&&currentPrice<=primary.price;
       if(reached) events.push(tbEvent('PRIMARY_TARGET_REACHED',{direction:decision.direction,price:currentPrice,significance:'high',explanation:`Primary Target erreicht: ${primary.reason}.`}));
     }
   }

@@ -271,6 +271,7 @@ class MarketState {
       entryStatus: decision.status,
       activeSetup: this.activeSetup,
       liquidityMemory: this.tradingBrain.liquidityMemory,
+      lastPrice: this._currentPrice(),
       lastStatusEventAt: statusEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastStatusEventAt) || null),
       lastApproachEventAt: approachEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastApproachEventAt) || null),
       lastLiquidityApproachEventAt: liquidityApproachEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastLiquidityApproachEventAt) || null)

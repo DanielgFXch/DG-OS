@@ -1122,6 +1122,95 @@ async function maybeAutoSend(){
   }
 }
 
+// ---------------------------------------------------------------------------
+// DG OS Assistant ("Jarvis") — Daniel's explicit correction: not a Telegram
+// chat, a voice/text interface IN the dashboard itself ("Hey Gomez, wie ist
+// der heutige Tag?"). Browser-native Web Speech API (SpeechRecognition for
+// voice-in, SpeechSynthesis for voice-out) — no server round-trip, no
+// secrets, works the moment this page is deployed. Every answer comes from
+// the exact same answerMarketQuestion() (marketBrain.js) the Telegram chat
+// uses — one source of truth, no LLM call, no fabricated market opinion.
+// Text input always works too — SpeechRecognition isn't supported on every
+// browser (notably Safari/iOS), and this must never be voice-only.
+// ---------------------------------------------------------------------------
+function assistantLogMessage(role,text){
+  const log=$('assistantLog');
+  const row=document.createElement('div');
+  row.className=`assistant-msg assistant-msg-${role}`;
+  const roleLabel=document.createElement('span');
+  roleLabel.className='assistant-msg-role';
+  roleLabel.textContent=role==='user'?'Du':'DG OS';
+  const textEl=document.createElement('span');
+  textEl.className='assistant-msg-text';
+  textEl.textContent=text;
+  row.appendChild(roleLabel);
+  row.appendChild(textEl);
+  log.appendChild(row);
+  log.scrollTop=log.scrollHeight;
+}
+
+function assistantSpeak(text){
+  if(!$('assistantSpeak').checked||!('speechSynthesis'in window)) return;
+  try{
+    window.speechSynthesis.cancel(); // don't stack overlapping replies
+    const utter=new SpeechSynthesisUtterance(text);
+    utter.lang='de-DE';
+    window.speechSynthesis.speak(utter);
+  }catch(err){ /* voice output is a nice-to-have, never block on failure */ }
+}
+
+function assistantAsk(question){
+  if(!question||!question.trim()) return;
+  assistantLogMessage('user',question);
+  const reply=answerMarketQuestion(question,marketServerReachable?tradingBrainState:null,new Date());
+  assistantLogMessage('assistant',reply);
+  assistantSpeak(reply);
+}
+
+const AssistantSpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
+let assistantListening=false;
+if(AssistantSpeechRecognition){
+  const recognition=new AssistantSpeechRecognition();
+  recognition.lang='de-DE';
+  recognition.interimResults=false;
+  recognition.maxAlternatives=1;
+
+  recognition.addEventListener('result',e=>{
+    const transcript=e.results[0][0].transcript;
+    assistantAsk(transcript);
+  });
+  recognition.addEventListener('end',()=>{
+    assistantListening=false;
+    $('assistantMicBtn').classList.remove('listening');
+    $('assistantStatus').textContent='Tippe auf das Mikrofon und frag z.B. „Gomez, wie sieht der Markt aus?"';
+  });
+  recognition.addEventListener('error',e=>{
+    assistantListening=false;
+    $('assistantMicBtn').classList.remove('listening');
+    $('assistantStatus').textContent=e.error==='not-allowed'?'Mikrofon-Zugriff verweigert.':`Spracherkennung-Fehler: ${e.error}`;
+  });
+
+  $('assistantMicBtn').addEventListener('click',()=>{
+    if(assistantListening){ recognition.stop(); return; }
+    try{
+      recognition.start();
+      assistantListening=true;
+      $('assistantMicBtn').classList.add('listening');
+      $('assistantStatus').textContent='Ich höre zu…';
+    }catch(err){ /* recognition already running — ignore, next click stops it via the listening branch above */ }
+  });
+}else{
+  $('assistantMicBtn').disabled=true;
+  $('assistantStatus').textContent='Sprach-Eingabe wird von diesem Browser nicht unterstützt — Text-Eingabe unten nutzen.';
+}
+
+$('assistantTextForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const input=$('assistantTextInput');
+  assistantAsk(input.value);
+  input.value='';
+});
+
 loadVersion();
 renderSessionCards();
 document.querySelectorAll('.card').forEach((el,i)=>{el.style.animationDelay=`${Math.min(i*0.05,0.4)}s`});

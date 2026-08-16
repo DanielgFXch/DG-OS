@@ -168,6 +168,35 @@ body{
   vertical-align:middle;text-transform:uppercase;opacity:.85
 }
 
+/* DG OS Assistant ("Jarvis") — voice/text interface, browser-native
+   Web Speech API, no server round-trip for the input/output itself. */
+.assistant-controls{display:flex;align-items:center;gap:14px;margin-top:6px}
+.assistant-mic{
+  flex-shrink:0;width:52px;height:52px;border-radius:50%;
+  background:var(--panel2);border:1px solid var(--line-strong);color:var(--cyan);
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:box-shadow .2s ease,color .2s ease,border-color .2s ease;
+}
+.assistant-mic .ic{width:22px;height:22px}
+.assistant-mic:hover{border-color:var(--cyan);box-shadow:0 0 14px rgba(47,217,242,.25)}
+.assistant-mic:disabled{opacity:.4;cursor:not-allowed}
+.assistant-mic.listening{color:var(--red);border-color:var(--red);box-shadow:0 0 18px rgba(255,77,109,.4);animation:pulse-dot 1.4s ease-in-out infinite}
+.assistant-controls-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.assistant-voice-toggle{font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:6px;cursor:pointer}
+.assistant-voice-toggle input{width:14px;height:14px;accent-color:var(--cyan)}
+.assistant-log{margin-top:12px;max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.assistant-log:empty{display:none}
+.assistant-msg{padding:8px 11px;border-radius:8px;font-size:12.5px;line-height:1.5;white-space:pre-wrap;border:1px solid var(--line)}
+.assistant-msg-role{display:block;font-family:var(--hud-font);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px}
+.assistant-msg-user{background:rgba(47,217,242,.06);border-color:var(--line-strong)}
+.assistant-msg-assistant{background:var(--panel2)}
+.assistant-text-form{display:flex;gap:8px;margin-top:12px}
+.assistant-text-form input{
+  flex:1;font:inherit;font-family:var(--hud-font);color:var(--text);background:var(--panel2);
+  border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0;
+}
+.assistant-text-form input:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 10px rgba(47,217,242,.2)}
+
 .action{display:flex;align-items:center;gap:10px;font-size:30px;font-weight:700;letter-spacing:-.01em;margin-top:8px;font-family:var(--display-font);transition:color .4s ease,text-shadow .4s ease}
 .action.wait{color:var(--gold);text-shadow:0 0 18px rgba(242,181,68,.35)}
 .action.watch{color:var(--cyan);text-shadow:0 0 18px rgba(47,217,242,.4)}

@@ -8,6 +8,38 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.32.0] — DG OS Assistant: Jarvis-Sprachinterface im Dashboard
+
+Korrektur nach Daniels Rückmeldung: nicht Telegram-Chat, sondern ein
+echtes Sprach-/Text-Interface direkt im Dashboard ("Hey Gomez, wie ist
+der heutige Tag?"). Neue Karte "DG OS Assistant" — Mikrofon-Button oder
+Texteingabe, Antwort erscheint im Log und wird optional vorgelesen.
+
+### Neu (`app.js`, `index.html`, `styles.css`)
+- Browser-natives Web Speech API (`SpeechRecognition` für Spracheingabe,
+  `SpeechSynthesis` für Vorlesen) — kein Server-Roundtrip, keine Secrets,
+  funktioniert sofort nach Deploy. Fällt ehrlich auf reine Text-Eingabe
+  zurück, wenn der Browser keine Spracherkennung unterstützt (v.a.
+  Safari/iOS) statt eine kaputte Mikrofon-Taste zu zeigen.
+- Jede Antwort läuft durch dieselbe `answerMarketQuestion()`
+  (`marketBrain.js`, bereits in v0.31.0 für den Telegram-Chat gebaut) —
+  eine Wahrheitsquelle für beide Oberflächen, kein LLM-Call, keine
+  erfundene Markteinschätzung. Ohne verbundenen Always-On Server
+  antwortet der Assistant ehrlich statt zu raten.
+- Jarvis-optisch ins bestehende dunkle HUD-Theme eingepasst (pulsierender
+  Mikrofon-Button während der Aufnahme, Chat-Log im Karten-Stil).
+
+### Getestet
+Playwright-End-to-End-Test: Texteingabe → echte `answerMarketQuestion()`-
+Antwort im Log, Eingabefeld wird geleert, kein Konsolenfehler. Die
+zugrunde liegende Antwortlogik ist bereits über `test_dg_rules_v1.js`
+(77 Tests) abgedeckt — hier neu nur die DOM-Verkabelung geprüft.
+
+### Geänderte Dateien
+`app.js`, `index.html`, `styles.css`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.31.1] — Proaktives Morgen-Briefing
 
 Ergänzt v0.31.0's reaktiven DG OS Chat um eine proaktive Variante von

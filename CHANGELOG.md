@@ -35,9 +35,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
   keine Entry-, Invalidation-, Target- oder R:R-Idee aus.
 
 ### Getestet
-- 46 Node-Regressionstests plus Syntax- und Diff-Prüfungen.
+- 50 Node-Regressionstests plus Syntax- und Diff-Prüfungen.
 - Read-only Real-Market-Scan gegen den laufenden DG-OS-Railway-Server auf
   15M, H1, 4H und Daily.
+- Kompakte echte XAUUSD-Fallbibliothek für OPEN/PARTIAL FVG, Sunday-Open,
+  Sweep→Reaction und POI-Touch ohne Confirmation; nicht beobachtete Zustände
+  sind explizit `REAL_CASE_NOT_AVAILABLE`.
 
 ---
 

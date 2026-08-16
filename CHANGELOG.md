@@ -30,9 +30,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
   nach Restart nicht.
 - Geometrisch widersprüchliche Invalidationswerte werden nicht ausgegeben.
   Eine alternative kontextspezifische SL-Auswahl bleibt `DG_RULE_QUESTION`.
+- Order Blocks über dem definierten 65%-Mitigationsrichtwert werden nicht
+  mehr als HIGH-Relevance dargestellt; DATA_NOT_READY/WAIT-Summaries geben
+  keine Entry-, Invalidation-, Target- oder R:R-Idee aus.
 
 ### Getestet
-- 44 Node-Regressionstests plus Syntax- und Diff-Prüfungen.
+- 46 Node-Regressionstests plus Syntax- und Diff-Prüfungen.
 - Read-only Real-Market-Scan gegen den laufenden DG-OS-Railway-Server auf
   15M, H1, 4H und Daily.
 

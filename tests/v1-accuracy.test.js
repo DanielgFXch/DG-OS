@@ -287,6 +287,26 @@ test('POI quality counts only a provably prior liquidity sweep',()=>{
   assert.equal(MB.poiHasSweepSupport(poi,new Map([['level',level]])),false);
 });
 
+test('Order Block above 65% mitigation cannot remain high quality',()=>{
+  const poi={type:'orderBlock',direction:'bearish',mitigationPercent:79,relatedLiquidity:['level'],reaction:{at:'2026-08-17T10:00:00Z'},relatedStructure:{id:'bos'},premiumDiscountZone:'premium',displacement:{},status:'fresh',priceLow:100,priceHigh:110,formedThroughCandle:c('2026-08-17 08:00:00',100,111,99,110)};
+  const level={status:'sweeped',sweptAt:'2026-08-17T07:00:00Z',relevance:{tier:'high'}};
+  const quality=MB.computePOIQuality(poi,{liquidityById:new Map([['level',level]]),tradingBiasDirection:'bearish',sameTimeframePOIs:[poi,{type:'fvg',status:'fresh',priceLow:105,priceHigh:106}]});
+  assert.ok(quality.score>=5);
+  assert.equal(quality.quality,'medium');
+});
+
+test('DATA_NOT_READY decision summary cannot expose an actionable setup',()=>{
+  const poi={id:'p1',type:'fvg',timeframe:'4H',direction:'bullish',priceLow:100,priceHigh:102,quality:'high',score:6,confirmation:{status:'ENGULFING_CONFIRMED'}};
+  const summary=MB.buildDecisionSummary({status:'DATA_NOT_READY',direction:'bullish',primaryPOI:'p1',entryZone:{priceLow:100,priceHigh:101},stopLoss:99,reasons:['missing']},{overallBias:'BULLISH',macro:null,trading:null},{riskRewardByTarget:[{rr:2}]},[{direction:'up',price:110}],[poi]);
+  assert.equal(summary.decisionStage,'DATA_NOT_READY');
+  assert.equal(summary.primaryPoi,null);
+  assert.equal(summary.confirmation,null);
+  assert.equal(summary.entryZone,'UNDEFINED');
+  assert.equal(summary.invalidation,null);
+  assert.deepEqual(summary.targets,[]);
+  assert.deepEqual(summary.riskReward,[]);
+});
+
 test('main report excludes FULLY_MITIGATED and low-relevance POIs', () => {
   const tf={range:{low:90,high:110},structure:{externalBias:null}};
   const base={direction:'bullish',timeframe:'4H',type:'fvg',priceLow:99,priceHigh:101,score:2,maxScore:8,confirmation:null};

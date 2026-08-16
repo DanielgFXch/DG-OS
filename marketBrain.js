@@ -1710,7 +1710,8 @@ function computePOIQuality(poi,ctx){
   }
 
   const score=factors.filter(f=>f.ok).length;
-  const quality=score>=POI_QUALITY_TIER_THRESHOLDS.high?'high':(score>=POI_QUALITY_TIER_THRESHOLDS.medium?'medium':'low');
+  let quality=score>=POI_QUALITY_TIER_THRESHOLDS.high?'high':(score>=POI_QUALITY_TIER_THRESHOLDS.medium?'medium':'low');
+  if(poi.type==='orderBlock'&&poi.mitigationPercent>65&&quality==='high') quality='medium';
   return{score,maxScore:factors.length,quality,reasons:factors.map(f=>`${f.ok?'✓':'✗'} ${f.label}`)};
 }
 
@@ -2092,6 +2093,8 @@ function presentDecisionStatus(status,direction){
 }
 
 function buildDecisionSummary(entryDecision,biasResult,risk,targets,poisAll){
+  const presentation=presentDecisionStatus(entryDecision.status,entryDecision.direction);
+  const isActionable=presentation.decisionStage==='WATCH'||presentation.decisionStage==='READY';
   const primaryPoi=entryDecision.primaryPOI?(poisAll||[]).find(p=>p.id===entryDecision.primaryPOI)||null:null;
   const primaryPoiSummary=primaryPoi?{
     id:primaryPoi.id,type:primaryPoi.type,timeframe:primaryPoi.timeframe,direction:primaryPoi.direction,
@@ -2104,18 +2107,18 @@ function buildDecisionSummary(entryDecision,biasResult,risk,targets,poisAll){
 
   return{
     status:entryDecision.status,
-    ...presentDecisionStatus(entryDecision.status,entryDecision.direction),
+    ...presentation,
     direction:entryDecision.direction,
     counterBias:!!entryDecision.counterBias,
     confidence:null, // Kapitel 1 defines no confidence formula — never fabricated
     macroBias:biasResult.macro?biasResult.macro.state:null,
     tradingBias:biasResult.trading?biasResult.trading.state:biasResult.overallBias,
-    primaryPoi:primaryPoiSummary,
-    confirmation:primaryPoi?primaryPoi.confirmation||null:null,
-    entryZone:entryDecision.entryZone,
-    invalidation:typeof entryDecision.stopLoss==='number'?entryDecision.stopLoss:null,
-    targets:directionTargets,
-    riskReward:(risk&&risk.riskRewardByTarget)||[],
+    primaryPoi:isActionable?primaryPoiSummary:null,
+    confirmation:isActionable&&primaryPoi?primaryPoi.confirmation||null:null,
+    entryZone:isActionable?entryDecision.entryZone:'UNDEFINED',
+    invalidation:isActionable&&typeof entryDecision.stopLoss==='number'?entryDecision.stopLoss:null,
+    targets:isActionable?directionTargets:[],
+    riskReward:isActionable&&risk?(risk.riskRewardByTarget||[]):[],
     missingRequirements:isPending?(entryDecision.reasons||[]):[],
     reasons:entryDecision.reasons||[]
   };

@@ -1,12 +1,12 @@
 {
-  "updatedAt": "2026-08-17T22:00:57.513Z",
+  "updatedAt": "2026-08-17T22:43:11.457Z",
   "dgOsVersion": "0.35.0",
   "liveData": {
-    "price": 4417.05662,
-    "dailyOpen": 4375.60522,
-    "dailyHigh": 4427.91357,
-    "dailyLow": 4367.39807,
-    "barDate": "2026-08-17",
+    "price": 4413.34287,
+    "dailyOpen": 4416.46004,
+    "dailyHigh": 4418.91295,
+    "dailyLow": 4412.04857,
+    "barDate": "2026-08-18",
     "weeklyOpen": 4375.60522,
     "weeklyHigh": 4427.91357,
     "weeklyLow": 4367.39807,
@@ -35,16 +35,16 @@
   },
   "premiumDiscount": {
     "daily": {
-      "high": 4427.91357,
-      "low": 4367.39807,
-      "range": 60.51549999999952,
-      "equilibrium": 4397.65582,
-      "price": 4417.05662,
-      "distanceToEq": 19.400800000000345,
-      "distanceToEqPercent": 32.05922449620427,
-      "zone": "premium",
-      "isPremium": true,
-      "isDiscount": false,
+      "high": 4418.91295,
+      "low": 4412.04857,
+      "range": 6.864379999999983,
+      "equilibrium": 4415.48076,
+      "price": 4413.34287,
+      "distanceToEq": -2.1378899999999703,
+      "distanceToEqPercent": -31.144691873118557,
+      "zone": "discount",
+      "isPremium": false,
+      "isDiscount": true,
       "isEquilibrium": false
     },
     "weekly": {
@@ -52,9 +52,9 @@
       "low": 4367.39807,
       "range": 60.51549999999952,
       "equilibrium": 4397.65582,
-      "price": 4417.05662,
-      "distanceToEq": 19.400800000000345,
-      "distanceToEqPercent": 32.05922449620427,
+      "price": 4413.34287,
+      "distanceToEq": 15.687050000000454,
+      "distanceToEqPercent": 25.922366996886055,
       "zone": "premium",
       "isPremium": true,
       "isDiscount": false,
@@ -65,9 +65,9 @@
       "low": 4022.04078,
       "range": 427.7434100000005,
       "equilibrium": 4235.912485,
-      "price": 4417.05662,
-      "distanceToEq": 181.14413500000046,
-      "distanceToEqPercent": 42.3487845201403,
+      "price": 4413.34287,
+      "distanceToEq": 177.43038500000057,
+      "distanceToEqPercent": 41.48056541654268,
       "zone": "premium",
       "isPremium": true,
       "isDiscount": false,
@@ -75,10 +75,10 @@
     }
   },
   "htfBias": {
-    "bias": "bullish",
-    "confidence": 100,
-    "trendStrength": 75,
-    "reason": "Daily > Open · Weekly > Open · Monthly > Open",
+    "bias": "mixed",
+    "confidence": 67,
+    "trendStrength": 65,
+    "reason": "Daily < Open · Weekly > Open · Monthly > Open",
     "lastBOS": null,
     "currentStructure": null
   },
@@ -88,8 +88,8 @@
       "label": "Daily High",
       "type": "high",
       "timeframe": "Daily",
-      "period": "2026-08-17",
-      "price": 4427.91357,
+      "period": "2026-08-18",
+      "price": 4418.91295,
       "status": "approaching"
     },
     {
@@ -97,9 +97,9 @@
       "label": "Daily Low",
       "type": "low",
       "timeframe": "Daily",
-      "period": "2026-08-17",
-      "price": 4367.39807,
-      "status": "active"
+      "period": "2026-08-18",
+      "price": 4412.04857,
+      "status": "touched"
     },
     {
       "id": "weeklyHigh",
@@ -108,7 +108,7 @@
       "timeframe": "Weekly",
       "period": "2026-08-17",
       "price": 4427.91357,
-      "status": "approaching"
+      "status": "active"
     },
     {
       "id": "weeklyLow",
@@ -144,7 +144,7 @@
       "timeframe": "Asia Session",
       "period": "2026-08-17",
       "price": 4415.05846,
-      "status": "sweeped"
+      "status": "touched"
     },
     {
       "id": "asiaLow",
@@ -162,7 +162,7 @@
       "timeframe": "London Session",
       "period": "2026-08-17",
       "price": 4427.32545,
-      "status": "approaching"
+      "status": "active"
     },
     {
       "id": "londonLow",
@@ -180,7 +180,7 @@
       "timeframe": "New York Session",
       "period": "2026-08-17",
       "price": 4427.91357,
-      "status": "approaching"
+      "status": "active"
     },
     {
       "id": "nyLow",
@@ -238,13 +238,13 @@
         "londonLow"
       ],
       "relatedSession": "ny",
-      "relatedHTFBias": "bullish",
+      "relatedHTFBias": "mixed",
       "premiumDiscountZone": "discount",
       "reaction": {
         "at": "2026-08-17T01:00:00.000Z",
         "reason": "Preis hat die Zone getestet und mit Kerze 2026-08-17 01:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 41.37
+      "distanceToPrice": 37.66
     },
     {
       "id": "orderBlock-H1-2026-08-16 22:00:00-4372.1581-4385.7878",
@@ -292,10 +292,10 @@
         "nyLow"
       ],
       "relatedSession": null,
-      "relatedHTFBias": "bullish",
+      "relatedHTFBias": "mixed",
       "premiumDiscountZone": "discount",
       "reaction": null,
-      "distanceToPrice": 38.08
+      "distanceToPrice": 34.37
     },
     {
       "id": "orderBlock-H1-2026-08-16 23:00:00-4367.3981-4386.1573",
@@ -339,20 +339,19 @@
       "structureReference": null,
       "mitigationDetail": null,
       "relatedLiquidity": [
-        "dailyLow",
         "weeklyLow",
         "asiaLow",
         "londonLow",
         "nyLow"
       ],
       "relatedSession": null,
-      "relatedHTFBias": "bullish",
+      "relatedHTFBias": "mixed",
       "premiumDiscountZone": "discount",
       "reaction": {
         "at": "2026-08-17T06:00:00.000Z",
         "reason": "Preis hat die Zone getestet und mit Kerze 2026-08-17 06:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 40.28
+      "distanceToPrice": 36.57
     },
     {
       "id": "orderBlock-H1-2026-08-17 00:00:00-4368.3383-4400.6337",
@@ -396,17 +395,16 @@
       "structureReference": null,
       "mitigationDetail": null,
       "relatedLiquidity": [
-        "dailyLow",
         "weeklyLow",
         "asiaLow",
         "londonLow",
         "nyLow"
       ],
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish",
+      "relatedHTFBias": "mixed",
       "premiumDiscountZone": "discount",
       "reaction": null,
-      "distanceToPrice": 32.57
+      "distanceToPrice": 28.86
     },
     {
       "id": "orderBlock-H1-2026-08-17 12:00:00-4377.7087-4397.7308",
@@ -454,10 +452,10 @@
         "nyLow"
       ],
       "relatedSession": "london",
-      "relatedHTFBias": "bullish",
+      "relatedHTFBias": "mixed",
       "premiumDiscountZone": "discount",
       "reaction": null,
-      "distanceToPrice": 29.34
+      "distanceToPrice": 25.62
     },
     {
       "id": "fvg-H1-2026-08-17 00:00:00-4386.1573-4392.4041",
@@ -491,13 +489,13 @@
       "mitigationDetail": null,
       "relatedLiquidity": [],
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish",
+      "relatedHTFBias": "mixed",
       "premiumDiscountZone": "discount",
       "reaction": {
         "at": "2026-08-17T07:00:00.000Z",
         "reason": "Preis hat die Zone getestet und mit Kerze 2026-08-17 07:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 27.78
+      "distanceToPrice": 24.06
     },
     {
       "id": "fvg-H1-2026-08-17 13:00:00-4397.7308-4404.1840",
@@ -531,13 +529,13 @@
       "mitigationDetail": null,
       "relatedLiquidity": [],
       "relatedSession": "london",
-      "relatedHTFBias": "bullish",
-      "premiumDiscountZone": "premium",
+      "relatedHTFBias": "mixed",
+      "premiumDiscountZone": "discount",
       "reaction": {
         "at": "2026-08-17T20:00:00.000Z",
         "reason": "Preis hat die Zone getestet und mit Kerze 2026-08-17 20:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 16.1
+      "distanceToPrice": 12.39
     },
     {
       "id": "fvg-H1-2026-08-17 14:00:00-4414.6212-4415.4423",
@@ -573,13 +571,13 @@
         "asiaHigh"
       ],
       "relatedSession": "london",
-      "relatedHTFBias": "bullish",
-      "premiumDiscountZone": "premium",
+      "relatedHTFBias": "mixed",
+      "premiumDiscountZone": "discount",
       "reaction": {
         "at": "2026-08-17T21:00:00.000Z",
         "reason": "Preis hat die Zone getestet und mit Kerze 2026-08-17 21:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 2.02
+      "distanceToPrice": 1.69
     },
     {
       "id": "fvg-H1-2026-08-17 17:00:00-4415.8331-4421.9406",
@@ -612,13 +610,14 @@
       "structureReference": null,
       "mitigationDetail": null,
       "relatedLiquidity": [
+        "dailyHigh",
         "asiaHigh"
       ],
       "relatedSession": "ny",
-      "relatedHTFBias": "bullish",
+      "relatedHTFBias": "mixed",
       "premiumDiscountZone": "premium",
       "reaction": null,
-      "distanceToPrice": 1.83
+      "distanceToPrice": 5.54
     }
   ],
   "structure": [
@@ -643,7 +642,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-internal-2026-08-15 02:00:00-HH-4375.8061",
@@ -666,7 +665,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-internal-2026-08-15 05:00:00-LH-4375.8041",
@@ -689,7 +688,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-internal-2026-08-15 07:00:00-HH-4375.8042",
@@ -712,7 +711,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-internal-2026-08-15 10:00:00-LH-4375.8013",
@@ -735,7 +734,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "london",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-internal-2026-08-15 21:00:00-HH-4379.8529",
@@ -758,7 +757,7 @@
       },
       "brokenLevel": null,
       "relatedSession": null,
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-internal-2026-08-16 18:00:00-LH-4375.8158",
@@ -781,7 +780,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "ny",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-internal-2026-08-17 01:00:00-HH-4415.0585",
@@ -804,7 +803,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-internal-2026-08-17 07:00:00-LH-4410.9214",
@@ -827,7 +826,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-internal-2026-08-17 10:00:00-LH-4406.8317",
@@ -850,7 +849,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "london",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-internal-2026-08-17 16:00:00-HH-4427.9136",
@@ -873,7 +872,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "ny",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-internal-2026-08-17 20:00:00-LH-4421.4401",
@@ -896,7 +895,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "ny",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-internal-2026-08-15 01:00:00--4375.5289",
@@ -919,7 +918,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-internal-2026-08-15 03:00:00-LL-4375.5289",
@@ -942,7 +941,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-internal-2026-08-15 05:00:00-HL-4375.5327",
@@ -965,7 +964,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-internal-2026-08-15 08:00:00-HL-4375.5360",
@@ -988,7 +987,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "london",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-internal-2026-08-16 23:00:00-LL-4367.3981",
@@ -1011,7 +1010,7 @@
       },
       "brokenLevel": null,
       "relatedSession": null,
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-internal-2026-08-17 03:00:00-HL-4388.2379",
@@ -1034,7 +1033,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-internal-2026-08-17 05:00:00-LL-4386.0367",
@@ -1057,7 +1056,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-internal-2026-08-17 08:00:00-HL-4393.2220",
@@ -1080,7 +1079,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "london",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-internal-2026-08-17 10:00:00-LL-4391.7435",
@@ -1103,7 +1102,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "london",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-internal-2026-08-17 12:00:00-LL-4377.7087",
@@ -1126,7 +1125,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "london",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-internal-2026-08-17 18:00:00-HL-4398.5045",
@@ -1149,7 +1148,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "ny",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "BOS-internal-2026-08-16 21:00:00--4376.6252",
@@ -1176,7 +1175,7 @@
         "createdAt": "2026-08-16T18:00:00.000Z"
       },
       "relatedSession": null,
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "BOS-internal-2026-08-17 13:00:00--4408.3289",
@@ -1203,7 +1202,7 @@
         "createdAt": "2026-08-17T10:00:00.000Z"
       },
       "relatedSession": "london",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-external-2026-08-15 02:00:00--4375.8061",
@@ -1226,7 +1225,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-external-2026-08-15 07:00:00-LH-4375.8042",
@@ -1249,7 +1248,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-external-2026-08-15 21:00:00-HH-4379.8529",
@@ -1272,7 +1271,7 @@
       },
       "brokenLevel": null,
       "relatedSession": null,
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-external-2026-08-17 01:00:00-HH-4415.0585",
@@ -1295,7 +1294,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-external-2026-08-17 07:00:00-LH-4410.9214",
@@ -1318,7 +1317,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingHigh-external-2026-08-17 16:00:00-HH-4427.9136",
@@ -1341,7 +1340,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "ny",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-external-2026-08-15 03:00:00--4375.5289",
@@ -1364,7 +1363,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-external-2026-08-16 23:00:00-LL-4367.3981",
@@ -1387,7 +1386,7 @@
       },
       "brokenLevel": null,
       "relatedSession": null,
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-external-2026-08-17 05:00:00-HL-4386.0367",
@@ -1410,7 +1409,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-external-2026-08-17 12:00:00-LL-4377.7087",
@@ -1433,7 +1432,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "london",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "swingLow-external-2026-08-17 18:00:00-HL-4398.5045",
@@ -1456,7 +1455,7 @@
       },
       "brokenLevel": null,
       "relatedSession": "ny",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "BOS-external-2026-08-16 22:00:00--4385.5768",
@@ -1483,7 +1482,7 @@
         "createdAt": "2026-08-15T21:00:00.000Z"
       },
       "relatedSession": null,
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     },
     {
       "id": "BOS-external-2026-08-17 14:00:00--4415.3751",
@@ -1510,11 +1509,11 @@
         "createdAt": "2026-08-17T07:00:00.000Z"
       },
       "relatedSession": "london",
-      "relatedHTFBias": "bullish"
+      "relatedHTFBias": "mixed"
     }
   ],
   "dgConfidence": {
-    "confidence": 79,
+    "confidence": 73,
     "contributions": [
       {
         "id": "session",
@@ -1528,7 +1527,7 @@
         "label": "Liquidity Engine",
         "score": 100,
         "status": "positive",
-        "reason": "12/12 Level valide, 1 davon touched/sweeped."
+        "reason": "12/12 Level valide, 2 davon touched/sweeped."
       },
       {
         "id": "premiumDiscount",
@@ -1540,9 +1539,9 @@
       {
         "id": "htfBias",
         "label": "HTF Bias",
-        "score": 100,
-        "status": "positive",
-        "reason": "Bias BULLISH bei 100% Confidence."
+        "score": 67,
+        "status": "negative",
+        "reason": "Bias MIXED bei 67% Confidence."
       },
       {
         "id": "fvg",
@@ -1572,7 +1571,7 @@
         "label": "Liquidity Engine",
         "score": 100,
         "status": "positive",
-        "reason": "12/12 Level valide, 1 davon touched/sweeped."
+        "reason": "12/12 Level valide, 2 davon touched/sweeped."
       },
       {
         "id": "premiumDiscount",
@@ -1580,13 +1579,6 @@
         "score": 100,
         "status": "positive",
         "reason": "3/3 Timeframes zeigen eine klare Premium/Discount-Lage (nicht Equilibrium)."
-      },
-      {
-        "id": "htfBias",
-        "label": "HTF Bias",
-        "score": 100,
-        "status": "positive",
-        "reason": "Bias BULLISH bei 100% Confidence."
       },
       {
         "id": "orderBlock",
@@ -1598,6 +1590,13 @@
     ],
     "negativeFactors": [
       {
+        "id": "htfBias",
+        "label": "HTF Bias",
+        "score": 67,
+        "status": "negative",
+        "reason": "Bias MIXED bei 67% Confidence."
+      },
+      {
         "id": "fvg",
         "label": "Fair Value Gap",
         "score": 0,
@@ -1608,10 +1607,10 @@
     "missingFactors": []
   },
   "decision": {
-    "id": "decision-1787004057511",
-    "timestamp": "2026-08-17T22:00:57.511Z",
+    "id": "decision-1787006591454",
+    "timestamp": "2026-08-17T22:43:11.454Z",
     "state": "WAIT",
-    "confidence": 79,
+    "confidence": 73,
     "reason": "DG-Regeln teilweise definiert, aber die Regelanwendung ist noch nicht implementiert (nächste Ausbaustufe der Decision Engine).",
     "supportingModules": [
       "htfBias",
@@ -1648,8 +1647,8 @@
       "htfBias": {
         "label": "HTF Bias",
         "available": true,
-        "direction": "bullish",
-        "summary": "Bias BULLISH (100% Confidence)."
+        "direction": null,
+        "summary": "Bias MIXED (67% Confidence)."
       },
       "structure": {
         "label": "Structure Engine",
@@ -1661,7 +1660,7 @@
         "label": "Liquidity Engine",
         "available": true,
         "direction": null,
-        "summary": "12 Level erfasst, 1 touched/sweeped."
+        "summary": "12 Level erfasst, 2 touched/sweeped."
       },
       "pois": {
         "label": "POI Engine",
@@ -1673,13 +1672,13 @@
         "label": "Premium/Discount",
         "available": true,
         "direction": null,
-        "summary": "daily: premium · weekly: premium · monthly: premium"
+        "summary": "daily: discount · weekly: premium · monthly: premium"
       },
       "dgConfidence": {
         "label": "DG Confidence Engine",
         "available": true,
         "direction": null,
-        "summary": "79% Confidence · 5 positiv, 1 negativ, 0 fehlend."
+        "summary": "73% Confidence · 4 positiv, 2 negativ, 0 fehlend."
       }
     }
   },
@@ -1692,7 +1691,7 @@
         "timeframe": "Asia Session",
         "period": "2026-08-17",
         "price": 4415.05846,
-        "status": "sweeped"
+        "status": "touched"
       },
       {
         "id": "asiaLow",
@@ -1710,7 +1709,7 @@
         "timeframe": "London Session",
         "period": "2026-08-17",
         "price": 4427.32545,
-        "status": "approaching"
+        "status": "active"
       },
       {
         "id": "londonLow",
@@ -1728,7 +1727,7 @@
         "timeframe": "New York Session",
         "period": "2026-08-17",
         "price": 4427.91357,
-        "status": "approaching"
+        "status": "active"
       },
       {
         "id": "nyLow",
@@ -1744,8 +1743,8 @@
         "label": "Daily High",
         "type": "high",
         "timeframe": "Daily",
-        "period": "2026-08-17",
-        "price": 4427.91357,
+        "period": "2026-08-18",
+        "price": 4418.91295,
         "status": "approaching"
       },
       {
@@ -1753,9 +1752,9 @@
         "label": "Daily Low",
         "type": "low",
         "timeframe": "Daily",
-        "period": "2026-08-17",
-        "price": 4367.39807,
-        "status": "active"
+        "period": "2026-08-18",
+        "price": 4412.04857,
+        "status": "touched"
       },
       {
         "id": "weeklyHigh",
@@ -1764,7 +1763,7 @@
         "timeframe": "Weekly",
         "period": "2026-08-17",
         "price": 4427.91357,
-        "status": "approaching"
+        "status": "active"
       },
       {
         "id": "weeklyLow",
@@ -1827,10 +1826,10 @@
           "nyLow"
         ],
         "relatedSession": "london",
-        "relatedHTFBias": "bullish",
+        "relatedHTFBias": "mixed",
         "premiumDiscountZone": "discount",
         "reaction": null,
-        "distanceToPrice": 29.34
+        "distanceToPrice": 25.62
       }
     ],
     "events": [
@@ -1858,11 +1857,6 @@
         "kind": "reaction",
         "at": "2026-08-17T01:00:00.000Z",
         "text": "Order Block bullish (H1, 4375.53–4375.85) — Preis hat die Zone getestet und mit Kerze 2026-08-17 01:00:00 UTC wieder außerhalb geschlossen"
-      },
-      {
-        "kind": "sweep",
-        "at": null,
-        "text": "Asia High (Asia Session) ist gesweept — aktueller Preis 4415.06"
       }
     ]
   },

@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-08-17T05:39:09.084Z",
+  "updatedAt": "2026-08-17T06:20:50.496Z",
   "dgOsVersion": "0.35.0",
   "liveData": {
-    "price": 4392.88367,
+    "price": 4393.77386,
     "dailyOpen": 4375.60522,
     "dailyHigh": 4415.05846,
     "dailyLow": 4367.39807,
@@ -39,9 +39,9 @@
       "low": 4367.39807,
       "range": 47.66039000000001,
       "equilibrium": 4391.228265,
-      "price": 4392.88367,
-      "distanceToEq": 1.6554050000004281,
-      "distanceToEqPercent": 3.4733349853000113,
+      "price": 4393.77386,
+      "distanceToEq": 2.545595000000503,
+      "distanceToEqPercent": 5.341112399626824,
       "zone": "premium",
       "isPremium": true,
       "isDiscount": false,
@@ -52,9 +52,9 @@
       "low": 4367.39807,
       "range": 47.66039000000001,
       "equilibrium": 4391.228265,
-      "price": 4392.88367,
-      "distanceToEq": 1.6554050000004281,
-      "distanceToEqPercent": 3.4733349853000113,
+      "price": 4393.77386,
+      "distanceToEq": 2.545595000000503,
+      "distanceToEqPercent": 5.341112399626824,
       "zone": "premium",
       "isPremium": true,
       "isDiscount": false,
@@ -65,9 +65,9 @@
       "low": 4022.04078,
       "range": 427.7434100000005,
       "equilibrium": 4235.912485,
-      "price": 4392.88367,
-      "distanceToEq": 156.97118500000033,
-      "distanceToEqPercent": 36.69751101483952,
+      "price": 4393.77386,
+      "distanceToEq": 157.8613750000004,
+      "distanceToEqPercent": 36.90562409833508,
       "zone": "premium",
       "isPremium": true,
       "isDiscount": false,
@@ -77,7 +77,7 @@
   "htfBias": {
     "bias": "bullish",
     "confidence": 100,
-    "trendStrength": 51,
+    "trendStrength": 53,
     "reason": "Daily > Open · Weekly > Open · Monthly > Open",
     "lastBOS": null,
     "currentStructure": null
@@ -203,8 +203,8 @@
       "createdAt": "2026-08-14T10:00:00.000Z",
       "status": "fresh",
       "strength": null,
-      "confidence": 77,
-      "reason": "Bullischer Order Block: Kerze 2026-08-14 10:00:00 UTC (bearish) vor Displacement-Kerze 2026-08-14 11:00:00 UTC (1.7x Ø-Range, Close bei 95% der Kerze)",
+      "confidence": 75,
+      "reason": "Bullischer Order Block: Kerze 2026-08-14 10:00:00 UTC (bearish) vor Displacement-Kerze 2026-08-14 11:00:00 UTC (1.6x Ø-Range, Close bei 95% der Kerze)",
       "sourceCandle": {
         "datetime": "2026-08-14 10:00:00",
         "open": 4354.63307,
@@ -229,8 +229,8 @@
           "close": 4368.14185
         },
         "range": 19.94699000000037,
-        "avgRange": 11.488750000000133,
-        "ratio": 1.7362193450114363
+        "avgRange": 12.209378000000106,
+        "ratio": 1.6337433405698634
       },
       "structureReference": null,
       "mitigationDetail": null,
@@ -239,7 +239,7 @@
       "relatedHTFBias": "bullish",
       "premiumDiscountZone": "discount",
       "reaction": null,
-      "distanceToPrice": 39.43
+      "distanceToPrice": 40.32
     },
     {
       "id": "orderBlock-H1-2026-08-16 20:00:00-4375.5254-4375.8499",
@@ -290,7 +290,7 @@
         "at": "2026-08-17T01:00:00.000Z",
         "reason": "Preis hat die Zone getestet und mit Kerze 2026-08-17 01:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 17.2
+      "distanceToPrice": 18.09
     },
     {
       "id": "orderBlock-H1-2026-08-16 22:00:00-4372.1581-4385.7878",
@@ -340,7 +340,7 @@
       "relatedHTFBias": "bullish",
       "premiumDiscountZone": "discount",
       "reaction": null,
-      "distanceToPrice": 13.91
+      "distanceToPrice": 14.8
     },
     {
       "id": "orderBlock-H1-2026-08-16 23:00:00-4367.3981-4386.1573",
@@ -392,8 +392,11 @@
       "relatedSession": null,
       "relatedHTFBias": "bullish",
       "premiumDiscountZone": "discount",
-      "reaction": null,
-      "distanceToPrice": 16.11
+      "reaction": {
+        "at": "2026-08-17T06:00:00.000Z",
+        "reason": "Preis hat die Zone getestet und mit Kerze 2026-08-17 06:00:00 UTC wieder außerhalb geschlossen"
+      },
+      "distanceToPrice": 17
     },
     {
       "id": "orderBlock-H1-2026-08-17 00:00:00-4368.3383-4400.6337",
@@ -448,46 +451,7 @@
       "relatedHTFBias": "bullish",
       "premiumDiscountZone": "discount",
       "reaction": null,
-      "distanceToPrice": 8.4
-    },
-    {
-      "id": "fvg-H1-2026-08-14 07:00:00-4336.7025-4342.3510",
-      "type": "fvg",
-      "direction": "bullish",
-      "priceHigh": 4342.35095,
-      "priceLow": 4336.70254,
-      "timeframe": "H1",
-      "createdAt": "2026-08-14T07:00:00.000Z",
-      "status": "fresh",
-      "strength": null,
-      "confidence": 59,
-      "reason": "Bullische Preislücke: Low der Kerze 2026-08-14 08:00:00 UTC liegt über dem High der Kerze 2026-08-14 06:00:00 UTC",
-      "sourceCandle": {
-        "datetime": "2026-08-14 07:00:00",
-        "open": 4334.74167,
-        "high": 4344.35123,
-        "low": 4330.50407,
-        "close": 4344.09988
-      },
-      "formedThroughCandle": {
-        "datetime": "2026-08-14 08:00:00",
-        "open": 4343.58408,
-        "high": 4349.52808,
-        "low": 4342.35095,
-        "close": 4347.69693
-      },
-      "impulseSize": null,
-      "displacement": null,
-      "structureReference": null,
-      "mitigationDetail": null,
-      "relatedLiquidity": [
-        "londonLow"
-      ],
-      "relatedSession": "asia",
-      "relatedHTFBias": "bullish",
-      "premiumDiscountZone": "discount",
-      "reaction": null,
-      "distanceToPrice": 53.36
+      "distanceToPrice": 9.29
     },
     {
       "id": "fvg-H1-2026-08-14 08:00:00-4344.3512-4346.0100",
@@ -499,7 +463,7 @@
       "createdAt": "2026-08-14T08:00:00.000Z",
       "status": "fresh",
       "strength": null,
-      "confidence": 17,
+      "confidence": 16,
       "reason": "Bullische Preislücke: Low der Kerze 2026-08-14 09:00:00 UTC liegt über dem High der Kerze 2026-08-14 07:00:00 UTC",
       "sourceCandle": {
         "datetime": "2026-08-14 08:00:00",
@@ -526,7 +490,7 @@
       "relatedHTFBias": "bullish",
       "premiumDiscountZone": "discount",
       "reaction": null,
-      "distanceToPrice": 47.7
+      "distanceToPrice": 48.59
     },
     {
       "id": "fvg-H1-2026-08-14 11:00:00-4358.3323-4366.1282",
@@ -538,7 +502,7 @@
       "createdAt": "2026-08-14T11:00:00.000Z",
       "status": "fresh",
       "strength": null,
-      "confidence": 62,
+      "confidence": 58,
       "reason": "Bullische Preislücke: Low der Kerze 2026-08-14 12:00:00 UTC liegt über dem High der Kerze 2026-08-14 10:00:00 UTC",
       "sourceCandle": {
         "datetime": "2026-08-14 11:00:00",
@@ -566,7 +530,7 @@
       "relatedHTFBias": "bullish",
       "premiumDiscountZone": "discount",
       "reaction": null,
-      "distanceToPrice": 30.65
+      "distanceToPrice": 31.54
     },
     {
       "id": "fvg-H1-2026-08-14 12:00:00-4369.0967-4370.0853",
@@ -578,7 +542,7 @@
       "createdAt": "2026-08-14T12:00:00.000Z",
       "status": "mitigated",
       "strength": null,
-      "confidence": 7,
+      "confidence": 6,
       "reason": "Bullische Preislücke: Low der Kerze 2026-08-14 13:00:00 UTC liegt über dem High der Kerze 2026-08-14 11:00:00 UTC",
       "sourceCandle": {
         "datetime": "2026-08-14 12:00:00",
@@ -611,7 +575,7 @@
         "at": "2026-08-17T01:00:00.000Z",
         "reason": "Preis hat die Zone getestet und mit Kerze 2026-08-17 01:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 23.29
+      "distanceToPrice": 24.18
     },
     {
       "id": "fvg-H1-2026-08-17 00:00:00-4386.1573-4392.4041",
@@ -648,7 +612,7 @@
       "relatedHTFBias": "bullish",
       "premiumDiscountZone": "discount",
       "reaction": null,
-      "distanceToPrice": 3.6
+      "distanceToPrice": 4.49
     }
   ],
   "structure": [
@@ -906,6 +870,29 @@
       "relatedHTFBias": "bullish"
     },
     {
+      "id": "swingHigh-internal-2026-08-17 05:00:00-LH-4400.6337",
+      "type": "swingHigh",
+      "label": "LH",
+      "price": 4400.63369,
+      "createdAt": "2026-08-17T05:00:00.000Z",
+      "timeframe": "H1",
+      "direction": "bearish",
+      "structureType": "internal",
+      "status": "active",
+      "confidence": 13,
+      "reason": "Lower High: Swing High bei 4400.63369 (2026-08-17 05:00:00 UTC, interne Struktur)",
+      "sourceCandle": {
+        "datetime": "2026-08-17 05:00:00",
+        "open": 4392.49175,
+        "high": 4400.63369,
+        "low": 4386.03674,
+        "close": 4393.72335
+      },
+      "brokenLevel": null,
+      "relatedSession": "asia",
+      "relatedHTFBias": "bullish"
+    },
+    {
       "id": "swingLow-internal-2026-08-14 15:00:00--4379.2424",
       "type": "swingLow",
       "label": null,
@@ -1107,6 +1094,29 @@
         "high": 4397.56444,
         "low": 4388.23785,
         "close": 4397.07812
+      },
+      "brokenLevel": null,
+      "relatedSession": "asia",
+      "relatedHTFBias": "bullish"
+    },
+    {
+      "id": "swingLow-internal-2026-08-17 05:00:00-LL-4386.0367",
+      "type": "swingLow",
+      "label": "LL",
+      "price": 4386.03674,
+      "createdAt": "2026-08-17T05:00:00.000Z",
+      "timeframe": "H1",
+      "direction": "bearish",
+      "structureType": "internal",
+      "status": "active",
+      "confidence": 24,
+      "reason": "Lower Low: Swing Low bei 4386.03674 (2026-08-17 05:00:00 UTC, interne Struktur)",
+      "sourceCandle": {
+        "datetime": "2026-08-17 05:00:00",
+        "open": 4392.49175,
+        "high": 4400.63369,
+        "low": 4386.03674,
+        "close": 4393.72335
       },
       "brokenLevel": null,
       "relatedSession": "asia",
@@ -1379,7 +1389,7 @@
     }
   ],
   "dgConfidence": {
-    "confidence": 87,
+    "confidence": 85,
     "contributions": [
       {
         "id": "session",
@@ -1412,16 +1422,16 @@
       {
         "id": "fvg",
         "label": "Fair Value Gap",
-        "score": 46,
+        "score": 37,
         "status": "positive",
-        "reason": "3/5 Fair Value Gap-Zonen noch frisch, Ø 46% Confidence."
+        "reason": "2/4 Fair Value Gap-Zonen noch frisch, Ø 37% Confidence."
       },
       {
         "id": "orderBlock",
         "label": "Order Block",
-        "score": 77,
+        "score": 75,
         "status": "positive",
-        "reason": "1/5 Order Block-Zonen noch frisch, Ø 77% Confidence."
+        "reason": "1/5 Order Block-Zonen noch frisch, Ø 75% Confidence."
       }
     ],
     "positiveFactors": [
@@ -1456,26 +1466,26 @@
       {
         "id": "fvg",
         "label": "Fair Value Gap",
-        "score": 46,
+        "score": 37,
         "status": "positive",
-        "reason": "3/5 Fair Value Gap-Zonen noch frisch, Ø 46% Confidence."
+        "reason": "2/4 Fair Value Gap-Zonen noch frisch, Ø 37% Confidence."
       },
       {
         "id": "orderBlock",
         "label": "Order Block",
-        "score": 77,
+        "score": 75,
         "status": "positive",
-        "reason": "1/5 Order Block-Zonen noch frisch, Ø 77% Confidence."
+        "reason": "1/5 Order Block-Zonen noch frisch, Ø 75% Confidence."
       }
     ],
     "negativeFactors": [],
     "missingFactors": []
   },
   "decision": {
-    "id": "decision-1786945149075",
-    "timestamp": "2026-08-17T05:39:09.075Z",
+    "id": "decision-1786947650488",
+    "timestamp": "2026-08-17T06:20:50.488Z",
     "state": "WAIT",
-    "confidence": 87,
+    "confidence": 85,
     "reason": "DG-Regeln teilweise definiert, aber die Regelanwendung ist noch nicht implementiert (nächste Ausbaustufe der Decision Engine).",
     "supportingModules": [
       "htfBias",
@@ -1531,7 +1541,7 @@
         "label": "POI Engine",
         "available": true,
         "direction": "bullish",
-        "summary": "4/10 POIs frisch (4 bullish, 0 bearish)."
+        "summary": "3/9 POIs frisch (3 bullish, 0 bearish)."
       },
       "premiumDiscount": {
         "label": "Premium/Discount",
@@ -1543,7 +1553,7 @@
         "label": "DG Confidence Engine",
         "available": true,
         "direction": null,
-        "summary": "87% Confidence · 6 positiv, 0 negativ, 0 fehlend."
+        "summary": "85% Confidence · 6 positiv, 0 negativ, 0 fehlend."
       }
     }
   },
@@ -1655,8 +1665,8 @@
         "createdAt": "2026-08-14T10:00:00.000Z",
         "status": "fresh",
         "strength": null,
-        "confidence": 77,
-        "reason": "Bullischer Order Block: Kerze 2026-08-14 10:00:00 UTC (bearish) vor Displacement-Kerze 2026-08-14 11:00:00 UTC (1.7x Ø-Range, Close bei 95% der Kerze)",
+        "confidence": 75,
+        "reason": "Bullischer Order Block: Kerze 2026-08-14 10:00:00 UTC (bearish) vor Displacement-Kerze 2026-08-14 11:00:00 UTC (1.6x Ø-Range, Close bei 95% der Kerze)",
         "sourceCandle": {
           "datetime": "2026-08-14 10:00:00",
           "open": 4354.63307,
@@ -1681,8 +1691,8 @@
             "close": 4368.14185
           },
           "range": 19.94699000000037,
-          "avgRange": 11.488750000000133,
-          "ratio": 1.7362193450114363
+          "avgRange": 12.209378000000106,
+          "ratio": 1.6337433405698634
         },
         "structureReference": null,
         "mitigationDetail": null,
@@ -1691,10 +1701,15 @@
         "relatedHTFBias": "bullish",
         "premiumDiscountZone": "discount",
         "reaction": null,
-        "distanceToPrice": 39.43
+        "distanceToPrice": 40.32
       }
     ],
     "events": [
+      {
+        "kind": "reaction",
+        "at": "2026-08-17T06:00:00.000Z",
+        "text": "Order Block bullish (H1, 4367.40–4386.16) — Preis hat die Zone getestet und mit Kerze 2026-08-17 06:00:00 UTC wieder außerhalb geschlossen"
+      },
       {
         "kind": "reaction",
         "at": "2026-08-17T01:00:00.000Z",
@@ -1709,7 +1724,6 @@
   },
   "patternIds": [
     "displacement-2026-08-14 11:00:00",
-    "displacement-2026-08-14 12:00:00",
     "displacement-2026-08-14 13:00:00",
     "displacement-2026-08-15 21:00:00",
     "displacement-2026-08-16 21:00:00",

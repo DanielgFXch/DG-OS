@@ -657,11 +657,13 @@ Wenn durch die Reaktion zusätzlich eine neue FVG entsteht, kann diese später f
 
 **Timeframe:**
 
-Für V1 soll die Confirmation primär auf 15M geprüft werden.
+Für V1 soll die Confirmation primär auf 15M geprüft werden — 15M bleibt entscheidend für den Entry-Status (WATCH/CONFIRMATION/READY).
 
 30M und 1H können zusätzliche Context-/Confirmation-Information liefern.
 
-5M und 1M werden später für präzisere Entry-Modelle ergänzt und sind aktuell noch nicht Teil der automatischen V1-Entry-Logik.
+**Update (2026-08-20):** 5M läuft zusätzlich als eigene, parallele Confirmation-Prüfung — DG OS meldet 5M-Confirmations als eigenen, früheren Alert, damit Gomes selbst rechtzeitig in den Markt schauen kann. 5M entscheidet NICHT über WATCH/READY — das bleibt allein 15M vorbehalten.
+
+1M wird später für ein präziseres Entry-Modell ergänzt und ist aktuell noch nicht Teil der automatischen V1-Entry-Logik.
 
 **Valid Confirmation:**
 

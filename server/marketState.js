@@ -53,9 +53,18 @@ const BRAIN_CANDLE_TIMEFRAME = '1h'; // the only series computeAllDerivedModules
 const HTF_CORE_TIMEFRAMES = ['weekly', 'daily', '4h', '1h'];
 
 class MarketState {
-  constructor({ apiKey, restBaseUrl, newsApiKey, newsBaseUrl }) {
+  constructor({ apiKey, restBaseUrl, newsApiKey, newsBaseUrl, onEvent }) {
     this.apiKey = apiKey;
     this.restBaseUrl = restBaseUrl;
+
+    // Live event push (Daniel's explicit ask, 2026-08-20: "auch wenn die
+    // App zu ist") — optional callback, called once per newly-classified
+    // 'trading' event, independent of the disk-flush debounce below so a
+    // push goes out the moment a real transition happens. Kept as an
+    // injected callback (not a direct Telegram dependency) so this module
+    // stays free of any specific notification channel — server/index.js
+    // decides what "notify" means (Telegram today).
+    this.onEvent = typeof onEvent === 'function' ? onEvent : null;
 
     this.quote = null; // {symbol, price, previousClose, changePercent, isMarketOpen}
     this.candlesByTimeframe = {}; // id -> {latestRealBar, series}
@@ -233,7 +242,10 @@ class MarketState {
     const persisted = store.toPersistedState(this.brain);
     persisted.patternIds = patternIds;
     this._lastDiffedBrainState = persisted; // becomes the baseline for the NEXT change, however soon it arrives
-    if (events.length) this._pendingEvents.push(...events);
+    if (events.length) {
+      this._pendingEvents.push(...events);
+      this._notifyEvents(events);
+    }
 
     this._recomputeTradingBrain();
 
@@ -261,7 +273,10 @@ class MarketState {
     this.tradingBrain = MB.computeTradingBrainV1(this.candlesByTimeframe, this.brain.liquidity, this._currentPrice(), priorSetupContext, priorLiquidityMemory, this.newsEvents);
     const decision = this.tradingBrain.decision;
     const { events: tbEvents, statusEventEmitted, approachEventEmitted, liquidityApproachEventEmitted } = classifyTradingBrainEvents(this._prevTradingBrainState, this.tradingBrain, this._currentPrice());
-    if (tbEvents.length) this._pendingEvents.push(...tbEvents);
+    if (tbEvents.length) {
+      this._pendingEvents.push(...tbEvents);
+      this._notifyEvents(tbEvents);
+    }
     this.activeSetup = buildActiveSetup(decision, this._prevTradingBrainState && this._prevTradingBrainState.activeSetup, this._currentPrice());
     // Each cooldown timestamp only advances when ITS OWN event type was
     // actually emitted (not on every suppressed flap) — see events.js's
@@ -275,6 +290,20 @@ class MarketState {
       lastApproachEventAt: approachEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastApproachEventAt) || null),
       lastLiquidityApproachEventAt: liquidityApproachEventEmitted ? new Date().toISOString() : ((prevTb && prevTb.lastLiquidityApproachEventAt) || null)
     };
+  }
+
+  // Fires the injected onEvent callback for every newly-classified event —
+  // called from BOTH _onBrainChanged (legacy liquidity/POI/structure diff)
+  // and _recomputeTradingBrain (DG Trading Brain V1 diff), right where each
+  // already collects into _pendingEvents. Independent of _scheduleDiskFlush
+  // on purpose: a push should go out the moment the transition happens, not
+  // wait for the debounced disk write. Errors are swallowed per-event (a
+  // failed Telegram send must never break the brain recompute it rode in on).
+  _notifyEvents(events) {
+    if (!this.onEvent) return;
+    events.forEach(event => {
+      try { this.onEvent(event); } catch (err) { console.error('[server] event notify failed:', err.message); }
+    });
   }
 
   _scheduleDiskFlush() {

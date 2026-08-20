@@ -8,6 +8,64 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.36.0] — Live Telegram-Push (App zu) + 5M Confirmation + Session-Open-Zonen
+
+Daniels expliziter Wunsch: "ich will das alles auf Telegram bekommen, auch
+wenn die App zu ist." Bisher liefen die Live-Events (Sweep, Reaktion,
+Confirmation, Entry-Status) nur ins Dashboard bzw. — wenn ein Browser-Tab
+offen war — client-seitig an Telegram. Ab jetzt pusht der Server selbst,
+unabhängig vom Handy/Browser.
+
+### Neu — Server-seitiger Live-Event-Push
+`server/marketState.js` nimmt einen optionalen `onEvent`-Callback entgegen
+und feuert ihn für jedes neu klassifizierte Trading Event, direkt an der
+Stelle, an der es ohnehin schon erkannt wird (kein zweiter Erkennungsweg).
+`server/index.js` verdrahtet das mit dem bestehenden Telegram-Sender —
+Session-High/Low-Sweeps, Liquidity Sweep + Reaktion, POI/Zone erreicht,
+Confirmation-Fortschritt (15M und neu 5M), Entry-Status-Wechsel
+(WATCH/CONFIRMATION/READY), MISSED, Setup ungültig. Neue Datei
+`server/lib/telegramEventFormatter.js` formatiert jedes Event in eine
+lesbare deutsche Nachricht — reine Präsentation bereits berechneter Fakten,
+keine neue Interpretation.
+
+### Neu — DG Confirmation (Kapitel 8): 5M zusätzlich zu 15M
+Auf Daniels Wunsch (2026-08-20) läuft ab jetzt eine zweite, parallele
+Confirmation-Prüfung auf 5M — als früherer Hinweis, damit er selbst
+rechtzeitig reinschauen kann. **15M bleibt allein entscheidend** für
+WATCH/CONFIRMATION/READY; 5M-Events sind eigene, klar als "früher Hinweis"
+markierte Telegram-Alerts, nie hohe Priorität, nie eine zweite
+Entry-Autorität. `rules/strategy.md` Kapitel 8 entsprechend aktualisiert
+(Daniels eigene Worte, von ihm bestätigt). Server holt jetzt 8 statt 7
+Timeframes (neu: 5M, `server/lib/timeframes.js`).
+
+### Neu — Session-Open Zonen-Update
+Bei Asia-/London-/NY-Open schickt der Server automatisch eine Buy/Sell-
+Zonen-Übersicht (`MB.buildSessionOpenZonesMessage()`) — Format an Daniels
+eigenem Vorbild orientiert, aber ausschließlich mit DG OS' echten Feldern
+(POI-Typ/Timeframe/Quality-Confluence/Ziel), kein SMT oder anderes
+undefiniertes Kriterium. Höchstens einmal pro Session pro Tag (neue Datei
+`server/lib/sessionOpenStore.js`, `MB.nextSessionOpenToSend()`).
+
+### Bugfix
+`server/lib/candleRefreshScheduler.js` kannte 5M noch nicht ("No boundary
+rule for timeframe: 5min") — eigener Boundary-Fall ergänzt, exakt nach dem
+15M-Muster.
+
+### Getestet
+25 neue Assertions (5M-Confirmation-Parametrisierung, Session-Open-Logik,
+Telegram-Formatierung, 5M-Event-Diff unabhängig von 15M) + volle
+End-to-End-Regression von `server/index.js` gegen Mock-TwelveData (jetzt
+8/8 Timeframes) + bestehende 92 (marketBrain) + 14 (Finnhub) Tests weiterhin
+grün.
+
+### Geänderte Dateien
+`marketBrain.js`, `events.js`, `server/marketState.js`, `server/index.js`,
+`server/lib/timeframes.js`, `server/lib/candleRefreshScheduler.js`,
+`server/lib/telegramEventFormatter.js` (neu), `server/lib/sessionOpenStore.js` (neu),
+`rules/strategy.md`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.35.0] — DG News (Kapitel 14): Finnhub-Anbindung
 
 Erste echte Datenquelle für Kapitel 14. Bisher war `newsStatus` immer der

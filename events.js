@@ -61,7 +61,14 @@ const EVENT_CATEGORY={
 
   // Reserved — no emitter yet, see file header.
   SETUP_FORMING:'trading',SETUP_CONFIRMED:'trading',
-  SETUP_INVALIDATED:'trading',TARGET_REACHED:'trading'
+  SETUP_INVALIDATED:'trading',TARGET_REACHED:'trading',
+
+  // Secondary 5M Confirmation (Kapitel 8 update, 2026-08-20) — purely
+  // informational early heads-up, own type prefix so it never collides
+  // (dedupe key, dashboard icon, Telegram formatting) with the 15M-driven,
+  // Entry-authoritative events above.
+  '5M_REACTION_DETECTED':'trading','5M_CONFIRMATION_DEVELOPING':'trading',
+  '5M_ENGULFING_CONFIRMED':'trading','5M_STRUCTURE_CONFIRMED':'trading'
 };
 
 const SESSION_EVENT_PREFIX={
@@ -275,7 +282,7 @@ function buildActiveSetup(decision,existing,currentPrice){
     symbol:'XAUUSD',direction:decision.direction,status:decision.status,
     createdAt:reuse?existing.createdAt:now,updatedAt:now,
     macroBias:decision.macroBias,tradingBias:decision.tradingBias,
-    primaryPoi:decision.primaryPoi,confirmation:decision.confirmation,
+    primaryPoi:decision.primaryPoi,confirmation:decision.confirmation,confirmation5m:decision.confirmation5m,
     entryZone:decision.entryZone,invalidation:decision.invalidation,
     targets:decision.targets,riskReward:decision.riskReward,reasons:decision.reasons,
     _approaching:isApproaching(decision.primaryPoi,currentPrice)
@@ -352,6 +359,20 @@ function classifyTradingBrainEvents(prevState,brain,currentPrice,now){
         direction:decision.direction,price:currentPrice,relatedPoi:decision.primaryPoi.id,timeframe:decision.primaryPoi.timeframe,
         significance:(nextConf==='STRUCTURE_CONFIRMED'||nextConf==='ENGULFING_CONFIRMED')?'high':'normal',
         explanation:(decision.confirmation.reasons&&decision.confirmation.reasons[0])||null
+      }));
+    }
+
+    // Secondary 5M Confirmation (Kapitel 8 update) — same progression logic,
+    // own event type prefix, never 'high' significance and never mentions
+    // WATCH/READY: purely "schau selbst rein", 15M stays authoritative.
+    const prevConf5m=prevActiveSetup.confirmation5m&&prevActiveSetup.confirmation5m.status;
+    const nextConf5m=decision.confirmation5m&&decision.confirmation5m.status;
+    if(nextConf5m&&nextConf5m!=='NO_CONFIRMATION'&&nextConf5m!==prevConf5m&&(CONFIRMATION_RANK[nextConf5m]||0)>(CONFIRMATION_RANK[prevConf5m]||-1)){
+      events.push(tbEvent(`5M_${nextConf5m}`,{
+        direction:decision.direction,price:currentPrice,relatedPoi:decision.primaryPoi.id,timeframe:'5M',
+        significance:'normal',
+        explanation:(decision.confirmation5m.reasons&&decision.confirmation5m.reasons[0])||null,
+        dedupeKey:`5M_${nextConf5m}-${decision.primaryPoi.id}-${decision.direction}`
       }));
     }
   }

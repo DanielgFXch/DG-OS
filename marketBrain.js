@@ -1126,6 +1126,14 @@ const HTF_TIMEFRAME_DEFS=[
 // Discount, only the Confirmation Engine.
 const LTF_CONFIRMATION_TIMEFRAME_KEY='15min';
 
+// Secondary, purely informational Confirmation timeframe (Kapitel 8 update:
+// 15M bleibt primär/entscheidend für den Entry-Status — 5M liefert
+// zusätzlich einen früheren Hinweis, damit Daniel selbst reinschauen kann,
+// entscheidet aber NICHT über WATCH/READY. Nie in computeEntryDecision
+// verwendet — nur ein zweites, gleichwertig berechnetes Confirmation-Objekt
+// pro POI (siehe poi.confirmation5m).
+const LTF_CONFIRMATION_TIMEFRAME_KEY_5M='5min';
+
 function seriesRange(candles){
   if(!Array.isArray(candles)||!candles.length) return null;
   return{high:Math.max(...candles.map(c=>c.high)),low:Math.min(...candles.map(c=>c.low))};
@@ -1619,32 +1627,37 @@ function isRejectionCandle(candle,direction){
   return strength>=0.7&&bodyRatio<=0.35;
 }
 
-function computeConfirmation(poi,ltf15mSeries){
+// timeframeLabel (default '15M'): purely cosmetic, for the `reasons` text —
+// lets the SAME detection logic run against a different LTF series (e.g.
+// 5M, see LTF_CONFIRMATION_TIMEFRAME_KEY_5M) without duplicating this
+// function or inventing a second detection model.
+function computeConfirmation(poi,ltfSeries,timeframeLabel){
+  timeframeLabel=timeframeLabel||'15M';
   if(!DG_RULES_DEFINED.confirmation){
     return{status:'AWAITING_DG_RULE',entryZone:'UNDEFINED',reasons:['DG Confirmation (Kapitel 8) ist noch nicht definiert.']};
   }
   if(!poi.reaction){
     return{status:'NO_CONFIRMATION',entryZone:'UNDEFINED',reasons:['Noch keine Reaktion am POI erkannt — Confirmation setzt eine Reaktion voraus.']};
   }
-  if(!Array.isArray(ltf15mSeries)||!ltf15mSeries.length){
-    return{status:'REACTION_DETECTED',entryZone:'UNDEFINED',reasons:['Reaktion erkannt, aber keine 15M-Daten für Confirmation verfügbar (DATA_NOT_READY für 15M).']};
+  if(!Array.isArray(ltfSeries)||!ltfSeries.length){
+    return{status:'REACTION_DETECTED',entryZone:'UNDEFINED',reasons:[`Reaktion erkannt, aber keine ${timeframeLabel}-Daten für Confirmation verfügbar (DATA_NOT_READY für ${timeframeLabel}).`]};
   }
 
   const reactionTime=new Date(poi.reaction.at).getTime();
-  const startIndex=ltf15mSeries.findIndex(c=>new Date(candleTimeToIso(c.datetime)).getTime()>=reactionTime);
+  const startIndex=ltfSeries.findIndex(c=>new Date(candleTimeToIso(c.datetime)).getTime()>=reactionTime);
   if(startIndex===-1){
-    return{status:'REACTION_DETECTED',entryZone:'UNDEFINED',reasons:['Reaktion erkannt, 15M-Historie reicht noch nicht bis zum Reaktionszeitpunkt.']};
+    return{status:'REACTION_DETECTED',entryZone:'UNDEFINED',reasons:[`Reaktion erkannt, ${timeframeLabel}-Historie reicht noch nicht bis zum Reaktionszeitpunkt.`]};
   }
 
-  const windowSlice=ltf15mSeries.slice(Math.max(0,startIndex-1),startIndex+CONFIRMATION_LOOKAHEAD_CANDLES);
+  const windowSlice=ltfSeries.slice(Math.max(0,startIndex-1),startIndex+CONFIRMATION_LOOKAHEAD_CANDLES);
   const engulfings=detectEngulfingCandles(windowSlice).filter(e=>e.direction===poi.direction);
   const matchingEngulfing=engulfings[0]||null;
 
-  const internalStructure=detectStructure(windowSlice,STRUCTURE_INTERNAL_WINDOW,'internal','15M');
+  const internalStructure=detectStructure(windowSlice,STRUCTURE_INTERNAL_WINDOW,'internal',timeframeLabel);
   const structureConfirm=internalStructure.elements.find(el=>(el.type==='BOS'||el.type==='CHOCH')&&el.direction===poi.direction)||null;
 
   const findEntryZone=()=>{
-    const fvgs=detectFairValueGaps(windowSlice,'15M').filter(f=>f.direction===poi.direction);
+    const fvgs=detectFairValueGaps(windowSlice,timeframeLabel).filter(f=>f.direction===poi.direction);
     if(!fvgs.length) return'UNDEFINED';
     const nearest=fvgs[fvgs.length-1];
     return{priceLow:nearest.priceLow,priceHigh:nearest.priceHigh};
@@ -1653,18 +1666,18 @@ function computeConfirmation(poi,ltf15mSeries){
   if(structureConfirm){
     return{
       status:'STRUCTURE_CONFIRMED',entryZone:findEntryZone(),
-      reasons:[`15M ${structureConfirm.type} in Richtung ${poi.direction} bei ${fmtPrice(structureConfirm.price)} (${structureConfirm.createdAt})`,
+      reasons:[`${timeframeLabel} ${structureConfirm.type} in Richtung ${poi.direction} bei ${fmtPrice(structureConfirm.price)} (${structureConfirm.createdAt})`,
         matchingEngulfing?`Zusätzlich ${poi.direction} Engulfing bei ${matchingEngulfing.at}`:null].filter(Boolean)
     };
   }
   if(matchingEngulfing){
-    return{status:'ENGULFING_CONFIRMED',entryZone:findEntryZone(),reasons:[`15M ${poi.direction} Engulfing bei ${matchingEngulfing.at}`]};
+    return{status:'ENGULFING_CONFIRMED',entryZone:findEntryZone(),reasons:[`${timeframeLabel} ${poi.direction} Engulfing bei ${matchingEngulfing.at}`]};
   }
   const rejection=windowSlice.slice(1).find(c=>isRejectionCandle(c,poi.direction));
   if(rejection){
-    return{status:'CONFIRMATION_DEVELOPING',entryZone:'UNDEFINED',reasons:[`15M Rejection-Kerze (${poi.direction}) bei ${rejection.datetime} UTC — schwächer als ein Engulfing (Secondary Confirmation, Kapitel 8).`]};
+    return{status:'CONFIRMATION_DEVELOPING',entryZone:'UNDEFINED',reasons:[`${timeframeLabel} Rejection-Kerze (${poi.direction}) bei ${rejection.datetime} UTC — schwächer als ein Engulfing (Secondary Confirmation, Kapitel 8).`]};
   }
-  return{status:'REACTION_DETECTED',entryZone:'UNDEFINED',reasons:['Reaktion erkannt, aber noch kein 15M Engulfing/Structure Shift/Rejection in die erwartete Richtung.']};
+  return{status:'REACTION_DETECTED',entryZone:'UNDEFINED',reasons:[`Reaktion erkannt, aber noch kein ${timeframeLabel} Engulfing/Structure Shift/Rejection in die erwartete Richtung.`]};
 }
 
 // DG Targets (Kapitel 10) — the candidate list itself (which liquidity/POI
@@ -1948,6 +1961,7 @@ function buildDecisionSummary(entryDecision,biasResult,risk,targets,poisAll){
     tradingBias:biasResult.trading?biasResult.trading.state:biasResult.overallBias,
     primaryPoi:primaryPoiSummary,
     confirmation:primaryPoi?primaryPoi.confirmation||null:null,
+    confirmation5m:primaryPoi?primaryPoi.confirmation5m||null:null,
     entryZone:entryDecision.entryZone,
     invalidation:typeof entryDecision.stopLoss==='number'?entryDecision.stopLoss:null,
     targets:directionTargets,
@@ -1999,6 +2013,23 @@ function shouldSendScheduledBriefing(now,lastSentDate,sendTimeHHMM){
   const today=zurichDateString(now);
   if(today===lastSentDate) return false;
   return zurichTimeString(now)>=sendTimeHHMM;
+}
+
+// Session-Open Zonen-Update: which session (if any) just opened and hasn't
+// had its zone-summary sent yet today. `alreadySentKeys` is a flat array of
+// previously-sent `${UTC-date}-${sessionId}` strings (see
+// server/lib/sessionOpenStore.js) — the date is embedded in the key itself,
+// so a new day naturally never matches yesterday's keys, no explicit reset
+// needed. Pure decision, no I/O, same shape as shouldSendScheduledBriefing.
+function nextSessionOpenToSend(now,alreadySentKeys){
+  const sent=new Set(alreadySentKeys||[]);
+  const dateStr=now.toISOString().slice(0,10); // UTC date — matches SESSIONS' own UTC startHour
+  for(const s of SESSIONS){
+    const openTime=new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth(),now.getUTCDate(),s.startHour,0,0));
+    const key=`${dateStr}-${s.id}`;
+    if(now>=openTime&&!sent.has(key)) return{sessionId:s.id,label:s.name,key};
+  }
+  return null;
 }
 
 const ENTRY_STATUS_HEADLINE={
@@ -2097,6 +2128,40 @@ function buildTargetsSection(decision){
 
 function buildStatusSection(decision){
   return`STATUS\n\n${ENTRY_STATUS_HEADLINE[decision.status]||decision.status}\n${decision.reasons&&decision.reasons.length?decision.reasons[0]:''}`.trim();
+}
+
+// Session-Open Zonen-Update (Daniel's explicit ask, Kapitel 13 context):
+// bei Asia/London/NY-Open eine kurze Buy/Sell-Zonen-Übersicht, im Stil
+// externer Signal-Kanäle, aber ausschließlich mit DG OS' eigenen, echten
+// Feldern (POI-Typ/Timeframe/Quality-Confluence/Target) — kein SMT, kein
+// erfundenes Kriterium, nichts, das nicht bereits in rules/strategy.md
+// steht. Reuses report.freshBullishPOIs/freshBearishPOIs + decision.targets
+// statt eine zweite Formatierungslogik zu erfinden.
+const POI_TYPE_LABEL={fvg:'FVG',orderBlock:'Order Block',ifvg:'iFVG',breaker:'Breaker'};
+
+function zoneBlock(poi,emoji,label,targets){
+  const lines=[`${emoji} ${label}: ${poi.range}`];
+  lines.push(`${POI_TYPE_LABEL[poi.type]||poi.type} (${poi.timeframe}), Quality: ${poi.quality}${typeof poi.score==='number'?` (${poi.score} Punkte)`:''}`);
+  if(poi.reasons&&poi.reasons.length) lines.push(poi.reasons.join(', '));
+  const direction=label==='BUY ZONE'?'up':'down';
+  const target=(targets||[]).find(t=>t.direction===direction&&(t.priority==='PRIMARY'||t.priority==='SECONDARY'));
+  if(target) lines.push(`Ziel bei Bestätigung: ${fmtPrice(target.price)} (${target.reason})`);
+  return lines.join('\n');
+}
+
+function buildSessionOpenZonesMessage(sessionLabel,brain,now){
+  const report=brain.report||{},decision=brain.decision||{};
+  const buyAreas=(report.freshBullishPOIs||[]).slice(0,2);
+  const sellAreas=(report.freshBearishPOIs||[]).slice(0,2);
+  const lines=[`🟡 ${sessionLabel.toUpperCase()} SESSION — XAUUSD`,''];
+  if(!buyAreas.length&&!sellAreas.length){
+    lines.push('Aktuell keine relevanten frischen DG-Zonen (Daily/4H/1H) — kein Setup erfunden, nur ehrlich: nichts Neues.');
+  }else{
+    sellAreas.forEach(p=>{ lines.push(zoneBlock(p,'🔴','SELL ZONE',decision.targets)); lines.push(''); });
+    buyAreas.forEach(p=>{ lines.push(zoneBlock(p,'🟢','BUY ZONE',decision.targets)); lines.push(''); });
+    lines.push('Bei Touch: auf 15M/5M Confirmation achten (Engulfing oder Struktur-Shift) — kein automatischer Entry.');
+  }
+  return lines.join('\n').trim();
 }
 
 function generateDGBriefing(brain,now){
@@ -2269,7 +2334,7 @@ function generateMarketReport(input){
   // V1 priority: FVG/Order Block briefing spotlight is Daily/4H/1H only
   // ("nicht hunderte alte FVGs im Hauptbriefing"), fresh, prioritizing zones
   // already linked to a Reaction/Structure Shift, nearest to price first.
-  const poiFact=p=>({timeframe:p.timeframe,type:p.type,range:`${fmtPrice(p.priceLow)}–${fmtPrice(p.priceHigh)}`,status:p.status,quality:p.quality,score:p.score});
+  const poiFact=p=>({timeframe:p.timeframe,type:p.type,range:`${fmtPrice(p.priceLow)}–${fmtPrice(p.priceHigh)}`,status:p.status,quality:p.quality,score:p.score,reasons:p.reasons||[]});
   const poiBriefingSort=(a,b)=>{
     const reactionDiff=(b.reaction?1:0)-(a.reaction?1:0);
     if(reactionDiff) return reactionDiff;
@@ -2414,6 +2479,12 @@ function computeTradingBrainV1(candlesByTimeframe,liquidityBase,currentPrice,pri
   const ltf15mSeries=(candlesByTimeframe[LTF_CONFIRMATION_TIMEFRAME_KEY]&&candlesByTimeframe[LTF_CONFIRMATION_TIMEFRAME_KEY].series)||[];
   poisAll.forEach(poi=>{ poi.confirmation=computeConfirmation(poi,ltf15mSeries); });
 
+  // (6b) Secondary 5M Confirmation (Kapitel 8 update) — purely informational
+  // early heads-up, same detection logic, never feeds computeEntryDecision
+  // below (15M stays authoritative for WATCH/READY, per "primär auf 15M").
+  const ltf5mSeries=(candlesByTimeframe[LTF_CONFIRMATION_TIMEFRAME_KEY_5M]&&candlesByTimeframe[LTF_CONFIRMATION_TIMEFRAME_KEY_5M].series)||[];
+  poisAll.forEach(poi=>{ poi.confirmation5m=computeConfirmation(poi,ltf5mSeries,'5M'); });
+
   // (7) DG Entry (Kapitel 9)
   const entryDecision=computeEntryDecision(biasResult.overallBias,poisAll,combinedLiquidity,currentPrice,priorSetupContext);
 
@@ -2506,7 +2577,7 @@ return{
   DECISION_INPUT_MODULES,computeDecisionEngine,
   OVERVIEW_QUICK_LEVEL_IDS,OVERVIEW_ZONE_CONFIDENCE_MIN,OVERVIEW_EVENT_LIMIT,computeOverview,
   computeAllDerivedModules,
-  HTF_TIMEFRAME_DEFS,MACRO_BIAS_TIMEFRAME_KEYS,TRADING_BIAS_TIMEFRAME_KEYS,LTF_CONFIRMATION_TIMEFRAME_KEY,
+  HTF_TIMEFRAME_DEFS,MACRO_BIAS_TIMEFRAME_KEYS,TRADING_BIAS_TIMEFRAME_KEYS,LTF_CONFIRMATION_TIMEFRAME_KEY,LTF_CONFIRMATION_TIMEFRAME_KEY_5M,
   seriesRange,computeTimeframeBrain,relatedStructureFor,computeTimeframePOIs,
   previousDayLiquidityFrom,swingLiquidityFrom,
   V1_PRIMARY_LIQUIDITY_IDS,V1_PRIMARY_SWING_TIMEFRAMES,isV1PrimaryLiquidity,
@@ -2521,8 +2592,9 @@ return{
   ENTRY_CANDIDATE_MIN_QUALITY,ENTRY_SL_BUFFER_PERCENT_OF_ZONE,liquiditySweepSupport,
   MISSED_MOVE_PROGRESSED_STATUSES,detectMissedMove,entryCandidatesFor,ENTRY_STATUS_RANK,evaluateEntryForDirection,computeEntryDecision,
   computeRiskManagement,NEWS_STATUS,computeNewsContext,SESSION_LIQUIDITY_TIMEFRAMES,computeSessionNotes,
-  buildDecisionSummary,timeOfDayGreeting,zurichDateString,zurichTimeString,shouldSendScheduledBriefing,ENTRY_STATUS_HEADLINE,waitingForText,
+  buildDecisionSummary,timeOfDayGreeting,zurichDateString,zurichTimeString,shouldSendScheduledBriefing,nextSessionOpenToSend,ENTRY_STATUS_HEADLINE,waitingForText,
   buildLiquiditySection,buildRecentEventsSection,buildPOISection,buildTargetsSection,buildStatusSection,buildBiasSection,buildRiskSection,generateDGBriefing,
+  buildSessionOpenZonesMessage,
   CHAT_INTENTS,detectChatIntent,answerNewsQuestion,answerMarketQuestion,
   summarizeTimeframeContext,V1_POI_BRIEFING_TIMEFRAMES,generateMarketReport,summarizeHTFContextEntry,computeTradingBrainV1
 };

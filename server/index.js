@@ -24,12 +24,15 @@ const { TwelveDataSocket } = require('./lib/twelveDataSocket.js');
 const { scheduleTimeframeRefresh } = require('./lib/candleRefreshScheduler.js');
 const { TIMEFRAME_DEFS } = require('./lib/timeframes.js');
 const { sendTelegramMessage } = require('./lib/telegramAssistant.js');
+const { formatEventForTelegram } = require('./lib/telegramEventFormatter.js');
 const scheduledBriefingStore = require('./lib/scheduledBriefingStore.js');
+const sessionOpenStore = require('./lib/sessionOpenStore.js');
 const MB = require('../marketBrain.js');
 
 const PORT = parseInt(process.env.PORT, 10) || 8080;
 const QUOTE_REFRESH_MS = 15 * 60 * 1000; // modest — previousClose/isMarketOpen don't need WS-level freshness
 const NEWS_REFRESH_MS = 30 * 60 * 1000; // economic calendar changes rarely — 30 min is plenty
+const SESSION_OPEN_CHECK_MS = 60 * 1000; // same coarse-is-fine reasoning as the morning briefing check below
 
 // Initial-burst spacing + one bounded retry pass. Root cause (see
 // docs/ALWAYS_ON_SERVER.md's "Initial fetch reliability" section): firing 8
@@ -82,7 +85,31 @@ async function main() {
   const newsApiKey = process.env.FINNHUB_API_KEY;
   const newsBaseUrl = process.env.FINNHUB_BASE_URL; // test-only override, undefined in real use
 
-  const marketState = new MarketState({ apiKey, restBaseUrl, newsApiKey, newsBaseUrl });
+  // DG OS Chat (Telegram) — optional, same "configure once it's available"
+  // pattern as TWELVEDATA_API_KEY. Undefined until Daniel adds these as
+  // Railway env vars (separate from the GitHub Actions secrets of the same
+  // name used by .github/workflows/telegram-heartbeat.yml) — the webhook
+  // route still responds, it just can't send a reply without a token yet.
+  // Read here (before MarketState) so the live event-push callback below
+  // can close over them.
+  const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
+  const telegramChatId = process.env.TELEGRAM_CHAT_ID;
+
+  // Live event push (Daniel's explicit ask, 2026-08-20: "ich will das alles
+  // auf Telegram bekommen, auch wenn die App zu ist") — every newly-
+  // classified 'trading' event (liquidity sweep, POI reaction, 15M/5M
+  // Confirmation progression, Entry status change, ...) gets pushed the
+  // moment MarketState classifies it, independent of any browser tab being
+  // open. formatEventForTelegram() returns null for anything not worth a
+  // push (context events) — silently skipped, not an error.
+  const onTradingEvent = (!telegramToken || !telegramChatId) ? null : (event) => {
+    const text = formatEventForTelegram(event);
+    if (!text) return;
+    sendTelegramMessage(telegramToken, telegramChatId, text)
+      .catch(err => console.error('[server] event push failed:', err.message));
+  };
+
+  const marketState = new MarketState({ apiKey, restBaseUrl, newsApiKey, newsBaseUrl, onEvent: onTradingEvent });
 
   console.log('[server] starting — initial REST fetch for all timeframes...');
   await marketState.refreshQuote().catch(err => console.error('[server] initial quote fetch failed:', err.message));
@@ -142,13 +169,6 @@ async function main() {
     marketState.refreshNews().catch(err => console.error('[server] news refresh failed:', err.message));
   }, NEWS_REFRESH_MS);
 
-  // DG OS Chat (Telegram) — optional, same "configure once it's available"
-  // pattern as TWELVEDATA_API_KEY. Undefined until Daniel adds these as
-  // Railway env vars (separate from the GitHub Actions secrets of the same
-  // name used by .github/workflows/telegram-heartbeat.yml) — the webhook
-  // route still responds, it just can't send a reply without a token yet.
-  const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
-  const telegramChatId = process.env.TELEGRAM_CHAT_ID;
   const apiServer = createApiServer(marketState, {
     token: telegramToken,
     chatId: telegramChatId,
@@ -179,6 +199,28 @@ async function main() {
       .catch(err => console.error('[server] scheduled morning briefing send failed:', err.message));
   }, 60 * 1000);
 
+  // Session-Open Zonen-Update (Daniel's explicit ask, 2026-08-20): bei
+  // Asia/London/NY-Open eine Buy/Sell-Zonen-Übersicht, im selben "configure
+  // once token+chatId exist" honest-opt-in pattern as the morning briefing
+  // above. Fires at most once per session per day (sessionOpenStore.js
+  // dedups by `${UTC-date}-${sessionId}`, same idea as
+  // scheduledBriefingStore.js's per-day dedup).
+  const sessionOpenInterval = setInterval(() => {
+    if (!telegramToken || !telegramChatId) return;
+    const sentKeys = sessionOpenStore.readSentKeys();
+    const next = MB.nextSessionOpenToSend(new Date(), sentKeys);
+    if (!next) return;
+    const brain = marketState.getTradingBrain();
+    if (!brain || !brain.decision || !brain.report) return; // not ready yet — retries next tick, doesn't mark as sent
+    const text = MB.buildSessionOpenZonesMessage(next.label, brain, new Date());
+    sendTelegramMessage(telegramToken, telegramChatId, text)
+      .then(() => {
+        sessionOpenStore.appendSentKey(next.key);
+        console.log(`[server] sent ${next.label} session-open zones`);
+      })
+      .catch(err => console.error('[server] session-open zones send failed:', err.message));
+  }, SESSION_OPEN_CHECK_MS);
+
   function shutdown() {
     console.log('[server] shutting down...');
     socket.disconnect();
@@ -186,6 +228,7 @@ async function main() {
     clearInterval(quoteInterval);
     clearInterval(newsInterval);
     clearInterval(scheduledBriefingInterval);
+    clearInterval(sessionOpenInterval);
     apiServer.close(() => process.exit(0));
     setTimeout(() => process.exit(0), 2000).unref();
   }

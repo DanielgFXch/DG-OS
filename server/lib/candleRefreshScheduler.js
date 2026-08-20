@@ -68,6 +68,11 @@ function nextBoundaryUtc(timeframeId, from) {
       const next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), 0, 0) + block * MINUTE_MS);
       return next;
     }
+    case '5min': {
+      const block = (Math.floor(d.getUTCMinutes() / 5) + 1) * 5;
+      const next = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate(), d.getUTCHours(), 0, 0) + block * MINUTE_MS);
+      return next;
+    }
     default:
       throw new Error(`No boundary rule for timeframe: ${timeframeId}`);
   }

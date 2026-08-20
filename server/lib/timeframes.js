@@ -6,11 +6,13 @@
 //
 // DG OS is primarily an HTF/swing assistant, not a scalping system (Daniel's
 // explicit correction). Priority order, highest first: Monthly > Weekly >
-// Daily > 4H > 1H > 30M > 15M. 5M and 1M are deliberately NOT in this
-// registry yet — "5M und 1M werden später ergänzt und sind aktuell KEINE
-// Priorität." Adding them later means one new entry here, nothing else
-// (same config-driven-registry pattern as LIQUIDITY_LEVEL_DEFS/POI_TYPE_DEFS
-// in marketBrain.js).
+// Daily > 4H > 1H > 30M > 15M > 5M. 5M was added per Daniel's explicit
+// request (Kapitel 8 update, 2026-08-20) as a SECOND, purely informational
+// DG Confirmation timeframe alongside 15M — 15M stays authoritative for the
+// Entry state machine. 1M is still deliberately NOT in this registry —
+// "1M wird später ergänzt und ist aktuell KEINE Priorität." Adding it later
+// means one new entry here, nothing else (same config-driven-registry
+// pattern as LIQUIDITY_LEVEL_DEFS/POI_TYPE_DEFS in marketBrain.js).
 //
 // `outputsize` values are deliberately modest — "keine unnötig großen
 // Datenmengen abrufen" — but sized so the EXISTING detectors in
@@ -51,7 +53,9 @@ const TIMEFRAME_DEFS = [
   { id: '30min', tdInterval: '30min', outputsize: 192, durationSeconds: 30 * MINUTE,
     reason: 'Rang 6, für feinere Reaktionen/Struktur unterhalb des HTF-Kerns, nicht für die Hauptanalyse. 192 Balken (~4 Tage).' },
   { id: '15min', tdInterval: '15min', outputsize: 192, durationSeconds: 15 * MINUTE,
-    reason: 'Rang 7, für Confirmation/Entry-Timing später. 192 Balken (~2 Tage).' }
+    reason: 'Rang 7, primäre/entscheidende DG Confirmation-Timeframe (Kapitel 8) für den Entry-Status. 192 Balken (~2 Tage).' },
+  { id: '5min', tdInterval: '5min', outputsize: 288, durationSeconds: 5 * MINUTE,
+    reason: 'Rang 8, sekundäre/informative DG Confirmation-Timeframe (Kapitel 8, Daniels expliziter Wunsch 2026-08-20) — liefert einen früheren Alert, entscheidet aber nicht über WATCH/READY. 288 Balken (~1 Tag).' }
 ];
 
 const TIMEFRAME_DEFS_DOCUMENTED = TIMEFRAME_DEFS.map(tf => Object.assign({}, tf, {

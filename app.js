@@ -491,7 +491,11 @@ let marketServerReachable=false;
 let tradingBrainState=null;      // last successful /api/brain/XAUUSD response, or null — DG Trading Brain V1, only reachable via the Always-On Server
 
 async function pollMarketServer(){
-  if(!marketServerUrl){ marketServerReachable=false; marketServerState=null; tradingBrainState=null; renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState); return; }
+  if(!marketServerUrl){
+    marketServerReachable=false; marketServerState=null; tradingBrainState=null;
+    renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
+    return false;
+  }
   try{
     const base=marketServerUrl.replace(/\/$/,'');
     const res=await fetch(`${base}/api/market/XAUUSD`,{cache:'no-store'});
@@ -518,23 +522,93 @@ async function pollMarketServer(){
   renderFreshness();
   renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
   pollAndSendEventAlerts();
+  return marketServerReachable;
 }
 
-function connectMarketServer(url){
-  marketServerUrl=url.trim();
+function normalizeMarketServerUrl(raw){
+  let value=(raw||'').trim();
+  if(!value) return '';
+  if(!/^https?:\/\//i.test(value)) value='https://'+value;
+  try{
+    const parsed=new URL(value);
+    if(parsed.protocol!=='https:'&&parsed.protocol!=='http:') return null;
+    return parsed.origin+parsed.pathname.replace(/\/+$/,'');
+  }catch(err){
+    return null;
+  }
+}
+
+async function connectMarketServer(url){
+  const normalized=normalizeMarketServerUrl(url);
+  if(normalized===null){
+    $('marketServerStatus').textContent='Ungültige Server-URL. Bitte eine gültige https:// Adresse eingeben.';
+    return false;
+  }
+  marketServerUrl=normalized;
   localStorage.setItem('dgos.marketServerUrl',marketServerUrl);
   if(!marketServerUrl){
     marketServerReachable=false;marketServerState=null;tradingBrainState=null;
-    $('marketServerStatus').textContent='Kein Always-On Server konfiguriert · nutzt den 15-Min-Feed + optionalen Browser-WebSocket.';
+    $('marketServerStatus').textContent='Kein Always-On Server konfiguriert · nutzt den Fallback-Marktdatenfeed.';
     renderFreshness();
     renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
-    return;
+    return false;
   }
-  pollMarketServer();
+  $('marketServerUrl').value=marketServerUrl;
+  $('marketServerStatus').textContent='Prüfe Always-On Server…';
+  return await pollMarketServer();
 }
 
 $('marketServerConnect').addEventListener('click',()=>connectMarketServer($('marketServerUrl').value));
+$('marketServerUrl').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    e.preventDefault();
+    connectMarketServer(e.currentTarget.value);
+  }
+});
 if(marketServerUrl) $('marketServerUrl').value=marketServerUrl;
+
+async function runSystemSelfTest(){
+  const btn=$('systemSelfTest');
+  const status=$('systemSelfTestStatus');
+  if(!btn||!status) return;
+  btn.disabled=true;
+  status.textContent='Funktionstest läuft…';
+  const checks=[];
+
+  try{
+    const res=await fetch(`${MARKET_DATA_URL}?health=${Date.now()}`,{cache:'no-store'});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    const updatedAt=data&&data.updatedAt?new Date(data.updatedAt):null;
+    const age=updatedAt&&!Number.isNaN(updatedAt.getTime())?formatDataAge(Math.max(0,(Date.now()-updatedAt.getTime())/1000)):'Alter unbekannt';
+    checks.push(`Fallback-Daten ✓ (${age})`);
+  }catch(err){
+    checks.push(`Fallback-Daten ✕ (${err.message})`);
+  }
+
+  if(marketServerUrl){
+    try{
+      const base=marketServerUrl.replace(/\/$/,'');
+      const res=await fetch(`${base}/api/health`,{cache:'no-store'});
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const health=await res.json();
+      const ws=health.websocketStatus||health.websocket||'—';
+      const htf=health.htfReady===true?'HTF bereit':health.htfReady===false?'HTF unvollständig':'HTF ?';
+      checks.push(`Server ✓ · WS ${ws} · ${htf}`);
+    }catch(err){
+      checks.push(`Server ✕ (${err.message})`);
+    }
+  }else{
+    checks.push('Server: URL fehlt');
+  }
+
+  checks.push(AssistantSpeechRecognition?'Mikrofon ✓':'Mikrofon: Browser-Limit');
+  checks.push('Text-Assistant ✓');
+  status.textContent=checks.join(' · ');
+  btn.disabled=false;
+}
+
+$('systemSelfTest').addEventListener('click',runSystemSelfTest);
 
 // Data Freshness + Version + Price/Candle Source — Phase "Version &
 // Freshness" (v0.21.0) + Phase D (Always-On Market Server). Ticks every
@@ -1380,6 +1454,19 @@ $('assistantTextForm').addEventListener('submit',e=>{
   const input=$('assistantTextInput');
   assistantAsk(input.value);
   input.value='';
+});
+
+// Bottom navigation was previously visual-only. Each button now scrolls to
+// a real dashboard section and updates the active state immediately.
+const bottomNavButtons=[...document.querySelectorAll('.bottom-nav button[data-target]')];
+bottomNavButtons.forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const target=document.getElementById(btn.dataset.target);
+    if(!target) return;
+    bottomNavButtons.forEach(b=>b.classList.toggle('active',b===btn));
+    const y=target.getBoundingClientRect().top+window.scrollY-118;
+    window.scrollTo({top:Math.max(0,y),behavior:'smooth'});
+  });
 });
 
 loadVersion();

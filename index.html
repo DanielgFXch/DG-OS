@@ -85,7 +85,7 @@
       </form>
     </section>
 
-    <section class="greeting card">
+    <section id="dashboardHome" class="greeting card">
       <div class="eyebrow"><span class="live-dot"></span><span id="sessionName">—</span></div>
       <div id="greetingText" class="greetingText">Guten Morgen, Daniel Gomes</div>
       <div class="muted" id="sessionSub">—</div>
@@ -110,9 +110,11 @@
       <div class="field-settings">
         <input id="marketServerUrl" type="text" placeholder="Always-On Market Server URL (optional)" autocomplete="off" />
         <div class="buttons">
-          <button id="marketServerConnect" class="secondary">Verbinden</button>
+          <button id="marketServerConnect" class="secondary" type="button">Server verbinden</button>
+          <button id="systemSelfTest" class="secondary" type="button">Funktionstest</button>
         </div>
-        <div class="muted" id="marketServerStatus">Kein Always-On Server konfiguriert · nutzt den 15-Min-Feed + optionalen Browser-WebSocket.</div>
+        <div class="muted" id="marketServerStatus">Kein Always-On Server konfiguriert · nutzt den Fallback-Marktdatenfeed.</div>
+        <div class="muted" id="systemSelfTestStatus" aria-live="polite"></div>
       </div>
     </section>
 
@@ -161,7 +163,7 @@
       </div>
     </section>
 
-    <section class="card brain-card">
+    <section id="learningSection" class="card brain-card">
       <div class="section-title"><svg class="ic"><use href="#ic-gauge"></use></svg>DG Trading Brain V1</div>
       <div class="eyebrow">Kapitel 0-16 in <code>rules/strategy.md</code> von Daniel definiert · Regelanwendung läuft nach Regel → Implementierung → Tests → Deploy · nur mit Always-On Server · Decision-Support, niemals automatische Order-Ausführung</div>
       <div class="overview-grid">
@@ -324,7 +326,7 @@
         </section>
 
         <section class="grid two">
-          <article class="card">
+          <article id="marketPlanSection" class="card">
             <div class="section-title"><svg class="ic"><use href="#ic-target"></use></svg>Market Plan <span class="badge-test">TEST</span></div>
             <div class="rows">
               <div class="row"><span>Current Opportunity</span><strong id="opportunity">Keine</strong></div>
@@ -370,7 +372,7 @@
           <p class="hint">TEST-SIMULATION, kein Live-Status: nur wenn kein Always-On Server verbunden ist, steuert dieser Demo-Screen die Karte „Aktuelle Handlung" oben. Sobald ein Server verbunden ist, zeigt diese Karte echte DG-Trading-Brain-Daten und die Simulation hat keinen Effekt mehr.</p>
         </section>
 
-        <section class="card">
+        <section id="marketEventsSection" class="card">
           <div class="section-title"><svg class="ic"><use href="#ic-broadcast"></use></svg>Market Events</div>
           <div id="events" class="events">
             <div class="event"><time>—</time><div><strong>Noch kein Event</strong><span>DG OS wartet auf Marktdaten.</span></div></div>
@@ -410,11 +412,11 @@
     <footer class="app-footer">DG OS <span id="appVersion">v0.0.0</span> · <a href="https://github.com/DanielgFXch/DG-OS/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
   </main>
 
-  <nav class="bottom-nav">
-    <button class="active">Dashboard</button>
-    <button>Market Plan</button>
-    <button>Events</button>
-    <button>Learning</button>
+  <nav class="bottom-nav" aria-label="DG OS Navigation">
+    <button class="active" type="button" data-target="dashboardHome">Dashboard</button>
+    <button type="button" data-target="marketPlanSection">Market Plan</button>
+    <button type="button" data-target="marketEventsSection">Events</button>
+    <button type="button" data-target="learningSection">Learning</button>
   </nav>
 
   <script src="./marketBrain.js"></script>

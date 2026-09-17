@@ -56,10 +56,17 @@ function renderGreeting(){
   $('sessionSub').textContent=session.sub;
 }
 
+function renderHeaderDateTime(now){
+  const clock=$('headerClock'),date=$('headerDate');
+  if(clock) clock.textContent=now.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  if(date) date.textContent=now.toLocaleDateString('de-CH',{weekday:'short',day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
 function renderTicker(){
   const now=new Date();
   $('tickerSession').textContent=`SESSION: ${currentSession(now).name.toUpperCase()}`;
-  $('tickerClock').textContent=now.toLocaleTimeString('de-DE');
+  $('tickerClock').textContent=now.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  renderHeaderDateTime(now);
 }
 
 const MARKET_DATA_URL='./data/market.json';
@@ -1560,6 +1567,7 @@ if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').cat
 render();
 renderGreeting();
 renderTicker();
+renderHeaderDateTime(new Date());
 renderFreshness();
 renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
 updateSessionStatuses();

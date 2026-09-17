@@ -448,6 +448,7 @@ function refreshDerivedModules(){
   renderDGConfidence(MarketBrain.dgConfidence);
   renderDecisionEngine(MarketBrain.decision);
   renderOverview(MarketBrain.overview);
+  renderKeySessionZones();
 }
 
 // Every "is this live" indicator in the app — the header badge, the ticker
@@ -502,6 +503,8 @@ async function pollMarketServer(){
     if(!res.ok) throw new Error('HTTP '+res.status);
     marketServerState=await res.json();
     marketServerReachable=true;
+    updateSessionData(marketServerState.sessions);
+    renderKeySessionZones(marketServerState.sessions);
     $('marketServerStatus').textContent=`Verbunden mit Always-On Server · ${marketServerUrl}`;
     // Separate, independent fetch — the Trading Brain V1 endpoint is new
     // (this build) and older Always-On Server deployments won't have it
@@ -517,6 +520,7 @@ async function pollMarketServer(){
     marketServerReachable=false;
     marketServerState=null;
     tradingBrainState=null;
+    renderKeySessionZones();
     $('marketServerStatus').textContent=`Always-On Server nicht erreichbar (${err.message}) — Dashboard nutzt Fallback (15-Min-Feed).`;
   }
   renderFreshness();
@@ -755,6 +759,83 @@ async function loadMarketData(){
 
 function fmtHour(h){return String(h).padStart(2,'0')+':00'}
 
+function currentSessionZonePrice(){
+  if(marketServerReachable&&marketServerState&&marketServerState.quote&&typeof marketServerState.quote.price==='number'){
+    return marketServerState.quote.price;
+  }
+  if(MarketBrain.liveData&&typeof MarketBrain.liveData.price==='number') return MarketBrain.liveData.price;
+  return null;
+}
+
+function currentSessionZoneData(){
+  if(marketServerReachable&&marketServerState&&marketServerState.sessions) return marketServerState.sessions;
+  return MarketBrain.sessions||null;
+}
+
+function currentSessionZoneLiquidity(){
+  if(marketServerReachable&&marketServerState&&marketServerState.brain&&Array.isArray(marketServerState.brain.liquidity)){
+    return marketServerState.brain.liquidity;
+  }
+  return Array.isArray(MarketBrain.liquidity)?MarketBrain.liquidity:[];
+}
+
+function sessionLevelState(liquidity,id){
+  const level=(liquidity||[]).find(l=>l&&l.id===id);
+  return level&&level.status?level.status:'invalid';
+}
+
+function sessionPositionLabel(price,high,low){
+  if(typeof price!=='number'||typeof high!=='number'||typeof low!=='number') return'—';
+  if(price>high) return'ÜBER HIGH';
+  if(price<low) return'UNTER LOW';
+  return'IN RANGE';
+}
+
+function renderKeySessionZones(explicitSessions){
+  const grid=$('keySessionZonesGrid');
+  if(!grid) return;
+  const sessions=explicitSessions||currentSessionZoneData();
+  const liquidity=currentSessionZoneLiquidity();
+  const price=currentSessionZonePrice();
+  const now=new Date();
+
+  if(!sessions){
+    grid.innerHTML='<div class="ov-empty">Noch keine Session-Daten.</div>';
+    return;
+  }
+
+  grid.innerHTML=SESSIONS.map(s=>{
+    const sd=sessions[s.id];
+    const valid=sd&&typeof sd.high==='number'&&typeof sd.low==='number';
+    const high=valid?sd.high:null,low=valid?sd.low:null;
+    const range=valid?high-low:null;
+    const status=sessionStatus(s,now);
+    const highState=sessionLevelState(liquidity,s.id+'High');
+    const lowState=sessionLevelState(liquidity,s.id+'Low');
+    const position=sessionPositionLabel(price,high,low);
+    let nearest='—';
+    if(valid&&typeof price==='number'){
+      const highDistance=Math.abs(high-price),lowDistance=Math.abs(price-low);
+      nearest=highDistance<=lowDistance
+        ?'High · $'+highDistance.toFixed(2)+' entfernt'
+        :'Low · $'+lowDistance.toFixed(2)+' entfernt';
+    }
+    return '<article class="key-session-zone key-session-zone-'+status+'">'
+      +'<div class="key-session-zone-head"><div>'
+      +'<div class="key-session-zone-name">'+s.name+'</div>'
+      +'<div class="key-session-zone-window">'+fmtHour(s.startHour)+'–'+fmtHour(s.endHour)+' UTC</div>'
+      +'</div><span class="session-status status-'+status+'">'+SESSION_STATUS_LABEL[status]+'</span></div>'
+      +'<div class="key-session-level"><span>High</span><strong>'+fmtPrice(high)+'</strong>'
+      +'<em class="key-session-level-state state-'+highState+'">'+(LIQUIDITY_STATUS_LABEL[highState]||'—')+'</em></div>'
+      +'<div class="key-session-level"><span>Low</span><strong>'+fmtPrice(low)+'</strong>'
+      +'<em class="key-session-level-state state-'+lowState+'">'+(LIQUIDITY_STATUS_LABEL[lowState]||'—')+'</em></div>'
+      +'<div class="key-session-zone-meta"><span><small>Range</small><b>'+(typeof range==='number'?'$'+range.toFixed(2):'—')+'</b></span>'
+      +'<span><small>Preis</small><b class="key-session-position">'+position+'</b></span></div>'
+      +'<div class="key-session-nearest"><small>Nächste Grenze</small><strong>'+nearest+'</strong></div>'
+      +'</article>';
+  }).join('');
+}
+
 function sessionStatus(session,now){
   const{start,end}=sessionWindowToday(session,now);
   if(now<start) return'upcoming';
@@ -788,6 +869,7 @@ function updateSessionStatuses(){
     el.textContent=SESSION_STATUS_LABEL[status];
     el.className=`session-status status-${status}`;
   });
+  renderKeySessionZones();
 }
 
 function updateSessionData(sessions){
@@ -804,6 +886,7 @@ function updateSessionData(sessions){
       highEl.textContent='—';lowEl.textContent='—';rangeEl.textContent='—';
     }
   });
+  renderKeySessionZones(sessions);
 }
 
 // TwelveData WebSocket-Streaming läuft komplett im Browser: der API-Key liegt dadurch
@@ -1480,6 +1563,7 @@ renderTicker();
 renderFreshness();
 renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
 updateSessionStatuses();
+renderKeySessionZones();
 loadMarketData();
 if(marketServerUrl) pollMarketServer();
 setInterval(renderGreeting,60000);

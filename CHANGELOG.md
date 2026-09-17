@@ -8,6 +8,34 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.36.3] — Functionality First: Navigation, Server-Verbindung & Selbsttest
+
+Nach dem UI-Polish liegt die Priorität wieder auf Funktion und Zuverlässigkeit.
+
+### Behoben / verbessert
+- Bottom Navigation ist nicht mehr dekorativ: Dashboard, Market Plan, Events und Learning springen jetzt zu echten Bereichen.
+- Always-On-Server-URL wird robust normalisiert (https:// wird bei Bedarf ergänzt), validiert und kann auch mit Enter verbunden werden.
+- Server-Verbindung zeigt während des Verbindungsversuchs einen echten Prüfstatus und liefert ein klares Ergebnis zurück.
+- Neuer **Funktionstest** im System-Status prüft den Fallback-Marktdatenfeed, optional den Always-On-Server inkl. /api/health, HTF-Bereitschaft sowie Browser-Unterstützung für Mikrofon/Text-Assistant.
+- Keine Änderung an Trading Brain, Market Brain, Regeln, Entry-Logik, Alerts oder Datenberechnung.
+
+### Geänderte Dateien
+`index.html`, `app.js`, `package.json`, `CHANGELOG.md`
+
+---
+
+## [0.36.2] — Premium WOW / Clean Mobile Pass
+
+UI-only: Premium-Glass-Polish, kompakterer Assistant, Hero/Header/Bottom-Navigation optisch verfeinert. Keine Trading-/Serverlogik geändert.
+
+---
+
+## [0.36.1] — Cleaner Mobile Dashboard UI
+
+UI-only: Hierarchie, Abstände, Cards und Mobile-Darstellung aufgeräumt. Keine Trading-/Serverlogik geändert.
+
+---
+
 ## [0.36.0] — Live Telegram-Push (App zu) + 5M Confirmation + Session-Open-Zonen
 
 Daniels expliziter Wunsch: "ich will das alles auf Telegram bekommen, auch

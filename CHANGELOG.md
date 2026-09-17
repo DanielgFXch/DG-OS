@@ -8,6 +8,31 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.37.0] — Wichtigste Session-Zonen: Asia / London / New York
+
+Neue permanente Dashboard-Sektion direkt im oberen Bereich für Daniels wichtigsten Session-Liquidity-Kontext.
+
+### Neu
+- Eigene **Wichtigste Session-Zonen**-Sektion für Asia, London und New York.
+- Pro Session werden echtes High, Low und Range gezeigt.
+- High und Low zeigen den bestehenden Liquidity-Status: OPEN / APPROACHING / TOUCHED / SWEPT.
+- Zeigt die aktuelle Preisposition relativ zur Session-Range (IN RANGE / ÜBER HIGH / UNTER LOW).
+- Zeigt automatisch, ob High oder Low aktuell die nähere Grenze ist und wie weit der Preis davon entfernt ist.
+- Session-Status (Bevorstehend / Aktiv / Geschlossen) bleibt sichtbar.
+
+### Datenlogik
+- Mit Always-On Server werden dessen aktuelle Session-Daten, Live-Preis und bestehende Liquidity-Engine verwendet.
+- Ohne Server fällt die Sektion sauber auf den bestehenden Fallback-Marktdatenfeed zurück.
+- Keine neue Tradingregel, kein neues Scoring und keine automatische Tradeentscheidung.
+
+### Aufgeräumt
+- Die ältere doppelte Session-High/Low-Kartenreihe weiter unten wurde entfernt; die Information lebt jetzt in der priorisierten Sektion.
+
+### Geänderte Dateien
+`index.html`, `app.js`, `wow.css`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.36.3] — Functionality First: Navigation, Server-Verbindung & Selbsttest
 
 Nach dem UI-Polish liegt die Priorität wieder auf Funktion und Zuverlässigkeit.

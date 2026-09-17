@@ -10,7 +10,7 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
-  <link rel="stylesheet" href="./wow.css?v=0.37.0" />
+  <link rel="stylesheet" href="./wow.css?v=0.37.1" />
   <title>DG OS Alpha</title>
 </head>
 <body>
@@ -47,7 +47,14 @@
         <div class="sub">XAUUSD Market Assistant</div>
       </div>
     </div>
-    <div id="connectionBadge" class="badge"><span class="live-dot"></span>OFFLINE DEMO</div>
+    <div class="topbar-meta">
+      <div class="header-datetime" aria-label="Aktueller Stand">
+        <span class="header-datetime-label">AKTUELLER STAND</span>
+        <strong id="headerClock">--:--:--</strong>
+        <span id="headerDate">--.--.----</span>
+      </div>
+      <div id="connectionBadge" class="badge"><span class="live-dot"></span>OFFLINE DEMO</div>
+    </div>
   </header>
 
   <div class="ticker">

@@ -8,6 +8,22 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/):
 - **MINOR** — neue Module oder größere Funktionen
 - **PATCH** — Bugfixes, Optimierungen, kleine Verbesserungen
 
+## [0.37.1] — Aktueller Stand: Uhrzeit + Datum im Header
+
+### Neu
+- Oben im Header steht jetzt permanent der **aktuelle Stand** mit Live-Uhrzeit inklusive Sekunden und Datum.
+- Anzeige verwendet die lokale Gerätezeit des Nutzers und aktualisiert sich jede Sekunde.
+- Auf Mobile wird die Anzeige kompakt, damit Branding und Live-Status weiterhin sauber sichtbar bleiben.
+- Der bestehende Ticker nutzt dieselbe lokale 24h-Zeitdarstellung.
+
+### Unverändert
+Keine Änderungen an Trading Brain, Market Brain, Session-Zonen, Datenfeeds oder Serverlogik.
+
+### Geänderte Dateien
+`index.html`, `app.js`, `wow.css`, `package.json`, `CHANGELOG.md`
+
+---
+
 ## [0.37.0] — Wichtigste Session-Zonen: Asia / London / New York
 
 Neue permanente Dashboard-Sektion direkt im oberen Bereich für Daniels wichtigsten Session-Liquidity-Kontext.

@@ -10,6 +10,7 @@
   <link rel="manifest" href="./manifest.webmanifest" />
   <link rel="apple-touch-icon" href="./icons/icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./wow.css?v=0.36.2" />
   <title>DG OS Alpha</title>
 </head>
 <body>
@@ -64,13 +65,13 @@
   <main class="app">
     <section class="card assistant-card">
       <div class="section-title"><svg class="ic"><use href="#ic-mic"></use></svg>DG OS Assistant</div>
-      <div class="eyebrow">Sprich oder tippe mit DG OS — jede Antwort kommt ausschließlich aus echten Trading-Brain-Daten, kein LLM, keine erfundene Einschätzung. Wichtige Ereignisse (Sweep/Reaktion/Signal) erscheinen hier automatisch, mit Always-On Server.</div>
+      <div class="eyebrow">Sprich oder tippe mit DG OS. Antworten basieren ausschließlich auf echten Trading-Brain-Daten — ohne erfundene Marktwerte.</div>
       <div class="assistant-controls">
         <button id="assistantMicBtn" class="assistant-mic" type="button" aria-label="Sprachaufnahme starten">
           <svg class="ic"><use href="#ic-mic"></use></svg>
         </button>
         <div class="assistant-controls-text">
-          <div id="assistantStatus" class="muted">Tippe auf das Mikrofon und frag z.B. „Gomez, wie sieht der Markt aus?"</div>
+          <div id="assistantStatus" class="muted">Frag z.B. „Gomez, wie sieht der Markt aus?"</div>
           <label class="assistant-voice-toggle"><input id="assistantSpeak" type="checkbox" checked /> Antwort vorlesen</label>
           <label class="assistant-voice-toggle"><input id="assistantContinuous" type="checkbox" /> Dauer-Zuhören ("Hey Gomez", ohne Tippen)</label>
           <select id="assistantVoiceSelect" class="assistant-voice-select"><option value="">Standard-Stimme</option></select>

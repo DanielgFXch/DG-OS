@@ -1,3 +1,20 @@
+# v0.46.3 — Mobile Cleanup nach iPhone-Screenshot
+
+## Behoben
+- Gesundheit, E-Mail, Social und Verbindungen werden auf Mobile jetzt garantiert einspaltig dargestellt statt gequetscht nebeneinander.
+- Der überflüssige grosse Einzel-Tag-Block in der Tagesübersicht wird auf Mobile ausgeblendet; die Agenda folgt direkt unter dem ausgewählten Datum.
+- Versehentlich sichtbares "\\n" oberhalb der App entfernt.
+- Untere Navigation visuell etwas ruhiger abgestimmt.
+
+## Begrüssung
+- 05:00–10:59: Guten Morgen.
+- 11:00–17:59: Guten Tag.
+- Ab 18:00 sowie nachts: Guten Abend.
+- Persönlicher und allgemeiner DG-OS-Greeting verwenden jetzt dieselbe Logik.
+
+## Unverändert
+- Kalenderdaten, Social-Cleanup und Trading-Logik bleiben unverändert.
+
 # v0.46.2 — Kalender zuerst, kompakter Tageskopf
 
 ## Verbessert

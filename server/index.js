@@ -26,6 +26,7 @@ const { TIMEFRAME_DEFS } = require('./lib/timeframes.js');
 const { sendTelegramMessage } = require('./lib/telegramAssistant.js');
 const { formatEventForTelegram } = require('./lib/telegramEventFormatter.js');
 const { GmailIntegration } = require('./lib/gmailIntegration.js');
+const { GoogleCalendarIntegration } = require('./lib/googleCalendarIntegration.js');
 const scheduledBriefingStore = require('./lib/scheduledBriefingStore.js');
 const sessionOpenStore = require('./lib/sessionOpenStore.js');
 const MB = require('../marketBrain.js');
@@ -175,16 +176,17 @@ async function main() {
   // If they are absent, /api/gmail/status reports configured:false and the
   // frontend keeps the direct Gmail links as an honest fallback.
   const gmail = new GmailIntegration(process.env);
-  if (gmail.configured) console.log('[server] Gmail hub configured — secure same-origin mail routes enabled.');
-  else console.log('[server] Gmail hub not configured — mail API stays unavailable; direct Gmail links remain usable.');
+  const calendar = new GoogleCalendarIntegration(gmail);
+  if (gmail.configured) console.log('[server] Google Workspace hub configured — Gmail + Calendar OAuth routes enabled.');
+  else console.log('[server] Google Workspace hub not configured — Gmail/Calendar stay unavailable; direct fallbacks remain usable.');
 
   const apiServer = createApiServer(marketState, {
     token: telegramToken,
     chatId: telegramChatId,
     webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET
-  }, gmail);
+  }, gmail, calendar);
   apiServer.listen(PORT, () => {
-    console.log(`[server] API listening on :${PORT} — DG OS frontend + market API + private Gmail hub + Telegram webhook`);
+    console.log(`[server] API listening on :${PORT} — DG OS frontend + market API + Google Workspace hub + Telegram webhook`);
   });
 
   // Proactive morning briefing — "ich will einfach immer up to date

@@ -137,24 +137,58 @@
     setCardStatuses();
   }
 
+  function setWorkspaceReady(ready){
+    const toolbar=document.querySelector('.personal-email-toolbar');
+    const layout=document.querySelector('.personal-email-layout');
+    if(toolbar) toolbar.classList.toggle('hidden',!ready);
+    if(layout) layout.classList.toggle('hidden',!ready);
+    $('emailNewsletterActions').classList.add('hidden');
+  }
+
   function updateWorkspaceControls(){
     const account=currentAccount();
     $('emailWorkspaceTitle').textContent=account?account.label+' E-Mail':'Postfach';
     $('emailWorkspaceAddress').textContent=account?account.email:'';
     const connect=$('emailConnect'),compose=$('emailCompose');
-    if(!account){connect.disabled=true;compose.disabled=true;return;}
+    if(!account){connect.disabled=true;compose.hidden=true;setWorkspaceReady(false);return;}
+
     if(!state.apiAvailable){
-      const remote=remoteServerBase();connect.hidden=false;connect.disabled=!remote;connect.textContent=remote?'Sichere Server-Version öffnen':'DG OS Server nicht verbunden';compose.disabled=true;
-      setNotice(remote?'Für E-Mails innerhalb von DG OS öffne die sichere Server-Version. Auf GitHub Pages werden keine Mail-Tokens verarbeitet.':'Für die interne E-Mail-Zentrale muss zuerst der sichere DG OS Server verbunden werden.','warn');return;
+      const remote=remoteServerBase();
+      connect.hidden=false;
+      connect.disabled=false;
+      connect.textContent=remote?'Sichere Server-Version öffnen':'Direkt in Gmail öffnen';
+      compose.hidden=true;
+      setWorkspaceReady(false);
+      setNotice(remote
+        ? 'Die interne Mailansicht ist hier nicht aktiv. Öffne die sichere DG OS Server-Version oder nutze Gmail direkt.'
+        : 'Die sichere DG OS Mail-Verbindung ist noch nicht eingerichtet. Bis dahin kannst du dieses Postfach direkt in Gmail öffnen.','warn');
+      return;
     }
-    if(!state.status||!state.status.configured){connect.hidden=false;connect.disabled=true;connect.textContent='Google OAuth nicht eingerichtet';compose.disabled=true;setNotice('Google Gmail OAuth ist auf dem Server noch nicht konfiguriert. Keine Maildaten werden abgerufen.','warn');return;}
+
+    if(!state.status||!state.status.configured){
+      connect.hidden=false;
+      connect.disabled=true;
+      connect.textContent='Google OAuth noch nicht eingerichtet';
+      compose.hidden=true;
+      setWorkspaceReady(false);
+      setNotice('Google Gmail OAuth ist auf dem DG OS Server noch nicht konfiguriert. Es werden keine Maildaten abgerufen.','warn');
+      return;
+    }
+
     const item=statusAccount(state.account),connected=Boolean(state.status.authenticated&&item&&item.connected);
-    connect.hidden=connected;connect.disabled=false;connect.textContent='Mit Google verbinden';compose.disabled=!connected;
-    if(!connected)setNotice('Dieses Postfach ist noch nicht mit DG OS verbunden.','warn');
+    connect.hidden=connected;
+    connect.disabled=false;
+    connect.textContent='Mit Google verbinden';
+    compose.hidden=!connected;
+    setWorkspaceReady(connected);
+    if(!connected)setNotice('Dieses Postfach ist noch nicht mit DG OS verbunden. Verbinde es einmal sicher mit Google.','warn');
   }
 
   function showWorkspace(accountId){
-    state.account=accountId;state.selected.clear();state.message=null;state.reply=null;workspace.classList.remove('hidden');updateWorkspaceControls();
+    state.account=accountId;state.filter='inbox';state.query='';state.selected.clear();state.message=null;state.reply=null;workspace.classList.remove('hidden');
+    document.querySelectorAll('[data-email-filter]').forEach(item=>item.setAttribute('aria-pressed',String(item.dataset.emailFilter==='inbox')));
+    $('emailSearch').value='';
+    updateWorkspaceControls();
     $('emailMessageDetail').innerHTML='<p class="personal-empty">Öffne eine E-Mail, um sie hier zu lesen.</p>';
     if(state.apiAvailable&&state.status&&state.status.authenticated){const item=statusAccount(accountId);if(item&&item.connected)loadMessages();}
     workspace.scrollIntoView({behavior:'smooth',block:'start'});
@@ -236,7 +270,17 @@
 
   document.querySelectorAll('[data-email-account]').forEach(button=>button.addEventListener('click',()=>showWorkspace(button.dataset.emailAccount)));
   document.querySelectorAll('[data-email-filter]').forEach(button=>button.addEventListener('click',()=>{state.filter=button.dataset.emailFilter;state.selected.clear();document.querySelectorAll('[data-email-filter]').forEach(item=>item.setAttribute('aria-pressed',String(item===button)));loadMessages();}));
-  $('emailConnect').addEventListener('click',()=>{if(!state.account)return;if(!state.apiAvailable){const remote=remoteServerBase();if(remote)window.location.href=remote+'/#personalEmail';return;}window.location.href='./api/gmail/oauth/start?account='+encodeURIComponent(state.account);});
+  $('emailConnect').addEventListener('click',()=>{
+    if(!state.account)return;
+    if(!state.apiAvailable){
+      const remote=remoteServerBase();
+      if(remote){window.location.href=remote+'/#personalEmail';return;}
+      const account=currentAccount();
+      if(account)window.location.href='https://mail.google.com/mail/u/?authuser='+encodeURIComponent(account.email)+'#inbox';
+      return;
+    }
+    window.location.href='./api/gmail/oauth/start?account='+encodeURIComponent(state.account);
+  });
   $('emailCompose').addEventListener('click',openCompose);$('emailCloseWorkspace').addEventListener('click',()=>workspace.classList.add('hidden'));$('emailTrashSelected').addEventListener('click',()=>trashMessages(Array.from(state.selected)));$('closeEmailCompose').addEventListener('click',()=>$('emailComposeDialog').close());
   $('emailSearchForm').addEventListener('submit',event=>{event.preventDefault();state.query=$('emailSearch').value.trim();loadMessages();});
   $('emailComposeForm').addEventListener('submit',async event=>{

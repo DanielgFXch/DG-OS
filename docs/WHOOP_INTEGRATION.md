@@ -55,30 +55,31 @@ Angeforderte Scopes:
 - Die öffentliche Callback-Seite entfernt den einmaligen Authorization Code sofort aus der Browser-History und leitet ihn nur an den gespeicherten privaten DG-OS-Server weiter.
 - Disconnect ruft den WHOOP-Revoke-Endpunkt auf und entfernt lokale Tokens.
 
-## Server-Variablen
+## Supabase Connector
 
-Mindestens:
+Ab v0.47.1 braucht WHOOP keinen Railway-/Always-On-Server mehr. Ein separates Supabase-Projekt `DG-OS` hostet die Edge Function `whoop`.
+
+Der einzige manuelle Secret-Wert ist:
 
 ```
 WHOOP_CLIENT_SECRET=<secret from WHOOP Developer Dashboard>
-WHOOP_REDIRECT_URI=https://danielgfxch.github.io/DG-OS/whoop-callback.html
-DGOS_PUBLIC_BASE_URL=https://<your-private-dgos-server>
-DGOS_APP_URL=https://<your-private-dgos-server>
-DGOS_INTEGRATION_ENCRYPTION_KEY=<32-byte key>
-DGOS_PRIVATE_DATA_DIR=<persistent directory>
 ```
 
-`WHOOP_CLIENT_ID` ist optional, solange die im Projekt hinterlegte öffentliche DG-OS-Client-ID verwendet wird.
+Dieses Secret wird direkt in Supabase unter **Edge Functions → Secrets** gespeichert und nie in GitHub oder im Browser abgelegt.
+
+Die öffentliche Connector-Basis ist:
+
+`https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/whoop`
 
 ## Verbindungsablauf
 
-1. Auf GitHub Pages unter **Gesundheit** auf **WHOOP verbinden**.
-2. DG OS öffnet über den privaten Server den WHOOP OAuth Login.
-3. WHOOP fragt nach der Freigabe der ausgewählten Scopes.
-4. WHOOP leitet zur registrierten GitHub-Pages-Callback-URL zurück.
-5. Die Callback-Seite leitet Code + State an den privaten DG-OS-Server weiter.
-6. Der Server tauscht den Code gegen Access-/Refresh-Token.
-7. Danach öffnet sich die servergehostete DG-OS-Oberfläche und lädt die echten WHOOP-Daten.
+1. In Supabase einmal `WHOOP_CLIENT_SECRET` als Edge Function Secret hinterlegen.
+2. Auf GitHub Pages unter **Gesundheit** auf **WHOOP verbinden**.
+3. WHOOP Login/Freigabe bestätigen.
+4. WHOOP leitet zur bestehenden GitHub-Pages-Callback-URL zurück.
+5. Die Callback-Seite gibt Code + State an die Supabase Edge Function weiter.
+6. Supabase tauscht den Code gegen WHOOP Access-/Refresh-Token und speichert diese verschlüsselt.
+7. Jarvis erhält nur eine zufällige Session und lädt danach die echten WHOOP-Daten direkt über Supabase.
 
 ## API
 

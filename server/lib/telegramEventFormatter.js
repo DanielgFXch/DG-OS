@@ -72,7 +72,7 @@ function formatEventForTelegram(event) {
     detailParts.push(bullish ? 'bullish' : (bearish ? 'bearish' : event.direction));
   }
 
-  const lines = [headline];
+  const lines = ['📈 TRADING', headline];
   if (detailParts.length) lines.push(detailParts.join(' · '));
   if (event.explanation) lines.push(event.explanation);
   lines.push('', 'XAUUSD — DG OS');

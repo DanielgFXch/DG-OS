@@ -388,8 +388,8 @@ class GmailIntegration {
     return entry.token;
   }
 
-  async accessToken(accountId) {
-    return this._accessToken(accountId, false);
+  async accessToken(accountId, forceRefresh) {
+    return this._accessToken(accountId, Boolean(forceRefresh));
   }
 
   async _gmailFetch(accountId, resource, options, retried) {

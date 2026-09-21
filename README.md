@@ -63,3 +63,12 @@ Der 15-Minuten-Takt ist das technische Maximum für einen zuverlässigen GitHub-
 2. Der Preis aktualisiert sich danach in Echtzeit, solange die Seite geöffnet ist.
 
 **Bewusster Trade-off:** Der Key liegt dabei sichtbar im Browser-Code (jeder mit Zugriff auf die Seite könnte ihn im DevTools-Netzwerktab sehen). Bei einem kostenlosen Account ohne Zahlungsdaten ist das Risiko gering – im schlimmsten Fall nutzt jemand das Kontingent mit. Der Key wird nur lokal im Browser (`localStorage`) gespeichert, nie committet. Bricht die Verbindung ab, versucht DG OS automatisch mehrfach neu zu verbinden und fällt danach ehrlich auf die 15-Minuten-JSON-Daten zurück.
+
+
+## Gmail Center
+
+DG OS kann Business (\`imdanielgomes@gmail.com\`) und Privat (\`gomesdani1999@gmail.com\`) getrennt verwalten. Die sichere In-App-Ansicht läuft nur über den DG-OS-Server, damit Google Client Secret und OAuth-/Refresh-Tokens nie in GitHub Pages oder Browser-Storage landen.
+
+Funktionen: Inbox, Ungelesen, Suche, Lesen, Schreiben, Antworten und ein Newsletter-Filter. Newsletter können bewusst ausgewählt und in den Gmail-Papierkorb verschoben werden; es gibt keine automatische oder permanente Löschung.
+
+Setup und Sicherheitsmodell: [docs/GMAIL_INTEGRATION.md](docs/GMAIL_INTEGRATION.md).

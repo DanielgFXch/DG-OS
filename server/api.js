@@ -1,23 +1,10 @@
 'use strict';
 
-// ---------------------------------------------------------------------------
-// HTTP API — Phase A endpoints, using Node's built-in `http` module. No
-// Express, no dependency added — "möglichst kleinen Node.js Always-On
-// Market Service", and the project has stayed dependency-free everywhere
-// else (see package.json).
-//
-// Read-only, public market data — no authentication, no user data, no
-// secrets ever appear in any response (see marketState.js's getHealth()/
-// getPublicMarketState(), which never include apiKey). CORS is
-// permissive (Access-Control-Allow-Origin: *) because the intended caller
-// is the static GitHub Pages frontend on a different origin, and the data
-// served is not sensitive.
-// ---------------------------------------------------------------------------
-
 const http = require('http');
 const { URL } = require('url');
 const MB = require('../marketBrain.js');
 const { handleTelegramUpdate } = require('./lib/telegramAssistant.js');
+const { serveStatic } = require('./lib/staticApp.js');
 
 function sendJson(res, status, body) {
   const json = JSON.stringify(body, null, 2);
@@ -25,7 +12,19 @@ function sendJson(res, status, body) {
     'Content-Type': 'application/json; charset=utf-8',
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type'
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'X-Content-Type-Options': 'nosniff'
+  });
+  res.end(json);
+}
+
+function sendPrivateJson(res, status, body) {
+  const json = JSON.stringify(body, null, 2);
+  res.writeHead(status, {
+    'Content-Type': 'application/json; charset=utf-8',
+    'Cache-Control': 'no-store',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'same-origin'
   });
   res.end(json);
 }
@@ -42,18 +41,56 @@ function readBody(req) {
   });
 }
 
-// `telegram` (optional) — { token, chatId, webhookSecret } read from
-// process.env by server/index.js. Undefined/absent in local dev or before
-// Daniel configures the Railway env vars — the webhook route still exists
-// and responds, it just can't actually send a reply without a token (see
-// telegramAssistant.js's sendTelegramMessage), same "honestly degraded, not
-// silently broken" pattern as every other optional integration here.
-function createApiServer(marketState, telegram) {
-  telegram = telegram || {};
-  return http.createServer(async (req, res) => {
-    if (req.method === 'OPTIONS') { sendJson(res, 204, {}); return; }
+async function readJson(req) {
+  const raw = await readBody(req);
+  if (!raw) return {};
+  try { return JSON.parse(raw); }
+  catch (_) { throw new Error('invalid_json'); }
+}
 
+function gmailErrorStatus(err) {
+  const code = err && err.message;
+  if (['invalid_json', 'unknown_account', 'invalid_recipient', 'invalid_subject', 'no_messages_selected'].includes(code)) return 400;
+  if (code === 'account_not_connected') return 409;
+  if (code === 'gmail_not_configured') return 503;
+  if (String(code || '').startsWith('gmail_api_failed_') || code === 'oauth_refresh_failed') return 502;
+  return 500;
+}
+
+function gmailPublicError(err) {
+  const code = err && err.message;
+  if (code === 'account_not_connected') return 'account_not_connected';
+  if (code === 'gmail_not_configured') return 'gmail_not_configured';
+  if (['invalid_json', 'unknown_account', 'invalid_recipient', 'invalid_subject', 'no_messages_selected'].includes(code)) return code;
+  return 'gmail_request_failed';
+}
+
+function requireMailSession(req, res, gmail) {
+  if (!gmail || !gmail.configured) {
+    sendPrivateJson(res, 503, { error: 'gmail_not_configured' });
+    return false;
+  }
+  if (!gmail.isAuthorized(req)) {
+    sendPrivateJson(res, 401, { error: 'mail_session_required' });
+    return false;
+  }
+  return true;
+}
+
+function createApiServer(marketState, telegram, gmail) {
+  telegram = telegram || {};
+
+  return http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
+
+    if (req.method === 'OPTIONS') {
+      if (url.pathname.startsWith('/api/gmail/')) {
+        sendPrivateJson(res, 403, { error: 'same_origin_required' });
+      } else {
+        sendJson(res, 204, {});
+      }
+      return;
+    }
 
     try {
       if (req.method === 'GET' && url.pathname === '/api/health') {
@@ -78,11 +115,109 @@ function createApiServer(marketState, telegram) {
         return;
       }
 
-      // Phase G — architecturally present, not functionally implemented.
-      // See docs/TRADINGVIEW_INTEGRATION_PLAN.md: no secret validation, no
-      // schema validation, no event-store write happens here yet. Reading
-      // the body (readBody) only so the connection is drained cleanly, not
-      // because it's used for anything.
+      // Gmail status is intentionally same-origin and never gets wildcard CORS.
+      if (req.method === 'GET' && url.pathname === '/api/gmail/status') {
+        if (!gmail) { sendPrivateJson(res, 200, { configured: false, authenticated: false, accounts: [] }); return; }
+        sendPrivateJson(res, 200, gmail.status(req));
+        return;
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/gmail/oauth/start') {
+        if (!gmail || !gmail.configured) { sendPrivateJson(res, 503, { error: 'gmail_not_configured' }); return; }
+        try {
+          const destination = gmail.authorizationUrl(url.searchParams.get('account'));
+          res.writeHead(302, { Location: destination, 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer' });
+          res.end();
+        } catch (err) {
+          sendPrivateJson(res, gmailErrorStatus(err), { error: gmailPublicError(err) });
+        }
+        return;
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/gmail/oauth/callback') {
+        if (!gmail || !gmail.configured) { sendPrivateJson(res, 503, { error: 'gmail_not_configured' }); return; }
+        const googleError = url.searchParams.get('error');
+        if (googleError) {
+          res.writeHead(302, { Location: gmail.appUrl + '/?gmail=error#personalEmail', 'Cache-Control': 'no-store' });
+          res.end();
+          return;
+        }
+        try {
+          const account = await gmail.handleOAuthCallback(url.searchParams.get('code'), url.searchParams.get('state'));
+          res.writeHead(302, {
+            Location: gmail.appUrl + '/?gmail=connected&account=' + encodeURIComponent(account.id) + '#personalEmail',
+            'Set-Cookie': gmail.sessionCookie(),
+            'Cache-Control': 'no-store',
+            'Referrer-Policy': 'no-referrer'
+          });
+          res.end();
+        } catch (err) {
+          console.error('[server] Gmail OAuth callback failed:', err.message);
+          res.writeHead(302, { Location: gmail.appUrl + '/?gmail=error#personalEmail', 'Cache-Control': 'no-store' });
+          res.end();
+        }
+        return;
+      }
+
+      if (req.method === 'POST' && url.pathname === '/api/gmail/logout') {
+        if (!gmail) { sendPrivateJson(res, 200, { ok: true }); return; }
+        res.writeHead(200, {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Set-Cookie': gmail.clearSessionCookie(),
+          'Cache-Control': 'no-store'
+        });
+        res.end(JSON.stringify({ ok: true }));
+        return;
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/gmail/messages') {
+        if (!requireMailSession(req, res, gmail)) return;
+        try {
+          const data = await gmail.listMessages(url.searchParams.get('account'), {
+            filter: url.searchParams.get('filter'),
+            query: url.searchParams.get('q'),
+            pageToken: url.searchParams.get('pageToken')
+          });
+          sendPrivateJson(res, 200, data);
+        } catch (err) {
+          sendPrivateJson(res, gmailErrorStatus(err), { error: gmailPublicError(err) });
+        }
+        return;
+      }
+
+      if (req.method === 'GET' && url.pathname.startsWith('/api/gmail/message/')) {
+        if (!requireMailSession(req, res, gmail)) return;
+        const id = decodeURIComponent(url.pathname.slice('/api/gmail/message/'.length));
+        try {
+          sendPrivateJson(res, 200, await gmail.getMessage(url.searchParams.get('account'), id));
+        } catch (err) {
+          sendPrivateJson(res, gmailErrorStatus(err), { error: gmailPublicError(err) });
+        }
+        return;
+      }
+
+      if (req.method === 'POST' && url.pathname === '/api/gmail/trash') {
+        if (!requireMailSession(req, res, gmail)) return;
+        try {
+          const body = await readJson(req);
+          sendPrivateJson(res, 200, await gmail.trashMessages(body.account, body.messageIds));
+        } catch (err) {
+          sendPrivateJson(res, gmailErrorStatus(err), { error: gmailPublicError(err) });
+        }
+        return;
+      }
+
+      if (req.method === 'POST' && url.pathname === '/api/gmail/send') {
+        if (!requireMailSession(req, res, gmail)) return;
+        try {
+          const body = await readJson(req);
+          sendPrivateJson(res, 200, await gmail.sendMessage(body.account, body));
+        } catch (err) {
+          sendPrivateJson(res, gmailErrorStatus(err), { error: gmailPublicError(err) });
+        }
+        return;
+      }
+
       if (req.method === 'POST' && url.pathname === '/api/tradingview/webhook') {
         await readBody(req);
         sendJson(res, 501, {
@@ -92,11 +227,6 @@ function createApiServer(marketState, telegram) {
         return;
       }
 
-      // DG OS Chat (Telegram webhook) — see server/lib/telegramAssistant.js.
-      // Always responds 200 (Telegram retries aggressively on non-2xx,
-      // which would just resend the same message repeatedly) — a
-      // malformed body or a send failure is logged, never surfaced as an
-      // HTTP error to Telegram itself.
       if (req.method === 'POST' && url.pathname === '/api/telegram/webhook') {
         const raw = await readBody(req);
         if (telegram.webhookSecret) {
@@ -104,7 +234,7 @@ function createApiServer(marketState, telegram) {
           if (secretHeader !== telegram.webhookSecret) { sendJson(res, 401, { error: 'unauthorized' }); return; }
         }
         let update = null;
-        try { update = JSON.parse(raw); } catch (err) { /* ignore malformed body */ }
+        try { update = JSON.parse(raw); } catch (_) { /* malformed body: acknowledge without retry storm */ }
         if (update) {
           handleTelegramUpdate(update, {
             MB,
@@ -117,9 +247,13 @@ function createApiServer(marketState, telegram) {
         return;
       }
 
-      sendJson(res, 404, { error: 'not_found' });
+      if (!url.pathname.startsWith('/api/') && serveStatic(req, res)) return;
+      if (url.pathname.startsWith('/api/gmail/')) sendPrivateJson(res, 404, { error: 'not_found' });
+      else sendJson(res, 404, { error: 'not_found' });
     } catch (err) {
-      sendJson(res, 500, { error: 'internal_error' }); // never leak err.message — could echo request internals
+      console.error('[server] request failed:', err.message);
+      if (url.pathname.startsWith('/api/gmail/')) sendPrivateJson(res, 500, { error: 'internal_error' });
+      else sendJson(res, 500, { error: 'internal_error' });
     }
   });
 }

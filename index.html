@@ -109,13 +109,22 @@
           </div>
           <p id="emailHubStatus" class="personal-email-note" role="status">Gmail-Status wird geprüft …</p>
         </section>
-        <section id="personalConnections" class="personal-panel"><div class="personal-kicker">DEIN ASSISTENT</div><h2>Alles an einem Ort.</h2><ul class="personal-connections"><li><span>Google / iCloud Kalender</span><small>Noch nicht verbunden</small></li><li><span>Telegram → Termine</span><small>Noch nicht eingerichtet</small></li><li><span>Wissen &amp; Notizen</span><small>Noch nicht eingerichtet</small></li></ul></section>
+        <section id="personalConnections" class="personal-panel">
+          <div class="personal-kicker">DEIN ASSISTENT</div>
+          <h2>Alles an einem Ort.</h2>
+          <div class="personal-hub-connect">
+            <div class="personal-hub-head"><div><strong>DG OS Hub</strong><small id="personalHubStatus">Noch nicht verbunden</small></div><span class="personal-status">JARVIS BRIDGE</span></div>
+            <div class="personal-hub-form"><input id="personalHubUrl" type="url" inputmode="url" placeholder="https://dein-dg-os-server…" autocomplete="off" /><button id="personalHubConnect" type="button">Verbinden</button></div>
+            <small class="personal-hub-help">Verbindet Jarvis sicher mit Gmail und später weiteren Diensten. Keine Passwörter hier eingeben.</small>
+          </div>
+          <ul class="personal-connections"><li><span>Google / iCloud Kalender</span><small>Noch nicht verbunden</small></li><li><span>Telegram → Termine</span><small>Noch nicht eingerichtet</small></li><li><span>Wissen &amp; Notizen</span><small>Noch nicht eingerichtet</small></li></ul>
+        </section>
       </aside>
     </div>
-    <section id="personalEmailWorkspace" class="personal-panel personal-email-workspace hidden" aria-live="polite">
+    <section id="personalEmailWorkspace" class="personal-panel personal-email-workspace hidden" role="dialog" aria-modal="true" aria-labelledby="emailWorkspaceTitle" aria-live="polite">
       <div class="personal-email-workspace-head">
         <div><div class="personal-kicker">E-MAIL-ZENTRALE</div><h2 id="emailWorkspaceTitle">Postfach</h2><p id="emailWorkspaceAddress"></p></div>
-        <div class="personal-email-head-actions"><button id="emailConnect" type="button">Mit Google verbinden</button><button id="emailCompose" type="button">+ E-Mail</button><button id="emailCloseWorkspace" type="button" class="secondary">Schliessen</button></div>
+        <div class="personal-email-head-actions"><button id="emailConnect" type="button">Mit Google verbinden</button><button id="emailCompose" type="button">+ E-Mail</button><button id="emailCloseWorkspace" type="button" class="secondary personal-email-window-close" aria-label="E-Mail-Fenster schliessen">×</button></div>
       </div>
       <div id="emailWorkspaceNotice" class="personal-email-workspace-notice" role="status"></div>
       <div class="personal-email-toolbar">

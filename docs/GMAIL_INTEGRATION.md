@@ -94,3 +94,19 @@ Ohne echte Google-Credentials können die reinen Helper/Filter lokal getestet we
 \`node server/lib/gmailIntegration.test.js\`
 
 Der Test prüft unter anderem Newsletter-Kriterien, sichere Plain-Text-Aufbereitung und RFC822-Erstellung fürs Senden.
+
+
+## DG OS Hub im Jarvis-Interface
+
+Ab v0.43.0 gibt es unter **Alles an einem Ort** einen eigenen **DG OS Hub**. Der Hub ist die Brücke zwischen der statischen Oberfläche und dem sicheren serverseitigen Jarvis-Teil.
+
+Ablauf:
+
+1. DG OS Server öffentlich über HTTPS deployen.
+2. Die Server-Adresse, z. B. \`https://dein-dg-os-server.example\`, im Feld **DG OS Hub** eintragen.
+3. **Verbinden** drücken.
+4. DG OS prüft \`/api/health\`. Nur wenn dort eine gültige DG-OS-Serverantwort kommt, wird die Adresse lokal gespeichert.
+5. Klickt man danach auf Business oder Privat, kann GitHub Pages zur sicheren Server-Version wechseln und das gewählte Postfach direkt weiterreichen.
+6. In der Server-Version einmal **Mit Google verbinden** wählen und das exakte Gmail-Konto freigeben.
+
+Das Mailfenster wird innerhalb von DG OS angezeigt. Gmail selbst wird nicht eingebettet; Nachrichten werden über die Gmail API geladen, damit Google-Credentials und Tokens nicht im statischen Frontend liegen.

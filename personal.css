@@ -41,3 +41,34 @@ body{background:radial-gradient(ellipse at 8% 12%,rgba(44,207,221,.21),transpare
 /* Email disconnected-state guard: later component display rules must never override .hidden. */
 .personal-email-toolbar.hidden,.personal-email-layout.hidden,.personal-email-newsletter-actions.hidden{display:none!important}
 @media(max-width:560px){.personal-email-workspace:has(.personal-email-toolbar.hidden){min-height:0}.personal-email-workspace:has(.personal-email-toolbar.hidden) .personal-email-workspace-notice{margin-bottom:0}.personal-email-workspace:has(.personal-email-toolbar.hidden) .personal-email-head-actions{grid-template-columns:1fr}.personal-email-workspace:has(.personal-email-toolbar.hidden) .personal-email-head-actions button{grid-column:1/-1}}
+
+
+/* Jarvis Hub connector */
+.personal-hub-connect{margin:4px 0 16px;padding:14px;border:1px solid rgba(137,237,219,.16);border-radius:14px;background:linear-gradient(135deg,rgba(137,237,219,.055),rgba(117,84,217,.055))}.personal-hub-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}.personal-hub-head strong{display:block;font-size:13px;color:#e9fbff}.personal-hub-head small{display:block;margin-top:5px;color:#87a0af;font-size:10px}.personal-hub-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:12px}.personal-hub-form input{min-width:0;padding:10px 11px;border:1px solid rgba(184,221,242,.2);border-radius:10px;background:rgba(8,20,31,.65);color:#edfaff}.personal-hub-form input:focus{outline:2px solid #8bedda;outline-offset:2px}.personal-hub-help{display:block;margin-top:8px;color:#6f8798;font-size:9px;line-height:1.45}
+
+/* Mail opens like its own app window inside DG OS. */
+body.email-window-open{overflow:hidden}
+.personal-email-workspace:not(.hidden){position:fixed;z-index:120;inset:max(12px,env(safe-area-inset-top)) 14px max(12px,env(safe-area-inset-bottom));display:flex;flex-direction:column;width:min(1180px,calc(100vw - 28px));max-width:none;height:auto;margin:auto;padding:20px;overflow:hidden;border-color:rgba(182,228,245,.28);box-shadow:0 34px 100px rgba(0,0,0,.62),inset 0 1px 0 rgba(255,255,255,.07);background:linear-gradient(145deg,rgba(9,24,39,.965),rgba(7,16,28,.975));backdrop-filter:blur(32px) saturate(145%);-webkit-backdrop-filter:blur(32px) saturate(145%)}
+.personal-email-workspace:not(.hidden)::before{content:'';position:fixed;inset:0;z-index:-2;background:rgba(1,5,11,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+.personal-email-workspace:not(.hidden)::after{content:'';position:absolute;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(circle at 12% 8%,rgba(53,214,244,.10),transparent 32%),radial-gradient(circle at 88% 20%,rgba(117,84,217,.12),transparent 34%)}
+.personal-email-workspace .personal-email-window-close{width:42px;height:42px;min-height:42px;padding:0;border-radius:50%;font-size:24px;line-height:1}
+.personal-email-workspace:not(.hidden) .personal-email-layout{flex:1;min-height:0}
+.personal-email-workspace:not(.hidden) .personal-email-list,.personal-email-workspace:not(.hidden) .personal-email-detail{height:100%;max-height:none;overscroll-behavior:contain}
+.personal-email-workspace:not(.hidden) .personal-email-detail{background:rgba(3,10,18,.34)}
+@media(max-width:900px){
+  .personal-email-workspace:not(.hidden){inset:0;width:100vw;height:100dvh;padding:max(18px,env(safe-area-inset-top)) 14px max(16px,env(safe-area-inset-bottom));border-radius:0;border-left:0;border-right:0}
+  .personal-email-workspace:not(.hidden) .personal-email-workspace-head{flex-direction:row;align-items:flex-start}
+  .personal-email-workspace:not(.hidden) .personal-email-head-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center}
+  .personal-email-workspace:not(.hidden) .personal-email-layout{display:grid;grid-template-columns:1fr;overflow:hidden}
+  .personal-email-workspace:not(.hidden) .personal-email-list,.personal-email-workspace:not(.hidden) .personal-email-detail{overflow:auto}
+}
+@media(max-width:560px){
+  .personal-hub-form{grid-template-columns:1fr}.personal-hub-form button{width:100%}
+  .personal-email-workspace:not(.hidden){padding-left:12px;padding-right:12px}
+  .personal-email-workspace:not(.hidden) .personal-email-workspace-head{gap:8px}
+  .personal-email-workspace:not(.hidden) .personal-email-head-actions{display:flex;gap:6px}
+  .personal-email-workspace:not(.hidden) .personal-email-head-actions #emailConnect,.personal-email-workspace:not(.hidden) .personal-email-head-actions #emailCompose{font-size:10px;padding:8px 10px;min-height:38px}
+  .personal-email-workspace:not(.hidden) .personal-email-window-close{width:38px;height:38px;min-height:38px;font-size:22px}
+  .personal-email-workspace:not(.hidden) .personal-email-toolbar{overflow:auto}
+  .personal-email-workspace:not(.hidden) .personal-email-layout{margin-top:10px}
+}

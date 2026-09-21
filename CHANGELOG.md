@@ -1,3 +1,13 @@
+# v0.40.0 — Compact top-right daily summary
+
+## Improved
+- Weather, sunrise, sunset and today's appointment count are compactly grouped in the upper-right area.
+- Calendar now follows directly after the greeting, so it appears much earlier when DG OS opens.
+- The detailed weather cards and large weather heading are removed from the main flow; values remain visible in the compact glass summary.
+
+## Changed files
+- index.html, personal.css, sw.js, package.json, CHANGELOG.md.
+
 # v0.39.0 — Glass dashboard and weather
 
 ## New

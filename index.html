@@ -60,17 +60,19 @@
 
   <main class="app">
     <section id="personalHome" class="personal-welcome">
-      <div><div class="personal-kicker">DEIN TAG. DEIN RHYTHMUS.</div><h2 id="personalGreeting">Willkommen, Gomes.</h2><p id="personalDate"></p></div>
+      <div class="personal-welcome-copy"><div class="personal-kicker">DEIN TAG. DEIN RHYTHMUS.</div><h2 id="personalGreeting">Willkommen, Gomes.</h2><p id="personalDate"></p></div>
       <div class="personal-time"><time id="personalClock">--:--:--</time><span>Europe/Zurich</span></div>
+      <div class="personal-quick-info" aria-label="Tagesinformationen">
+        <div class="quick-info-location"><span>OETWIL AM SEE</span><button id="weatherRefresh" type="button" aria-label="Wetter aktualisieren">↻</button></div>
+        <div class="quick-info-grid">
+          <div><span>Wetter</span><strong id="weatherTemperature">— °C</strong><small id="weatherDescription">Lädt …</small></div>
+          <div><span>Sonnenaufgang</span><strong id="weatherSunrise">—:—</strong><small>Heute</small></div>
+          <div><span>Sonnenuntergang</span><strong id="weatherSunset">—:—</strong><small id="weatherDaylight">Tageslicht —</small></div>
+          <div><span>Heute geplant</span><strong id="personalCount">0</strong><small>Termine</small></div>
+        </div>
+        <div class="quick-info-footer"><span id="weatherFeels">Gefühlt — °C</span><span id="weatherStatus" role="status">Wetter lädt …</span></div>
+      </div>
     </section>
-    <div class="personal-weather-heading"><span>WETTER · OETWIL AM SEE</span><button id="weatherRefresh" type="button">Aktualisieren ↻</button></div>
-    <div class="personal-stats" aria-label="Wetter und Tagesübersicht">
-      <article><span>Temperatur</span><strong id="weatherTemperature">— °C</strong><small id="weatherDescription">Wetterdaten werden geladen …</small><small id="weatherFeels">Gefühlt — °C</small></article>
-      <article><span>Sonnenaufgang <span aria-hidden="true">↗</span></span><strong id="weatherSunrise">—:—</strong><small>Heute · Schweizer Zeit</small></article>
-      <article><span>Sonnenuntergang <span aria-hidden="true">↘</span></span><strong id="weatherSunset">—:—</strong><small id="weatherDaylight">Tageslicht —</small></article>
-      <article><span>Heute geplant</span><strong id="personalCount">0</strong><small>Nur Termine auf diesem Gerät</small></article>
-    </div>
-    <div class="personal-weather-footer"><span id="weatherStatus" role="status">Verbindung wird hergestellt …</span><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Wetterdaten: Open-Meteo</a></div>
     <div class="personal-columns">
       <section id="personalCalendar" class="personal-panel">
         <div class="personal-panel-head"><div><div class="personal-kicker">ZEIT FÜR DAS WICHTIGE</div><h2>Dein Kalender</h2></div><button id="newLocalEvent" type="button">+ Termin</button></div>

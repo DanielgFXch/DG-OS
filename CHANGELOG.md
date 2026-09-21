@@ -1,3 +1,29 @@
+# v0.47.0 — Live WHOOP in Jarvis
+
+## Neu
+- Echte WHOOP-v2-Integration für den Gesundheitsbereich.
+- Einmaliger OAuth-Login über den bestehenden WHOOP Developer App Client.
+- Automatische Darstellung von Schlafdauer, Sleep Performance, Recovery und Tages-Strain.
+- Erweiterte WHOOP-Daten: HRV, Ruhepuls, SpO₂, Hauttemperatur, Schlaf-Effizienz, Konsistenz, Atemfrequenz, REM-, Tief- und Leichtschlaf, Schlafbedarf, Schlafzyklen und Störungen.
+- Letzte WHOOP-Workouts mit Strain, Herzfrequenz und Energie.
+- WHOOP-Verbindungsstatus erscheint auch in der Jarvis-Serviceübersicht.
+
+## OAuth & Sicherheit
+- Verwendet die aktuelle WHOOP v2 API.
+- Scopes: offline, read:recovery, read:cycles, read:sleep, read:workout, read:profile, read:body_measurement.
+- Client Secret bleibt ausschliesslich serverseitig.
+- Refresh Tokens werden AES-256-GCM-verschlüsselt gespeichert.
+- WHOOP rotiert Refresh Tokens; DG OS persistiert nach jedem Refresh den neuesten Token.
+- Gesundheitsdaten-Routen sind same-origin und zusätzlich durch eine signierte HttpOnly-Sitzung geschützt.
+- Disconnect widerruft den WHOOP-Zugriff und löscht die lokal gespeicherte Verbindung.
+
+## Tests
+- Neue WHOOP-Unit-Tests für OAuth-State, Scopes und Gesundheitswert-Normalisierung.
+- Node-Syntaxprüfung umfasst die neue WHOOP-Integration.
+
+## Unverändert
+- Keine Änderungen an Trading Brain, Market Brain, Trading-Regeln oder Orderausführung.
+
 # v0.46.3 — Mobile Cleanup nach iPhone-Screenshot
 
 ## Behoben

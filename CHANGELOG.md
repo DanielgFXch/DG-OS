@@ -1,3 +1,18 @@
+# v0.40.1 — Responsive personal home polish
+
+## Improved
+- iPad widths keep the compact weather, sunrise, sunset and today's appointment summary beside the greeting instead of pushing it into a full-width second row.
+- Small tablets and landscape phone widths use a controlled two-row layout, while iPhone portrait keeps the compact stacked layout.
+- Mobile backgrounds no longer rely on fixed attachment, reducing Safari scroll/rendering glitches while preserving the glassmorphism look.
+- Calendar remains directly below the daily header with less wasted vertical space.
+
+## Unchanged
+- No changes to Trading Brain, Market Brain, trading rules, market data, Telegram logic or decision logic.
+- Google Calendar, iCloud, Gmail and WHOOP remain clearly marked as not connected.
+
+## Changed files
+- personal.css, sw.js, package.json, CHANGELOG.md.
+
 # v0.40.0 — Compact top-right daily summary
 
 ## Improved

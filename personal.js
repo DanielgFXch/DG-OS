@@ -1028,10 +1028,10 @@
 
   function renderOrganizer(data){
     const map=[
-      ['appointment','privateAppointmentList','privateAppointmentCount','Termin'],
-      ['bill','privateBillList','privateBillCount','Rechnung'],
-      ['shopping','privateShoppingList','privateShoppingCount','Eintrag'],
-      ['note','privateNoteList','privateNoteCount','Notiz']
+      ['appointment','privateAppointmentList','privateAppointmentCount','Termine'],
+      ['bill','privateBillList','privateBillCount','Rechnungen'],
+      ['shopping','privateShoppingList','privateShoppingCount','Einträge'],
+      ['note','privateNoteList','privateNoteCount','Notizen']
     ];
     let total=0;
     map.forEach(([kind,listId,countId,label])=>{
@@ -1041,7 +1041,7 @@
       const list=$(listId);if(!list)return;
       list.replaceChildren();
       if(!items.length){
-        const p=document.createElement('p');p.className='personal-empty';p.textContent='Keine '+(label==='Eintrag'?'Einträge':label+(label.endsWith('g')?'en':'en'))+'.';
+        const p=document.createElement('p');p.className='personal-empty';p.textContent='Keine '+label+'.';
         list.append(p);
       }else items.forEach(item=>list.append(organizerRow(item,kind)));
     });

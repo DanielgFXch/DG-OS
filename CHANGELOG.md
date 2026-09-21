@@ -1,3 +1,24 @@
+# v0.47.1 — WHOOP ohne Railway
+
+## Neu
+- WHOOP läuft jetzt über einen eigenen kostenlosen Supabase Edge Connector statt Railway.
+- Jarvis auf GitHub Pages verbindet sich direkt mit dem Supabase-WHOOP-Connector.
+- OAuth Callback speichert nur eine anonyme DG-OS-Sitzung im Browser; WHOOP Access-/Refresh-Tokens bleiben serverseitig.
+- Keine separate DG-OS-Server-URL mehr nötig, um WHOOP zu verwenden.
+
+## Sicherheit
+- WHOOP Client Secret liegt ausschliesslich als Supabase Edge Function Secret.
+- WHOOP Refresh- und Access-Tokens werden verschlüsselt in einem eigenen DG-OS-Supabase-Projekt gespeichert.
+- Tabellen sind per RLS gesperrt und nicht für anon/authenticated freigegeben.
+- Health-Endpunkte akzeptieren nur die DG-OS-GitHub-Origin und verlangen für Gesundheitsdaten eine zufällige Session.
+
+## Kosten
+- Eigenes DG-OS Supabase-Projekt auf dem aktuell verfügbaren kostenlosen Plan: 0 USD/Monat.
+
+## Unverändert
+- Keine Änderungen an Trading Brain, Market Brain oder Trading-Regeln.
+- LiveUP Academy Supabase wurde nicht verändert.
+
 # v0.47.0 — Live WHOOP in Jarvis
 
 ## Neu

@@ -664,7 +664,8 @@
   if(!connect)return;
 
   const EDGE='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/whoop';
-  const SESSION_KEY='dgos.whoopSession';
+  const DEVICE_SESSION_KEY='dgos.deviceSession';
+  const LEGACY_SESSION_KEY='dgos.whoopSession';
 
   function session(){return localStorage.getItem(SESSION_KEY)||'';}
   function headers(){
@@ -813,7 +814,7 @@
   const form=$('taskQuickForm');
   if(!form)return;
 
-  function session(){ return localStorage.getItem(SESSION_KEY)||''; }
+  function session(){ return localStorage.getItem(DEVICE_SESSION_KEY)||localStorage.getItem(LEGACY_SESSION_KEY)||''; }
   function headers(json=true){
     const h={};
     const token=session();
@@ -984,7 +985,7 @@
   async function load(){
     const token=session();
     if(!token){
-      note('Für die synchronisierte Aufgabenliste fehlt auf diesem Gerät noch die DG-OS-Sitzung. Öffne einmal Gesundheit/WHOOP auf diesem Gerät.','error');
+      note('Verbinde Telegram einmal mit diesem Gerät. Danach funktioniert die Aufgabenliste unabhängig von WHOOP.','error');
       form.querySelectorAll('input,select,button').forEach(el=>el.disabled=true);
       return;
     }
@@ -997,7 +998,7 @@
       form.querySelectorAll('input,select,button').forEach(el=>el.disabled=false);
     }catch(err){
       if(err.status===401){
-        note('Deine DG-OS-Gerätesitzung ist abgelaufen. Verbinde WHOOP auf diesem Gerät einmal neu.','error');
+        note('Deine DG-OS-Gerätesitzung ist abgelaufen. Verbinde Telegram auf diesem Gerät einmal neu.','error');
         form.querySelectorAll('input,select,button').forEach(el=>el.disabled=true);
       }else{
         note('Aufgaben konnten gerade nicht geladen werden.','error');
@@ -1025,13 +1026,14 @@
       await load();
       $('taskQuickTitle').focus();
     }catch(err){
-      note(err.status===401?'Gerätesitzung abgelaufen. Bitte WHOOP einmal neu verbinden.':'Aufgabe konnte nicht gespeichert werden.','error');
+      note(err.status===401?'Gerätesitzung abgelaufen. Bitte Telegram einmal neu verbinden.':'Aufgabe konnte nicht gespeichert werden.','error');
     }finally{button.disabled=false;}
   });
 
   load();
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});
   window.addEventListener('focus',load);
+  window.addEventListener('dgos-device-session',load);
 })();
 
 
@@ -1044,15 +1046,28 @@
   if(!button||!status)return;
 
   const EDGE='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/telegram-tasks';
-  const SESSION_KEY='dgos.whoopSession';
+  const DEVICE_SESSION_KEY='dgos.deviceSession';
+  const LEGACY_SESSION_KEY='dgos.whoopSession';
 
-  function headers(){
-    const token=localStorage.getItem(SESSION_KEY)||'';
-    return token?{Authorization:'Bearer '+token}:{};
+  function session(){
+    return localStorage.getItem(DEVICE_SESSION_KEY)||localStorage.getItem(LEGACY_SESSION_KEY)||'';
   }
 
-  async function request(action,method='GET'){
-    const r=await fetch(EDGE+'/'+action,{method,headers:headers(),cache:'no-store'});
+  function headers(json=false){
+    const h={};
+    const token=session();
+    if(token)h.Authorization='Bearer '+token;
+    if(json)h['Content-Type']='application/json';
+    return h;
+  }
+
+  async function request(action,method='GET',body){
+    const r=await fetch(EDGE+'/'+action,{
+      method,
+      headers:headers(body!==undefined),
+      body:body!==undefined?JSON.stringify(body):undefined,
+      cache:'no-store'
+    });
     let data={};try{data=await r.json();}catch(_){}
     if(!r.ok){
       const e=new Error(data.error||'telegram_error');
@@ -1062,38 +1077,35 @@
     return data;
   }
 
-  async function refresh(){
-    if(!localStorage.getItem(SESSION_KEY)){
-      button.disabled=true;
-      button.textContent='Telegram';
-      status.textContent='Telegram wartet auf deine DG-OS-Gerätesitzung';
-      return;
-    }
+  function setConnected(data){
+    button.disabled=true;
+    button.textContent='Telegram ✓';
+    const mode=data&&data.mode==='private'?'Privat/Jarvis':'Trading';
+    status.textContent='Ein Bot verbunden · aktuell '+mode+' · /private oder /trading zum Wechseln';
+  }
 
+  async function refresh(){
     try{
       const data=await request('status');
 
       if(!data.configured){
         button.disabled=true;
         button.textContent='Telegram';
-        status.textContent='Bestehender Bot bereit zur Übernahme · Bot-Token fehlt noch in Supabase';
+        status.textContent='Bestehender Bot gefunden · Bot-Token fehlt noch in Supabase';
         return;
       }
 
-      if(data.paired){
-        button.disabled=true;
-        button.textContent='Telegram ✓';
-        const mode=data.mode==='private'?'Privat/Jarvis':'Trading';
-        status.textContent='Ein Bot verbunden · aktuell '+mode+' · /private oder /trading zum Wechseln';
+      if(data.deviceAuthenticated){
+        setConnected(data);
         return;
       }
 
       button.disabled=false;
       button.textContent='Telegram verbinden';
-      status.textContent=(data.botUsername?'@'+data.botUsername+' · ':'')+'Einmal koppeln, danach Privat + Trading im gleichen Bot';
+      status.textContent=(data.botUsername?'@'+data.botUsername+' · ':'')+'Dieses Gerät einmal über Telegram bestätigen';
     }catch(_){
-      button.disabled=true;
-      button.textContent='Telegram';
+      button.disabled=false;
+      button.textContent='Telegram verbinden';
       status.textContent='Telegram-Status konnte gerade nicht geladen werden';
     }
   }
@@ -1102,36 +1114,49 @@
     if(button.disabled)return;
     button.disabled=true;
     button.textContent='Öffne Telegram …';
+
     try{
       const data=await request('pair-start','POST');
-      const code=String(data.code||'');
-      const bot=data.botUsername?'@'+data.botUsername:'dein Bot';
-      status.textContent=bot+' · Pairing-Code '+code+' · 10 Min. gültig';
 
-      if(data.deepLink){
-        const opened=window.open(data.deepLink,'_blank','noopener,noreferrer');
-        if(!opened) window.location.href=data.deepLink;
+      if(data.alreadyAuthenticated){
+        setConnected(data);
+        return;
       }
 
-      button.textContent='Warte auf Pairing …';
+      const code=String(data.code||'');
+      const claimSecret=String(data.claimSecret||'');
+      const bot=data.botUsername?'@'+data.botUsername:'dein Bot';
+
+      if(!code||!claimSecret||!data.deepLink)throw new Error('pairing_data_missing');
+
+      status.textContent=bot+' · Code '+code+' · in Telegram auf Start drücken';
+
+      const opened=window.open(data.deepLink,'_blank','noopener,noreferrer');
+      if(!opened)window.location.href=data.deepLink;
+
+      button.textContent='Warte auf Bestätigung …';
+
       let attempts=0;
       const timer=setInterval(async()=>{
         attempts+=1;
         try{
-          const current=await request('status');
-          if(current.paired){
+          const claim=await request('pair-claim','POST',{code,claimSecret});
+          if(claim.approved&&claim.deviceToken){
             clearInterval(timer);
-            button.disabled=true;
-            button.textContent='Telegram ✓';
-            status.textContent='Ein Bot verbunden · Trading bleibt Standard · Privat über /private';
-          }else if(attempts>=40){
-            clearInterval(timer);
-            button.disabled=false;
-            button.textContent='Telegram verbinden';
-            status.textContent='Pairing noch nicht bestätigt. Tippe erneut und sende den Start-Befehl im Bot.';
+            localStorage.setItem(DEVICE_SESSION_KEY,claim.deviceToken);
+            window.dispatchEvent(new Event('dgos-device-session'));
+            setConnected(claim);
+            return;
           }
         }catch(_){}
-      },3000);
+
+        if(attempts>=60){
+          clearInterval(timer);
+          button.disabled=false;
+          button.textContent='Telegram verbinden';
+          status.textContent='Pairing abgelaufen. Tippe erneut auf Telegram verbinden.';
+        }
+      },2000);
     }catch(err){
       button.disabled=err.status===503;
       button.textContent='Telegram verbinden';
@@ -1141,7 +1166,7 @@
     }
   });
 
-  window.addEventListener('focus',()=>setTimeout(refresh,600));
-  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(refresh,600);});
+  window.addEventListener('focus',()=>setTimeout(refresh,700));
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(refresh,700);});
   refresh();
 })();

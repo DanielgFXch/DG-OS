@@ -1,3 +1,32 @@
+# v0.42.0 — Secure Gmail Center
+
+## Neu
+- Business- und Privat-Postfach können in der servergehosteten DG-OS-Version direkt innerhalb von DG OS geöffnet werden.
+- Inbox, Ungelesen, Suche, Lesen, Schreiben und Antworten über die Gmail API.
+- Newsletter-Filter anhand nachvollziehbarer Gmail-/Mailinglisten-Merkmale.
+- Mehrfachauswahl für Newsletter; Löschen verschiebt bewusst in den Gmail-Papierkorb.
+- DG OS Server kann die persönliche Oberfläche selbst ausliefern, damit Mail-UI und private Gmail-API same-origin laufen.
+
+## Sicherheit
+- Google OAuth läuft serverseitig; keine Passwörter, Client Secrets oder OAuth-/Refresh-Tokens im Frontend.
+- Refresh-Tokens werden mit AES-256-GCM verschlüsselt gespeichert.
+- Mail-Endpunkte verwenden kein öffentliches Wildcard-CORS.
+- Signierte HttpOnly-Session; Konto wird nach OAuth gegen die fest definierte Business-/Privat-Adresse geprüft.
+- Kein permanentes Gmail-Delete und keine automatische Newsletter-Löschung.
+- GitHub Pages bleibt ein sicherer Fallback mit direkten Gmail-Links und zeigt ehrlich, wenn die interne Mailansicht nicht verbunden ist.
+
+## Tests
+- Neue Unit-Tests für Newsletter-Klassifikation, Body-Aufbereitung und ausgehende Mail-Erstellung.
+
+## Unverändert
+- Keine Änderungen an Trading Brain, Market Brain, Trading-Regeln oder Orderausführung.
+
+## Geänderte Dateien
+- index.html, personal.css, personal.js, server/index.js, server/api.js
+- server/lib/gmailIntegration.js, server/lib/gmailIntegration.test.js, server/lib/staticApp.js
+- .env.example, .gitignore, docs/GMAIL_INTEGRATION.md, README.md
+- package.json, sw.js, CHANGELOG.md
+
 # v0.41.0 — Business- und Privat-E-Mail
 
 ## Neu

@@ -26,7 +26,7 @@ let DG_OS_VERSION=null;
 const state={asia:false,sweep:false,engulf:false};
 const $=id=>document.getElementById(id);
 
-const TRADER_NAME='Daniel Gomes';
+const TRADER_NAME='Gomes';
 
 function greetingWord(localHour){
   if(localHour>=5 && localHour<11) return 'Guten Morgen';

@@ -1,3 +1,19 @@
+# v0.42.1 — Cleaner disconnected E-Mail state
+
+## Behoben
+- Newsletter-Auswahl/Papierkorb wird nicht mehr im normalen Posteingang angezeigt.
+- Ohne verbundenen DG OS Server werden Inbox-Filter, Suche und leere Mailflächen nicht mehr als scheinbar aktive Funktionen dargestellt.
+- Auf iPhone ist der noch nicht verbundene Zustand deutlich kompakter und verständlicher.
+- Wenn noch kein sicherer Server hinterlegt ist, öffnet der primäre Button das gewählte Business- oder Privat-Postfach direkt in Gmail.
+- "+ E-Mail" erscheint erst, wenn das jeweilige Gmail-Konto wirklich mit DG OS verbunden ist.
+
+## Unverändert
+- Die sichere Gmail-OAuth-/Server-Architektur aus v0.42.0 bleibt unverändert.
+- Keine Änderungen an Trading Brain, Market Brain oder Trading-Regeln.
+
+## Geänderte Dateien
+- personal.js, personal.css, package.json, sw.js, CHANGELOG.md
+
 # v0.42.0 — Secure Gmail Center
 
 ## Neu

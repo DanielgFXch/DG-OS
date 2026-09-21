@@ -649,3 +649,133 @@
   showSaved();
   readLocalHubStatus();
 })();
+
+
+/* WHOOP health integration — private same-origin data through the DG OS server. */
+(() => {
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const connect=$('whoopConnect');
+  if(!connect)return;
+  let serverMode=false;
+
+  function serverBase(){
+    try{
+      const raw=localStorage.getItem('dgos.marketServerUrl')||'';
+      return raw?new URL(raw.includes('://')?raw:'https://'+raw).origin:'';
+    }catch(_){return'';}
+  }
+  function fmtHours(value){
+    const n=Number(value); if(!Number.isFinite(n))return'—';
+    const total=Math.max(0,Math.round(n*60));
+    return Math.floor(total/60)+'h '+String(total%60).padStart(2,'0')+'m';
+  }
+  function fmt(value,digits,suffix){
+    const n=Number(value);return Number.isFinite(n)?n.toFixed(digits)+(suffix||''):'—';
+  }
+  function set(id,text){const el=$(id);if(el)el.textContent=text;}
+  function showDisconnected(text){
+    set('whoopStatus','WHOOP · nicht verbunden');
+    set('whoopHealthMeta',text||'Verbinde WHOOP einmal sicher mit DG OS. Danach werden deine Werte automatisch geladen.');
+    $('whoopDetails')?.classList.add('hidden');
+  }
+  function render(data){
+    const recovery=data&&data.recovery, sleep=data&&data.sleep, cycle=data&&data.cycle;
+    set('whoopStatus','WHOOP · verbunden');
+    set('whoopSleep',sleep?fmtHours(sleep.durationHours):'—');
+    set('whoopSleepPerformance',sleep&&Number.isFinite(Number(sleep.performance))?'Sleep Performance '+Math.round(Number(sleep.performance))+'%':'—');
+    set('whoopRecovery',recovery&&Number.isFinite(Number(recovery.score))?Math.round(Number(recovery.score))+'%':'—');
+    set('whoopHrv',recovery&&Number.isFinite(Number(recovery.hrvMs))?'HRV '+Math.round(Number(recovery.hrvMs))+' ms':'HRV —');
+    set('whoopStrain',cycle&&Number.isFinite(Number(cycle.strain))?Number(cycle.strain).toFixed(1):'—');
+    set('whoopCalories',cycle&&Number.isFinite(Number(cycle.calories))?Math.round(Number(cycle.calories))+' kcal':'—');
+    set('whoopRhr',recovery&&Number.isFinite(Number(recovery.restingHeartRate))?Math.round(Number(recovery.restingHeartRate))+' bpm':'—');
+    set('whoopSpo2',recovery?fmt(recovery.spo2,1,'%'):'—');
+    set('whoopSkinTemp',recovery?fmt(recovery.skinTempC,1,' °C'):'—');
+    set('whoopEfficiency',sleep?fmt(sleep.efficiency,0,'%'):'—');
+    set('whoopConsistency',sleep?fmt(sleep.consistency,0,'%'):'—');
+    set('whoopRespiratory',sleep?fmt(sleep.respiratoryRate,1,'/min'):'—');
+    set('whoopRem',sleep?fmtHours(sleep.remHours):'—');
+    set('whoopDeep',sleep?fmtHours(sleep.deepHours):'—');
+    set('whoopLight',sleep?fmtHours(sleep.lightHours):'—');
+    set('whoopNeeded',sleep?fmtHours(sleep.neededHours):'—');
+    set('whoopCycles',sleep&&sleep.cycles!=null?String(sleep.cycles):'—');
+    set('whoopDisturbances',sleep&&sleep.disturbances!=null?String(sleep.disturbances):'—');
+    const updated=data&&data.updatedAt?new Date(data.updatedAt):null;
+    set('whoopHealthMeta',updated&&Number.isFinite(updated.getTime())?'WHOOP automatisch aktualisiert · '+new Intl.DateTimeFormat('de-CH',{hour:'2-digit',minute:'2-digit'}).format(updated):'WHOOP-Daten geladen.');
+    $('whoopDetails')?.classList.remove('hidden');
+    connect.textContent='WHOOP verbunden';
+    connect.disabled=true;
+
+    const box=$('whoopWorkouts');
+    if(box){
+      box.replaceChildren();
+      const items=Array.isArray(data&&data.workouts)?data.workouts:[];
+      if(!items.length){
+        const p=document.createElement('p');p.className='personal-empty';p.textContent='Keine aktuellen Workouts.';box.append(p);
+      }else{
+        items.forEach(w=>{
+          const row=document.createElement('div');row.className='personal-whoop-workout';
+          const info=document.createElement('div');
+          const strong=document.createElement('strong');strong.textContent=w.name||'Workout';
+          const small=document.createElement('small');
+          const when=w.start?new Intl.DateTimeFormat('de-CH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(w.start)):'';
+          small.textContent=[when,Number.isFinite(Number(w.strain))?'Strain '+Number(w.strain).toFixed(1):'',Number.isFinite(Number(w.calories))?Math.round(Number(w.calories))+' kcal':''].filter(Boolean).join(' · ');
+          info.append(strong,small);row.append(info);box.append(row);
+        });
+      }
+    }
+  }
+
+  async function loadSummary(){
+    try{
+      const response=await fetch('./api/whoop/summary',{cache:'no-store',credentials:'same-origin'});
+      if(!response.ok)throw new Error('summary_failed');
+      render(await response.json());
+    }catch(_){
+      set('whoopHealthMeta','WHOOP ist verbunden, aber die Daten konnten gerade nicht geladen werden.');
+    }
+  }
+
+  async function check(){
+    try{
+      const response=await fetch('./api/whoop/status',{cache:'no-store',credentials:'same-origin'});
+      const type=response.headers.get('content-type')||'';
+      if(!response.ok||!type.includes('application/json'))throw new Error('not_server');
+      const status=await response.json();serverMode=true;
+      if(!status.configured){
+        showDisconnected('WHOOP-App ist erstellt. Auf dem privaten DG-OS-Server fehlt noch das WHOOP Client Secret.');
+        connect.textContent='WHOOP noch konfigurieren';connect.disabled=true;return;
+      }
+      if(status.connected&&status.authenticated){await loadSummary();return;}
+      showDisconnected('WHOOP ist bereit. Einmal verbinden, danach lädt Jarvis deine Werte automatisch.');
+      connect.textContent='WHOOP verbinden';connect.disabled=false;
+    }catch(_){
+      serverMode=false;
+      const remote=serverBase();
+      if(remote){
+        showDisconnected('WHOOP ist für die sichere Verbindung bereit. Öffne die Freigabe über deinen privaten DG-OS-Server.');
+        connect.textContent='WHOOP verbinden';connect.disabled=false;
+      }else{
+        showDisconnected('Für WHOOP braucht DG OS noch den privaten Server für das Client Secret.');
+        connect.textContent='Server zuerst verbinden';connect.disabled=true;
+      }
+    }
+  }
+
+  connect.addEventListener('click',()=>{
+    if(connect.disabled)return;
+    if(serverMode){window.location.href='./api/whoop/oauth/start';return;}
+    const remote=serverBase();
+    if(remote)window.location.href=remote+'/api/whoop/oauth/start';
+  });
+
+  const params=new URLSearchParams(location.search);
+  if(params.get('whoop')==='error'){
+    set('whoopHealthMeta','WHOOP-Verbindung wurde nicht abgeschlossen. Du kannst es erneut versuchen.');
+    history.replaceState(null,'',location.pathname+location.hash);
+  }else if(params.get('whoop')==='connected'){
+    history.replaceState(null,'',location.pathname+location.hash);
+  }
+  check();
+  setInterval(()=>{if(serverMode&&!connect.disabled)check();else if(serverMode)loadSummary();},10*60*1000);
+})();

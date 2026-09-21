@@ -72,3 +72,10 @@ DG OS kann Business (\`imdanielgomes@gmail.com\`) und Privat (\`gomesdani1999@gm
 Funktionen: Inbox, Ungelesen, Suche, Lesen, Schreiben, Antworten und ein Newsletter-Filter. Newsletter können bewusst ausgewählt und in den Gmail-Papierkorb verschoben werden; es gibt keine automatische oder permanente Löschung.
 
 Setup und Sicherheitsmodell: [docs/GMAIL_INTEGRATION.md](docs/GMAIL_INTEGRATION.md).
+
+
+## DG OS Hub
+
+Der persönliche Jarvis-Hub bündelt die privaten Verbindungen zu Google Workspace, Telegram und später WHOOP/iCloud. Google Business und Privat verwenden jeweils **eine gemeinsame OAuth-Freigabe für Gmail + Google Kalender**. Der servergehostete Build bleibt die sichere Stelle für Tokens und private APIs.
+
+Einmaliges Setup: [docs/HUB_SETUP.md](docs/HUB_SETUP.md).

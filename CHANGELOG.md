@@ -1,3 +1,21 @@
+# v0.41.0 — Business- und Privat-E-Mail
+
+## Neu
+- Eigener E-Mail-Bereich auf der persönlichen DG-OS-Startseite.
+- Getrennte Postfach-Karten für Business (`imdanielgomes@gmail.com`) und Privat (`gomesdani1999@gmail.com`).
+- Jede Karte öffnet gezielt den passenden Gmail-Posteingang über das bereits angemeldete Google-Konto des Geräts.
+- Keine Passwörter, OAuth-Tokens oder E-Mail-Inhalte werden in DG OS gespeichert.
+
+## Klarstellung
+- DG OS liest E-Mails in dieser Version noch nicht selbst. Die Karten sind sichere Direktverknüpfungen zu den zwei Gmail-Postfächern.
+- Falls das gewählte Google-Konto auf dem Gerät noch nicht angemeldet ist, übernimmt Google die Anmeldung.
+
+## Unverändert
+- Keine Änderungen an Trading Brain, Market Brain, Trading-Regeln, Marktdaten oder Telegram-Logik.
+
+## Geänderte Dateien
+- index.html, personal.css, sw.js, package.json, CHANGELOG.md.
+
 # v0.40.1 — Responsive personal home polish
 
 ## Improved

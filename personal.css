@@ -214,3 +214,67 @@ body.email-window-open{overflow:hidden}
   .personal-organizer-grid{grid-template-columns:1fr}
   .personal-organizer-card:not([open]){display:block}
 }
+
+
+/* v0.51.0 — Jarvis Attention Cockpit */
+.personal-attention-panel{
+  margin:0 0 12px;
+  padding:17px;
+  border-color:rgba(142,226,215,.16);
+  background:
+    radial-gradient(circle at 6% 10%,rgba(55,219,226,.08),transparent 34%),
+    radial-gradient(circle at 92% 20%,rgba(118,81,224,.08),transparent 34%),
+    rgba(7,18,29,.72)
+}
+.personal-attention-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.personal-attention-head h2{margin:3px 0 0;max-width:720px;font-size:18px}
+.personal-attention-head p{margin:5px 0 0;color:#7893a2;font-size:9px}
+.personal-attention-count{display:grid;place-items:center;min-width:44px;height:44px;padding:0 9px;border:1px solid rgba(142,226,215,.20);border-radius:14px;background:rgba(142,226,215,.05);color:#8ee2d7;font:600 16px/1 "Chakra Petch",sans-serif}
+.personal-attention-stats{display:flex;flex-wrap:wrap;gap:7px;margin-top:13px}
+.personal-attention-stats span{display:inline-flex;align-items:center;gap:5px;padding:6px 8px;border:1px solid rgba(205,228,249,.08);border-radius:999px;background:rgba(255,255,255,.025);color:#758d9b;font-size:8px}
+.personal-attention-stats strong{color:#dff5f7;font-size:9px}
+.personal-attention-list{display:grid;gap:6px;margin-top:11px}
+.personal-attention-row{display:grid;grid-template-columns:30px minmax(0,1fr) auto;align-items:center;gap:9px;padding:9px 10px;border:1px solid rgba(205,228,249,.08);border-radius:11px;background:rgba(5,15,24,.38)}
+.personal-attention-row.is-urgent{border-color:rgba(255,126,112,.22);background:rgba(104,30,24,.08)}
+.personal-attention-row.is-high{border-color:rgba(255,183,101,.18);background:rgba(108,65,17,.06)}
+.personal-attention-icon{display:grid;place-items:center;width:28px;height:28px;border-radius:9px;background:rgba(255,255,255,.035);font-size:13px}
+.personal-attention-copy{min-width:0}
+.personal-attention-copy strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#e8f7fa;font-size:10px}
+.personal-attention-copy small{display:block;margin-top:3px;color:#718a98;font-size:8.5px}
+.personal-attention-level{font-size:7px;letter-spacing:.08em;color:#718a98}
+.personal-attention-row.is-urgent .personal-attention-level{color:#ffaaa2}
+.personal-attention-row.is-high .personal-attention-level{color:#ffc588}
+.personal-attention-clear{margin:0;padding:11px;border:1px dashed rgba(142,226,215,.14);border-radius:11px;color:#82a59f;font-size:9px}
+.personal-attention-more{display:block;padding:4px 2px;color:#6e8796;font-size:8px}
+.personal-attention-actions{display:flex;gap:8px;margin-top:12px}
+.personal-attention-actions button{min-height:34px;padding:7px 10px;font-size:9px}
+.personal-summary-panel{margin-top:13px;padding:13px;border:1px solid rgba(142,226,215,.12);border-radius:13px;background:rgba(3,11,19,.44)}
+.personal-summary-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.personal-summary-head h3{margin:3px 0 0;color:#e9f8fb;font-size:14px}
+.personal-summary-head button{width:30px;height:30px;min-height:30px;padding:0;border-radius:9px;font-size:17px}
+.personal-summary-content{display:grid;gap:10px;margin-top:11px}
+.personal-summary-hero,.personal-summary-context{padding:11px;border:1px solid rgba(205,228,249,.08);border-radius:11px;background:rgba(255,255,255,.025)}
+.personal-summary-hero strong,.personal-summary-context strong{display:block;color:#e7f6f9;font-size:10px}
+.personal-summary-hero p,.personal-summary-context p{margin:4px 0 0;color:#7d96a4;font-size:8.8px;line-height:1.5}
+.personal-summary-section h4{margin:0 0 6px;color:#b9d3dc;font-size:8.5px;text-transform:uppercase;letter-spacing:.09em}
+.personal-summary-list{display:grid;gap:5px}
+.personal-summary-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:7px 9px;border-radius:9px;background:rgba(255,255,255,.02)}
+.personal-summary-row strong{min-width:0;color:#e1f2f5;font-size:9px;font-weight:500}
+.personal-summary-row small{flex:none;color:#6f8795;font-size:8px;text-align:right}
+.personal-summary-alert{margin:0;padding:9px;border-radius:10px;background:rgba(114,83,214,.08);color:#a99bdc;font-size:8.8px}
+@media(max-width:700px){
+  .personal-attention-panel{padding:13px;border-radius:16px}
+  .personal-attention-head h2{font-size:16px;line-height:1.22}
+  .personal-attention-count{min-width:38px;height:38px;border-radius:12px;font-size:14px}
+  .personal-attention-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}
+  .personal-attention-stats span{justify-content:center;padding:6px 4px;text-align:center}
+  .personal-attention-row{grid-template-columns:28px minmax(0,1fr) auto;padding:8px}
+  .personal-attention-actions{display:grid;grid-template-columns:1fr 1fr}
+}
+@media(max-width:430px){
+  .personal-attention-stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .personal-attention-level{display:none}
+  .personal-attention-actions{grid-template-columns:1fr}
+  .personal-summary-row{display:grid;gap:3px}
+  .personal-summary-row small{text-align:left}
+}

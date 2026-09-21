@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="./icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./wow.css?v=0.37.1" />
-  <link rel="stylesheet" href="./personal.css" />
+  <link rel="stylesheet" href="./personal.css" />\n  <link rel="stylesheet" href="./social.css" />
   <title>DG OS · Dein Tag</title>
 </head>
 <body>
@@ -109,6 +109,25 @@
           </div>
           <p id="emailHubStatus" class="personal-email-note" role="status">Gmail-Status wird geprüft …</p>
         </section>
+
+        <section id="personalSocial" class="personal-panel social-panel">
+          <div class="personal-kicker">SOCIAL MEDIA</div>
+          <div class="social-panel-head"><h2>Dein Social Hub.</h2><span class="personal-status">BETA</span></div>
+          <p>Zwei Instagram-Accounts, sauber getrennt. DG OS analysiert deinen Datenexport lokal und baut daraus deine Cleanup-Queue.</p>
+          <div class="social-account-grid">
+            <button class="social-account-card" type="button" data-social-open="business">
+              <span class="social-account-type">Instagram Business</span>
+              <strong id="socialBusinessHandle">Business-Account einrichten</strong>
+              <small id="socialBusinessStatus">Noch keine Instagram-Daten importiert</small>
+            </button>
+            <button class="social-account-card" type="button" data-social-open="private">
+              <span class="social-account-type">Instagram Privat</span>
+              <strong id="socialPrivateHandle">Privat-Account einrichten</strong>
+              <small id="socialPrivateStatus">Noch keine Instagram-Daten importiert</small>
+            </button>
+          </div>
+          <button id="openSocialHub" class="social-open-hub" type="button">Social Hub öffnen</button>
+        </section>
         <section id="personalConnections" class="personal-panel">
           <div class="personal-kicker">DEIN ASSISTENT</div>
           <h2>Alles an einem Ort.</h2>
@@ -147,6 +166,93 @@
       <div class="personal-email-layout">
         <div id="emailMessageList" class="personal-email-list"><p class="personal-empty">Wähle ein Postfach.</p></div>
         <article id="emailMessageDetail" class="personal-email-detail"><p class="personal-empty">Öffne eine E-Mail, um sie hier zu lesen.</p></article>
+      </div>
+    </section>
+
+    <section id="socialWorkspace" class="personal-panel social-workspace hidden" role="dialog" aria-modal="true" aria-labelledby="socialWorkspaceTitle">
+      <div class="social-workspace-head">
+        <div>
+          <div class="personal-kicker">SOCIAL MEDIA HUB</div>
+          <h2 id="socialWorkspaceTitle">Business Instagram</h2>
+          <p id="socialWorkspaceSubtitle">Account noch nicht benannt</p>
+        </div>
+        <div class="social-workspace-actions">
+          <button id="socialStartCleanup" type="button">Cleanup starten</button>
+          <button id="socialCloseWorkspace" class="secondary social-close" type="button" aria-label="Social Media Hub schliessen">×</button>
+        </div>
+      </div>
+      <div class="social-account-tabs" aria-label="Instagram Account wählen">
+        <button type="button" data-social-account="business" aria-pressed="true">Business</button>
+        <button type="button" data-social-account="private" aria-pressed="false">Privat</button>
+      </div>
+      <div id="socialNotice" class="social-notice" role="status"></div>
+
+      <div class="social-grid">
+        <div class="social-stack">
+          <section class="social-glass">
+            <div class="social-glass-head"><h3>Instagram Account</h3><small>Kein Passwort erforderlich</small></div>
+            <div class="social-form-row">
+              <input id="socialHandleInput" type="text" inputmode="text" autocomplete="off" placeholder="@username" aria-label="Instagram Username" />
+              <button id="socialSaveHandle" type="button">Speichern</button>
+            </div>
+            <div class="social-import-box">
+              <div class="social-import-copy">
+                <strong>Instagram-Datenexport importieren</strong>
+                <small>Wähle aus dem entpackten Export deine Followers-Datei(en) und die Following-Datei. JSON und HTML werden unterstützt.</small>
+              </div>
+              <label class="social-file-label">Dateien wählen<input id="socialImportFiles" type="file" multiple accept=".json,.html,.htm,application/json,text/html" /></label>
+            </div>
+            <small class="social-help">Die Listen werden nur in deinem Browser gespeichert. DG OS sendet sie nicht an Instagram und speichert keine Instagram-Zugangsdaten.</small>
+          </section>
+
+          <section class="social-glass">
+            <div class="social-glass-head"><h3>Übersicht</h3><small id="socialImportedAt">Noch kein Import</small></div>
+            <div class="social-metrics">
+              <div class="social-metric"><span>Followers</span><strong id="socialMetricFollowers">0</strong></div>
+              <div class="social-metric"><span>Following</span><strong id="socialMetricFollowing">0</strong></div>
+              <div class="social-metric is-accent"><span>Folgen nicht zurück</span><strong id="socialMetricNonFollowers">0</strong></div>
+              <div class="social-metric"><span>Whitelist</span><strong id="socialMetricWhitelist">0</strong></div>
+            </div>
+          </section>
+
+          <section class="social-glass">
+            <div class="social-glass-head"><h3>Whitelist</h3><small id="socialWhitelistCount">0 geschützt</small></div>
+            <div class="social-whitelist-form">
+              <input id="socialWhitelistInput" type="text" autocomplete="off" placeholder="@username niemals entfernen" aria-label="Username zur Whitelist hinzufügen" />
+              <button id="socialWhitelistAdd" type="button">Schützen</button>
+            </div>
+            <div id="socialWhitelistList" class="social-whitelist-list"></div>
+          </section>
+        </div>
+
+        <div class="social-stack">
+          <section id="socialCleanupSection" class="social-glass social-cleanup-section">
+            <div class="social-glass-head"><h3>Smart Cleanup</h3><small id="socialQueueCount">0 offen</small></div>
+            <div id="socialCleanupCard" class="social-cleanup-card hidden">
+              <span class="social-cleanup-badge">Cleanup-Kandidat</span>
+              <h3 id="socialCleanupUsername">@username</h3>
+              <p id="socialCleanupReason">Folgt dir nicht zurück · nicht auf Whitelist</p>
+              <div id="socialCleanupPosition" class="social-position"></div>
+              <button id="socialOpenInstagram" class="social-cleanup-open" type="button">Instagram-Profil öffnen ↗</button>
+              <div class="social-decision-grid">
+                <button id="socialDecisionKeep" class="secondary" type="button">Behalten</button>
+                <button id="socialDecisionRemoved" class="social-removed" type="button">Entfernt ✓</button>
+                <button id="socialDecisionLater" class="secondary social-later" type="button">Später</button>
+              </div>
+            </div>
+            <div id="socialCleanupEmpty" class="social-cleanup-empty">Importiere zuerst deine Instagram Followers- und Following-Dateien.</div>
+            <small class="social-help">DG OS priorisiert aktuell transparent nach „folgt nicht zurück“ und Whitelist. Das eigentliche Entfolgen führst du auf Instagram selbst aus; danach markierst du den Account hier als entfernt.</small>
+          </section>
+
+          <section class="social-glass">
+            <div class="social-glass-head"><h3>Cleanup Verlauf</h3><small id="socialCleanupProgress">0 entfernt · 0 behalten · 0 später</small></div>
+            <p class="social-help">Deine Entscheidungen bleiben pro Business-/Privat-Account getrennt gespeichert.</p>
+            <div class="social-footer-actions">
+              <span class="social-help">V1 · lokale Analyse ohne Instagram-Login</span>
+              <button id="socialResetData" class="secondary social-danger" type="button">Importdaten löschen</button>
+            </div>
+          </section>
+        </div>
       </div>
     </section>
     <details id="tradingWorkspace" class="personal-trading"><summary><span><span class="personal-kicker">DEIN MARKET WORKSPACE</span><strong>Trading</strong></span><span class="personal-trading-hint">Aufklappen <span aria-hidden="true">↗</span></span></summary>
@@ -547,7 +653,7 @@
   </form></dialog>
   <script src="./marketBrain.js"></script>
   <script src="./app.js"></script>
-  <script src="./personal.js"></script>
+  <script src="./personal.js"></script>\n  <script src="./social.js"></script>
   <script src="./weather.js"></script>
 </body>
 </html>

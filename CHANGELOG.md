@@ -1,3 +1,34 @@
+# v0.50.0 — Private Organizer
+
+## Privat zuerst
+- Eingehende Telegram-Nachrichten sind jetzt standardmässig privat/Jarvis.
+- Kein manueller Trading-Modus mehr nötig.
+- Trading bleibt ein reiner ausgehender Bereich: spätere Markt-/Trading-Meldungen behalten eine klare `📈 TRADING`-Überschrift.
+- Keine Änderungen an Trading Brain, Decision Engine oder Trading-Regeln.
+
+## Automatische Sortierung
+- Aufgaben bleiben unter **Aufgaben**.
+- Termine werden unter **📅 Termine** gespeichert.
+- Rechnungen und Zahlungen unter **💳 Rechnungen**.
+- Einkäufe unter **🛒 Einkauf**.
+- Notizen und Ideen unter **📝 Notizen**.
+- Einfache Datums-/Zeitangaben wie heute, morgen, übermorgen, Wochentage, `21.10.` und Uhrzeiten wie `14:30` werden erkannt.
+- Rechnungen können Betrag/Währung speichern, wenn diese eindeutig im Text enthalten sind.
+
+## Jarvis Oberfläche
+- Neue Übersicht **Privat organisiert** direkt auf der Heute-Seite.
+- Offene Termine, Rechnungen, Einkauf und Notizen werden getrennt angezeigt.
+- Einträge können abgehakt/archiviert oder gelöscht werden.
+- Alles wird im separaten DG-OS-Supabase-Projekt synchron gespeichert.
+
+## Bilder & Voice
+- Bilder und Sprachnachrichten landen weiterhin sicher in der privaten Jarvis Inbox.
+- Automatische Bildanalyse/Transkription wird erst aktiviert, wenn ein echter Vision-/Speech-Dienst verbunden ist; keine erfundenen Auswertungen.
+
+## Fix
+- Fehlende Session-Konstanten im Aufgaben-Modul korrigiert.
+- Aufgaben/Privat bleiben unabhängig vom WHOOP-Status.
+
 # v0.49.1 — Telegram-Gerätesitzung statt WHOOP-Abhängigkeit
 
 ## Fix

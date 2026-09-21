@@ -389,13 +389,7 @@
       const trading = nav.querySelector('[data-target="tradingWorkspace"]');
       nav.insertBefore(button, trading || null);
     }
-    if (!button.dataset.socialBound) {
-      button.dataset.socialBound = 'true';
-      button.addEventListener('click', () => {
-        nav.querySelectorAll('button[data-target]').forEach(b => b.classList.toggle('active', b === button));
-        openWorkspace(state.active);
-      });
-    }
+    button.dataset.socialBound = 'router';
   }
 
   function bind() {

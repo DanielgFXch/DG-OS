@@ -1,3 +1,31 @@
+# v0.51.1 — Telegram → DG OS Sync Fix
+
+## Fix
+- Telegram-/Jarvis-Termine werden jetzt direkt in den DG-OS-Kalender synchronisiert.
+- Jarvis-Termine zählen auch in "Heute geplant".
+- Zurückwechseln von Telegram zu DG OS aktualisiert den Kalender automatisch.
+- Termine ohne Uhrzeit erscheinen ganztägig; Termine mit Uhrzeit zeigen die gespeicherte Uhrzeit.
+- Jarvis-Termine sind im Kalender als eigene Quelle erkennbar.
+
+## Telegram Parser
+- Mehrere Zeilen in einer Nachricht werden als mehrere private Einträge verarbeitet.
+- Datumsformat `23.09` wird nicht mehr zusätzlich als `23:09` interpretiert.
+- Ein oder zwei Punkte in Datumsangaben wie `23.09` / `23..09` werden robust erkannt.
+- Persönliche Ereignisse wie Zivilschutz, Kurs, Schicht, Training oder Geburtstag werden als mögliche Termine erkannt.
+- Wochentag und Datum werden gegengeprüft. Bei einem Widerspruch fragt Jarvis nach, statt einen falschen Termin zu speichern.
+
+## Datenbereinigung
+- Doppelten kombinierten Sunrise-/Zivilschutz-Eintrag entfernt.
+- Eine saubere offene Sunrise-Rechnung für 22.09.2026 bleibt erhalten.
+- Zivilschutz wurde wegen widersprüchlicher Angabe "Donnerstag 23.09" bewusst nicht automatisch terminiert.
+
+## Nebenfix
+- WHOOP-Browser-Session liest wieder den korrekten gespeicherten WHOOP-Session-Key.
+
+## Unverändert
+- Keine Änderungen an Trading Brain, Decision Engine oder Trading-Regeln.
+- LiveUP Academy wurde nicht verändert.
+
 # v0.51.0 — Jarvis Attention Cockpit + AI Inbox Foundation
 
 ## Aufmerksamkeit statt Listen durchsuchen

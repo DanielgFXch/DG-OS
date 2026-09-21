@@ -272,8 +272,8 @@ class WhoopIntegration {
         consistency:sleepScore.sleep_consistency_percentage??null,
         efficiency:sleepScore.sleep_efficiency_percentage??null,
         respiratoryRate:sleepScore.respiratory_rate??null,
-        disturbances:stages&&stages.disturbance_count??null,
-        cycles:stages&&stages.sleep_cycle_count??null
+        disturbances:stages ? (stages.disturbance_count ?? null) : null,
+        cycles:stages ? (stages.sleep_cycle_count ?? null) : null
       } : null,
       cycle: cycle ? {
         start:cycle.start,

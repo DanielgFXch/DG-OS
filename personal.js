@@ -1035,66 +1035,113 @@
 })();
 
 
-/* Telegram task bridge — text becomes tasks, voice/images enter the Jarvis Inbox. */
+/* Unified Telegram bridge — one bot, separate Jarvis/Trading modes. */
 (() => {
   'use strict';
+
   const button=document.getElementById('taskTelegramSetup');
   const status=document.getElementById('taskInboxStatus');
   if(!button||!status)return;
 
   const EDGE='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/telegram-tasks';
   const SESSION_KEY='dgos.whoopSession';
+
   function headers(){
     const token=localStorage.getItem(SESSION_KEY)||'';
     return token?{Authorization:'Bearer '+token}:{};
   }
+
   async function request(action,method='GET'){
     const r=await fetch(EDGE+'/'+action,{method,headers:headers(),cache:'no-store'});
     let data={};try{data=await r.json();}catch(_){}
-    if(!r.ok){const e=new Error(data.error||'telegram_task_error');e.status=r.status;throw e;}
+    if(!r.ok){
+      const e=new Error(data.error||'telegram_error');
+      e.status=r.status;
+      throw e;
+    }
     return data;
   }
+
   async function refresh(){
     if(!localStorage.getItem(SESSION_KEY)){
       button.disabled=true;
-      status.textContent='Direkte Eingabe aktiv · Telegram wartet auf Gerätesitzung';
+      button.textContent='Telegram';
+      status.textContent='Telegram wartet auf deine DG-OS-Gerätesitzung';
       return;
     }
+
     try{
       const data=await request('status');
+
       if(!data.configured){
         button.disabled=true;
         button.textContent='Telegram';
-        status.textContent='Direkte Eingabe aktiv · Telegram noch nicht eingerichtet';
+        status.textContent='Bestehender Bot bereit zur Übernahme · Bot-Token fehlt noch in Supabase';
         return;
       }
-      if(data.webhookActive){
+
+      if(data.paired){
         button.disabled=true;
         button.textContent='Telegram ✓';
-        status.textContent='Telegram Text → Aufgabe · Voice/Bild → Inbox';
-      }else{
-        button.disabled=false;
-        button.textContent='Telegram verbinden';
-        status.textContent='Telegram ist vorbereitet · Webhook noch aktivieren';
+        const mode=data.mode==='private'?'Privat/Jarvis':'Trading';
+        status.textContent='Ein Bot verbunden · aktuell '+mode+' · /private oder /trading zum Wechseln';
+        return;
       }
+
+      button.disabled=false;
+      button.textContent='Telegram verbinden';
+      status.textContent=(data.botUsername?'@'+data.botUsername+' · ':'')+'Einmal koppeln, danach Privat + Trading im gleichen Bot';
     }catch(_){
       button.disabled=true;
-      status.textContent='Direkte Eingabe aktiv · Telegram-Status nicht verfügbar';
+      button.textContent='Telegram';
+      status.textContent='Telegram-Status konnte gerade nicht geladen werden';
     }
   }
 
   button.addEventListener('click',async()=>{
+    if(button.disabled)return;
     button.disabled=true;
-    button.textContent='Verbinde …';
+    button.textContent='Öffne Telegram …';
     try{
-      await request('setup','POST');
-      await refresh();
-    }catch(_){
-      button.disabled=false;
+      const data=await request('pair-start','POST');
+      const code=String(data.code||'');
+      const bot=data.botUsername?'@'+data.botUsername:'dein Bot';
+      status.textContent=bot+' · Pairing-Code '+code+' · 10 Min. gültig';
+
+      if(data.deepLink){
+        const opened=window.open(data.deepLink,'_blank','noopener,noreferrer');
+        if(!opened) window.location.href=data.deepLink;
+      }
+
+      button.textContent='Warte auf Pairing …';
+      let attempts=0;
+      const timer=setInterval(async()=>{
+        attempts+=1;
+        try{
+          const current=await request('status');
+          if(current.paired){
+            clearInterval(timer);
+            button.disabled=true;
+            button.textContent='Telegram ✓';
+            status.textContent='Ein Bot verbunden · Trading bleibt Standard · Privat über /private';
+          }else if(attempts>=40){
+            clearInterval(timer);
+            button.disabled=false;
+            button.textContent='Telegram verbinden';
+            status.textContent='Pairing noch nicht bestätigt. Tippe erneut und sende den Start-Befehl im Bot.';
+          }
+        }catch(_){}
+      },3000);
+    }catch(err){
+      button.disabled=err.status===503;
       button.textContent='Telegram verbinden';
-      status.textContent='Telegram konnte nicht verbunden werden.';
+      status.textContent=err.status===503
+        ?'Bot-Token fehlt noch in Supabase'
+        :'Telegram konnte nicht gekoppelt werden.';
     }
   });
 
+  window.addEventListener('focus',()=>setTimeout(refresh,600));
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(refresh,600);});
   refresh();
 })();

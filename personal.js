@@ -11,7 +11,7 @@
   const format = (value, options) => new Intl.DateTimeFormat('de-CH', {timeZone:'UTC', ...options}).format(date(value));
   const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(date(value).getTime()) && iso(date(value)) === value;
   const validTime = value => typeof value === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
-  let selected = today(), view = 'month', events = [], cloudEvents = [], storageReadable = true;
+  let selected = today(), view = 'day', events = [], cloudEvents = [], storageReadable = true;
   let hubState = null, cloudRangeKey = '', cloudRequestId = 0, suppressCloudRefresh = false;
 
   try {

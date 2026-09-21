@@ -30,9 +30,8 @@ const TRADER_NAME='Gomes';
 
 function greetingWord(localHour){
   if(localHour>=5 && localHour<11) return 'Guten Morgen';
-  if(localHour>=11 && localHour<17) return 'Guten Tag';
-  if(localHour>=17 && localHour<22) return 'Guten Abend';
-  return 'Gute Nacht';
+  if(localHour>=11 && localHour<18) return 'Guten Tag';
+  return 'Guten Abend';
 }
 
 // Grobe UTC-Fenster ohne DST-Anpassung – dient nur zur Orientierung, nicht als exakte Marktzeit.

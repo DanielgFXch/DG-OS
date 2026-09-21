@@ -26,6 +26,7 @@ jobs:
         run: |
           node --check server/lib/gmailIntegration.js
           node --check server/lib/googleCalendarIntegration.js
+          node --check server/lib/whoopIntegration.js
           node --check server/lib/staticApp.js
           node --check server/api.js
           node --check server/index.js

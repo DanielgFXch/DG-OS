@@ -115,9 +115,17 @@
           <div class="personal-hub-connect">
             <div class="personal-hub-head"><div><strong>DG OS Hub</strong><small id="personalHubStatus">Noch nicht verbunden</small></div><span class="personal-status">JARVIS BRIDGE</span></div>
             <div class="personal-hub-form"><input id="personalHubUrl" type="url" inputmode="url" placeholder="https://dein-dg-os-server…" autocomplete="off" /><button id="personalHubConnect" type="button">Verbinden</button></div>
-            <small class="personal-hub-help">Verbindet Jarvis sicher mit Gmail und später weiteren Diensten. Keine Passwörter hier eingeben.</small>
+            <small class="personal-hub-help">Eine sichere Brücke für Gmail, Google Kalender, Telegram und weitere Jarvis-Dienste. Keine Passwörter hier eingeben.</small>
+            <div class="personal-hub-services" aria-label="Jarvis Verbindungen">
+              <div class="personal-hub-service"><div><strong>Google Business</strong><small id="hubGoogleBusiness">Gmail + Kalender · nicht verbunden</small></div><button type="button" data-google-connect="business">Verbinden</button></div>
+              <div class="personal-hub-service"><div><strong>Google Privat</strong><small id="hubGooglePrivate">Gmail + Kalender · nicht verbunden</small></div><button type="button" data-google-connect="private">Verbinden</button></div>
+              <div class="personal-hub-service"><div><strong>Wetter</strong><small id="hubWeatherStatus">Open-Meteo · verbunden</small></div><span class="personal-status">LIVE</span></div>
+              <div class="personal-hub-service"><div><strong>Telegram</strong><small id="hubTelegramStatus">Hub erforderlich</small></div><span class="personal-status" id="hubTelegramBadge">OFF</span></div>
+              <div class="personal-hub-service"><div><strong>WHOOP</strong><small>Connector folgt als eigener OAuth-Dienst</small></div><span class="personal-status">OFF</span></div>
+              <div class="personal-hub-service"><div><strong>iCloud Kalender</strong><small>Separater Apple-Connector erforderlich</small></div><span class="personal-status">OFF</span></div>
+            </div>
           </div>
-          <ul class="personal-connections"><li><span>Google / iCloud Kalender</span><small>Noch nicht verbunden</small></li><li><span>Telegram → Termine</span><small>Noch nicht eingerichtet</small></li><li><span>Wissen &amp; Notizen</span><small>Noch nicht eingerichtet</small></li></ul>
+          <ul class="personal-connections"><li><span>Wissen &amp; Notizen</span><small>Noch nicht eingerichtet</small></li></ul>
         </section>
       </aside>
     </div>
@@ -520,8 +528,9 @@
     <button type="button" data-target="tradingWorkspace">Trading</button>
   </nav>
   <dialog id="localEventDialog" class="personal-dialog"><form id="localEventForm">
-    <div class="personal-panel-head"><h2>Termin auf diesem Gerät</h2><button type="button" id="closeLocalEvent" aria-label="Schliessen">×</button></div>
-    <p>Wird noch nicht mit Apple oder Google synchronisiert. Uhrzeiten gelten für Europe/Zurich.</p>
+    <div class="personal-panel-head"><h2>Termin erstellen</h2><button type="button" id="closeLocalEvent" aria-label="Schliessen">×</button></div>
+    <p>Wähle, wo der Termin gespeichert wird. Google-Ziele werden nach der sicheren Hub-Verbindung automatisch freigeschaltet. Uhrzeiten gelten für Europe/Zurich.</p>
+    <label>Kalender<select id="localEventTarget"><option value="local">Auf diesem Gerät</option><option value="business" disabled>Business Google · nicht verbunden</option><option value="private" disabled>Privat Google · nicht verbunden</option></select></label>
     <label>Titel<input id="localEventTitle" required maxlength="120" autocomplete="off" /></label>
     <label>Datum<input id="localEventDate" type="date" required /></label>
     <div class="personal-form-times"><label>Von<input id="localEventStart" type="time" value="09:00" required /></label><label>Bis<input id="localEventEnd" type="time" value="10:00" required /></label></div>

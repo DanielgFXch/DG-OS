@@ -8,6 +8,9 @@ const GMAIL_API = 'https://gmail.googleapis.com/gmail/v1/users/me';
 const GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const GOOGLE_AUTH_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.modify';
+const CALENDAR_EVENTS_SCOPE = 'https://www.googleapis.com/auth/calendar.events';
+const CALENDAR_LIST_SCOPE = 'https://www.googleapis.com/auth/calendar.calendarlist.readonly';
+const GOOGLE_SCOPES = Object.freeze([GMAIL_SCOPE, CALENDAR_EVENTS_SCOPE, CALENDAR_LIST_SCOPE]);
 
 const ACCOUNTS = Object.freeze({
   business: Object.freeze({ id: 'business', label: 'Business', email: 'imdanielgomes@gmail.com' }),
@@ -201,7 +204,7 @@ class GmailIntegration {
     this.clientSecret = env.GOOGLE_GMAIL_CLIENT_SECRET || '';
     this.publicBaseUrl = String(env.DGOS_PUBLIC_BASE_URL || '').replace(/\/+$/, '');
     this.appUrl = String(env.DGOS_APP_URL || this.publicBaseUrl || '').replace(/\/+$/, '');
-    this.key = parseEncryptionKey(env.DGOS_GMAIL_ENCRYPTION_KEY || '');
+    this.key = parseEncryptionKey(env.DGOS_INTEGRATION_ENCRYPTION_KEY || env.DGOS_GMAIL_ENCRYPTION_KEY || '');
     const privateDir = env.DGOS_PRIVATE_DATA_DIR || path.resolve(process.cwd(), 'private');
     this.store = new EncryptedTokenStore(path.join(privateDir, 'gmail-tokens.enc.json'), this.key);
     this.tokens = this.store.read();
@@ -269,12 +272,20 @@ class GmailIntegration {
       configured: this.configured,
       authenticated: authorized,
       sameOriginRequired: true,
-      accounts: Object.values(ACCOUNTS).map(account => ({
-        id: account.id,
-        label: account.label,
-        email: account.email,
-        connected: authorized ? Boolean(this.tokens[account.id] && this.tokens[account.id].refreshToken) : false
-      }))
+      accounts: Object.values(ACCOUNTS).map(account => {
+        const stored = this.tokens[account.id] || {};
+        const connected = authorized ? Boolean(stored.refreshToken) : false;
+        const scopes = String(stored.scope || '').split(/\s+/).filter(Boolean);
+        const legacyGmailToken = connected && scopes.length === 0;
+        return {
+          id: account.id,
+          label: account.label,
+          email: account.email,
+          connected,
+          gmailConnected: connected && (legacyGmailToken || scopes.includes(GMAIL_SCOPE)),
+          calendarConnected: connected && scopes.includes(CALENDAR_EVENTS_SCOPE) && scopes.includes(CALENDAR_LIST_SCOPE)
+        };
+      })
     };
   }
 
@@ -294,7 +305,7 @@ class GmailIntegration {
       access_type: 'offline',
       prompt: 'consent',
       include_granted_scopes: 'true',
-      scope: GMAIL_SCOPE,
+      scope: GOOGLE_SCOPES.join(' '),
       login_hint: account.email,
       state
     });
@@ -335,7 +346,12 @@ class GmailIntegration {
     const previous = this.tokens[account.id] || {};
     const refreshToken = token.refresh_token || previous.refreshToken;
     if (!refreshToken) throw new Error('oauth_refresh_token_missing');
-    this.tokens[account.id] = { email: account.email, refreshToken, connectedAt: new Date().toISOString() };
+    this.tokens[account.id] = {
+      email: account.email,
+      refreshToken,
+      scope: String(token.scope || GOOGLE_SCOPES.join(' ')),
+      connectedAt: new Date().toISOString()
+    };
     this.store.write(this.tokens);
     this.accessCache.set(account.id, {
       token: token.access_token,
@@ -370,6 +386,10 @@ class GmailIntegration {
     };
     this.accessCache.set(accountId, entry);
     return entry.token;
+  }
+
+  async accessToken(accountId, forceRefresh) {
+    return this._accessToken(accountId, Boolean(forceRefresh));
   }
 
   async _gmailFetch(accountId, resource, options, retried) {
@@ -491,6 +511,9 @@ module.exports = {
   GmailIntegration,
   ACCOUNTS,
   GMAIL_SCOPE,
+  CALENDAR_EVENTS_SCOPE,
+  CALENDAR_LIST_SCOPE,
+  GOOGLE_SCOPES,
   classifyNewsletter,
   extractMessageBody,
   buildRawMessage,

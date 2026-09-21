@@ -1,4 +1,4 @@
-name: Gmail Center Tests
+name: DG OS Integration Hub Tests
 
 on:
   pull_request:
@@ -25,9 +25,10 @@ jobs:
       - name: Syntax check
         run: |
           node --check server/lib/gmailIntegration.js
+          node --check server/lib/googleCalendarIntegration.js
           node --check server/lib/staticApp.js
           node --check server/api.js
           node --check server/index.js
           node --check personal.js
-      - name: Gmail unit tests
-        run: npm run test:gmail
+      - name: Integration unit tests
+        run: npm run test:integrations

@@ -77,14 +77,14 @@ function requireMailSession(req, res, gmail) {
   return true;
 }
 
-function createApiServer(marketState, telegram, gmail) {
+function createApiServer(marketState, telegram, gmail, calendar) {
   telegram = telegram || {};
 
   return http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
 
     if (req.method === 'OPTIONS') {
-      if (url.pathname.startsWith('/api/gmail/')) {
+      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname === '/api/hub/status') {
         sendPrivateJson(res, 403, { error: 'same_origin_required' });
       } else {
         sendJson(res, 204, {});
@@ -112,6 +112,24 @@ function createApiServer(marketState, telegram, gmail) {
         const limitParam = url.searchParams.get('limit');
         const limit = limitParam ? Math.max(1, Math.min(500, parseInt(limitParam, 10) || 50)) : 50;
         sendJson(res, 200, { events: marketState.getRecentEvents(limit) });
+        return;
+      }
+
+      // Unified Jarvis Hub status — same-origin only. No message contents,
+      // calendar event data or secrets are exposed here.
+      if (req.method === 'GET' && url.pathname === '/api/hub/status') {
+        const google = gmail ? gmail.status(req) : { configured: false, authenticated: false, accounts: [] };
+        sendPrivateJson(res, 200, {
+          hub: 'DG OS',
+          server: true,
+          googleWorkspace: google,
+          services: {
+            weather: { connected: true, provider: 'Open-Meteo', mode: 'client' },
+            telegram: { connected: Boolean(telegram.token && telegram.chatId), mode: 'server' },
+            whoop: { connected: false, mode: 'not_configured' },
+            icloudCalendar: { connected: false, mode: 'not_configured' }
+          }
+        });
         return;
       }
 
@@ -218,6 +236,48 @@ function createApiServer(marketState, telegram, gmail) {
         return;
       }
 
+      if (req.method === 'GET' && url.pathname === '/api/calendar/calendars') {
+        if (!requireMailSession(req, res, gmail)) return;
+        try {
+          sendPrivateJson(res, 200, { calendars: await calendar.listCalendars(url.searchParams.get('account')) });
+        } catch (err) {
+          const code = err && err.message;
+          const status = code === 'calendar_scope_required' ? 409 : code === 'account_not_connected' ? 409 : 502;
+          sendPrivateJson(res, status, { error: code === 'calendar_scope_required' ? 'google_reconnect_required' : 'calendar_request_failed' });
+        }
+        return;
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/calendar/events') {
+        if (!requireMailSession(req, res, gmail)) return;
+        try {
+          const calendarIds = url.searchParams.getAll('calendarId');
+          sendPrivateJson(res, 200, await calendar.listEvents(url.searchParams.get('account'), {
+            timeMin: url.searchParams.get('timeMin'),
+            timeMax: url.searchParams.get('timeMax'),
+            calendarIds
+          }));
+        } catch (err) {
+          const code = err && err.message;
+          const status = ['invalid_calendar_range','unknown_account'].includes(code) ? 400 : ['calendar_scope_required','account_not_connected'].includes(code) ? 409 : 502;
+          sendPrivateJson(res, status, { error: code === 'calendar_scope_required' ? 'google_reconnect_required' : code === 'invalid_calendar_range' ? code : 'calendar_request_failed' });
+        }
+        return;
+      }
+
+      if (req.method === 'POST' && url.pathname === '/api/calendar/events') {
+        if (!requireMailSession(req, res, gmail)) return;
+        try {
+          const body = await readJson(req);
+          sendPrivateJson(res, 200, await calendar.createEvent(body.account, body));
+        } catch (err) {
+          const code = err && err.message;
+          const status = ['invalid_calendar_event','unknown_account'].includes(code) ? 400 : ['calendar_scope_required','account_not_connected'].includes(code) ? 409 : 502;
+          sendPrivateJson(res, status, { error: code === 'calendar_scope_required' ? 'google_reconnect_required' : code === 'invalid_calendar_event' ? code : 'calendar_request_failed' });
+        }
+        return;
+      }
+
       if (req.method === 'POST' && url.pathname === '/api/tradingview/webhook') {
         await readBody(req);
         sendJson(res, 501, {
@@ -248,11 +308,11 @@ function createApiServer(marketState, telegram, gmail) {
       }
 
       if (!url.pathname.startsWith('/api/') && serveStatic(req, res)) return;
-      if (url.pathname.startsWith('/api/gmail/')) sendPrivateJson(res, 404, { error: 'not_found' });
+      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname === '/api/hub/status') sendPrivateJson(res, 404, { error: 'not_found' });
       else sendJson(res, 404, { error: 'not_found' });
     } catch (err) {
       console.error('[server] request failed:', err.message);
-      if (url.pathname.startsWith('/api/gmail/')) sendPrivateJson(res, 500, { error: 'internal_error' });
+      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname === '/api/hub/status') sendPrivateJson(res, 500, { error: 'internal_error' });
       else sendJson(res, 500, { error: 'internal_error' });
     }
   });

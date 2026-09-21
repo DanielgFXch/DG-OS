@@ -1,9 +1,15 @@
 {
   "name": "dg-os",
-  "version": "0.43.0",
+  "version": "0.44.0",
   "private": true,
   "description": "DG OS - Personal AI Trading Brain for XAUUSD",
   "scripts": {
-    "test:gmail": "node server/lib/gmailIntegration.test.js"
+    "test:gmail": "node server/lib/gmailIntegration.test.js",
+    "start": "node server/index.js",
+    "test:calendar": "node server/lib/googleCalendarIntegration.test.js",
+    "test:integrations": "npm run test:gmail && npm run test:calendar"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

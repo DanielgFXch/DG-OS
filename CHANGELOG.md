@@ -1,3 +1,39 @@
+# v0.44.0 — Unified Jarvis Hub
+
+## Neu
+- Eine zentrale DG-OS-Hub-Verbindung bündelt die persönlichen Dienste.
+- Google Business und Google Privat verwenden je eine gemeinsame OAuth-Freigabe für Gmail + Google Kalender.
+- Google-Kalender-Termine werden in der servergehosteten DG-OS-Version direkt im bestehenden Kalender angezeigt.
+- Beim Erstellen eines Termins kann zwischen lokal, Business Google und Privat Google gewählt werden.
+- Neue Google-Termine werden im primären Kalender des gewählten Kontos gespeichert.
+- Hub-Serviceübersicht zeigt Google, Wetter, Telegram sowie die noch nicht eingerichteten WHOOP-/iCloud-Connectoren ehrlich an.
+- Neuer `/api/hub/status`-Endpoint für den privaten Verbindungsstatus.
+- Neue Calendar-API-Routen für Kalenderliste, Termine lesen und Termine erstellen.
+- Railway-Deployment ist mit `npm start`, Node >=22, `railway.json` und Healthcheck vorbereitet.
+
+## Google-Sicherheit
+- Gmail und Calendar teilen denselben verschlüsselten serverseitigen Refresh-Token.
+- Google-Scopes bleiben auf Gmail Modify, Calendar Events und Calendar List Readonly begrenzt.
+- Kein Gmail-Vollzugriff `mail.google.com` und kein voller Calendar-Administrationsscope.
+- Bestehende reine Gmail-Tokens werden als "Kalender neu freigeben" erkannt.
+
+## Tests
+- Bestehende Gmail-Tests bleiben aktiv.
+- Neue Unit-Tests für Google Calendar.
+- CI prüft Gmail, Calendar, Server-Dateien und `personal.js` mit Node 22.
+
+## Unverändert
+- Keine Änderungen an Trading Brain, Market Brain, Trading-Regeln oder Orderausführung.
+- WHOOP und iCloud werden nicht als verbunden dargestellt, solange keine echte Autorisierung existiert.
+
+## Geänderte/Neue Dateien
+- index.html, personal.css, personal.js
+- server/index.js, server/api.js, server/lib/gmailIntegration.js
+- server/lib/googleCalendarIntegration.js, server/lib/googleCalendarIntegration.test.js
+- package.json, railway.json, .env.example, sw.js
+- docs/GMAIL_INTEGRATION.md, docs/HUB_SETUP.md, README.md, CHANGELOG.md
+- .github/workflows/test-gmail.yml
+
 # v0.43.0 — In-App E-Mail-Fenster + DG OS Hub
 
 ## Neu

@@ -1,3 +1,18 @@
+# v0.46.2 — Kalender zuerst, kompakter Tageskopf
+
+## Verbessert
+- Auf Mobile gibt es nur noch eine Uhrzeit: die Uhr im oberen DG-OS-Header.
+- Datum und aktuelle Temperatur stehen kompakt direkt bei dieser Uhr.
+- Die zweite grosse Uhr im Tagesbereich wird auf Mobile ausgeblendet.
+- Wetterblock deutlich verkleinert; dort bleiben nur Sonnenaufgang, Sonnenuntergang und heutige Termine als Mini-Übersicht.
+- Begrüssungsbereich stark reduziert, damit der Kalender deutlich weiter nach oben rückt.
+- Kalenderkopf, Navigation und Monatsraster auf Mobile kompakter gemacht; Monatsansicht zeigt mehr Inhalt im ersten Viewport.
+- Kalenderansichten heissen jetzt Tagesübersicht, Wochenübersicht und Monatsübersicht.
+- Tagesübersicht ist beim Laden standardmässig aktiv.
+
+## Unverändert
+- Desktop-Struktur, Terminlogik und Google-Kalender-Integration bleiben erhalten.
+
 # v0.46.1 — Mobile Formation & Responsive Layout
 
 ## Verbessert

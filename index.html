@@ -11,9 +11,9 @@
   <link rel="apple-touch-icon" href="./icon-192.png" />
   <link rel="stylesheet" href="./styles.css?v=0.45.3" />
   <link rel="stylesheet" href="./wow.css?v=0.37.1" />
-  <link rel="stylesheet" href="./personal.css?v=0.50.0" />
+  <link rel="stylesheet" href="./personal.css?v=0.51.0" />
   <link rel="stylesheet" href="./social.css?v=0.45.3" />
-  <link rel="stylesheet" href="./navigation.css?v=0.48.0" />
+  <link rel="stylesheet" href="./navigation.css?v=0.51.0" />
   <link rel="stylesheet" href="./mobile.css?v=0.46.3" />
   <title>DG OS · Dein Tag</title>
 </head>
@@ -81,6 +81,41 @@
           <div><span>Heute geplant</span><strong id="personalCount">0</strong><small>Termine</small></div>
         </div>
         <div class="quick-info-footer"><span id="weatherFeels">Gefühlt — °C</span><span id="weatherStatus" role="status">Wetter lädt …</span></div>
+      </div>
+    </section>
+
+    <section id="personalAttention" class="personal-panel personal-attention-panel" aria-labelledby="personalAttentionTitle">
+      <div class="personal-attention-head">
+        <div>
+          <div class="personal-kicker">JARVIS FOKUS</div>
+          <h2 id="personalAttentionTitle">Was braucht heute deine Aufmerksamkeit?</h2>
+          <p id="attentionSubtitle">Dein Tag wird priorisiert …</p>
+        </div>
+        <span id="attentionCount" class="personal-attention-count">0</span>
+      </div>
+
+      <div id="attentionStats" class="personal-attention-stats" aria-label="Tagesstatus">
+        <span><strong id="attentionTaskStat">0</strong> Aufgaben</span>
+        <span><strong id="attentionBillStat">0</strong> Rechnungen</span>
+        <span><strong id="attentionAppointmentStat">0</strong> Termine</span>
+        <span><strong id="attentionInboxStat">0</strong> Inbox</span>
+      </div>
+
+      <div id="attentionList" class="personal-attention-list">
+        <p class="personal-empty">Jarvis prüft deinen Tag …</p>
+      </div>
+
+      <div class="personal-attention-actions">
+        <button id="dailyBriefingButton" type="button">☀️ Tagesbriefing</button>
+        <button id="weeklyReviewButton" type="button">↗ Wochenreview</button>
+      </div>
+
+      <div id="jarvisSummaryPanel" class="personal-summary-panel hidden" aria-live="polite">
+        <div class="personal-summary-head">
+          <div><div class="personal-kicker" id="jarvisSummaryKicker">JARVIS</div><h3 id="jarvisSummaryTitle">Zusammenfassung</h3></div>
+          <button id="jarvisSummaryClose" type="button" aria-label="Zusammenfassung schliessen">×</button>
+        </div>
+        <div id="jarvisSummaryContent" class="personal-summary-content"></div>
       </div>
     </section>
 
@@ -771,7 +806,7 @@
   </form></dialog>
   <script src="./marketBrain.js"></script>
   <script src="./app.js?v=0.46.3"></script>
-  <script src="./personal.js?v=0.50.0"></script>\n  <script src="./social.js?v=0.45.3"></script>
+  <script src="./personal.js?v=0.51.0"></script>\n  <script src="./social.js?v=0.45.3"></script>
   <script src="./navigation.js?v=0.46.0"></script>
   <script src="./weather.js?v=0.46.2"></script>
 </body>

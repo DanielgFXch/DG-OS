@@ -1,3 +1,37 @@
+# v0.51.0 — Jarvis Attention Cockpit + AI Inbox Foundation
+
+## Aufmerksamkeit statt Listen durchsuchen
+- Neue Karte **Was braucht heute deine Aufmerksamkeit?** direkt oben auf Heute.
+- Jarvis priorisiert überfällige Aufgaben, heute fällige Rechnungen/Termine, wichtige Aufgaben und Inbox-Eingänge.
+- Kompakte Tagesstatistik für Aufgaben, Rechnungen, Termine und Inbox.
+- Dringende Einträge werden visuell stärker markiert.
+
+## Tagesbriefing
+- Neuer Button **Tagesbriefing** im Interface.
+- Fasst Überfälliges, heutige Aufgaben, kommende Termine, Rechnungen, Einkauf und Inbox zusammen.
+- Nimmt vorhandene Wetter- und WHOOP-Werte aus dem Interface mit auf, wenn sie geladen sind.
+- Telegram erhält **☀️ Briefing** / `/briefing`.
+
+## Wochenreview
+- Neuer Button **Wochenreview**.
+- Zeigt erledigte Aufgaben/private Punkte, offene Punkte der Woche sowie Termine und Rechnungen der nächsten Woche.
+- Telegram erhält **↗ Wochenreview** / `/week`.
+
+## AI Inbox Foundation
+- Inbox erweitert um Analysezustand, Vorschlag, Sicherheit, Modell, Fehlerstatus und Telegram-Metadaten.
+- Bilder, Voice und Dokumente/PDFs können über den neuen Edge-Dienst `jarvis-ai` verarbeitet werden.
+- Architektur: Telegram-Datei -> sichere Serveranalyse -> strukturierter Vorschlag -> **Übernehmen / Ignorieren**.
+- Bestätigte Vorschläge werden erst danach als Aufgabe, Termin, Rechnung, Einkauf oder Notiz gespeichert.
+- Kühlschrank-/Lebensmittelbilder können Einkaufsvorschläge erzeugen; Unsicherheit bleibt sichtbar.
+- Voice wird vor Klassifikation transkribiert.
+- Ohne `OPENAI_API_KEY` bleibt alles sicher gespeichert und wartet; es gibt keine Fake-Auswertung.
+
+## Privat / Trading
+- Eingehender Bot bleibt privat/Jarvis.
+- Interaktive Trading-Abfragen über `/trade` sind deaktiviert.
+- Automatische Trading-Meldungen bleiben unverändert möglich und klar mit **📈 TRADING** gekennzeichnet.
+- Keine Änderung an Trading Brain, Decision Engine oder Trading-Regeln.
+
 # v0.50.0 — Private Organizer
 
 ## Privat zuerst

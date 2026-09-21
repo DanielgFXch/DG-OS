@@ -286,7 +286,7 @@
 
   function greet() {
     const now=new Date(),hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:zone,hour:'2-digit',hourCycle:'h23'}).format(now));
-    $('personalGreeting').textContent=(hour<11?'Guten Morgen':hour<18?'Guten Tag':'Guten Abend')+', Gomes.';
+    $('personalGreeting').textContent=(hour>=5&&hour<11?'Guten Morgen':hour>=11&&hour<18?'Guten Tag':'Guten Abend')+', Gomes.';
     $('personalDate').textContent=new Intl.DateTimeFormat('de-CH',{timeZone:zone,weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(now)+' · Europe/Zurich';
     $('personalCount').textContent=String(allEvents().filter(e=>e.date===today()).length);
   }

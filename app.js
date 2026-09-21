@@ -1553,6 +1553,7 @@ bottomNavButtons.forEach(btn=>{
   btn.addEventListener('click',()=>{
     const target=document.getElementById(btn.dataset.target);
     if(!target) return;
+    if(target.id==='tradingWorkspace') target.open=true;
     bottomNavButtons.forEach(b=>b.classList.toggle('active',b===btn));
     const y=target.getBoundingClientRect().top+window.scrollY-118;
     window.scrollTo({top:Math.max(0,y),behavior:'smooth'});

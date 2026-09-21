@@ -1,3 +1,20 @@
+# v0.38.0 — Personal home and device calendar
+
+## New
+- Personal greeting and Zurich date; usable day/week/month calendar with local event creation and deletion.
+- Local appointments persist on this browser only, with explicit sync and storage-error messages.
+
+## Improved
+- Personal home is the entry point; the existing Trading workspace is collapsible.
+- Responsive calendar, keyboard-operable controls and appointment dialog.
+
+## Bugfixes
+- Service-worker asset paths corrected; updated shell assets replace the previous cache.
+
+## Changed files
+- index.html, personal.css, personal.js, app.js, sw.js, manifest.webmanifest, package.json, CHANGELOG.md
+- Google/iCloud, WHOOP, weather, Gmail and Telegram calendar ingestion are not connected in this build.
+
 # Changelog
 
 Alle nennenswerten Änderungen an DG OS werden hier dokumentiert.

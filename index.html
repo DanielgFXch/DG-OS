@@ -8,10 +8,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DG OS" />
   <link rel="manifest" href="./manifest.webmanifest" />
-  <link rel="apple-touch-icon" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icon-192.png" />
   <link rel="stylesheet" href="./styles.css" />
   <link rel="stylesheet" href="./wow.css?v=0.37.1" />
-  <title>DG OS Alpha</title>
+  <link rel="stylesheet" href="./personal.css" />
+  <title>DG OS · Dein Tag</title>
 </head>
 <body>
   <svg class="ic-sprite" aria-hidden="true">
@@ -43,8 +44,8 @@
     <div class="brand">
       <div class="logo">DG</div>
       <div>
-        <h1>DG OS Alpha</h1>
-        <div class="sub">XAUUSD Market Assistant</div>
+        <h1>DG OS</h1>
+        <div class="sub">Deine persönliche Zentrale</div>
       </div>
     </div>
     <div class="topbar-meta">
@@ -53,10 +54,38 @@
         <strong id="headerClock">--:--:--</strong>
         <span id="headerDate">--.--.----</span>
       </div>
-      <div id="connectionBadge" class="badge"><span class="live-dot"></span>OFFLINE DEMO</div>
+
     </div>
   </header>
 
+  <main class="app">
+    <section id="personalHome" class="personal-welcome">
+      <div><div class="personal-kicker">DEIN TAG. DEIN RHYTHMUS.</div><h2 id="personalGreeting">Willkommen, Daniel.</h2><p id="personalDate"></p></div>
+      <a class="personal-jump" href="#personalCalendar">Zum Kalender ↗</a>
+    </section>
+    <div class="personal-stats" aria-label="Tagesübersicht">
+      <article><span>Wetter</span><strong>— °C</strong><small>Wetterquelle noch nicht verbunden</small></article>
+      <article><span>Sonnenaufgang / Untergang</span><strong>— / —</strong><small>Wetterquelle noch nicht verbunden</small></article>
+      <article><span>Heute geplant</span><strong id="personalCount">0</strong><small>Nur Termine auf diesem Gerät</small></article>
+    </div>
+    <div class="personal-columns">
+      <section id="personalCalendar" class="personal-panel">
+        <div class="personal-panel-head"><div><div class="personal-kicker">ZEIT FÜR DAS WICHTIGE</div><h2>Dein Kalender</h2></div><button id="newLocalEvent" type="button">+ Termin</button></div>
+        <div class="personal-calendar-toolbar"><div class="personal-period"><button id="calendarPrevious" type="button" aria-label="Vorheriger Zeitraum">‹</button><h3 id="calendarPeriod"></h3><button id="calendarNext" type="button" aria-label="Nächster Zeitraum">›</button></div><button id="calendarToday" type="button">Heute</button></div>
+        <div class="personal-tabs" aria-label="Kalenderansicht"><button data-calendar-view="day" type="button" aria-pressed="false">Tag</button><button data-calendar-view="week" type="button" aria-pressed="false">Woche</button><button data-calendar-view="month" type="button" aria-pressed="true">Monat</button></div>
+        <p class="personal-source">Google &amp; iCloud noch nicht verbunden. Neue Termine bleiben auf diesem Gerät.</p>
+        <div id="calendarGrid" class="personal-calendar-grid"></div>
+        <div class="personal-agenda"><h3 id="agendaHeading"></h3><div id="personalAgenda"></div></div>
+        <p id="personalNotice" role="status"></p>
+      </section>
+      <aside class="personal-side">
+        <section id="personalHealth" class="personal-panel"><div class="personal-kicker">GESUNDHEIT</div><h2>Deine Energie.</h2><span class="personal-status">WHOOP · nicht verbunden</span><div class="personal-health-values"><div><span>Schlaf</span><strong>—</strong></div><div><span>Erholung</span><strong>—</strong></div><div><span>Belastung</span><strong>—</strong></div></div><p>Hier findest du später deine verfügbaren WHOOP-Werte.</p></section>
+        <section id="personalConnections" class="personal-panel"><div class="personal-kicker">DEIN ASSISTENT</div><h2>Alles an einem Ort.</h2><ul class="personal-connections"><li><span>Google / iCloud Kalender</span><small>Noch nicht verbunden</small></li><li><span>Gmail</span><small>Noch nicht mit DG OS verbunden</small></li><li><span>Telegram → Termine</span><small>Noch nicht eingerichtet</small></li><li><span>Wissen &amp; Notizen</span><small>Noch nicht eingerichtet</small></li></ul></section>
+      </aside>
+    </div>
+    <details id="tradingWorkspace" class="personal-trading"><summary><span><span class="personal-kicker">DEIN MARKET WORKSPACE</span><strong>Trading</strong></span><span class="personal-trading-hint">Aufklappen <span aria-hidden="true">↗</span></span></summary>
+      <div id="connectionBadge" class="badge"><span class="live-dot"></span>OFFLINE DEMO</div>
+      <div class="personal-news"><span aria-hidden="true">●</span> Wirtschaftsnews · Quelle noch nicht verbunden</div>
   <div class="ticker">
     <div class="ticker-inner">
       <span class="ticker-item ticker-strong">XAUUSD</span>
@@ -69,7 +98,6 @@
     </div>
   </div>
 
-  <main class="app">
     <section class="card assistant-card">
       <div class="section-title"><svg class="ic"><use href="#ic-mic"></use></svg>DG OS Assistant</div>
       <div class="eyebrow">Sprich oder tippe mit DG OS. Antworten basieren ausschließlich auf echten Trading-Brain-Daten — ohne erfundene Marktwerte.</div>
@@ -423,17 +451,26 @@
       </div>
     </div>
 
+    </details>
     <footer class="app-footer">DG OS <span id="appVersion">v0.0.0</span> · <a href="https://github.com/DanielgFXch/DG-OS/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
   </main>
 
   <nav class="bottom-nav" aria-label="DG OS Navigation">
-    <button class="active" type="button" data-target="dashboardHome">Dashboard</button>
-    <button type="button" data-target="marketPlanSection">Market Plan</button>
-    <button type="button" data-target="marketEventsSection">Events</button>
-    <button type="button" data-target="learningSection">Learning</button>
+    <button class="active" type="button" data-target="personalHome">Heute</button>
+    <button type="button" data-target="personalCalendar">Kalender</button>
+    <button type="button" data-target="personalHealth">Gesundheit</button>
+    <button type="button" data-target="tradingWorkspace">Trading</button>
   </nav>
-
+  <dialog id="localEventDialog" class="personal-dialog"><form id="localEventForm">
+    <div class="personal-panel-head"><h2>Termin auf diesem Gerät</h2><button type="button" id="closeLocalEvent" aria-label="Schliessen">×</button></div>
+    <p>Wird noch nicht mit Apple oder Google synchronisiert. Uhrzeiten gelten für Europe/Zurich.</p>
+    <label>Titel<input id="localEventTitle" required maxlength="120" autocomplete="off" /></label>
+    <label>Datum<input id="localEventDate" type="date" required /></label>
+    <div class="personal-form-times"><label>Von<input id="localEventStart" type="time" value="09:00" required /></label><label>Bis<input id="localEventEnd" type="time" value="10:00" required /></label></div>
+    <p id="localEventError" role="alert"></p><button type="submit">Termin speichern</button>
+  </form></dialog>
   <script src="./marketBrain.js"></script>
   <script src="./app.js"></script>
+  <script src="./personal.js"></script>
 </body>
 </html>

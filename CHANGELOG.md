@@ -1,3 +1,15 @@
+# v0.45.3 — Social Bottom-Navigation final gefixt
+
+## Behoben
+- Ursache gefunden: Die Bottom-Navigation war im Basis-CSS noch auf exakt 4 Spalten festgelegt.
+- Navigation verwendet jetzt 5 gleich breite Spalten: Heute, Kalender, Gesundheit, Social, Trading.
+- Social.js ergänzt den Social-Button zusätzlich als Fallback, falls ein älteres gecachtes HTML ohne Social-Button geladen wurde.
+- Kritische CSS-/JS-Dateien tragen jetzt einen v0.45.3 Cache-Buster, damit iOS/PWA keine gemischten alten/neuen Shell-Dateien mehr verwendet.
+- Service-Worker-Cache erneut erhöht.
+
+## Unverändert
+- Social-Hub-Daten, Cleanup-Logik und Trading-System bleiben unverändert.
+
 # v0.45.2 — Frischer PWA-Cache statt alter DG-OS-Version
 
 ## Behoben

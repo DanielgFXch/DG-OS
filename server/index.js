@@ -25,6 +25,7 @@ const { scheduleTimeframeRefresh } = require('./lib/candleRefreshScheduler.js');
 const { TIMEFRAME_DEFS } = require('./lib/timeframes.js');
 const { sendTelegramMessage } = require('./lib/telegramAssistant.js');
 const { formatEventForTelegram } = require('./lib/telegramEventFormatter.js');
+const { GmailIntegration } = require('./lib/gmailIntegration.js');
 const scheduledBriefingStore = require('./lib/scheduledBriefingStore.js');
 const sessionOpenStore = require('./lib/sessionOpenStore.js');
 const MB = require('../marketBrain.js');
@@ -169,13 +170,21 @@ async function main() {
     marketState.refreshNews().catch(err => console.error('[server] news refresh failed:', err.message));
   }, NEWS_REFRESH_MS);
 
+  // Personal Gmail hub — optional and fail-closed. OAuth credentials and the
+  // encrypted refresh-token key live only in server environment variables.
+  // If they are absent, /api/gmail/status reports configured:false and the
+  // frontend keeps the direct Gmail links as an honest fallback.
+  const gmail = new GmailIntegration(process.env);
+  if (gmail.configured) console.log('[server] Gmail hub configured — secure same-origin mail routes enabled.');
+  else console.log('[server] Gmail hub not configured — mail API stays unavailable; direct Gmail links remain usable.');
+
   const apiServer = createApiServer(marketState, {
     token: telegramToken,
     chatId: telegramChatId,
     webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET
-  });
+  }, gmail);
   apiServer.listen(PORT, () => {
-    console.log(`[server] API listening on :${PORT} — GET /api/health, /api/market/XAUUSD, /api/events/XAUUSD, /api/brain/XAUUSD, POST /api/telegram/webhook`);
+    console.log(`[server] API listening on :${PORT} — DG OS frontend + market API + private Gmail hub + Telegram webhook`);
   });
 
   // Proactive morning briefing — "ich will einfach immer up to date

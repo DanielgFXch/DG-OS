@@ -656,19 +656,20 @@
 })();
 
 
-/* WHOOP health integration — private same-origin data through the DG OS server. */
+/* WHOOP health integration — free secure Supabase connector, no Railway required. */
 (() => {
   'use strict';
   const $=id=>document.getElementById(id);
   const connect=$('whoopConnect');
   if(!connect)return;
-  let serverMode=false;
 
-  function serverBase(){
-    try{
-      const raw=localStorage.getItem('dgos.marketServerUrl')||'';
-      return raw?new URL(raw.includes('://')?raw:'https://'+raw).origin:'';
-    }catch(_){return'';}
+  const EDGE='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/whoop';
+  const SESSION_KEY='dgos.whoopSession';
+
+  function session(){return localStorage.getItem(SESSION_KEY)||'';}
+  function headers(){
+    const token=session();
+    return token?{Authorization:'Bearer '+token}:{};
   }
   function fmtHours(value){
     const n=Number(value); if(!Number.isFinite(n))return'—';
@@ -684,6 +685,7 @@
     set('whoopHealthMeta',text||'Verbinde WHOOP einmal sicher mit DG OS. Danach werden deine Werte automatisch geladen.');
     $('whoopDetails')?.classList.add('hidden');
   }
+
   function render(data){
     const recovery=data&&data.recovery, sleep=data&&data.sleep, cycle=data&&data.cycle;
     set('whoopStatus','WHOOP · verbunden');
@@ -705,8 +707,11 @@
     set('whoopNeeded',sleep?fmtHours(sleep.neededHours):'—');
     set('whoopCycles',sleep&&sleep.cycles!=null?String(sleep.cycles):'—');
     set('whoopDisturbances',sleep&&sleep.disturbances!=null?String(sleep.disturbances):'—');
+
     const updated=data&&data.updatedAt?new Date(data.updatedAt):null;
-    set('whoopHealthMeta',updated&&Number.isFinite(updated.getTime())?'WHOOP automatisch aktualisiert · '+new Intl.DateTimeFormat('de-CH',{hour:'2-digit',minute:'2-digit'}).format(updated):'WHOOP-Daten geladen.');
+    set('whoopHealthMeta',updated&&Number.isFinite(updated.getTime())
+      ?'WHOOP automatisch aktualisiert · '+new Intl.DateTimeFormat('de-CH',{hour:'2-digit',minute:'2-digit'}).format(updated)
+      :'WHOOP-Daten geladen.');
     $('whoopDetails')?.classList.remove('hidden');
     connect.textContent='WHOOP verbunden';
     connect.disabled=true;
@@ -732,46 +737,57 @@
   }
 
   async function loadSummary(){
+    const token=session();
+    if(!token)return false;
     try{
-      const response=await fetch('./api/whoop/summary',{cache:'no-store',credentials:'same-origin'});
+      const response=await fetch(EDGE+'/summary',{cache:'no-store',headers:headers()});
+      if(response.status===401){
+        localStorage.removeItem(SESSION_KEY);
+        showDisconnected('Deine WHOOP-Sitzung ist abgelaufen. Verbinde WHOOP bitte einmal neu.');
+        connect.textContent='WHOOP neu verbinden';connect.disabled=false;
+        return false;
+      }
       if(!response.ok)throw new Error('summary_failed');
       render(await response.json());
+      return true;
     }catch(_){
       set('whoopHealthMeta','WHOOP ist verbunden, aber die Daten konnten gerade nicht geladen werden.');
+      return false;
     }
   }
 
   async function check(){
     try{
-      const response=await fetch('./api/whoop/status',{cache:'no-store',credentials:'same-origin'});
-      const type=response.headers.get('content-type')||'';
-      if(!response.ok||!type.includes('application/json'))throw new Error('not_server');
-      const status=await response.json();serverMode=true;
+      const response=await fetch(EDGE+'/status',{cache:'no-store',headers:headers()});
+      if(!response.ok)throw new Error('status_failed');
+      const status=await response.json();
+
       if(!status.configured){
-        showDisconnected('WHOOP-App ist erstellt. Auf dem privaten DG-OS-Server fehlt noch das WHOOP Client Secret.');
-        connect.textContent='WHOOP noch konfigurieren';connect.disabled=true;return;
+        showDisconnected('WHOOP ist vorbereitet. Es fehlt nur noch das einmalige Client Secret in Supabase.');
+        connect.textContent='WHOOP noch konfigurieren';connect.disabled=true;
+        return;
       }
-      if(status.connected&&status.authenticated){await loadSummary();return;}
-      showDisconnected('WHOOP ist bereit. Einmal verbinden, danach lädt Jarvis deine Werte automatisch.');
-      connect.textContent='WHOOP verbinden';connect.disabled=false;
+
+      if(status.authenticated&&session()){
+        await loadSummary();
+        return;
+      }
+
+      showDisconnected(status.connected
+        ?'WHOOP ist eingerichtet. Verbinde dein Konto einmal neu mit diesem Gerät.'
+        :'WHOOP ist bereit. Einmal verbinden, danach lädt Jarvis deine Werte automatisch.');
+      connect.textContent=status.connected?'WHOOP neu verbinden':'WHOOP verbinden';
+      connect.disabled=false;
     }catch(_){
-      serverMode=false;
-      const remote=serverBase();
-      if(remote){
-        showDisconnected('WHOOP ist für die sichere Verbindung bereit. Öffne die Freigabe über deinen privaten DG-OS-Server.');
-        connect.textContent='WHOOP verbinden';connect.disabled=false;
-      }else{
-        showDisconnected('Für WHOOP braucht DG OS noch den privaten Server für das Client Secret.');
-        connect.textContent='Server zuerst verbinden';connect.disabled=true;
-      }
+      showDisconnected('Der kostenlose WHOOP-Connector ist gerade nicht erreichbar. Bitte später erneut versuchen.');
+      connect.textContent='WHOOP verbinden';
+      connect.disabled=false;
     }
   }
 
   connect.addEventListener('click',()=>{
     if(connect.disabled)return;
-    if(serverMode){window.location.href='./api/whoop/oauth/start';return;}
-    const remote=serverBase();
-    if(remote)window.location.href=remote+'/api/whoop/oauth/start';
+    location.href=EDGE+'/start';
   });
 
   const params=new URLSearchParams(location.search);
@@ -781,6 +797,7 @@
   }else if(params.get('whoop')==='connected'){
     history.replaceState(null,'',location.pathname+location.hash);
   }
+
   check();
-  setInterval(()=>{if(serverMode&&!connect.disabled)check();else if(serverMode)loadSummary();},10*60*1000);
+  setInterval(()=>{if(session())loadSummary();},10*60*1000);
 })();

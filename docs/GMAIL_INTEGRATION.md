@@ -1,8 +1,10 @@
-# DG OS Gmail Center
+# DG OS Google Workspace Center
 
 ## Ziel
 
-DG OS verwaltet zwei klar getrennte Gmail-Postfächer:
+DG OS nutzt pro Google-Konto **eine gemeinsame OAuth-Freigabe für Gmail + Google Kalender**. Dadurch bleiben Business und Privat getrennt, aber Jarvis muss nicht zwei verschiedene Google-Verbindungen verwalten.
+
+Google-Konten:
 
 - **Business:** \`imdanielgomes@gmail.com\`
 - **Privat:** \`gomesdani1999@gmail.com\`
@@ -20,6 +22,8 @@ Die Maildaten werden nur über den servergehosteten DG-OS-Build verarbeitet. Git
 - Newsletter-Ansicht
 - Mehrfachauswahl von Newslettern
 - Bewusstes Verschieben in den Gmail-Papierkorb
+- Google-Kalender automatisch im DG-OS-Kalender anzeigen
+- Neue Termine wahlweise lokal, in Business Google oder Privat Google erstellen
 
 Es gibt **keine automatische Löschung** und **keine permanente Delete-API**. "Löschen" bedeutet in DG OS immer \`messages.trash\`: die Nachricht landet zuerst im Gmail-Papierkorb.
 
@@ -39,7 +43,7 @@ Die Erkennung ist bewusst als Filterhilfe gebaut, nicht als automatische Löschr
 - OAuth läuft serverseitig.
 - Das Google Client Secret steht nur in Server-Umgebungsvariablen.
 - Refresh-Tokens werden mit AES-256-GCM verschlüsselt gespeichert.
-- Der Schlüssel liegt nur in \`DGOS_GMAIL_ENCRYPTION_KEY\`.
+- Der Schlüssel liegt nur serverseitig in \`DGOS_INTEGRATION_ENCRYPTION_KEY\` (mit \`DGOS_GMAIL_ENCRYPTION_KEY\` als altem Fallback).
 - Die Token-Datei liegt unter \`DGOS_PRIVATE_DATA_DIR\` und ist gitignored.
 - Nach erfolgreicher Google-Anmeldung wird nur ein signiertes \`HttpOnly\`-Session-Cookie gesetzt.
 - Mail-Endpunkte haben **kein** \`Access-Control-Allow-Origin: *\`; sie sind bewusst same-origin.
@@ -49,7 +53,7 @@ Die Erkennung ist bewusst als Filterhilfe gebaut, nicht als automatische Löschr
 ## Google Cloud Einrichtung
 
 1. Google Cloud Projekt anlegen oder ein bestehendes Projekt verwenden.
-2. Gmail API aktivieren.
+2. Gmail API **und** Google Calendar API aktivieren.
 3. OAuth Consent Screen konfigurieren.
 4. OAuth 2.0 Client vom Typ **Web application** erstellen.
 5. Als Authorized redirect URI eintragen:
@@ -62,7 +66,7 @@ Die Erkennung ist bewusst als Filterhilfe gebaut, nicht als automatische Löschr
    - \`GOOGLE_GMAIL_CLIENT_SECRET\`
    - \`DGOS_PUBLIC_BASE_URL=https://<DEIN-DG-OS-SERVER>\`
    - \`DGOS_APP_URL=https://<DEIN-DG-OS-SERVER>\`
-   - \`DGOS_GMAIL_ENCRYPTION_KEY=<32-byte-key>\`
+   - \`DGOS_INTEGRATION_ENCRYPTION_KEY=<32-byte-key>\`
    - \`DGOS_PRIVATE_DATA_DIR=<persistentes-volume-verzeichnis>\`
 
 7. Einen 32-Byte-Schlüssel lokal generieren, z. B.:
@@ -71,13 +75,15 @@ Die Erkennung ist bewusst als Filterhilfe gebaut, nicht als automatische Löschr
 
 8. Den servergehosteten DG-OS-Build öffnen und Business bzw. Privat mit Google verbinden.
 
-## Scope
+## Scopes
 
-DG OS fordert nur:
+DG OS fordert für Google Workspace nur die für die gewünschten Funktionen benötigten Scopes:
 
-\`https://www.googleapis.com/auth/gmail.modify\`
+- \`https://www.googleapis.com/auth/gmail.modify\` — Gmail lesen, schreiben/senden und verändern, aber keine sofortige permanente Löschung.
+- \`https://www.googleapis.com/auth/calendar.events\` — Termine lesen und bearbeiten.
+- \`https://www.googleapis.com/auth/calendar.calendarlist.readonly\` — die vorhandenen Google-Kalender auflisten.
 
-Damit kann DG OS E-Mails lesen, schreiben/senden und in den Papierkorb verschieben. Der deutlich weitergehende \`https://mail.google.com/\` Scope für unmittelbare permanente Löschung wird bewusst **nicht** verwendet.
+Der deutlich weitergehende Gmail-Vollzugriff \`https://mail.google.com/\` und der Calendar-Vollzugriff \`https://www.googleapis.com/auth/calendar\` werden bewusst **nicht** verwendet.
 
 ## Betrieb auf GitHub Pages
 
@@ -110,3 +116,14 @@ Ablauf:
 6. In der Server-Version einmal **Mit Google verbinden** wählen und das exakte Gmail-Konto freigeben.
 
 Das Mailfenster wird innerhalb von DG OS angezeigt. Gmail selbst wird nicht eingebettet; Nachrichten werden über die Gmail API geladen, damit Google-Credentials und Tokens nicht im statischen Frontend liegen.
+
+
+## Kalenderverhalten ab v0.44.0
+
+Sobald Business oder Privat mit der neuen Google-Workspace-Freigabe verbunden ist:
+
+- DG OS lädt die sichtbaren Google-Termine für den aktuell angezeigten Kalenderzeitraum.
+- Google-Termine werden zusammen mit lokalen Terminen dargestellt und als Google-Quelle markiert.
+- Im Dialog **+ Termin** wird das entsprechende Google-Konto automatisch als Ziel freigeschaltet.
+- Neue Google-Termine werden im primären Kalender des ausgewählten Kontos gespeichert.
+- Alte OAuth-Tokens aus einer reinen Gmail-Freigabe zeigen `Kalender neu freigeben`; eine erneute Google-Freigabe ergänzt die Calendar-Scopes.

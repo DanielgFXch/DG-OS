@@ -1,3 +1,18 @@
+# v0.44.1 — WHOOP OAuth setup pages
+
+## Neu
+- Öffentliche Privacy Policy für DG OS Integrationen.
+- Stabile WHOOP OAuth Redirect-Seite unter `/whoop-callback.html`.
+- WHOOP Callback speichert keine Tokens im Browser und leitet den einmaligen Autorisierungscode nur an den verbundenen privaten DG-OS-Server weiter.
+
+## Sicherheit
+- WHOOP Client Secret bleibt serverseitig.
+- Autorisierungscode wird nach dem Laden sofort aus der Browser-History entfernt.
+- Ohne verbundenen DG-OS-Server wird keine WHOOP-Verbindung simuliert oder gespeichert.
+
+## Unverändert
+- Keine Änderungen an Trading Brain, Market Brain oder Trading-Regeln.
+
 # v0.44.0 — Unified Jarvis Hub
 
 ## Neu

@@ -7,6 +7,8 @@ const { URL } = require('url');
 const ROOT = path.resolve(__dirname, '..', '..');
 const ALLOWED = new Set([
   'index.html',
+  'privacy.html',
+  'whoop-callback.html',
   'styles.css',
   'wow.css',
   'personal.css',

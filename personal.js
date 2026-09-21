@@ -521,7 +521,7 @@
 })();
 
 
-/* DG OS Hub connector — one Jarvis bridge for Gmail and future personal services. */
+/* DG OS Hub connector — one Jarvis bridge for personal services. */
 (() => {
   'use strict';
   const input=document.getElementById('personalHubUrl');
@@ -529,6 +529,7 @@
   const status=document.getElementById('personalHubStatus');
   if(!input||!button||!status)return;
   const key='dgos.marketServerUrl';
+  let localHubStatus=null;
 
   function normalize(value){
     const raw=String(value||'').trim();
@@ -540,8 +541,64 @@
     }catch(_){return'';}
   }
 
+  function savedBase(){return normalize(localStorage.getItem(key)||'');}
+  function setText(id,text){const el=document.getElementById(id);if(el)el.textContent=text;}
+
+  function renderServices(data){
+    localHubStatus=data||null;
+    const workspace=data&&data.googleWorkspace;
+    const accounts=workspace&&Array.isArray(workspace.accounts)?workspace.accounts:[];
+    for(const id of ['business','private']){
+      const item=accounts.find(account=>account.id===id);
+      const target=id==='business'?'hubGoogleBusiness':'hubGooglePrivate';
+      const buttonEl=document.querySelector('[data-google-connect="'+id+'"]');
+      let text='Gmail + Kalender · nicht verbunden';
+      if(workspace&&workspace.configured){
+        if(workspace.authenticated&&item&&item.gmailConnected&&item.calendarConnected) text='Gmail + Kalender · verbunden';
+        else if(workspace.authenticated&&item&&item.gmailConnected&&!item.calendarConnected) text='Gmail verbunden · Kalender neu freigeben';
+        else text='Google-Anmeldung erforderlich';
+      }else if(data&&data.server) text='Google OAuth noch nicht konfiguriert';
+      else if(savedBase()) text='Hub gespeichert · Google noch verbinden';
+      setText(target,text);
+      if(buttonEl){
+        buttonEl.textContent=(item&&item.gmailConnected&&item.calendarConnected)?'Neu verbinden':'Verbinden';
+        buttonEl.disabled=Boolean(data&&data.server&&workspace&&!workspace.configured);
+      }
+    }
+    if(data&&data.services){
+      const telegram=Boolean(data.services.telegram&&data.services.telegram.connected);
+      setText('hubTelegramStatus',telegram?'Bot + Chat · verbunden':'Noch nicht verbunden');
+      setText('hubTelegramBadge',telegram?'ON':'OFF');
+      setText('hubWeatherStatus',data.services.weather&&data.services.weather.connected?'Open-Meteo · verbunden':'Nicht verbunden');
+    }else{
+      setText('hubTelegramStatus',savedBase()?'Status in Server-Version sichtbar':'Hub erforderlich');
+      setText('hubTelegramBadge','OFF');
+      setText('hubWeatherStatus','Open-Meteo · verbunden');
+    }
+  }
+
+  async function readLocalHubStatus(){
+    try{
+      const response=await fetch('./api/hub/status',{cache:'no-store',credentials:'same-origin'});
+      const type=response.headers.get('content-type')||'';
+      if(!response.ok||!type.includes('application/json'))throw Error('not_hub');
+      const data=await response.json();
+      renderServices(data);
+      if(data&&data.server){
+        const origin=window.location.origin;
+        localStorage.setItem(key,origin);
+        input.value=origin;
+        status.textContent='Verbunden · '+window.location.host;
+      }
+      return data;
+    }catch(_){
+      renderServices(null);
+      return null;
+    }
+  }
+
   function showSaved(){
-    const saved=normalize(localStorage.getItem(key)||'');
+    const saved=savedBase();
     if(saved){input.value=saved;status.textContent='Gespeichert · '+new URL(saved).host;}
     else status.textContent='Noch nicht verbunden';
   }
@@ -568,11 +625,28 @@
       localStorage.setItem(key,base);
       input.value=base;
       status.textContent='Verbunden · '+new URL(base).host;
+      renderServices(null);
       window.dispatchEvent(new CustomEvent('dgos-hub-connected',{detail:{url:base}}));
     }catch(_){
       status.textContent='Nicht erreichbar · Server-Adresse oder Deployment prüfen.';
     }finally{button.disabled=false;}
   });
 
+  document.querySelectorAll('[data-google-connect]').forEach(connect=>{
+    connect.addEventListener('click',()=>{
+      const account=connect.dataset.googleConnect;
+      let base='';
+      if(localHubStatus&&localHubStatus.server) base=window.location.origin;
+      else base=savedBase();
+      if(!base){
+        status.textContent='Zuerst den DG OS Hub verbinden.';
+        input.focus();
+        return;
+      }
+      window.location.href=base+'/api/gmail/oauth/start?account='+encodeURIComponent(account);
+    });
+  });
+
   showSaved();
+  readLocalHubStatus();
 })();

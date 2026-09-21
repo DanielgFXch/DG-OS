@@ -377,6 +377,27 @@
     notice('Import- und Cleanup-Daten dieses Accounts wurden lokal gelöscht.', 'success');
   }
 
+  function ensureSocialBottomNav() {
+    const nav = document.querySelector('.bottom-nav');
+    if (!nav) return;
+    let button = nav.querySelector('[data-target="personalSocial"]');
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.dataset.target = 'personalSocial';
+      button.textContent = 'Social';
+      const trading = nav.querySelector('[data-target="tradingWorkspace"]');
+      nav.insertBefore(button, trading || null);
+    }
+    if (!button.dataset.socialBound) {
+      button.dataset.socialBound = 'true';
+      button.addEventListener('click', () => {
+        nav.querySelectorAll('button[data-target]').forEach(b => b.classList.toggle('active', b === button));
+        openWorkspace(state.active);
+      });
+    }
+  }
+
   function bind() {
     $('openSocialHub').addEventListener('click', () => openWorkspace(state.active));
     document.querySelectorAll('[data-social-open]').forEach(button => {
@@ -427,6 +448,7 @@
     });
   }
 
+  ensureSocialBottomNav();
   bind();
   render();
 })();

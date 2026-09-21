@@ -1546,23 +1546,8 @@ $('assistantTextForm').addEventListener('submit',e=>{
   input.value='';
 });
 
-// Bottom navigation was previously visual-only. Each button now scrolls to
-// a real dashboard section and updates the active state immediately.
-const bottomNavButtons=[...document.querySelectorAll('.bottom-nav button[data-target]')];
-bottomNavButtons.forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    const target=document.getElementById(btn.dataset.target);
-    if(!target) return;
-    bottomNavButtons.forEach(b=>b.classList.toggle('active',b===btn));
-    if(target.id==='personalSocial'){
-      const socialOpener=document.getElementById('openSocialHub');
-      if(socialOpener){ socialOpener.click(); return; }
-    }
-    if(target.id==='tradingWorkspace') target.open=true;
-    const y=target.getBoundingClientRect().top+window.scrollY-118;
-    window.scrollTo({top:Math.max(0,y),behavior:'smooth'});
-  });
-});
+// Bottom navigation is handled by navigation.js (v0.46.0).
+// It provides routed in-app screens, History API back navigation and active-tab state.
 
 loadVersion();
 renderSessionCards();

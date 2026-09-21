@@ -804,6 +804,261 @@
 })();
 
 
+
+/* Jarvis Attention Cockpit — prioritised day, daily briefing and weekly review. */
+(() => {
+  'use strict';
+
+  const EDGE='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/tasks';
+  const DEVICE_SESSION_KEY='dgos.deviceSession';
+  const LEGACY_SESSION_KEY='dgos.whoopSession';
+  const $=id=>document.getElementById(id);
+  const root=$('personalAttention');
+  if(!root)return;
+
+  function session(){
+    return localStorage.getItem(DEVICE_SESSION_KEY)||localStorage.getItem(LEGACY_SESSION_KEY)||'';
+  }
+  function todayZurich(){
+    const parts=new Intl.DateTimeFormat('en-CA',{
+      timeZone:'Europe/Zurich',year:'numeric',month:'2-digit',day:'2-digit'
+    }).formatToParts(new Date());
+    const map=Object.fromEntries(parts.map(p=>[p.type,p.value]));
+    return map.year+'-'+map.month+'-'+map.day;
+  }
+  function headers(){
+    const token=session();
+    return token?{Authorization:'Bearer '+token}:{};
+  }
+  async function api(action){
+    const response=await fetch(EDGE+'/'+action,{headers:headers(),cache:'no-store'});
+    let data={};try{data=await response.json();}catch(_){}
+    if(!response.ok){
+      const err=new Error(data.error||'cockpit_request_failed');
+      err.status=response.status;throw err;
+    }
+    return data;
+  }
+  function set(id,value){const el=$(id);if(el)el.textContent=value;}
+  function icon(kind){
+    if(kind==='bill')return'💳';
+    if(kind==='appointment')return'📅';
+    if(kind==='inbox')return'📥';
+    if(kind==='shopping')return'🛒';
+    return'✅';
+  }
+  function dateText(date){
+    if(!date)return'';
+    const d=new Date(date+'T12:00:00');
+    if(!Number.isFinite(d.getTime()))return date;
+    return new Intl.DateTimeFormat('de-CH',{day:'2-digit',month:'2-digit'}).format(d);
+  }
+  function itemMeta(item){
+    const bits=[];
+    if(item.reason)bits.push(item.reason);
+    if(item.dueDate)bits.push(dateText(item.dueDate));
+    if(item.dueTime)bits.push(String(item.dueTime).slice(0,5));
+    if(item.amount!=null)bits.push(String(Number(item.amount).toFixed(2)).replace('.00','')+' '+String(item.currency||''));
+    return bits.join(' · ');
+  }
+  function makeAttentionRow(item){
+    const row=document.createElement('div');
+    row.className='personal-attention-row is-'+(item.severity||'normal');
+
+    const visual=document.createElement('span');
+    visual.className='personal-attention-icon';
+    visual.textContent=icon(item.kind);
+
+    const copy=document.createElement('div');
+    copy.className='personal-attention-copy';
+    const strong=document.createElement('strong');
+    strong.textContent=item.title||'Eintrag';
+    const small=document.createElement('small');
+    small.textContent=itemMeta(item)||'Heute';
+    copy.append(strong,small);
+
+    const level=document.createElement('span');
+    level.className='personal-attention-level';
+    level.textContent=item.severity==='urgent'?'JETZT':item.severity==='high'?'WICHTIG':'HEUTE';
+
+    row.append(visual,copy,level);
+    return row;
+  }
+  function renderAttention(data){
+    const items=Array.isArray(data.attention)?data.attention:[];
+    const stats=data.stats||{};
+    set('attentionCount',String(items.length));
+    set('attentionTaskStat',String(Number(stats.todayTasks||0)+Number(stats.overdueTasks||0)));
+    set('attentionBillStat',String(stats.dueBills||0));
+    set('attentionAppointmentStat',String(stats.dueAppointments||0));
+    set('attentionInboxStat',String(stats.inbox||0));
+
+    const urgent=items.filter(x=>x.severity==='urgent').length;
+    const high=items.filter(x=>x.severity==='high').length;
+    set('attentionSubtitle',urgent
+      ?urgent+' dringende '+(urgent===1?'Sache':'Sachen')+' zuerst.'
+      :high
+        ?high+' wichtige '+(high===1?'Sache':'Sachen')+' im Fokus.'
+        :items.length?'Dein Tag ist sortiert.':'Aktuell braucht nichts deine sofortige Aufmerksamkeit.');
+
+    const list=$('attentionList');
+    if(!list)return;
+    list.replaceChildren();
+    if(!items.length){
+      const p=document.createElement('p');
+      p.className='personal-attention-clear';
+      p.textContent='✓ Alles ruhig. Jarvis meldet sich, sobald etwas relevant wird.';
+      list.append(p);
+      return;
+    }
+    items.slice(0,7).forEach(item=>list.append(makeAttentionRow(item)));
+    if(items.length>7){
+      const more=document.createElement('small');
+      more.className='personal-attention-more';
+      more.textContent='+'+(items.length-7)+' weitere Einträge in deinen Bereichen';
+      list.append(more);
+    }
+  }
+
+  function section(title,items,formatter){
+    const wrap=document.createElement('section');
+    wrap.className='personal-summary-section';
+    const h=document.createElement('h4');h.textContent=title;
+    wrap.append(h);
+    if(!items||!items.length){
+      const p=document.createElement('p');p.className='personal-empty';p.textContent='Nichts offen.';wrap.append(p);
+      return wrap;
+    }
+    const ul=document.createElement('div');ul.className='personal-summary-list';
+    items.slice(0,8).forEach(item=>{
+      const row=document.createElement('div');row.className='personal-summary-row';
+      const strong=document.createElement('strong');strong.textContent=item.title||'Eintrag';
+      const small=document.createElement('small');small.textContent=formatter?formatter(item):itemMeta(item);
+      row.append(strong,small);ul.append(row);
+    });
+    wrap.append(ul);
+    return wrap;
+  }
+
+  function openSummary(title,kicker){
+    set('jarvisSummaryTitle',title);
+    set('jarvisSummaryKicker',kicker);
+    const panel=$('jarvisSummaryPanel');
+    panel?.classList.remove('hidden');
+    const content=$('jarvisSummaryContent');
+    if(content){
+      content.replaceChildren();
+      const p=document.createElement('p');p.className='personal-empty';p.textContent='Jarvis erstellt die Übersicht …';content.append(p);
+    }
+    return content;
+  }
+  function liveContextBlock(){
+    const values=[];
+    const temp=$('weatherTemperature')?.textContent?.trim();
+    const weather=$('weatherDescription')?.textContent?.trim();
+    const sleep=$('whoopSleep')?.textContent?.trim();
+    const recovery=$('whoopRecovery')?.textContent?.trim();
+    const strain=$('whoopStrain')?.textContent?.trim();
+    if(temp&&temp!=='— °C'&&temp!=='—')values.push('Wetter '+temp+(weather&&weather!=='Lädt …'?' · '+weather:''));
+    if(sleep&&sleep!=='—')values.push('Schlaf '+sleep);
+    if(recovery&&recovery!=='—')values.push('Recovery '+recovery);
+    if(strain&&strain!=='—')values.push('Strain '+strain);
+    if(!values.length)return null;
+    const box=document.createElement('div');box.className='personal-summary-context';
+    const strong=document.createElement('strong');strong.textContent='Dein Zustand heute';
+    const p=document.createElement('p');p.textContent=values.join(' · ');
+    box.append(strong,p);return box;
+  }
+
+  async function dailyBriefing(){
+    const content=openSummary('Dein Tagesbriefing','HEUTE IM BLICK');
+    try{
+      const data=await api('briefing?date='+encodeURIComponent(todayZurich()));
+      if(!content)return;
+      content.replaceChildren();
+
+      const context=liveContextBlock();
+      if(context)content.append(context);
+
+      const hero=document.createElement('div');hero.className='personal-summary-hero';
+      const total=(data.overdue?.length||0)+(data.tasksToday?.length||0)+(data.appointments?.filter(x=>x.dueDate===data.date).length||0)+(data.bills?.filter(x=>x.dueDate&&x.dueDate<=data.date).length||0);
+      const strong=document.createElement('strong');
+      strong.textContent=total?total+' Punkte brauchen heute Aufmerksamkeit.':'Dein Tag ist aktuell ruhig.';
+      const p=document.createElement('p');
+      p.textContent=data.overdue?.length
+        ?'Starte mit den überfälligen Punkten, danach kommt der Rest.'
+        :'Jarvis hat Aufgaben, Termine und Rechnungen für dich sortiert.';
+      hero.append(strong,p);content.append(hero);
+
+      content.append(
+        section('Überfällig',data.overdue,x=>[dateText(x.dueDate),x.priority==='high'?'Wichtig':''].filter(Boolean).join(' · ')),
+        section('Aufgaben heute',data.tasksToday,x=>x.priority==='high'?'Wichtig':'Heute'),
+        section('Kommende Termine',data.appointments,x=>[dateText(x.dueDate),x.dueTime?String(x.dueTime).slice(0,5):''].filter(Boolean).join(' · ')),
+        section('Rechnungen',data.bills,x=>[dateText(x.dueDate),x.amount!=null?String(Number(x.amount).toFixed(2)).replace('.00','')+' '+String(x.currency||''):''].filter(Boolean).join(' · '))
+      );
+
+      if(data.shopping?.length){
+        const shopping=document.createElement('div');shopping.className='personal-summary-context';
+        const st=document.createElement('strong');st.textContent='🛒 Einkauf';
+        const sp=document.createElement('p');sp.textContent=data.shopping.slice(0,6).map(x=>x.title).join(' · ');
+        shopping.append(st,sp);content.append(shopping);
+      }
+      if(Number(data.pendingInbox||0)>0){
+        const inbox=document.createElement('p');inbox.className='personal-summary-alert';
+        inbox.textContent='📥 '+data.pendingInbox+' Inbox-'+(data.pendingInbox===1?'Eintrag wartet':'Einträge warten')+' auf Verarbeitung.';
+        content.append(inbox);
+      }
+    }catch(_){
+      if(content){content.replaceChildren();const p=document.createElement('p');p.className='personal-empty';p.textContent='Tagesbriefing konnte gerade nicht geladen werden.';content.append(p);}
+    }
+  }
+
+  async function weeklyReview(){
+    const content=openSummary('Dein Wochenreview','WOCHENÜBERBLICK');
+    try{
+      const data=await api('week?date='+encodeURIComponent(todayZurich()));
+      if(!content)return;
+      content.replaceChildren();
+
+      const hero=document.createElement('div');hero.className='personal-summary-hero';
+      const strong=document.createElement('strong');
+      strong.textContent=String(data.completedTasks||0)+' Aufgaben + '+String(data.completedPrivate||0)+' private Punkte erledigt.';
+      const p=document.createElement('p');
+      p.textContent='Zeitraum '+dateText(data.period?.start)+' – '+dateText(data.period?.end)+'.';
+      hero.append(strong,p);content.append(hero);
+
+      content.append(
+        section('Noch offen aus dieser Woche',data.openTasks,x=>[dateText(x.dueDate),x.priority==='high'?'Wichtig':''].filter(Boolean).join(' · ')),
+        section('Termine nächste Woche',data.nextAppointments,x=>[dateText(x.dueDate),x.dueTime?String(x.dueTime).slice(0,5):''].filter(Boolean).join(' · ')),
+        section('Rechnungen nächste Woche',data.nextBills,x=>[dateText(x.dueDate),x.amount!=null?String(Number(x.amount).toFixed(2)).replace('.00','')+' '+String(x.currency||''):''].filter(Boolean).join(' · '))
+      );
+    }catch(_){
+      if(content){content.replaceChildren();const p=document.createElement('p');p.className='personal-empty';p.textContent='Wochenreview konnte gerade nicht geladen werden.';content.append(p);}
+    }
+  }
+
+  async function load(){
+    if(!session()){
+      set('attentionSubtitle','Verbinde dein Gerät einmal über Telegram, damit Jarvis priorisieren kann.');
+      return;
+    }
+    try{
+      renderAttention(await api('attention?date='+encodeURIComponent(todayZurich())));
+    }catch(_){
+      set('attentionSubtitle','Jarvis konnte deinen Tag gerade nicht laden.');
+    }
+  }
+
+  $('dailyBriefingButton')?.addEventListener('click',dailyBriefing);
+  $('weeklyReviewButton')?.addEventListener('click',weeklyReview);
+  $('jarvisSummaryClose')?.addEventListener('click',()=>$('jarvisSummaryPanel')?.classList.add('hidden'));
+
+  load();
+  window.addEventListener('focus',load);
+  window.addEventListener('dgos-device-session',load);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});
+})();
+
 /* Daily Tasks — Supabase-backed, secured by the active DG OS device session. */
 (() => {
   'use strict';

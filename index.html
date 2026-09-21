@@ -94,7 +94,36 @@
         <p id="personalNotice" role="status"></p>
       </section>
       <aside class="personal-side">
-        <section id="personalHealth" class="personal-panel"><div class="personal-kicker">GESUNDHEIT</div><h2>Deine Energie.</h2><span class="personal-status">WHOOP · nicht verbunden</span><div class="personal-health-values"><div><span>Schlaf</span><strong>—</strong></div><div><span>Erholung</span><strong>—</strong></div><div><span>Belastung</span><strong>—</strong></div></div><p>Hier findest du später deine verfügbaren WHOOP-Werte.</p></section>
+        <section id="personalHealth" class="personal-panel personal-health-panel">
+          <div class="personal-health-head">
+            <div><div class="personal-kicker">GESUNDHEIT</div><h2>Deine Energie.</h2></div>
+            <div class="personal-health-actions"><span id="whoopStatus" class="personal-status">WHOOP · wird geprüft</span><button id="whoopConnect" type="button">WHOOP verbinden</button></div>
+          </div>
+          <div class="personal-health-values">
+            <div><span>Schlaf</span><strong id="whoopSleep">—</strong><small id="whoopSleepPerformance">—</small></div>
+            <div><span>Recovery</span><strong id="whoopRecovery">—</strong><small id="whoopHrv">HRV —</small></div>
+            <div><span>Strain</span><strong id="whoopStrain">—</strong><small id="whoopCalories">—</small></div>
+          </div>
+          <p id="whoopHealthMeta">Verbinde WHOOP einmal sicher mit DG OS. Danach werden deine Werte automatisch geladen.</p>
+          <details id="whoopDetails" class="personal-whoop-details hidden">
+            <summary>Mehr WHOOP-Daten <span aria-hidden="true">↗</span></summary>
+            <div class="personal-whoop-metrics">
+              <div><span>Ruhepuls</span><strong id="whoopRhr">—</strong></div>
+              <div><span>SpO₂</span><strong id="whoopSpo2">—</strong></div>
+              <div><span>Hauttemp.</span><strong id="whoopSkinTemp">—</strong></div>
+              <div><span>Schlaf-Effizienz</span><strong id="whoopEfficiency">—</strong></div>
+              <div><span>Konsistenz</span><strong id="whoopConsistency">—</strong></div>
+              <div><span>Atemfrequenz</span><strong id="whoopRespiratory">—</strong></div>
+              <div><span>REM</span><strong id="whoopRem">—</strong></div>
+              <div><span>Tiefschlaf</span><strong id="whoopDeep">—</strong></div>
+              <div><span>Leichtschlaf</span><strong id="whoopLight">—</strong></div>
+              <div><span>Schlafbedarf</span><strong id="whoopNeeded">—</strong></div>
+              <div><span>Schlafzyklen</span><strong id="whoopCycles">—</strong></div>
+              <div><span>Störungen</span><strong id="whoopDisturbances">—</strong></div>
+            </div>
+            <div class="personal-whoop-workouts"><strong>Letzte Workouts</strong><div id="whoopWorkouts"><p class="personal-empty">Noch keine WHOOP-Daten geladen.</p></div></div>
+          </details>
+        </section>
         <section id="personalEmail" class="personal-panel personal-email-panel">
           <div class="personal-kicker">E-MAIL</div>
           <h2>Deine Postfächer.</h2>

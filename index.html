@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="./styles.css?v=0.45.3" />
   <link rel="stylesheet" href="./wow.css?v=0.37.1" />
   <link rel="stylesheet" href="./personal.css?v=0.45.3" />\n  <link rel="stylesheet" href="./social.css?v=0.45.3" />
+  <link rel="stylesheet" href="./navigation.css?v=0.46.0" />
   <title>DG OS · Dein Tag</title>
 </head>
 <body>
@@ -59,6 +60,13 @@
   </header>
 
   <main class="app">
+    <div id="dgosRouteBar" class="dgos-route-bar hidden" aria-live="polite">
+      <button id="dgosRouteBack" type="button" class="dgos-route-back" aria-label="Zurück">←</button>
+      <div class="dgos-route-copy">
+        <span class="personal-kicker">DG OS</span>
+        <strong id="dgosRouteTitle">Bereich</strong>
+      </div>
+    </div>
     <section id="personalHome" class="personal-welcome">
       <div class="personal-welcome-copy"><div class="personal-kicker">DEIN TAG. DEIN RHYTHMUS.</div><h2 id="personalGreeting">Willkommen, Gomes.</h2><p id="personalDate"></p></div>
       <div class="personal-time"><time id="personalClock">--:--:--</time><span>Europe/Zurich</span></div>
@@ -655,6 +663,7 @@
   <script src="./marketBrain.js"></script>
   <script src="./app.js?v=0.45.3"></script>
   <script src="./personal.js?v=0.45.3"></script>\n  <script src="./social.js?v=0.45.3"></script>
+  <script src="./navigation.js?v=0.46.0"></script>
   <script src="./weather.js"></script>
 </body>
 </html>

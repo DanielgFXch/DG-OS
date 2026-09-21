@@ -1,3 +1,33 @@
+# v0.52.0 — Jarvis Voice Orb + Obsidian Bridge
+
+## Home / Mobile
+- Header und Tagesübersicht auf Mobile deutlich kompakter gestaltet.
+- Doppelte grosse Uhr auf der Heute-Seite entfernt; Wetter-/Sonnen-/Terminleiste ist flacher und schneller erfassbar.
+- Bestehender Jarvis-Fokus bleibt erhalten und sitzt direkt vor dem neuen Voice-Bereich.
+
+## Jarvis Voice Orb
+- Neuer animierter Jarvis-Orb direkt auf der Heute-Seite.
+- Der Orb nutzt die bestehende DG-OS-Spracherkennung statt eine zweite Voice-Logik zu erfinden.
+- Zustände **Bereit / Ich höre zu / Antwortet** werden live gespiegelt.
+- Letzte Jarvis-Antwort erscheint kompakt direkt unter dem Orb.
+- Reduced-Motion wird respektiert.
+
+## Obsidian
+- Neuer lokaler Obsidian-Connector über das offizielle `obsidian://` URI-Protokoll.
+- Vault-Name oder Vault-ID wird nur lokal im Browser gespeichert.
+- **Notiz speichern** legt neue Jarvis-Notizen in `00 Inbox` an.
+- **Obsidian Inbox** öffnet/erstellt `00 Inbox/Jarvis Inbox`.
+- **Daily Note** öffnet die aktuelle Daily Note im verbundenen Vault.
+- Keine Obsidian-Zugangsdaten und keine Cloud-Secrets nötig.
+
+## Changed files
+- `index.html`
+- `personal.css`
+- `personal.js`
+- `sw.js`
+- `package.json`
+- `CHANGELOG.md`
+
 # v0.51.0 — Jarvis Attention Cockpit + AI Inbox Foundation
 
 ## Aufmerksamkeit statt Listen durchsuchen

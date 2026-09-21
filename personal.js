@@ -1501,3 +1501,157 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(refresh,700);});
   refresh();
 })();
+
+
+/* v0.52.0 — Home Jarvis Orb + Obsidian URI bridge. */
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const panel = $('personalJarvis');
+  const orb = $('personalJarvisOrbBtn');
+  if (!panel || !orb) return;
+
+  const status = $('personalJarvisStatus');
+  const reply = $('personalJarvisReply');
+  const sourceMic = $('assistantMicBtn');
+  const sourceStatus = $('assistantStatus');
+  const sourceLog = $('assistantLog');
+  const sourceText = $('assistantTextInput');
+  const OBSIDIAN_VAULT_KEY = 'dgos.obsidianVault';
+
+  function setStatus(text) {
+    if (status) status.textContent = text || 'Bereit';
+  }
+
+  function syncVoiceState() {
+    const listening = !!(sourceMic && sourceMic.classList.contains('listening'));
+    panel.classList.toggle('is-listening', listening);
+    orb.setAttribute('aria-pressed', String(listening));
+    if (listening) {
+      setStatus('Ich höre zu …');
+      return;
+    }
+    const sourceTextValue = sourceStatus ? sourceStatus.textContent.trim() : '';
+    if (sourceTextValue && !sourceTextValue.toLowerCase().startsWith('frag z.b.')) setStatus(sourceTextValue);
+    else setStatus('Bereit');
+  }
+
+  orb.addEventListener('click', () => {
+    if (!sourceMic || sourceMic.disabled) {
+      setStatus('Sprache hier nicht verfügbar');
+      if (reply) reply.textContent = 'Text-Eingabe bleibt verfügbar. Öffne den DG OS Assistant oder nutze einen Browser mit Spracherkennung.';
+      if (sourceText) {
+        sourceText.scrollIntoView({behavior:'smooth', block:'center'});
+        setTimeout(() => sourceText.focus(), 280);
+      }
+      return;
+    }
+    sourceMic.click();
+    setTimeout(syncVoiceState, 0);
+  });
+
+  if (sourceMic) new MutationObserver(syncVoiceState).observe(sourceMic, {attributes:true, attributeFilter:['class','disabled']});
+  if (sourceStatus) new MutationObserver(syncVoiceState).observe(sourceStatus, {childList:true, subtree:true, characterData:true});
+  if (sourceLog) {
+    new MutationObserver(() => {
+      const messages = sourceLog.querySelectorAll('.assistant-msg-assistant .assistant-msg-text');
+      const latest = messages[messages.length - 1];
+      if (!latest || !latest.textContent.trim()) return;
+      panel.classList.add('is-speaking');
+      setStatus('Antwortet …');
+      if (reply) reply.textContent = latest.textContent.trim();
+      clearTimeout(panel._jarvisSpeakingTimer);
+      panel._jarvisSpeakingTimer = setTimeout(() => {
+        panel.classList.remove('is-speaking');
+        syncVoiceState();
+      }, 3600);
+    }).observe(sourceLog, {childList:true, subtree:true});
+  }
+  syncVoiceState();
+
+  const obsidianStatus = $('obsidianStatus');
+  const vaultButton = $('obsidianVaultButton');
+  const capture = $('obsidianCaptureForm');
+  const captureInput = $('obsidianCaptureInput');
+
+  function vaultName() {
+    try { return (localStorage.getItem(OBSIDIAN_VAULT_KEY) || '').trim(); } catch (_) { return ''; }
+  }
+  function setObsidianStatus(text) {
+    if (obsidianStatus) obsidianStatus.textContent = text;
+  }
+  function updateVaultButton() {
+    const value = vaultName();
+    if (vaultButton) vaultButton.textContent = value ? 'Obsidian · ' + value : 'Obsidian verbinden';
+  }
+  function requestVault() {
+    const current = vaultName();
+    const value = window.prompt('Wie heisst dein Obsidian Vault? Du kannst auch die Vault-ID einfügen.', current);
+    if (value === null) return '';
+    const clean = value.trim();
+    if (!clean) {
+      try { localStorage.removeItem(OBSIDIAN_VAULT_KEY); } catch (_) {}
+      setObsidianStatus('Kein Obsidian Vault verbunden.');
+      updateVaultButton();
+      return '';
+    }
+    try { localStorage.setItem(OBSIDIAN_VAULT_KEY, clean); } catch (_) {}
+    setObsidianStatus('Obsidian Vault verbunden: ' + clean);
+    updateVaultButton();
+    return clean;
+  }
+  function ensureVault() {
+    return vaultName() || requestVault();
+  }
+  function enc(value) { return encodeURIComponent(String(value)); }
+  function openObsidian(action, params, flags) {
+    const vault = ensureVault();
+    if (!vault) return false;
+    const query = [['vault', vault]].concat(params || []).map(pair => enc(pair[0]) + '=' + enc(pair[1])).join('&');
+    const suffix = (flags || []).map(flag => '&' + enc(flag)).join('');
+    const uri = 'obsidian://' + action + '?' + query + suffix;
+    setObsidianStatus('Obsidian wird geöffnet …');
+    window.location.href = uri;
+    return true;
+  }
+
+  if (vaultButton) vaultButton.addEventListener('click', requestVault);
+
+  $('obsidianNoteButton')?.addEventListener('click', () => {
+    if (!capture) return;
+    capture.classList.toggle('hidden');
+    if (!capture.classList.contains('hidden')) setTimeout(() => captureInput && captureInput.focus(), 50);
+  });
+
+  $('obsidianCaptureCancel')?.addEventListener('click', () => {
+    if (capture) capture.classList.add('hidden');
+  });
+
+  capture?.addEventListener('submit', event => {
+    event.preventDefault();
+    const text = captureInput ? captureInput.value.trim() : '';
+    if (!text) {
+      setObsidianStatus('Schreib zuerst eine kurze Notiz.');
+      if (captureInput) captureInput.focus();
+      return;
+    }
+    const now = new Date();
+    const stamp = new Intl.DateTimeFormat('sv-SE', {timeZone:'Europe/Zurich',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(now).replace(' ', ' ');
+    const safeStamp = stamp.replace(':','-');
+    const content = '# Jarvis Notiz\n\n' + text + '\n\n---\nErfasst mit DG OS · ' + stamp + ' · Europe/Zurich';
+    if (openObsidian('new', [['file', '00 Inbox/' + safeStamp + ' Jarvis'], ['content', content]], [])) {
+      if (captureInput) captureInput.value = '';
+      capture.classList.add('hidden');
+    }
+  });
+
+  $('obsidianInboxButton')?.addEventListener('click', () => {
+    openObsidian('new', [['file','00 Inbox/Jarvis Inbox']], ['append']);
+  });
+
+  $('obsidianDailyButton')?.addEventListener('click', () => {
+    openObsidian('daily', [], []);
+  });
+
+  updateVaultButton();
+})();

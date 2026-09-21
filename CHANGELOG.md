@@ -1,3 +1,32 @@
+# v0.49.0 — Ein Telegram-Bot für Jarvis + Trading
+
+## Neu
+- Derselbe bestehende Telegram-Bot kann jetzt sicher für zwei Bereiche verwendet werden.
+- `/private` schaltet in den Jarvis-/Privatmodus.
+- `/trading` schaltet in den Tradingmodus.
+- `/todo ...` speichert unabhängig vom Modus eine Aufgabe.
+- `/today` zeigt offene Aufgaben für heute.
+- `/trade ...` zeigt den aktuellen gespeicherten DG-OS-Trading-Stand.
+- Jarvis koppelt den Bot über einen einmaligen 6-stelligen Pairing-Code; die Chat-ID muss nicht manuell eingetragen werden.
+- Trading bleibt nach dem Pairing Standardmodus, damit der bisherige Bot-Workflow nicht unerwartet umgestellt wird.
+- Telegram-Keyboard mit Privat, Trading und Heute.
+
+## Trennung
+- Persönliche Antworten sind mit `✅ JARVIS` gekennzeichnet.
+- Trading-Antworten und Trading-Pushs sind mit `📈 TRADING` gekennzeichnet.
+- Trading-Push-Logik und DG-Trading-Regeln bleiben unverändert; es wurde nur die Telegram-Darstellung ergänzt.
+- Voice/Bilder werden im Privatmodus in die Jarvis Inbox gelegt; im Tradingmodus werden sie nicht als persönliche Aufgabe interpretiert.
+
+## Sicherheit
+- Ein einziger Telegram-Webhook wird auf den privaten Supabase-Connector gesetzt.
+- Der Webhook nutzt einen aus dem Bot-Token abgeleiteten Telegram Secret Token.
+- Nach dem Pairing werden nur Nachrichten aus Daniels gekoppeltem Chat verarbeitet.
+- Bot-Token bleibt ausschliesslich als Supabase Edge Function Secret.
+
+## Unverändert
+- Keine Änderungen an Market Brain, Decision Engine oder Trading-Regeln.
+- LiveUP Academy wurde nicht verändert.
+
 # v0.48.0 — Jarvis Heute-Aufgaben
 
 ## Neu

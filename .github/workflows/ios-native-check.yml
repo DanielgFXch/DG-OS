@@ -1,0 +1,36 @@
+name: iOS Native Shell Check
+
+on:
+  push:
+    branches:
+      - feature/ios-native-jarvis-shell
+  pull_request:
+    paths:
+      - 'ios/DGOSNative/**'
+      - '.github/workflows/ios-native-check.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Build DG OS native shell
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ios/DGOSNative/DGOSNative.xcodeproj \
+            -scheme DGOSNative \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -destination 'generic/platform=iOS Simulator' \
+            CODE_SIGNING_ALLOWED=NO \
+            build

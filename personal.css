@@ -72,3 +72,17 @@ body.email-window-open{overflow:hidden}
   .personal-email-workspace:not(.hidden) .personal-email-toolbar{overflow:auto}
   .personal-email-workspace:not(.hidden) .personal-email-layout{margin-top:10px}
 }
+
+
+/* Unified Jarvis integrations */
+.personal-hub-services{display:grid;gap:7px;margin-top:14px;padding-top:12px;border-top:1px solid rgba(205,228,249,.10)}
+.personal-hub-service{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid rgba(205,228,249,.07)}
+.personal-hub-service:last-child{border-bottom:0}
+.personal-hub-service>div{min-width:0}
+.personal-hub-service strong{display:block;color:#e9fbff;font-size:11px;font-weight:600}
+.personal-hub-service small{display:block;margin-top:4px;color:#7893a2;font-size:9px;line-height:1.4}
+.personal-hub-service button{flex:none;min-height:34px;padding:7px 9px;font-size:9px}
+.personal-event-chip.is-google{color:#8edbcc}
+.personal-dialog select{display:block;width:100%;margin-top:8px;padding:12px;border:1px solid #3c505c;border-radius:8px;background:#09131b;color:#eef7fa;color-scheme:dark}
+.personal-dialog select:focus{outline:2px solid #8bedda;outline-offset:2px}
+@media(max-width:560px){.personal-hub-service{align-items:flex-start}.personal-hub-service button{max-width:104px}.personal-hub-head .personal-status{display:none}}

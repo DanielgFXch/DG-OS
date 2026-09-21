@@ -878,3 +878,89 @@
     min-height: 43px;
   }
 }
+
+
+/* v0.46.3 — screenshot-driven mobile cleanup */
+@media (max-width: 700px) {
+  /* Force the secondary modules into a real one-column phone feed. */
+  .personal-side {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    margin-top: 10px;
+  }
+
+  .personal-side > .personal-panel {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* Day view already shows the date in the period header.
+     The extra single-day box only wastes vertical phone space. */
+  .personal-calendar-grid[data-view="day"] {
+    display: none !important;
+  }
+
+  .personal-calendar-grid[data-view="day"] + .personal-agenda {
+    margin-top: 8px;
+    padding-top: 9px;
+  }
+
+  #personalCalendar {
+    border-radius: 18px;
+  }
+
+  #personalCalendar .personal-panel-head,
+  #personalCalendar .personal-calendar-toolbar,
+  #personalCalendar .personal-tabs,
+  #personalCalendar .personal-source,
+  #personalCalendar .personal-agenda {
+    max-width: 100%;
+  }
+
+  .personal-agenda {
+    min-height: 0;
+  }
+
+  .personal-empty {
+    margin: 0;
+  }
+
+  /* Cleaner full-width module cards beneath the calendar. */
+  #personalHealth,
+  #personalEmail,
+  #personalSocial,
+  #personalConnections {
+    padding: 14px;
+  }
+
+  #personalHealth h2,
+  #personalEmail h2,
+  #personalSocial h2,
+  #personalConnections h2 {
+    font-size: 20px;
+  }
+
+  #personalHealth .personal-health-values {
+    margin: 14px 0 8px;
+  }
+
+  #personalEmail .personal-email-grid {
+    margin-top: 10px;
+  }
+
+  .personal-email-account {
+    padding: 12px;
+  }
+
+  /* Slightly calmer bottom bar on phone. */
+  .bottom-nav {
+    background: rgba(8,20,34,.88);
+    box-shadow: 0 12px 36px rgba(0,0,0,.32), inset 0 1px rgba(255,255,255,.035);
+  }
+
+  .bottom-nav button {
+    font-size: 8.7px;
+  }
+}

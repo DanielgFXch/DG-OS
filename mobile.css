@@ -608,3 +608,273 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* v0.46.2 — ultra-compact top glance + calendar-first mobile layout */
+@media (max-width: 700px) {
+  .topbar {
+    min-height: 56px;
+    padding-top: calc(env(safe-area-inset-top) + 6px);
+    padding-bottom: 6px;
+  }
+
+  .topbar .logo {
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    font-size: 14px;
+  }
+
+  .topbar .brand {
+    gap: 7px;
+  }
+
+  .topbar .brand h1 {
+    font-size: 15px;
+  }
+
+  .topbar .sub {
+    font-size: 6.8px;
+    margin-top: 2px;
+  }
+
+  .header-datetime {
+    display: grid;
+    justify-items: end;
+    gap: 1px;
+  }
+
+  .header-datetime strong {
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .header-meta-line {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 4px;
+    color: #8299a7;
+    font-size: 7.5px;
+    white-space: nowrap;
+  }
+
+  #headerWeather {
+    color: #a8dcd7;
+  }
+
+  .app {
+    padding-top: 5px;
+    gap: 7px;
+  }
+
+  .personal-welcome {
+    display: block;
+    padding: 6px 1px 5px;
+  }
+
+  .personal-welcome-copy {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 5px;
+  }
+
+  .personal-welcome-copy .personal-kicker,
+  .personal-welcome-copy #personalDate {
+    display: none;
+  }
+
+  .personal-welcome h2 {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.05;
+    letter-spacing: -.025em;
+  }
+
+  .personal-time {
+    display: none !important;
+  }
+
+  .personal-quick-info {
+    padding: 7px 9px;
+    border-radius: 13px;
+  }
+
+  .quick-info-location {
+    margin-bottom: 5px;
+    font-size: 7px;
+  }
+
+  .quick-info-location button {
+    width: 21px;
+    height: 21px;
+    font-size: 12px;
+  }
+
+  .quick-info-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .quick-info-grid > div:first-child {
+    display: none;
+  }
+
+  .quick-info-grid > div {
+    padding-right: 4px;
+  }
+
+  .quick-info-grid span {
+    font-size: 6.8px;
+  }
+
+  .quick-info-grid strong {
+    margin: 2px 0 1px;
+    font-size: 12px;
+  }
+
+  .quick-info-grid small {
+    font-size: 6.5px;
+  }
+
+  .quick-info-footer {
+    display: none;
+  }
+
+  .personal-columns {
+    margin-top: 0;
+  }
+
+  #personalCalendar {
+    padding: 12px;
+  }
+
+  #personalCalendar .personal-panel-head {
+    margin-bottom: 4px;
+  }
+
+  #personalCalendar .personal-panel-head > div .personal-kicker {
+    display: none;
+  }
+
+  #personalCalendar .personal-panel-head h2 {
+    margin: 0;
+    font-size: 19px;
+  }
+
+  #newLocalEvent {
+    min-height: 36px;
+    padding: 7px 10px;
+    font-size: 10px;
+  }
+
+  .personal-calendar-toolbar {
+    margin-top: 8px;
+  }
+
+  .personal-period {
+    grid-template-columns: 36px minmax(0, 1fr) 36px;
+  }
+
+  .personal-period button,
+  #calendarToday {
+    min-width: 36px;
+    min-height: 36px;
+    padding: 6px;
+  }
+
+  .personal-period h3 {
+    font-size: 13px;
+  }
+
+  .personal-tabs {
+    gap: 4px;
+    margin: 8px 0 4px;
+  }
+
+  .personal-tabs button {
+    min-height: 34px;
+    padding: 6px 3px;
+    font-size: 8.3px;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .personal-source {
+    margin-top: 4px !important;
+    font-size: 7.8px !important;
+    line-height: 1.35 !important;
+  }
+
+  .personal-calendar-grid {
+    margin-top: 8px;
+    gap: 2px;
+  }
+
+  .personal-weekday {
+    padding-bottom: 4px;
+    font-size: 8px;
+  }
+
+  .personal-calendar-grid .personal-day {
+    min-height: 46px;
+    padding: 4px 3px;
+    border-radius: 7px;
+  }
+
+  .personal-day-number {
+    font-size: 10px;
+  }
+
+  .personal-event-chip {
+    font-size: 6.5px;
+  }
+
+  .personal-calendar-grid[data-view="week"] .personal-day {
+    min-height: 62px;
+  }
+
+  .personal-calendar-grid[data-view="day"] {
+    margin-top: 7px;
+  }
+
+  .personal-calendar-grid[data-view="day"] .personal-day {
+    min-height: 68px;
+    padding: 8px;
+  }
+
+  .personal-agenda {
+    margin-top: 10px;
+    padding-top: 8px;
+  }
+
+  .personal-agenda h3 {
+    margin: 0 0 4px;
+    font-size: 13px;
+  }
+
+  .personal-empty {
+    padding: 8px 0;
+    font-size: 10px;
+  }
+
+  .personal-agenda-row {
+    padding: 8px 0;
+  }
+
+  body[data-dgos-route="calendar"] .dgos-route-bar {
+    margin-bottom: 6px;
+  }
+}
+
+@media (max-width: 380px) {
+  .personal-tabs button {
+    font-size: 7.5px;
+  }
+
+  .personal-calendar-grid .personal-day {
+    min-height: 43px;
+  }
+}

@@ -1,3 +1,13 @@
+# v0.45.2 — Frischer PWA-Cache statt alter DG-OS-Version
+
+## Behoben
+- HTML, JavaScript und CSS werden im Service Worker jetzt network-first geladen.
+- Dadurch bleibt die iPhone/PWA-Ansicht nach einem erfolgreichen GitHub-Pages-Deploy nicht mehr unnötig auf einer alten DG-OS-Version hängen.
+- Fonts und Bilder bleiben weiterhin cache-first für schnellen Start und Offline-Resilienz.
+
+## Unverändert
+- Social Media Hub, Cleanup-Logik und Trading-System wurden nicht verändert.
+
 # v0.45.1 — Social in der Bottom-Navigation
 
 ## Verbessert

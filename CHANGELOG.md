@@ -1,3 +1,23 @@
+# v0.43.0 — In-App E-Mail-Fenster + DG OS Hub
+
+## Neu
+- Business- und Privat-E-Mail öffnen als eigenes Jarvis-Fenster innerhalb von DG OS.
+- Auf iPhone ist das Mailfenster vollflächig; auf iPad/Desktop bleibt es als schwebende In-App-Oberfläche.
+- Das Mailfenster kann per X oder Escape geschlossen werden und sperrt den Hintergrund während der Nutzung.
+- Neuer "DG OS Hub" im persönlichen Assistenten: Server-Adresse eintragen, Verbindung prüfen und als Jarvis-Bridge speichern.
+- Von GitHub Pages kann ein gewähltes Postfach direkt an die sichere Server-Version weitergegeben werden, sobald ein Hub verbunden ist.
+
+## Verhalten
+- Echte Mailinhalte werden weiterhin nur über die sichere serverseitige Gmail-API geladen.
+- Ohne Hub bleibt der direkte Gmail-Fallback verfügbar; Gmail selbst wird nicht per iframe eingebettet.
+- Newsletter-Filter und Papierkorb-Verhalten aus v0.42.x bleiben unverändert.
+
+## Unverändert
+- Keine Änderungen an Trading Brain, Market Brain oder Trading-Regeln.
+
+## Geänderte Dateien
+- index.html, personal.css, personal.js, package.json, sw.js, CHANGELOG.md, docs/GMAIL_INTEGRATION.md
+
 # v0.42.1 — Cleaner disconnected E-Mail state
 
 ## Behoben

@@ -1,4 +1,4 @@
-/* Personal calendar: device-only appointments. No provider credentials or API calls. */
+/* Personal calendar: local appointments + Google Calendar through the secure DG OS Hub. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -11,76 +11,290 @@
   const format = (value, options) => new Intl.DateTimeFormat('de-CH', {timeZone:'UTC', ...options}).format(date(value));
   const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(date(value).getTime()) && iso(date(value)) === value;
   const validTime = value => typeof value === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
-  let selected = today(), view = 'month', events = [], storageReadable = true;
+  let selected = today(), view = 'month', events = [], cloudEvents = [], storageReadable = true;
+  let hubState = null, cloudRangeKey = '', cloudRequestId = 0;
+
   try {
     const saved = JSON.parse(localStorage.getItem(key) || '[]');
     if (!Array.isArray(saved) || !saved.every(e => e && typeof e.id==='string' && typeof e.title==='string' && e.title.trim() && validDate(e.date) && validTime(e.start) && validTime(e.end) && e.end>e.start)) throw Error('invalid');
     events = saved;
-  } catch (_) { storageReadable = false; $('personalNotice').textContent = 'Gespeicherte Termine konnten nicht gelesen werden. Neue Einträge sind gesperrt, damit nichts überschrieben wird.'; }
+  } catch (_) {
+    storageReadable = false;
+    $('personalNotice').textContent = 'Gespeicherte Termine konnten nicht gelesen werden. Neue lokale Einträge sind gesperrt, damit nichts überschrieben wird.';
+  }
+
   const node = (tag, text, cls) => { const el = document.createElement(tag); if(text!==undefined) el.textContent=text; if(cls) el.className=cls; return el; };
+
   function persist(next) {
     if(!storageReadable) return false;
-    try { localStorage.setItem(key,JSON.stringify(next)); events=next; $('personalNotice').textContent='Auf diesem Gerät gespeichert · keine Cloud-Synchronisierung.'; return true; }
-    catch (_) { $('personalNotice').textContent='Speichern nicht möglich. Browser-Speicher ist gesperrt oder voll.'; return false; }
+    try {
+      localStorage.setItem(key,JSON.stringify(next));
+      events=next;
+      $('personalNotice').textContent='Lokaler Termin auf diesem Gerät gespeichert.';
+      return true;
+    } catch (_) {
+      $('personalNotice').textContent='Speichern nicht möglich. Browser-Speicher ist gesperrt oder voll.';
+      return false;
+    }
   }
+
   function range() {
     if(view==='day') return [selected];
     let first, count;
-    if(view==='week') {first=add(selected,-((date(selected).getUTCDay()+6)%7));count=7;}
-    else {first=selected.slice(0,7)+'-01';first=add(first,-((date(first).getUTCDay()+6)%7));count=42;}
+    if(view==='week') { first=add(selected,-((date(selected).getUTCDay()+6)%7)); count=7; }
+    else { first=selected.slice(0,7)+'-01'; first=add(first,-((date(first).getUTCDay()+6)%7)); count=42; }
     return Array.from({length:count},(_,i)=>add(first,i));
   }
+
+  function googleAccountLabel(account) {
+    return account === 'business' ? 'Business Google' : 'Privat Google';
+  }
+
+  function allEvents() {
+    return [...events.map(e=>Object.assign({source:'local'},e)), ...cloudEvents];
+  }
+
   function render() {
     const days=range(), grid=$('calendarGrid'); grid.replaceChildren(); grid.dataset.view=view;
+    const merged=allEvents();
     $('calendarPeriod').textContent=view==='month'?format(selected,{month:'long',year:'numeric'}):view==='day'?format(selected,{day:'numeric',month:'long',year:'numeric'}):format(days[0],{day:'numeric',month:'short'})+' – '+format(days[6],{day:'numeric',month:'short',year:'numeric'});
     document.querySelectorAll('[data-calendar-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.calendarView===view)));
     if(view!=='day') ['Mo','Di','Mi','Do','Fr','Sa','So'].forEach(d=>grid.append(node('span',d,'personal-weekday')));
+
     days.forEach(day=>{
-      const items=events.filter(e=>e.date===day).sort((a,b)=>a.start.localeCompare(b.start));
-      const cell=node('button',undefined,'personal-day');cell.type='button';cell.classList.toggle('outside',day.slice(0,7)!==selected.slice(0,7));cell.classList.toggle('is-today',day===today());cell.setAttribute('aria-pressed',String(day===selected));cell.setAttribute('aria-label',format(day,{weekday:'long',day:'numeric',month:'long',year:'numeric'})+', '+items.length+' lokale Termine');
+      const items=merged.filter(e=>e.date===day).sort((a,b)=>a.start.localeCompare(b.start));
+      const cell=node('button',undefined,'personal-day');
+      cell.type='button';
+      cell.classList.toggle('outside',day.slice(0,7)!==selected.slice(0,7));
+      cell.classList.toggle('is-today',day===today());
+      cell.setAttribute('aria-pressed',String(day===selected));
+      cell.setAttribute('aria-label',format(day,{weekday:'long',day:'numeric',month:'long',year:'numeric'})+', '+items.length+' Termine');
       cell.append(node('span',String(Number(day.slice(-2))),'personal-day-number'));
-      items.slice(0,2).forEach(e=>cell.append(node('span',e.start+' '+e.title,'personal-event-chip')));
+      items.slice(0,2).forEach(e=>{
+        const prefix=e.allDay?'':e.start+' ';
+        const chip=node('span',prefix+e.title,'personal-event-chip');
+        if(e.source==='google') chip.classList.add('is-google');
+        cell.append(chip);
+      });
       if(items.length>2) cell.append(node('small','+'+(items.length-2)+' weitere'));
-      cell.addEventListener('click',()=>{selected=day;render();});grid.append(cell);
+      cell.addEventListener('click',()=>{selected=day;render();});
+      grid.append(cell);
     });
-    $('personalCount').textContent=String(events.filter(e=>e.date===today()).length);
+
+    $('personalCount').textContent=String(merged.filter(e=>e.date===today()).length);
     $('agendaHeading').textContent=view==='week'?'Termine dieser Woche':format(selected,{weekday:'long',day:'numeric',month:'long'});
     const list=$('personalAgenda');list.replaceChildren();
-    const items=events.filter(e=>view==='week'?days.includes(e.date):e.date===selected).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
-    if(!items.length) list.append(node('p','Keine lokalen Termine für diesen Zeitraum. Deine verbundenen Kalender erscheinen nach der Einrichtung.','personal-empty'));
+    const items=merged.filter(e=>view==='week'?days.includes(e.date):e.date===selected).sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start));
+    if(!items.length) list.append(node('p','Keine Termine für diesen Zeitraum.','personal-empty'));
+
     items.forEach(e=>{
       const row=node('div',undefined,'personal-agenda-row'), info=node('div');
-      info.append(node('strong',e.title),node('small',format(e.date,{day:'numeric',month:'short'})+' · '+e.start+'–'+e.end+' · Auf diesem Gerät'));
-      const del=node('button','Entfernen');del.type='button';del.setAttribute('aria-label',e.title+' entfernen');del.addEventListener('click',()=>{if(persist(events.filter(item=>item.id!==e.id))) render();});row.append(info,del);list.append(row);
+      const source=e.source==='google'?(googleAccountLabel(e.account)+(e.calendarName?' · '+e.calendarName:'')):'Auf diesem Gerät';
+      const when=e.allDay?'Ganztägig':e.start+'–'+e.end;
+      info.append(node('strong',e.title),node('small',format(e.date,{day:'numeric',month:'short'})+' · '+when+' · '+source));
+      row.append(info);
+      if(e.source==='local'){
+        const del=node('button','Entfernen');del.type='button';del.setAttribute('aria-label',e.title+' entfernen');
+        del.addEventListener('click',()=>{if(persist(events.filter(item=>item.id!==e.id))) render();});
+        row.append(del);
+      }
+      list.append(row);
     });
+
+    refreshCloudForDays(days);
   }
+
   function move(direction) {
     if(view==='month') {const d=date(selected.slice(0,7)+'-01');d.setUTCMonth(d.getUTCMonth()+direction);selected=iso(d);}
     else selected=add(selected,direction*(view==='week'?7:1));
     render();
   }
-  $('calendarPrevious').onclick=()=>move(-1);$('calendarNext').onclick=()=>move(1);
+
+  function googleEventToLocal(event) {
+    if(!event || !event.start) return null;
+    if(event.start.date) {
+      return {
+        id:'google:'+event.account+':'+event.id,
+        title:event.title||'(Ohne Titel)',
+        date:event.start.date,
+        start:'00:00',
+        end:'23:59',
+        allDay:true,
+        source:'google',
+        account:event.account,
+        calendarName:event.calendarName||'Google Kalender'
+      };
+    }
+    const startValue=event.start.dateTime, endValue=event.end&&event.end.dateTime;
+    if(!startValue || !endValue) return null;
+    const startDate=new Date(startValue), endDate=new Date(endValue);
+    if(!Number.isFinite(startDate.getTime()) || !Number.isFinite(endDate.getTime())) return null;
+    const dayFmt=new Intl.DateTimeFormat('sv-SE',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'});
+    const timeFmt=new Intl.DateTimeFormat('en-GB',{timeZone:zone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+    return {
+      id:'google:'+event.account+':'+event.id,
+      title:event.title||'(Ohne Titel)',
+      date:dayFmt.format(startDate),
+      start:timeFmt.format(startDate),
+      end:timeFmt.format(endDate),
+      allDay:false,
+      source:'google',
+      account:event.account,
+      calendarName:event.calendarName||'Google Kalender'
+    };
+  }
+
+  async function readHubStatus() {
+    try {
+      const response=await fetch('./api/hub/status',{cache:'no-store',credentials:'same-origin'});
+      const type=response.headers.get('content-type')||'';
+      if(!response.ok || !type.includes('application/json')) throw Error('not_hub');
+      hubState=await response.json();
+    } catch (_) {
+      hubState=null;
+    }
+    updateCalendarTargets();
+    return hubState;
+  }
+
+  function connectedGoogleAccounts() {
+    const accounts=hubState&&hubState.googleWorkspace&&Array.isArray(hubState.googleWorkspace.accounts)?hubState.googleWorkspace.accounts:[];
+    if(!hubState||!hubState.googleWorkspace||!hubState.googleWorkspace.authenticated) return [];
+    return accounts.filter(item=>item&&item.calendarConnected).map(item=>item.id);
+  }
+
+  function updateCalendarTargets() {
+    const target=$('localEventTarget');
+    if(!target) return;
+    ['business','private'].forEach(id=>{
+      const option=target.querySelector('option[value="'+id+'"]');
+      if(!option) return;
+      const connected=connectedGoogleAccounts().includes(id);
+      option.disabled=!connected;
+      option.textContent=(id==='business'?'Business Google':'Privat Google')+(connected?'':' · nicht verbunden');
+    });
+  }
+
+  async function refreshCloudForDays(days, force) {
+    if(!days.length) return;
+    const key=days[0]+'|'+days[days.length-1];
+    if(!force && cloudRangeKey===key) return;
+    cloudRangeKey=key;
+    const requestId=++cloudRequestId;
+
+    if(!hubState) await readHubStatus();
+    const accounts=connectedGoogleAccounts();
+    if(!accounts.length) {
+      cloudEvents=[];
+      if(requestId===cloudRequestId) renderNoCloudLoop();
+      return;
+    }
+
+    const timeMin=new Date(add(days[0],-1)+'T00:00:00Z').toISOString();
+    const timeMax=new Date(add(days[days.length-1],2)+'T00:00:00Z').toISOString();
+    try {
+      const batches=await Promise.all(accounts.map(async account=>{
+        const params=new URLSearchParams({account,timeMin,timeMax});
+        const response=await fetch('./api/calendar/events?'+params.toString(),{cache:'no-store',credentials:'same-origin'});
+        if(!response.ok) throw Error('calendar_fetch_failed');
+        const data=await response.json();
+        return Array.isArray(data.events)?data.events:[];
+      }));
+      if(requestId!==cloudRequestId) return;
+      const visible=new Set(days);
+      cloudEvents=batches.flat().map(googleEventToLocal).filter(Boolean).filter(e=>visible.has(e.date));
+      $('personalNotice').textContent='Google Kalender synchronisiert · lokale Termine bleiben auf diesem Gerät.';
+      renderNoCloudLoop();
+    } catch (_) {
+      if(requestId!==cloudRequestId) return;
+      cloudEvents=[];
+      $('personalNotice').textContent='Google Kalender konnte gerade nicht geladen werden. Lokale Termine bleiben verfügbar.';
+      renderNoCloudLoop();
+    }
+  }
+
+  function renderNoCloudLoop() {
+    const previous=cloudRangeKey;
+    cloudRangeKey='__rendering__';
+    render();
+    cloudRangeKey=previous;
+  }
+
+  $('calendarPrevious').onclick=()=>move(-1);
+  $('calendarNext').onclick=()=>move(1);
   $('calendarToday').onclick=()=>{selected=today();render();};
-  document.querySelectorAll('[data-calendar-view]').forEach(b=>b.onclick=()=>{view=b.dataset.calendarView;render();});
+  document.querySelectorAll('[data-calendar-view]').forEach(b=>b.onclick=()=>{view=b.dataset.calendarView;cloudRangeKey='';render();});
+
   $('newLocalEvent').disabled=!storageReadable;
-  $('newLocalEvent').onclick=()=>{$('localEventForm').reset();$('localEventDate').value=selected;$('localEventError').textContent='';$('localEventDialog').showModal();$('localEventTitle').focus();};
-  $('closeLocalEvent').onclick=()=>$('localEventDialog').close();
-  $('localEventForm').onsubmit=e=>{
-    e.preventDefault();
-    const entry={id:crypto.randomUUID(),title:$('localEventTitle').value.trim(),date:$('localEventDate').value,start:$('localEventStart').value,end:$('localEventEnd').value};
-    if(!entry.title || !validDate(entry.date) || !validTime(entry.start) || !validTime(entry.end) || entry.end<=entry.start) {$('localEventError').textContent='Bitte Titel und Datum prüfen. Das Ende muss nach dem Beginn am gleichen Tag liegen.';return;}
-    if(persist([...events,entry])) {selected=entry.date;$('localEventDialog').close();render();}
-    else $('localEventError').textContent='Der Termin konnte nicht gespeichert werden.';
+  $('newLocalEvent').onclick=()=>{
+    $('localEventForm').reset();
+    $('localEventDate').value=selected;
+    $('localEventTarget').value='local';
+    $('localEventError').textContent='';
+    updateCalendarTargets();
+    $('localEventDialog').showModal();
+    $('localEventTitle').focus();
   };
+  $('closeLocalEvent').onclick=()=>$('localEventDialog').close();
+
+  $('localEventForm').onsubmit=async e=>{
+    e.preventDefault();
+    const entry={
+      id:crypto.randomUUID(),
+      title:$('localEventTitle').value.trim(),
+      date:$('localEventDate').value,
+      start:$('localEventStart').value,
+      end:$('localEventEnd').value
+    };
+    const target=$('localEventTarget').value;
+    if(!entry.title || !validDate(entry.date) || !validTime(entry.start) || !validTime(entry.end) || entry.end<=entry.start) {
+      $('localEventError').textContent='Bitte Titel und Datum prüfen. Das Ende muss nach dem Beginn am gleichen Tag liegen.';
+      return;
+    }
+
+    if(target==='local'){
+      if(persist([...events,entry])) {selected=entry.date;$('localEventDialog').close();render();}
+      else $('localEventError').textContent='Der Termin konnte nicht gespeichert werden.';
+      return;
+    }
+
+    if(!['business','private'].includes(target) || !connectedGoogleAccounts().includes(target)) {
+      $('localEventError').textContent='Dieser Google Kalender ist noch nicht mit dem DG OS Hub verbunden.';
+      return;
+    }
+
+    const submit=e.submitter; if(submit) submit.disabled=true;
+    $('localEventError').textContent='Termin wird in Google Kalender gespeichert …';
+    try {
+      const response=await fetch('./api/calendar/events',{
+        method:'POST',
+        credentials:'same-origin',
+        headers:{'Content-Type':'application/json',Accept:'application/json'},
+        body:JSON.stringify({account:target,title:entry.title,date:entry.date,start:entry.start,end:entry.end,calendarId:'primary'})
+      });
+      if(!response.ok) throw Error('create_failed');
+      selected=entry.date;
+      $('localEventDialog').close();
+      cloudRangeKey='';
+      await readHubStatus();
+      render();
+    } catch (_) {
+      $('localEventError').textContent='Google-Termin konnte nicht gespeichert werden. Verbindung und Freigabe prüfen.';
+    } finally {
+      if(submit) submit.disabled=false;
+    }
+  };
+
   function greet() {
     const now=new Date(),hour=Number(new Intl.DateTimeFormat('en-GB',{timeZone:zone,hour:'2-digit',hourCycle:'h23'}).format(now));
     $('personalGreeting').textContent=(hour<11?'Guten Morgen':hour<18?'Guten Tag':'Guten Abend')+', Gomes.';
     $('personalDate').textContent=new Intl.DateTimeFormat('de-CH',{timeZone:zone,weekday:'long',day:'numeric',month:'long',year:'numeric'}).format(now)+' · Europe/Zurich';
-    $('personalCount').textContent=String(events.filter(e=>e.date===today()).length);
+    $('personalCount').textContent=String(allEvents().filter(e=>e.date===today()).length);
   }
-  greet();render();setInterval(greet,60000);
-})();
 
+  readHubStatus().finally(()=>{greet();render();});
+  setInterval(greet,60000);
+})();
 
 /* Secure Gmail center: same-origin DG OS server only. No OAuth tokens in browser storage. */
 (() => {

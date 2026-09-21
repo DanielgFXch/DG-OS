@@ -12,7 +12,7 @@
   const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(date(value).getTime()) && iso(date(value)) === value;
   const validTime = value => typeof value === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
   let selected = today(), view = 'month', events = [], cloudEvents = [], storageReadable = true;
-  let hubState = null, cloudRangeKey = '', cloudRequestId = 0;
+  let hubState = null, cloudRangeKey = '', cloudRequestId = 0, suppressCloudRefresh = false;
 
   try {
     const saved = JSON.parse(localStorage.getItem(key) || '[]');
@@ -101,7 +101,7 @@
       list.append(row);
     });
 
-    refreshCloudForDays(days);
+    if(!suppressCloudRefresh) refreshCloudForDays(days);
   }
 
   function move(direction) {
@@ -214,10 +214,9 @@
   }
 
   function renderNoCloudLoop() {
-    const previous=cloudRangeKey;
-    cloudRangeKey='__rendering__';
-    render();
-    cloudRangeKey=previous;
+    suppressCloudRefresh=true;
+    try { render(); }
+    finally { suppressCloudRefresh=false; }
   }
 
   $('calendarPrevious').onclick=()=>move(-1);

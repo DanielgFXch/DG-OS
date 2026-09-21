@@ -27,6 +27,7 @@ const { sendTelegramMessage } = require('./lib/telegramAssistant.js');
 const { formatEventForTelegram } = require('./lib/telegramEventFormatter.js');
 const { GmailIntegration } = require('./lib/gmailIntegration.js');
 const { GoogleCalendarIntegration } = require('./lib/googleCalendarIntegration.js');
+const { WhoopIntegration } = require('./lib/whoopIntegration.js');
 const scheduledBriefingStore = require('./lib/scheduledBriefingStore.js');
 const sessionOpenStore = require('./lib/sessionOpenStore.js');
 const MB = require('../marketBrain.js');
@@ -177,16 +178,19 @@ async function main() {
   // frontend keeps the direct Gmail links as an honest fallback.
   const gmail = new GmailIntegration(process.env);
   const calendar = new GoogleCalendarIntegration(gmail);
+  const whoop = new WhoopIntegration(process.env);
   if (gmail.configured) console.log('[server] Google Workspace hub configured — Gmail + Calendar OAuth routes enabled.');
   else console.log('[server] Google Workspace hub not configured — Gmail/Calendar stay unavailable; direct fallbacks remain usable.');
+  if (whoop.configured) console.log('[server] WHOOP integration configured — secure health routes enabled.');
+  else console.log('[server] WHOOP integration not configured — WHOOP remains disconnected.');
 
   const apiServer = createApiServer(marketState, {
     token: telegramToken,
     chatId: telegramChatId,
     webhookSecret: process.env.TELEGRAM_WEBHOOK_SECRET
-  }, gmail, calendar);
+  }, gmail, calendar, whoop);
   apiServer.listen(PORT, () => {
-    console.log(`[server] API listening on :${PORT} — DG OS frontend + market API + Google Workspace hub + Telegram webhook`);
+    console.log(`[server] API listening on :${PORT} — DG OS frontend + market API + Google Workspace + WHOOP + Telegram`);
   });
 
   // Proactive morning briefing — "ich will einfach immer up to date

@@ -1,5 +1,5 @@
-const CACHE='dgos-personal-shell-9';
-const ASSETS=['./','./index.html','./styles.css','./wow.css?v=0.37.1','./personal.css','./personal.js','./weather.js','./marketBrain.js','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png',
+const CACHE='dgos-personal-shell-10';
+const ASSETS=['./','./index.html','./styles.css','./wow.css?v=0.37.1','./personal.css','./social.css','./personal.js','./social.js','./weather.js','./marketBrain.js','./app.js','./manifest.webmanifest','./icon-192.png','./icon-512.png',
   './fonts/chakra-petch-500.woff2','./fonts/chakra-petch-600.woff2','./fonts/chakra-petch-700.woff2',
   './fonts/jetbrains-mono-400.woff2','./fonts/jetbrains-mono-500.woff2','./fonts/jetbrains-mono-700.woff2'];
 self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())));

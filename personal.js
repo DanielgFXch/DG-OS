@@ -11,8 +11,8 @@
   const format = (value, options) => new Intl.DateTimeFormat('de-CH', {timeZone:'UTC', ...options}).format(date(value));
   const validDate = value => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) && Number.isFinite(date(value).getTime()) && iso(date(value)) === value;
   const validTime = value => typeof value === 'string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value);
-  let selected = today(), view = 'day', events = [], cloudEvents = [], storageReadable = true;
-  let hubState = null, cloudRangeKey = '', cloudRequestId = 0, suppressCloudRefresh = false;
+  let selected = today(), view = 'day', events = [], cloudEvents = [], jarvisEvents = [], storageReadable = true;
+  let hubState = null, cloudRangeKey = '', cloudRequestId = 0, suppressCloudRefresh = false, jarvisRangeKey = '', jarvisRequestId = 0;
 
   try {
     const saved = JSON.parse(localStorage.getItem(key) || '[]');
@@ -51,7 +51,7 @@
   }
 
   function allEvents() {
-    return [...events.map(e=>Object.assign({source:'local'},e)), ...cloudEvents];
+    return [...events.map(e=>Object.assign({source:'local'},e)), ...cloudEvents, ...jarvisEvents];
   }
 
   function render() {
@@ -74,6 +74,7 @@
         const prefix=e.allDay?'':e.start+' ';
         const chip=node('span',prefix+e.title,'personal-event-chip');
         if(e.source==='google') chip.classList.add('is-google');
+        if(e.source==='jarvis') chip.classList.add('is-jarvis');
         cell.append(chip);
       });
       if(items.length>2) cell.append(node('small','+'+(items.length-2)+' weitere'));
@@ -89,8 +90,8 @@
 
     items.forEach(e=>{
       const row=node('div',undefined,'personal-agenda-row'), info=node('div');
-      const source=e.source==='google'?(googleAccountLabel(e.account)+(e.calendarName?' · '+e.calendarName:'')):'Auf diesem Gerät';
-      const when=e.allDay?'Ganztägig':e.start+'–'+e.end;
+      const source=e.source==='google'?(googleAccountLabel(e.account)+(e.calendarName?' · '+e.calendarName:'')):e.source==='jarvis'?'Jarvis · Telegram':'Auf diesem Gerät';
+      const when=e.allDay?'Ganztägig':e.singleTime?e.start+' Uhr':e.start+'–'+e.end;
       info.append(node('strong',e.title),node('small',format(e.date,{day:'numeric',month:'short'})+' · '+when+' · '+source));
       row.append(info);
       if(e.source==='local'){
@@ -102,12 +103,61 @@
     });
 
     if(!suppressCloudRefresh) refreshCloudForDays(days);
+    refreshJarvisForDays(days);
   }
 
   function move(direction) {
     if(view==='month') {const d=date(selected.slice(0,7)+'-01');d.setUTCMonth(d.getUTCMonth()+direction);selected=iso(d);}
     else selected=add(selected,direction*(view==='week'?7:1));
     render();
+  }
+
+  function jarvisEventToLocal(event) {
+    if(!event || !validDate(event.date) || typeof event.title!=='string' || !event.title.trim()) return null;
+    const time=typeof event.time==='string' && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(event.time)?event.time:null;
+    return {
+      id:'jarvis:'+event.id,
+      title:event.title.trim(),
+      date:event.date,
+      start:time||'00:00',
+      end:time||'23:59',
+      allDay:!time,
+      singleTime:Boolean(time),
+      source:'jarvis'
+    };
+  }
+
+  function jarvisSession() {
+    return localStorage.getItem('dgos.deviceSession') || localStorage.getItem('dgos.whoopSession') || '';
+  }
+
+  async function refreshJarvisForDays(days, force) {
+    if(!days.length) return;
+    const token=jarvisSession();
+    if(!token) {
+      jarvisEvents=[];
+      return;
+    }
+    const key=days[0]+'|'+days[days.length-1];
+    if(!force && jarvisRangeKey===key) return;
+    jarvisRangeKey=key;
+    const requestId=++jarvisRequestId;
+
+    try {
+      const params=new URLSearchParams({start:days[0],end:days[days.length-1]});
+      const response=await fetch('https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/tasks/calendar?'+params.toString(),{
+        cache:'no-store',
+        headers:{Authorization:'Bearer '+token}
+      });
+      if(!response.ok) throw Error('jarvis_calendar_failed');
+      const data=await response.json();
+      if(requestId!==jarvisRequestId) return;
+      jarvisEvents=(Array.isArray(data.events)?data.events:[]).map(jarvisEventToLocal).filter(Boolean);
+      render();
+    } catch (_) {
+      if(requestId!==jarvisRequestId) return;
+      jarvisEvents=[];
+    }
   }
 
   function googleEventToLocal(event) {
@@ -292,7 +342,9 @@
   }
 
   readHubStatus().finally(()=>{greet();render();});
-  setInterval(greet,60000);
+  window.addEventListener('focus',()=>{jarvisRangeKey='';render();});
+  window.addEventListener('dgos-device-session',()=>{jarvisRangeKey='';render();});
+  setInterval(()=>{greet();jarvisRangeKey='';render();},60000);
 })();
 
 /* Secure Gmail center: same-origin DG OS server only. No OAuth tokens in browser storage. */
@@ -667,7 +719,7 @@
   const DEVICE_SESSION_KEY='dgos.deviceSession';
   const LEGACY_SESSION_KEY='dgos.whoopSession';
 
-  function session(){return localStorage.getItem(SESSION_KEY)||'';}
+  function session(){return localStorage.getItem(LEGACY_SESSION_KEY)||'';}
   function headers(){
     const token=session();
     return token?{Authorization:'Bearer '+token}:{};

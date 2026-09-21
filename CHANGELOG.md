@@ -1,3 +1,34 @@
+# v0.48.0 — Jarvis Heute-Aufgaben
+
+## Neu
+- Neue Aufgaben-Zentrale direkt auf der Heute-Seite.
+- Schnelle Eingabe für Aufgaben des aktuellen Tages.
+- Prioritäten Normal, Wichtig und Später.
+- Aufgaben mit einem Haken erledigen und wieder öffnen.
+- Fortschritt erledigt/gesamt.
+- Eigener Bereich für überfällige Aufgaben mit "Heute"-Aktion.
+- Erledigte Aufgaben bleiben nachvollziehbar und können wieder geöffnet werden.
+- Aufgaben werden im separaten DG-OS-Supabase-Projekt synchron gespeichert.
+- Jarvis Inbox zeigt noch nicht verarbeitete Telegram-Voice-/Bild-Eingänge.
+
+## Telegram
+- Neue Supabase Edge Function `telegram-tasks`.
+- Telegram-Text wird nach Verbindung direkt als Aufgabe gespeichert.
+- Präfix `morgen` legt die Aufgabe für morgen an; `heute` für heute.
+- Ein führendes `!` markiert die Aufgabe als wichtig.
+- Voice und Bilder werden sicher in der Jarvis Inbox gespeichert.
+- Automatische Bild-/Voice-Auswertung ist bewusst noch nicht simuliert; dafür wird ein echter Vision-/Transkriptionsdienst benötigt.
+
+## Sicherheit
+- Task-API ist nicht öffentlich lesbar.
+- Zugriff aus Jarvis benötigt die aktive private DG-OS-Gerätesitzung.
+- Tabellen sind per RLS gesperrt und für anon/authenticated nicht freigegeben.
+- Telegram Webhook akzeptiert nur den konfigurierten Telegram Secret Token und den erlaubten Chat.
+
+## Unverändert
+- Keine Änderungen an Trading Brain, Market Brain oder Trading-Regeln.
+- LiveUP Academy wurde nicht verändert.
+
 # v0.47.1 — WHOOP ohne Railway
 
 ## Neu

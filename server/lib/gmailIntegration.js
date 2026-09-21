@@ -204,7 +204,7 @@ class GmailIntegration {
     this.clientSecret = env.GOOGLE_GMAIL_CLIENT_SECRET || '';
     this.publicBaseUrl = String(env.DGOS_PUBLIC_BASE_URL || '').replace(/\/+$/, '');
     this.appUrl = String(env.DGOS_APP_URL || this.publicBaseUrl || '').replace(/\/+$/, '');
-    this.key = parseEncryptionKey(env.DGOS_GMAIL_ENCRYPTION_KEY || '');
+    this.key = parseEncryptionKey(env.DGOS_INTEGRATION_ENCRYPTION_KEY || env.DGOS_GMAIL_ENCRYPTION_KEY || '');
     const privateDir = env.DGOS_PRIVATE_DATA_DIR || path.resolve(process.cwd(), 'private');
     this.store = new EncryptedTokenStore(path.join(privateDir, 'gmail-tokens.enc.json'), this.key);
     this.tokens = this.store.read();

@@ -1,0 +1,111 @@
+/* DG OS v0.46.0 — routed in-app screens */
+.dgos-route-bar{
+  position:sticky;
+  top:calc(env(safe-area-inset-top) + 74px);
+  z-index:34;
+  display:flex;
+  align-items:center;
+  gap:11px;
+  margin:0 0 12px;
+  padding:9px 10px;
+  border:1px solid rgba(198,230,255,.15);
+  border-radius:16px;
+  background:rgba(8,20,34,.76);
+  backdrop-filter:blur(22px) saturate(140%);
+  -webkit-backdrop-filter:blur(22px) saturate(140%);
+  box-shadow:0 12px 34px rgba(0,0,0,.22),inset 0 1px rgba(255,255,255,.035);
+}
+.dgos-route-bar.hidden{display:none}
+.dgos-route-back{
+  flex:none;
+  width:42px;
+  height:42px;
+  min-height:42px;
+  padding:0;
+  border-radius:13px;
+  font-size:20px;
+  line-height:1;
+}
+.dgos-route-copy{min-width:0;display:grid;gap:2px}
+.dgos-route-copy .personal-kicker{font-size:8px}
+.dgos-route-copy strong{color:#edfaff;font-size:16px;font-weight:600;letter-spacing:-.02em}
+
+/* Non-home routes behave like dedicated pages. */
+body[data-dgos-route="calendar"] #personalHome,
+body[data-dgos-route="health"] #personalHome,
+body[data-dgos-route="social"] #personalHome,
+body[data-dgos-route="trading"] #personalHome{display:none!important}
+
+body[data-dgos-route="calendar"] .personal-side,
+body[data-dgos-route="health"] #personalCalendar,
+body[data-dgos-route="social"] #personalCalendar,
+body[data-dgos-route="trading"] .personal-columns{display:none!important}
+
+body[data-dgos-route="calendar"] .personal-columns{display:block!important}
+body[data-dgos-route="calendar"] #personalCalendar{
+  display:block!important;
+  width:100%;
+  max-width:none;
+  animation:dgosScreenIn .24s ease both;
+}
+
+body[data-dgos-route="health"] .personal-columns{display:block!important}
+body[data-dgos-route="health"] .personal-side{display:block!important}
+body[data-dgos-route="health"] .personal-side>section:not(#personalHealth){display:none!important}
+body[data-dgos-route="health"] #personalHealth{
+  display:block!important;
+  min-height:320px;
+  animation:dgosScreenIn .24s ease both;
+}
+
+body[data-dgos-route="social"] .personal-columns{display:none!important}
+body[data-dgos-route="social"] #socialWorkspace{
+  position:relative!important;
+  inset:auto!important;
+  z-index:1!important;
+  display:flex!important;
+  width:100%!important;
+  max-width:none!important;
+  min-height:calc(100dvh - 190px);
+  margin:0!important;
+  border-radius:20px!important;
+  overflow:visible!important;
+  animation:dgosScreenIn .24s ease both;
+}
+body[data-dgos-route="social"] #socialCloseWorkspace{display:none!important}
+
+body[data-dgos-route="trading"] #tradingWorkspace{
+  display:block!important;
+  margin-top:0!important;
+  animation:dgosScreenIn .24s ease both;
+}
+body[data-dgos-route="trading"] #tradingWorkspace>summary{display:none!important}
+
+body[data-dgos-route="calendar"] #personalEmailWorkspace,
+body[data-dgos-route="calendar"] #socialWorkspace,
+body[data-dgos-route="health"] #personalEmailWorkspace,
+body[data-dgos-route="health"] #socialWorkspace,
+body[data-dgos-route="trading"] #personalEmailWorkspace,
+body[data-dgos-route="trading"] #socialWorkspace{display:none!important}
+
+@keyframes dgosScreenIn{
+  from{opacity:.01;transform:translateY(7px)}
+  to{opacity:1;transform:none}
+}
+html.dgos-route-changing .app{opacity:.985}
+
+@media(max-width:700px){
+  .dgos-route-bar{
+    top:calc(env(safe-area-inset-top) + 68px);
+    margin-left:0;
+    margin-right:0;
+    border-radius:15px;
+  }
+  .dgos-route-copy strong{font-size:15px}
+  body[data-dgos-route="calendar"] #personalCalendar,
+  body[data-dgos-route="health"] #personalHealth,
+  body[data-dgos-route="social"] #socialWorkspace,
+  body[data-dgos-route="trading"] #tradingWorkspace{
+    border-radius:18px;
+  }
+}

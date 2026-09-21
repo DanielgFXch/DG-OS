@@ -27,9 +27,9 @@
     try{
       const response=await fetch(endpoint,{signal:controller.signal,cache:'no-store',credentials:'omit'});if(!response.ok)throw Error('Weather request failed');
       const values=normalize(await response.json());
-      for(const [key,id] of Object.entries({temperature:'weatherTemperature',feels:'weatherFeels',description:'weatherDescription',sunrise:'weatherSunrise',sunset:'weatherSunset',daylight:'weatherDaylight',status:'weatherStatus'}))$(id).textContent=values[key];
+      for(const [key,id] of Object.entries({temperature:'weatherTemperature',feels:'weatherFeels',description:'weatherDescription',sunrise:'weatherSunrise',sunset:'weatherSunset',daylight:'weatherDaylight',status:'weatherStatus'}))$(id).textContent=values[key]; if($('headerWeather')) $('headerWeather').textContent=values.temperature;
     }catch(_){
-      $('weatherTemperature').textContent='— °C';$('weatherFeels').textContent='Gefühlt — °C';$('weatherDescription').textContent='Wetter nicht verfügbar';$('weatherSunrise').textContent='—:—';$('weatherSunset').textContent='—:—';$('weatherDaylight').textContent='Tageslicht —';$('weatherStatus').textContent='Abruf fehlgeschlagen. Bitte erneut versuchen.';
+      $('weatherTemperature').textContent='— °C';if($('headerWeather')) $('headerWeather').textContent='— °C';$('weatherFeels').textContent='Gefühlt — °C';$('weatherDescription').textContent='Wetter nicht verfügbar';$('weatherSunrise').textContent='—:—';$('weatherSunset').textContent='—:—';$('weatherDaylight').textContent='Tageslicht —';$('weatherStatus').textContent='Abruf fehlgeschlagen. Bitte erneut versuchen.';
     }finally{clearTimeout(timeout);busy=false;$('weatherRefresh').disabled=false;}
   }
   $('weatherRefresh').addEventListener('click',refresh);

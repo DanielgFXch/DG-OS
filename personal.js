@@ -801,3 +801,300 @@
   check();
   setInterval(()=>{if(session())loadSummary();},10*60*1000);
 })();
+
+
+/* Daily Tasks — Supabase-backed, secured by the active DG OS device session. */
+(() => {
+  'use strict';
+
+  const EDGE='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/tasks';
+  const SESSION_KEY='dgos.whoopSession';
+  const $=id=>document.getElementById(id);
+  const form=$('taskQuickForm');
+  if(!form)return;
+
+  function session(){ return localStorage.getItem(SESSION_KEY)||''; }
+  function headers(json=true){
+    const h={};
+    const token=session();
+    if(token) h.Authorization='Bearer '+token;
+    if(json) h['Content-Type']='application/json';
+    return h;
+  }
+  function todayZurich(){
+    const parts=new Intl.DateTimeFormat('en-CA',{
+      timeZone:'Europe/Zurich',year:'numeric',month:'2-digit',day:'2-digit'
+    }).formatToParts(new Date());
+    const map=Object.fromEntries(parts.map(p=>[p.type,p.value]));
+    return map.year+'-'+map.month+'-'+map.day;
+  }
+  function prettyDate(date){
+    const d=new Date(date+'T12:00:00');
+    return new Intl.DateTimeFormat('de-CH',{
+      timeZone:'Europe/Zurich',weekday:'long',day:'2-digit',month:'long'
+    }).format(d);
+  }
+  function set(id,value){const el=$(id);if(el)el.textContent=value;}
+  function note(msg,kind=''){
+    const el=$('taskNotice'); if(!el)return;
+    el.textContent=msg||''; el.dataset.kind=kind;
+  }
+  async function api(action,options={}){
+    const response=await fetch(EDGE+'/'+action,{
+      method:options.method||'GET',
+      headers:headers(options.body!==undefined),
+      body:options.body!==undefined?JSON.stringify(options.body):undefined,
+      cache:'no-store'
+    });
+    let data={};
+    try{data=await response.json();}catch(_){}
+    if(!response.ok){
+      const err=new Error(data.error||'task_request_failed');
+      err.status=response.status; throw err;
+    }
+    return data;
+  }
+
+  function priorityLabel(value){
+    if(value==='high')return'Wichtig';
+    if(value==='low')return'Später';
+    return'Normal';
+  }
+  function sourceLabel(value){
+    if(value==='telegram')return'Telegram';
+    if(value==='voice')return'Voice';
+    if(value==='image')return'Bild';
+    return'Jarvis';
+  }
+  function dueMeta(task){
+    const bits=[];
+    if(task.due_time) bits.push(String(task.due_time).slice(0,5));
+    bits.push(sourceLabel(task.source));
+    return bits.join(' · ');
+  }
+
+  function makeTaskRow(task,opts={}){
+    const overdue=Boolean(opts.overdue);
+    const done=Boolean(opts.done);
+    const row=document.createElement('div');
+    row.className='personal-task-row'+(done?' is-done':'')+(overdue?' is-overdue':'');
+    row.dataset.taskId=task.id;
+
+    const check=document.createElement('button');
+    check.type='button';
+    check.className='personal-task-check';
+    check.setAttribute('aria-label',done?'Aufgabe wieder öffnen':'Aufgabe erledigen');
+    check.setAttribute('aria-pressed',done?'true':'false');
+    check.textContent=done?'✓':'';
+
+    const body=document.createElement('div');
+    body.className='personal-task-copy';
+    const title=document.createElement('strong');
+    title.textContent=task.title;
+    const meta=document.createElement('small');
+    meta.textContent=(overdue?('Fällig '+prettyDate(task.due_date)+' · '):'')+dueMeta(task);
+    body.append(title,meta);
+
+    const side=document.createElement('div');
+    side.className='personal-task-side';
+    const badge=document.createElement('span');
+    badge.className='personal-task-priority is-'+(task.priority||'normal');
+    badge.textContent=priorityLabel(task.priority);
+    side.append(badge);
+
+    if(overdue && !done){
+      const today=document.createElement('button');
+      today.type='button'; today.className='personal-task-mini'; today.textContent='Heute';
+      today.addEventListener('click',async()=>{
+        today.disabled=true;
+        try{await api('move',{method:'POST',body:{id:task.id,dueDate:todayZurich()}});await load();}
+        catch(_){note('Aufgabe konnte nicht auf heute verschoben werden.','error');}
+        finally{today.disabled=false;}
+      });
+      side.append(today);
+    }
+
+    const del=document.createElement('button');
+    del.type='button';del.className='personal-task-delete';del.textContent='×';
+    del.setAttribute('aria-label','Aufgabe löschen');
+    del.addEventListener('click',async()=>{
+      del.disabled=true;
+      try{await api('delete',{method:'POST',body:{id:task.id}});await load();}
+      catch(_){note('Aufgabe konnte nicht gelöscht werden.','error');}
+    });
+    side.append(del);
+
+    check.addEventListener('click',async()=>{
+      check.disabled=true;
+      try{
+        await api('toggle',{method:'POST',body:{id:task.id,done:!done}});
+        await load();
+      }catch(_){
+        note('Aufgabe konnte nicht aktualisiert werden.','error');
+        check.disabled=false;
+      }
+    });
+
+    row.append(check,body,side);
+    return row;
+  }
+
+  function render(data){
+    const tasks=Array.isArray(data.tasks)?data.tasks:[];
+    const open=tasks.filter(t=>t.status==='open');
+    const done=tasks.filter(t=>t.status==='done');
+    const overdue=Array.isArray(data.overdue)?data.overdue:[];
+
+    set('taskProgress',done.length+'/'+tasks.length);
+    set('taskOpenCount',open.length+' offen');
+    set('taskDoneCount',String(done.length));
+    set('taskOverdueCount',String(overdue.length));
+    set('taskInboxBadge',String(Number(data.pendingInbox||0)));
+    set('taskInboxStatus',Number(data.pendingInbox||0)>0
+      ?String(data.pendingInbox)+' neue Eingänge warten auf Verarbeitung'
+      :'Direkte Eingabe aktiv · Telegram folgt');
+
+    const list=$('taskTodayList');
+    if(list){
+      list.replaceChildren();
+      if(!open.length){
+        const p=document.createElement('p');p.className='personal-empty';
+        p.textContent=done.length?'Alles für heute erledigt.':'Noch keine Aufgaben für heute.';
+        list.append(p);
+      }else open.forEach(task=>list.append(makeTaskRow(task)));
+    }
+
+    const doneSection=$('taskDoneSection');
+    const doneList=$('taskDoneList');
+    if(doneSection&&doneList){
+      doneSection.classList.toggle('hidden',!done.length);
+      doneList.replaceChildren();
+      done.forEach(task=>doneList.append(makeTaskRow(task,{done:true})));
+    }
+
+    const overdueWrap=$('taskOverdueWrap');
+    const overdueList=$('taskOverdueList');
+    if(overdueWrap&&overdueList){
+      overdueWrap.classList.toggle('hidden',!overdue.length);
+      overdueList.replaceChildren();
+      overdue.forEach(task=>overdueList.append(makeTaskRow(task,{overdue:true})));
+    }
+  }
+
+  async function load(){
+    const token=session();
+    if(!token){
+      note('Für die synchronisierte Aufgabenliste fehlt auf diesem Gerät noch die DG-OS-Sitzung. Öffne einmal Gesundheit/WHOOP auf diesem Gerät.','error');
+      form.querySelectorAll('input,select,button').forEach(el=>el.disabled=true);
+      return;
+    }
+
+    try{
+      set('taskDateLabel',prettyDate(todayZurich()));
+      const data=await api('today?date='+encodeURIComponent(todayZurich()));
+      render(data);
+      note('');
+      form.querySelectorAll('input,select,button').forEach(el=>el.disabled=false);
+    }catch(err){
+      if(err.status===401){
+        note('Deine DG-OS-Gerätesitzung ist abgelaufen. Verbinde WHOOP auf diesem Gerät einmal neu.','error');
+        form.querySelectorAll('input,select,button').forEach(el=>el.disabled=true);
+      }else{
+        note('Aufgaben konnten gerade nicht geladen werden.','error');
+      }
+    }
+  }
+
+  form.addEventListener('submit',async e=>{
+    e.preventDefault();
+    const title=$('taskQuickTitle').value.trim();
+    if(!title)return;
+    const button=form.querySelector('button[type="submit"]');
+    button.disabled=true; note('Aufgabe wird gespeichert …');
+    try{
+      await api('create',{
+        method:'POST',
+        body:{
+          title,
+          dueDate:todayZurich(),
+          priority:$('taskQuickPriority').value
+        }
+      });
+      $('taskQuickTitle').value='';
+      $('taskQuickPriority').value='normal';
+      await load();
+      $('taskQuickTitle').focus();
+    }catch(err){
+      note(err.status===401?'Gerätesitzung abgelaufen. Bitte WHOOP einmal neu verbinden.':'Aufgabe konnte nicht gespeichert werden.','error');
+    }finally{button.disabled=false;}
+  });
+
+  load();
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});
+  window.addEventListener('focus',load);
+})();
+
+
+/* Telegram task bridge — text becomes tasks, voice/images enter the Jarvis Inbox. */
+(() => {
+  'use strict';
+  const button=document.getElementById('taskTelegramSetup');
+  const status=document.getElementById('taskInboxStatus');
+  if(!button||!status)return;
+
+  const EDGE='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/telegram-tasks';
+  const SESSION_KEY='dgos.whoopSession';
+  function headers(){
+    const token=localStorage.getItem(SESSION_KEY)||'';
+    return token?{Authorization:'Bearer '+token}:{};
+  }
+  async function request(action,method='GET'){
+    const r=await fetch(EDGE+'/'+action,{method,headers:headers(),cache:'no-store'});
+    let data={};try{data=await r.json();}catch(_){}
+    if(!r.ok){const e=new Error(data.error||'telegram_task_error');e.status=r.status;throw e;}
+    return data;
+  }
+  async function refresh(){
+    if(!localStorage.getItem(SESSION_KEY)){
+      button.disabled=true;
+      status.textContent='Direkte Eingabe aktiv · Telegram wartet auf Gerätesitzung';
+      return;
+    }
+    try{
+      const data=await request('status');
+      if(!data.configured){
+        button.disabled=true;
+        button.textContent='Telegram';
+        status.textContent='Direkte Eingabe aktiv · Telegram noch nicht eingerichtet';
+        return;
+      }
+      if(data.webhookActive){
+        button.disabled=true;
+        button.textContent='Telegram ✓';
+        status.textContent='Telegram Text → Aufgabe · Voice/Bild → Inbox';
+      }else{
+        button.disabled=false;
+        button.textContent='Telegram verbinden';
+        status.textContent='Telegram ist vorbereitet · Webhook noch aktivieren';
+      }
+    }catch(_){
+      button.disabled=true;
+      status.textContent='Direkte Eingabe aktiv · Telegram-Status nicht verfügbar';
+    }
+  }
+
+  button.addEventListener('click',async()=>{
+    button.disabled=true;
+    button.textContent='Verbinde …';
+    try{
+      await request('setup','POST');
+      await refresh();
+    }catch(_){
+      button.disabled=false;
+      button.textContent='Telegram verbinden';
+      status.textContent='Telegram konnte nicht verbunden werden.';
+    }
+  });
+
+  refresh();
+})();

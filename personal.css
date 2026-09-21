@@ -91,3 +91,102 @@ body.email-window-open{overflow:hidden}
 /* WHOOP health */
 .personal-health-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.personal-health-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.personal-health-actions button{min-height:34px;padding:7px 10px;font-size:9px}.personal-health-values>div{min-width:0}.personal-health-values small{display:block;margin-top:5px;color:#7792a0;font-size:9px}.personal-whoop-details{margin-top:14px;border-top:1px solid rgba(205,228,249,.1);padding-top:12px}.personal-whoop-details summary{cursor:pointer;color:#8edbcc;font-size:10px;letter-spacing:.04em}.personal-whoop-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}.personal-whoop-metrics>div{padding:10px;border:1px solid rgba(205,228,249,.09);border-radius:10px;background:rgba(7,18,29,.35)}.personal-whoop-metrics span{display:block;color:#718a99;font-size:8px;text-transform:uppercase;letter-spacing:.08em}.personal-whoop-metrics strong{display:block;margin-top:5px;color:#e9f8fb;font-size:12px}.personal-whoop-workouts{margin-top:14px}.personal-whoop-workouts>strong{font-size:11px;color:#dff4f6}.personal-whoop-workout{padding:9px 0;border-bottom:1px solid rgba(205,228,249,.07)}.personal-whoop-workout:last-child{border-bottom:0}.personal-whoop-workout strong{display:block;font-size:10px;color:#e4f5f8}.personal-whoop-workout small{display:block;margin-top:4px;color:#708a99;font-size:9px}
 @media(max-width:560px){.personal-health-head{flex-direction:column}.personal-health-actions{justify-content:flex-start}.personal-whoop-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+
+/* v0.48.0 — Daily Tasks */
+.personal-tasks-panel{
+  margin:0 0 14px;
+  padding:18px;
+  border-color:rgba(137,237,219,.16);
+  background:
+    radial-gradient(circle at 8% 8%,rgba(53,214,244,.07),transparent 34%),
+    radial-gradient(circle at 90% 12%,rgba(117,84,217,.08),transparent 32%),
+    rgba(7,18,29,.72);
+}
+.personal-tasks-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+.personal-tasks-head h2{margin:3px 0 0}
+.personal-tasks-head p{margin:5px 0 0;color:#7893a2;font-size:9px;text-transform:capitalize}
+.personal-task-progress{display:grid;justify-items:end;gap:2px;min-width:70px}
+.personal-task-progress strong{color:#e9fbff;font-size:24px;line-height:1}
+.personal-task-progress small{color:#77909f;font-size:8px;text-transform:uppercase;letter-spacing:.08em}
+.personal-task-quick{display:grid;grid-template-columns:minmax(0,1fr) 112px auto;gap:8px;margin-top:14px}
+.personal-task-quick input,.personal-task-quick select{
+  min-width:0;
+  min-height:42px;
+  padding:10px 11px;
+  border:1px solid rgba(184,221,242,.18);
+  border-radius:11px;
+  background:rgba(6,17,28,.72);
+  color:#edfaff;
+  color-scheme:dark;
+  font:inherit
+}
+.personal-task-quick input:focus,.personal-task-quick select:focus{outline:2px solid #8bedda;outline-offset:2px}
+.personal-task-quick button{min-height:42px;white-space:nowrap}
+.personal-task-notice{min-height:16px;margin-top:7px;color:#7893a2;font-size:9px}
+.personal-task-notice[data-kind="error"]{color:#ffb6b6}
+.personal-task-section-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:13px 0 7px;color:#dff4f6}
+.personal-task-section-head strong{font-size:10px;text-transform:uppercase;letter-spacing:.08em}
+.personal-task-section-head span{color:#718b99;font-size:9px}
+.personal-task-list{display:grid;gap:7px}
+.personal-task-row{
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr) auto;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  padding:9px 10px;
+  border:1px solid rgba(205,228,249,.09);
+  border-radius:12px;
+  background:rgba(5,15,24,.42)
+}
+.personal-task-row.is-overdue{border-color:rgba(255,171,100,.18);background:rgba(90,45,10,.07)}
+.personal-task-row.is-done{opacity:.62}
+.personal-task-check{
+  width:30px;height:30px;min-height:30px;padding:0;
+  border:1px solid rgba(142,226,215,.32);
+  border-radius:9px;
+  background:rgba(142,226,215,.04);
+  color:#8ee2d7;
+  font-size:15px;
+  line-height:1
+}
+.personal-task-check[aria-pressed="true"]{background:rgba(142,226,215,.13);border-color:rgba(142,226,215,.5)}
+.personal-task-copy{min-width:0}
+.personal-task-copy strong{display:block;overflow:hidden;text-overflow:ellipsis;color:#e7f6f9;font-size:11px;font-weight:600}
+.personal-task-row.is-done .personal-task-copy strong{text-decoration:line-through}
+.personal-task-copy small{display:block;margin-top:4px;color:#718a99;font-size:8.5px;line-height:1.35}
+.personal-task-side{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+.personal-task-priority{padding:4px 6px;border-radius:999px;font-size:7px;text-transform:uppercase;letter-spacing:.05em;color:#8399a6;background:rgba(255,255,255,.04)}
+.personal-task-priority.is-high{color:#ffd0a8;background:rgba(255,166,88,.08)}
+.personal-task-priority.is-low{color:#79909c}
+.personal-task-mini,.personal-task-delete{min-height:28px;padding:5px 7px;font-size:8px}
+.personal-task-delete{width:28px;padding:0;font-size:16px;color:#8094a0}
+.personal-task-overdue{margin-top:9px}
+.personal-task-done{margin-top:12px;border-top:1px solid rgba(205,228,249,.08);padding-top:10px}
+.personal-task-done summary{cursor:pointer;color:#8aa2ae;font-size:9px;text-transform:uppercase;letter-spacing:.07em}
+.personal-task-done .personal-task-list{margin-top:8px}
+.personal-task-ingest{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  margin-top:14px;padding-top:11px;border-top:1px solid rgba(205,228,249,.08)
+}
+.personal-task-ingest strong{display:block;color:#dff4f6;font-size:10px}
+.personal-task-ingest small{display:block;margin-top:3px;color:#6e8796;font-size:8.5px}
+@media(max-width:700px){
+  .personal-tasks-panel{padding:13px;margin-bottom:9px;border-radius:16px}
+  .personal-tasks-head{align-items:center}
+  .personal-task-progress strong{font-size:20px}
+  .personal-task-quick{grid-template-columns:minmax(0,1fr) 88px}
+  .personal-task-quick button{grid-column:1/-1}
+  .personal-task-row{grid-template-columns:32px minmax(0,1fr);gap:8px;padding:9px}
+  .personal-task-side{grid-column:2;justify-content:flex-start;margin-top:-2px}
+  .personal-task-copy strong{font-size:10.5px}
+}
+@media(max-width:430px){
+  .personal-task-quick{grid-template-columns:1fr}
+  .personal-task-quick button{grid-column:auto}
+  .personal-task-priority{display:none}
+}
+
+.personal-task-ingest-actions{display:flex;align-items:center;gap:7px}.personal-task-ingest-actions button{min-height:30px;padding:6px 8px;font-size:8px}
+@media(max-width:430px){.personal-task-ingest{align-items:flex-start}.personal-task-ingest-actions{flex-direction:column;align-items:flex-end}}

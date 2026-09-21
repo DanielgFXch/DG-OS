@@ -11,9 +11,9 @@
   <link rel="apple-touch-icon" href="./icon-192.png" />
   <link rel="stylesheet" href="./styles.css?v=0.45.3" />
   <link rel="stylesheet" href="./wow.css?v=0.37.1" />
-  <link rel="stylesheet" href="./personal.css?v=0.47.0" />
+  <link rel="stylesheet" href="./personal.css?v=0.48.0" />
   <link rel="stylesheet" href="./social.css?v=0.45.3" />
-  <link rel="stylesheet" href="./navigation.css?v=0.46.0" />
+  <link rel="stylesheet" href="./navigation.css?v=0.48.0" />
   <link rel="stylesheet" href="./mobile.css?v=0.46.3" />
   <title>DG OS · Dein Tag</title>
 </head>
@@ -83,6 +83,59 @@
         <div class="quick-info-footer"><span id="weatherFeels">Gefühlt — °C</span><span id="weatherStatus" role="status">Wetter lädt …</span></div>
       </div>
     </section>
+
+    <section id="personalTasks" class="personal-panel personal-tasks-panel" aria-labelledby="personalTasksTitle">
+      <div class="personal-tasks-head">
+        <div>
+          <div class="personal-kicker">HEUTE ERLEDIGEN</div>
+          <h2 id="personalTasksTitle">Deine Aufgaben.</h2>
+          <p id="taskDateLabel">Heute</p>
+        </div>
+        <div class="personal-task-progress" aria-live="polite">
+          <strong id="taskProgress">0/0</strong>
+          <small>erledigt</small>
+        </div>
+      </div>
+
+      <form id="taskQuickForm" class="personal-task-quick" autocomplete="off">
+        <input id="taskQuickTitle" type="text" maxlength="240" placeholder="Was musst du heute erledigen?" aria-label="Neue Aufgabe" required />
+        <select id="taskQuickPriority" aria-label="Priorität">
+          <option value="normal">Normal</option>
+          <option value="high">Wichtig</option>
+          <option value="low">Später</option>
+        </select>
+        <button type="submit">+ Aufgabe</button>
+      </form>
+
+      <div id="taskNotice" class="personal-task-notice" role="status"></div>
+
+      <div id="taskOverdueWrap" class="personal-task-overdue hidden">
+        <div class="personal-task-section-head"><strong>Überfällig</strong><span id="taskOverdueCount">0</span></div>
+        <div id="taskOverdueList" class="personal-task-list"></div>
+      </div>
+
+      <div class="personal-task-section-head">
+        <strong>Heute</strong>
+        <span id="taskOpenCount">0 offen</span>
+      </div>
+      <div id="taskTodayList" class="personal-task-list">
+        <p class="personal-empty">Aufgaben werden geladen …</p>
+      </div>
+
+      <details id="taskDoneSection" class="personal-task-done hidden">
+        <summary>Erledigt <span id="taskDoneCount">0</span></summary>
+        <div id="taskDoneList" class="personal-task-list"></div>
+      </details>
+
+      <div class="personal-task-ingest">
+        <div><strong>Jarvis Inbox</strong><small id="taskInboxStatus">Direkte Eingabe aktiv · Telegram wird geprüft</small></div>
+        <div class="personal-task-ingest-actions">
+          <span id="taskInboxBadge" class="personal-status">0</span>
+          <button id="taskTelegramSetup" type="button">Telegram</button>
+        </div>
+      </div>
+    </section>
+
     <div class="personal-columns">
       <section id="personalCalendar" class="personal-panel">
         <div class="personal-panel-head"><div><div class="personal-kicker">ZEIT FÜR DAS WICHTIGE</div><h2>Dein Kalender</h2></div><button id="newLocalEvent" type="button">+ Termin</button></div>
@@ -693,7 +746,7 @@
   </form></dialog>
   <script src="./marketBrain.js"></script>
   <script src="./app.js?v=0.46.3"></script>
-  <script src="./personal.js?v=0.47.1"></script>\n  <script src="./social.js?v=0.45.3"></script>
+  <script src="./personal.js?v=0.48.0"></script>\n  <script src="./social.js?v=0.45.3"></script>
   <script src="./navigation.js?v=0.46.0"></script>
   <script src="./weather.js?v=0.46.2"></script>
 </body>

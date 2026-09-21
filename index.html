@@ -84,6 +84,41 @@
       </div>
     </section>
 
+    <section id="personalAttention" class="personal-panel personal-attention-panel" aria-labelledby="personalAttentionTitle">
+      <div class="personal-attention-head">
+        <div>
+          <div class="personal-kicker">JARVIS FOKUS</div>
+          <h2 id="personalAttentionTitle">Was braucht heute deine Aufmerksamkeit?</h2>
+          <p id="attentionSubtitle">Dein Tag wird priorisiert …</p>
+        </div>
+        <span id="attentionCount" class="personal-attention-count">0</span>
+      </div>
+
+      <div id="attentionStats" class="personal-attention-stats" aria-label="Tagesstatus">
+        <span><strong id="attentionTaskStat">0</strong> Aufgaben</span>
+        <span><strong id="attentionBillStat">0</strong> Rechnungen</span>
+        <span><strong id="attentionAppointmentStat">0</strong> Termine</span>
+        <span><strong id="attentionInboxStat">0</strong> Inbox</span>
+      </div>
+
+      <div id="attentionList" class="personal-attention-list">
+        <p class="personal-empty">Jarvis prüft deinen Tag …</p>
+      </div>
+
+      <div class="personal-attention-actions">
+        <button id="dailyBriefingButton" type="button">☀️ Tagesbriefing</button>
+        <button id="weeklyReviewButton" type="button">↗ Wochenreview</button>
+      </div>
+
+      <div id="jarvisSummaryPanel" class="personal-summary-panel hidden" aria-live="polite">
+        <div class="personal-summary-head">
+          <div><div class="personal-kicker" id="jarvisSummaryKicker">JARVIS</div><h3 id="jarvisSummaryTitle">Zusammenfassung</h3></div>
+          <button id="jarvisSummaryClose" type="button" aria-label="Zusammenfassung schliessen">×</button>
+        </div>
+        <div id="jarvisSummaryContent" class="personal-summary-content"></div>
+      </div>
+    </section>
+
     <section id="personalTasks" class="personal-panel personal-tasks-panel" aria-labelledby="personalTasksTitle">
       <div class="personal-tasks-head">
         <div>

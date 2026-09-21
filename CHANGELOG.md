@@ -1,3 +1,24 @@
+# v0.49.1 — Telegram-Gerätesitzung statt WHOOP-Abhängigkeit
+
+## Fix
+- Aufgaben und Telegram hängen nicht mehr von einer WHOOP-Browsersitzung ab.
+- Ein Gerät wird jetzt direkt über den bestehenden DG-OS-Telegram-Bot bestätigt.
+- Nach erfolgreichem Pairing erhält der Browser eine eigene private DG-OS-Gerätesitzung.
+- Aufgabenliste und Telegram funktionieren danach unabhängig vom WHOOP-Status in diesem Browser/WebView.
+- Bestehende WHOOP-Sitzungen bleiben vorübergehend als Legacy-Fallback gültig.
+
+## Pairing
+- `Telegram verbinden` funktioniert auch auf einem neuen Gerät ohne WHOOP-Login.
+- Jarvis erzeugt einen einmaligen 6-stelligen Code plus privaten Claim-Schlüssel.
+- Nur Daniels bereits gekoppelter Telegram-Chat kann das Gerät bestätigen.
+- Die Browser-Sitzung wird erst nach der Telegram-Bestätigung ausgegeben.
+- Gerätesitzungen laufen nach 180 Tagen ab und können dann neu gekoppelt werden.
+
+## Unverändert
+- Ein Telegram-Bot für Privat/Jarvis + Trading.
+- Keine Änderungen an Trading Brain, Decision Engine oder Trading-Regeln.
+- LiveUP Academy wurde nicht verändert.
+
 # v0.49.0 — Ein Telegram-Bot für Jarvis + Trading
 
 ## Neu

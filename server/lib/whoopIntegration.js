@@ -83,8 +83,8 @@ class WhoopIntegration {
     this.clientId=env.WHOOP_CLIENT_ID||DEFAULT_CLIENT_ID;
     this.clientSecret=env.WHOOP_CLIENT_SECRET||'';
     this.redirectUri=env.WHOOP_REDIRECT_URI||DEFAULT_REDIRECT_URI;
-    this.appUrl=String(env.DGOS_APP_URL||env.DGOS_PUBLIC_BASE_URL||'').replace(/\/+$/,'');
-    this.publicBaseUrl=String(env.DGOS_PUBLIC_BASE_URL||'').replace(/\/+$/,'');
+    this.publicBaseUrl=String(env.DGOS_PUBLIC_BASE_URL||env.DGOS_APP_URL||'').replace(/\/+$/,'');
+    this.appUrl=String(env.DGOS_APP_URL||this.publicBaseUrl||'').replace(/\/+$/,'');
     this.key=parseKey(env.DGOS_INTEGRATION_ENCRYPTION_KEY||env.DGOS_GMAIL_ENCRYPTION_KEY||'');
     const privateDir=env.DGOS_PRIVATE_DATA_DIR||path.resolve(process.cwd(),'private');
     this.store=new EncryptedStore(path.join(privateDir,'whoop-tokens.enc.json'),this.key);
@@ -95,7 +95,7 @@ class WhoopIntegration {
     this.refreshPromise=null;
   }
 
-  get configured(){return Boolean(this.clientId&&this.clientSecret&&this.redirectUri&&this.appUrl&&this.key);}
+  get configured(){return Boolean(this.clientId&&this.clientSecret&&this.redirectUri&&this.publicBaseUrl&&this.appUrl&&this.key);}
   get connected(){return Boolean(this.token&&this.token.refreshToken);}
 
   _save(){

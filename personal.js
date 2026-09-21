@@ -566,13 +566,18 @@
     }
     if(data&&data.services){
       const telegram=Boolean(data.services.telegram&&data.services.telegram.connected);
+      const whoop=data.services.whoop||null;
       setText('hubTelegramStatus',telegram?'Bot + Chat · verbunden':'Noch nicht verbunden');
       setText('hubTelegramBadge',telegram?'ON':'OFF');
       setText('hubWeatherStatus',data.services.weather&&data.services.weather.connected?'Open-Meteo · verbunden':'Nicht verbunden');
+      setText('hubWhoopStatus',whoop&&whoop.authenticated?'WHOOP · verbunden':whoop&&whoop.configured?'OAuth · bereit':'OAuth · nicht konfiguriert');
+      setText('hubWhoopBadge',whoop&&whoop.authenticated?'ON':'OFF');
     }else{
       setText('hubTelegramStatus',savedBase()?'Status in Server-Version sichtbar':'Hub erforderlich');
       setText('hubTelegramBadge','OFF');
       setText('hubWeatherStatus','Open-Meteo · verbunden');
+      setText('hubWhoopStatus',savedBase()?'Status in Server-Version sichtbar':'OAuth · nicht verbunden');
+      setText('hubWhoopBadge','OFF');
     }
   }
 

@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="./wow.css?v=0.37.1" />
   <link rel="stylesheet" href="./personal.css?v=0.45.3" />\n  <link rel="stylesheet" href="./social.css?v=0.45.3" />
   <link rel="stylesheet" href="./navigation.css?v=0.46.0" />
-  <link rel="stylesheet" href="./mobile.css?v=0.46.1" />
+  <link rel="stylesheet" href="./mobile.css?v=0.46.2" />
   <title>DG OS · Dein Tag</title>
 </head>
 <body>
@@ -54,7 +54,7 @@
       <div class="header-datetime" aria-label="Aktueller Stand">
         <span class="header-datetime-label">AKTUELLER STAND</span>
         <strong id="headerClock">--:--:--</strong>
-        <span id="headerDate">--.--.----</span>
+        <span class="header-meta-line"><span id="headerDate">--.--.----</span><span aria-hidden="true">·</span><span id="headerWeather">— °C</span></span>
       </div>
 
     </div>
@@ -86,7 +86,7 @@
       <section id="personalCalendar" class="personal-panel">
         <div class="personal-panel-head"><div><div class="personal-kicker">ZEIT FÜR DAS WICHTIGE</div><h2>Dein Kalender</h2></div><button id="newLocalEvent" type="button">+ Termin</button></div>
         <div class="personal-calendar-toolbar"><div class="personal-period"><button id="calendarPrevious" type="button" aria-label="Vorheriger Zeitraum">‹</button><h3 id="calendarPeriod"></h3><button id="calendarNext" type="button" aria-label="Nächster Zeitraum">›</button></div><button id="calendarToday" type="button">Heute</button></div>
-        <div class="personal-tabs" aria-label="Kalenderansicht"><button data-calendar-view="day" type="button" aria-pressed="false">Tag</button><button data-calendar-view="week" type="button" aria-pressed="false">Woche</button><button data-calendar-view="month" type="button" aria-pressed="true">Monat</button></div>
+        <div class="personal-tabs" aria-label="Kalenderansicht"><button data-calendar-view="day" type="button" aria-pressed="true">Tagesübersicht</button><button data-calendar-view="week" type="button" aria-pressed="false">Wochenübersicht</button><button data-calendar-view="month" type="button" aria-pressed="false">Monatsübersicht</button></div>
         <p class="personal-source">Google &amp; iCloud noch nicht verbunden. Neue Termine bleiben auf diesem Gerät.</p>
         <div id="calendarGrid" class="personal-calendar-grid"></div>
         <div class="personal-agenda"><h3 id="agendaHeading"></h3><div id="personalAgenda"></div></div>
@@ -663,8 +663,8 @@
   </form></dialog>
   <script src="./marketBrain.js"></script>
   <script src="./app.js?v=0.45.3"></script>
-  <script src="./personal.js?v=0.45.3"></script>\n  <script src="./social.js?v=0.45.3"></script>
+  <script src="./personal.js?v=0.46.2"></script>\n  <script src="./social.js?v=0.45.3"></script>
   <script src="./navigation.js?v=0.46.0"></script>
-  <script src="./weather.js"></script>
+  <script src="./weather.js?v=0.46.2"></script>
 </body>
 </html>

@@ -1033,3 +1033,68 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});
   window.addEventListener('focus',load);
 })();
+
+
+/* Telegram task bridge — text becomes tasks, voice/images enter the Jarvis Inbox. */
+(() => {
+  'use strict';
+  const button=document.getElementById('taskTelegramSetup');
+  const status=document.getElementById('taskInboxStatus');
+  if(!button||!status)return;
+
+  const EDGE='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/telegram-tasks';
+  const SESSION_KEY='dgos.whoopSession';
+  function headers(){
+    const token=localStorage.getItem(SESSION_KEY)||'';
+    return token?{Authorization:'Bearer '+token}:{};
+  }
+  async function request(action,method='GET'){
+    const r=await fetch(EDGE+'/'+action,{method,headers:headers(),cache:'no-store'});
+    let data={};try{data=await r.json();}catch(_){}
+    if(!r.ok){const e=new Error(data.error||'telegram_task_error');e.status=r.status;throw e;}
+    return data;
+  }
+  async function refresh(){
+    if(!localStorage.getItem(SESSION_KEY)){
+      button.disabled=true;
+      status.textContent='Direkte Eingabe aktiv · Telegram wartet auf Gerätesitzung';
+      return;
+    }
+    try{
+      const data=await request('status');
+      if(!data.configured){
+        button.disabled=true;
+        button.textContent='Telegram';
+        status.textContent='Direkte Eingabe aktiv · Telegram noch nicht eingerichtet';
+        return;
+      }
+      if(data.webhookActive){
+        button.disabled=true;
+        button.textContent='Telegram ✓';
+        status.textContent='Telegram Text → Aufgabe · Voice/Bild → Inbox';
+      }else{
+        button.disabled=false;
+        button.textContent='Telegram verbinden';
+        status.textContent='Telegram ist vorbereitet · Webhook noch aktivieren';
+      }
+    }catch(_){
+      button.disabled=true;
+      status.textContent='Direkte Eingabe aktiv · Telegram-Status nicht verfügbar';
+    }
+  }
+
+  button.addEventListener('click',async()=>{
+    button.disabled=true;
+    button.textContent='Verbinde …';
+    try{
+      await request('setup','POST');
+      await refresh();
+    }catch(_){
+      button.disabled=false;
+      button.textContent='Telegram verbinden';
+      status.textContent='Telegram konnte nicht verbunden werden.';
+    }
+  });
+
+  refresh();
+})();

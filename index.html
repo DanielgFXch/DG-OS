@@ -83,6 +83,56 @@
         <div class="quick-info-footer"><span id="weatherFeels">Gefühlt — °C</span><span id="weatherStatus" role="status">Wetter lädt …</span></div>
       </div>
     </section>
+
+    <section id="personalTasks" class="personal-panel personal-tasks-panel" aria-labelledby="personalTasksTitle">
+      <div class="personal-tasks-head">
+        <div>
+          <div class="personal-kicker">HEUTE ERLEDIGEN</div>
+          <h2 id="personalTasksTitle">Deine Aufgaben.</h2>
+          <p id="taskDateLabel">Heute</p>
+        </div>
+        <div class="personal-task-progress" aria-live="polite">
+          <strong id="taskProgress">0/0</strong>
+          <small>erledigt</small>
+        </div>
+      </div>
+
+      <form id="taskQuickForm" class="personal-task-quick" autocomplete="off">
+        <input id="taskQuickTitle" type="text" maxlength="240" placeholder="Was musst du heute erledigen?" aria-label="Neue Aufgabe" required />
+        <select id="taskQuickPriority" aria-label="Priorität">
+          <option value="normal">Normal</option>
+          <option value="high">Wichtig</option>
+          <option value="low">Später</option>
+        </select>
+        <button type="submit">+ Aufgabe</button>
+      </form>
+
+      <div id="taskNotice" class="personal-task-notice" role="status"></div>
+
+      <div id="taskOverdueWrap" class="personal-task-overdue hidden">
+        <div class="personal-task-section-head"><strong>Überfällig</strong><span id="taskOverdueCount">0</span></div>
+        <div id="taskOverdueList" class="personal-task-list"></div>
+      </div>
+
+      <div class="personal-task-section-head">
+        <strong>Heute</strong>
+        <span id="taskOpenCount">0 offen</span>
+      </div>
+      <div id="taskTodayList" class="personal-task-list">
+        <p class="personal-empty">Aufgaben werden geladen …</p>
+      </div>
+
+      <details id="taskDoneSection" class="personal-task-done hidden">
+        <summary>Erledigt <span id="taskDoneCount">0</span></summary>
+        <div id="taskDoneList" class="personal-task-list"></div>
+      </details>
+
+      <div class="personal-task-ingest">
+        <div><strong>Jarvis Inbox</strong><small id="taskInboxStatus">Direkte Eingabe aktiv · Telegram folgt</small></div>
+        <span id="taskInboxBadge" class="personal-status">0</span>
+      </div>
+    </section>
+
     <div class="personal-columns">
       <section id="personalCalendar" class="personal-panel">
         <div class="personal-panel-head"><div><div class="personal-kicker">ZEIT FÜR DAS WICHTIGE</div><h2>Dein Kalender</h2></div><button id="newLocalEvent" type="button">+ Termin</button></div>

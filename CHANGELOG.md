@@ -1,3 +1,24 @@
+# v0.46.0 — Echte In-App-Seiten & Zurück-Navigation
+
+## Neu
+- Bottom-Navigation öffnet Kalender, Gesundheit, Social Media und Trading jetzt als eigene DG-OS-Screens statt nur dorthin zu scrollen.
+- Jeder Unterbereich erhält oben einen sichtbaren Zurück-Button.
+- Browser-/iPhone-Zurück und Vorwärts funktionieren über die History API.
+- Deep Links über #calendar, #health, #social und #trading werden unterstützt.
+- Social Media verwendet im eigenen Screen dieselbe Live-State-Instanz wie der bestehende Hub — keine doppelten Daten.
+- Trading öffnet im eigenen Screen automatisch den vollständigen Market Workspace.
+- Flüssige Screen-Transitions mit kurzer, reduzierter Bewegung; bestehende Eingaben und Zustände bleiben erhalten.
+
+## Navigation
+- Heute = bestehendes Dashboard.
+- Kalender = dedizierter Kalender-Screen.
+- Gesundheit = dedizierter Health/WHOOP-Screen.
+- Social = dedizierter Social Media Hub.
+- Trading = dedizierter Trading-Screen.
+
+## Unverändert
+- Keine Änderungen an Trading Brain, Market Brain, Cleanup-Regeln oder gespeicherten Nutzerdaten.
+
 # v0.45.3 — Social Bottom-Navigation final gefixt
 
 ## Behoben

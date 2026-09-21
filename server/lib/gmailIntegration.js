@@ -349,7 +349,7 @@ class GmailIntegration {
     this.tokens[account.id] = {
       email: account.email,
       refreshToken,
-      scope: String(token.scope || previous.scope || ''),
+      scope: String(token.scope || GOOGLE_SCOPES.join(' ')),
       connectedAt: new Date().toISOString()
     };
     this.store.write(this.tokens);

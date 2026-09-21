@@ -77,14 +77,14 @@ function requireMailSession(req, res, gmail) {
   return true;
 }
 
-function createApiServer(marketState, telegram, gmail, calendar) {
+function createApiServer(marketState, telegram, gmail, calendar, whoop) {
   telegram = telegram || {};
 
   return http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
 
     if (req.method === 'OPTIONS') {
-      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname === '/api/hub/status') {
+      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname.startsWith('/api/whoop/') || url.pathname === '/api/hub/status') {
         sendPrivateJson(res, 403, { error: 'same_origin_required' });
       } else {
         sendJson(res, 204, {});
@@ -126,10 +126,80 @@ function createApiServer(marketState, telegram, gmail, calendar) {
           services: {
             weather: { connected: true, provider: 'Open-Meteo', mode: 'client' },
             telegram: { connected: Boolean(telegram.token && telegram.chatId), mode: 'server' },
-            whoop: { connected: false, mode: 'not_configured' },
+            whoop: whoop ? Object.assign({ mode: 'server' }, whoop.status(req)) : { configured: false, connected: false, authenticated: false, mode: 'not_configured' },
             icloudCalendar: { connected: false, mode: 'not_configured' }
           }
         });
+        return;
+      }
+
+      // WHOOP is private health data: all WHOOP API routes are same-origin,
+      // and data access additionally requires the signed HttpOnly WHOOP session.
+      if (req.method === 'GET' && url.pathname === '/api/whoop/status') {
+        if (!whoop) { sendPrivateJson(res, 200, { configured: false, connected: false, authenticated: false }); return; }
+        sendPrivateJson(res, 200, whoop.status(req));
+        return;
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/whoop/oauth/start') {
+        if (!whoop || !whoop.configured) { sendPrivateJson(res, 503, { error: 'whoop_not_configured' }); return; }
+        try {
+          const destination=whoop.authorizationUrl();
+          res.writeHead(302,{Location:destination,'Cache-Control':'no-store','Referrer-Policy':'no-referrer'});
+          res.end();
+        } catch (err) {
+          console.error('[server] WHOOP OAuth start failed:',err.message);
+          sendPrivateJson(res,500,{error:'whoop_oauth_start_failed'});
+        }
+        return;
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/whoop/oauth/callback') {
+        if (!whoop || !whoop.configured) { sendPrivateJson(res, 503, { error: 'whoop_not_configured' }); return; }
+        try {
+          await whoop.handleCallback(
+            url.searchParams.get('code'),
+            url.searchParams.get('state'),
+            url.searchParams.get('redirect_uri')
+          );
+          res.writeHead(302,{
+            Location:whoop.appUrl+'/?whoop=connected#personalHealth',
+            'Set-Cookie':whoop.sessionCookie(),
+            'Cache-Control':'no-store',
+            'Referrer-Policy':'no-referrer'
+          });
+          res.end();
+        } catch (err) {
+          console.error('[server] WHOOP OAuth callback failed:',err.message);
+          res.writeHead(302,{Location:whoop.appUrl+'/?whoop=error#personalHealth','Cache-Control':'no-store'});
+          res.end();
+        }
+        return;
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/whoop/summary') {
+        if (!whoop || !whoop.configured) { sendPrivateJson(res,503,{error:'whoop_not_configured'}); return; }
+        if (!whoop.connected) { sendPrivateJson(res,409,{error:'whoop_not_connected'}); return; }
+        if (!whoop.isAuthorized(req)) { sendPrivateJson(res,401,{error:'whoop_session_required'}); return; }
+        try {
+          sendPrivateJson(res,200,await whoop.summary());
+        } catch (err) {
+          console.error('[server] WHOOP summary failed:',err.message);
+          sendPrivateJson(res,502,{error:'whoop_request_failed'});
+        }
+        return;
+      }
+
+      if (req.method === 'POST' && url.pathname === '/api/whoop/disconnect') {
+        if (!whoop || !whoop.configured) { sendPrivateJson(res,503,{error:'whoop_not_configured'}); return; }
+        if (!whoop.isAuthorized(req)) { sendPrivateJson(res,401,{error:'whoop_session_required'}); return; }
+        await whoop.disconnect();
+        res.writeHead(200,{
+          'Content-Type':'application/json; charset=utf-8',
+          'Set-Cookie':whoop.clearSessionCookie(),
+          'Cache-Control':'no-store'
+        });
+        res.end(JSON.stringify({ok:true}));
         return;
       }
 
@@ -308,11 +378,11 @@ function createApiServer(marketState, telegram, gmail, calendar) {
       }
 
       if (!url.pathname.startsWith('/api/') && serveStatic(req, res)) return;
-      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname === '/api/hub/status') sendPrivateJson(res, 404, { error: 'not_found' });
+      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname.startsWith('/api/whoop/') || url.pathname === '/api/hub/status') sendPrivateJson(res, 404, { error: 'not_found' });
       else sendJson(res, 404, { error: 'not_found' });
     } catch (err) {
       console.error('[server] request failed:', err.message);
-      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname === '/api/hub/status') sendPrivateJson(res, 500, { error: 'internal_error' });
+      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname.startsWith('/api/whoop/') || url.pathname === '/api/hub/status') sendPrivateJson(res, 500, { error: 'internal_error' });
       else sendJson(res, 500, { error: 'internal_error' });
     }
   });

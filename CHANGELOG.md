@@ -1,3 +1,16 @@
+# v0.39.0 — Glass dashboard and weather
+
+## New
+- Open-Meteo weather for Oetwil am See: temperature, feels-like, weather condition, sunrise, sunset and daylight duration.
+- Zurich clock, ten-minute refresh, manual retry, response validation and explicit unavailable states.
+
+## Improved
+- Frosted-glass panels, atmospheric cyan/violet light, translucent calendar cells and navigation; opaque fallback without backdrop-filter.
+- Greeting uses Gomes only.
+
+## Changed files
+- index.html, personal.css, personal.js, weather.js, app.js, sw.js, package.json, CHANGELOG.md.
+
 # v0.38.0 — Personal home and device calendar
 
 ## New

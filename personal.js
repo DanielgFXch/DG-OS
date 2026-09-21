@@ -185,13 +185,18 @@
   }
 
   function showWorkspace(accountId){
-    state.account=accountId;state.filter='inbox';state.query='';state.selected.clear();state.message=null;state.reply=null;workspace.classList.remove('hidden');
+    state.account=accountId;state.filter='inbox';state.query='';state.selected.clear();state.message=null;state.reply=null;
+    workspace.classList.remove('hidden');document.body.classList.add('email-window-open');
     document.querySelectorAll('[data-email-filter]').forEach(item=>item.setAttribute('aria-pressed',String(item.dataset.emailFilter==='inbox')));
     $('emailSearch').value='';
     updateWorkspaceControls();
     $('emailMessageDetail').innerHTML='<p class="personal-empty">Öffne eine E-Mail, um sie hier zu lesen.</p>';
     if(state.apiAvailable&&state.status&&state.status.authenticated){const item=statusAccount(accountId);if(item&&item.connected)loadMessages();}
-    workspace.scrollIntoView({behavior:'smooth',block:'start'});
+    $('emailCloseWorkspace').focus();
+  }
+
+  function closeWorkspace(){
+    workspace.classList.add('hidden');document.body.classList.remove('email-window-open');
   }
 
   function formatMailDate(value){
@@ -274,14 +279,15 @@
     if(!state.account)return;
     if(!state.apiAvailable){
       const remote=remoteServerBase();
-      if(remote){window.location.href=remote+'/#personalEmail';return;}
+      if(remote){window.location.href=remote+'/?emailAccount='+encodeURIComponent(state.account)+'#personalEmail';return;}
       const account=currentAccount();
       if(account)window.location.href='https://mail.google.com/mail/u/?authuser='+encodeURIComponent(account.email)+'#inbox';
       return;
     }
     window.location.href='./api/gmail/oauth/start?account='+encodeURIComponent(state.account);
   });
-  $('emailCompose').addEventListener('click',openCompose);$('emailCloseWorkspace').addEventListener('click',()=>workspace.classList.add('hidden'));$('emailTrashSelected').addEventListener('click',()=>trashMessages(Array.from(state.selected)));$('closeEmailCompose').addEventListener('click',()=>$('emailComposeDialog').close());
+  $('emailCompose').addEventListener('click',openCompose);$('emailCloseWorkspace').addEventListener('click',closeWorkspace);$('emailTrashSelected').addEventListener('click',()=>trashMessages(Array.from(state.selected)));$('closeEmailCompose').addEventListener('click',()=>$('emailComposeDialog').close());
+  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&!workspace.classList.contains('hidden')&&!$('emailComposeDialog').open)closeWorkspace();});
   $('emailSearchForm').addEventListener('submit',event=>{event.preventDefault();state.query=$('emailSearch').value.trim();loadMessages();});
   $('emailComposeForm').addEventListener('submit',async event=>{
     event.preventDefault();$('emailComposeError').textContent='';
@@ -291,8 +297,68 @@
   });
 
   (async()=>{
-    await probeStatus();const params=new URLSearchParams(window.location.search);const connectedAccount=params.get('gmail')==='connected'?params.get('account'):null;
+    await probeStatus();const params=new URLSearchParams(window.location.search);
+    const connectedAccount=params.get('gmail')==='connected'?params.get('account'):null;
+    const requestedAccount=params.get('emailAccount');
     if(connectedAccount&&accounts[connectedAccount]){showWorkspace(connectedAccount);history.replaceState(null,'',window.location.pathname+window.location.hash);}
+    else if(requestedAccount&&accounts[requestedAccount]){showWorkspace(requestedAccount);history.replaceState(null,'',window.location.pathname+window.location.hash);}
     else if(params.get('gmail')==='error'){$('emailHubStatus').textContent='Google-Verbindung wurde nicht abgeschlossen. Es wurden keine Maildaten gespeichert.';history.replaceState(null,'',window.location.pathname+window.location.hash);}
   })();
+})();
+
+
+/* DG OS Hub connector — one Jarvis bridge for Gmail and future personal services. */
+(() => {
+  'use strict';
+  const input=document.getElementById('personalHubUrl');
+  const button=document.getElementById('personalHubConnect');
+  const status=document.getElementById('personalHubStatus');
+  if(!input||!button||!status)return;
+  const key='dgos.marketServerUrl';
+
+  function normalize(value){
+    const raw=String(value||'').trim();
+    if(!raw)return'';
+    try{
+      const url=new URL(raw.includes('://')?raw:'https://'+raw);
+      if(!/^https?:$/.test(url.protocol))return'';
+      return url.origin;
+    }catch(_){return'';}
+  }
+
+  function showSaved(){
+    const saved=normalize(localStorage.getItem(key)||'');
+    if(saved){input.value=saved;status.textContent='Gespeichert · '+new URL(saved).host;}
+    else status.textContent='Noch nicht verbunden';
+  }
+
+  async function testHub(base){
+    const controller=new AbortController();
+    const timeout=setTimeout(()=>controller.abort(),8000);
+    try{
+      const response=await fetch(base+'/api/health',{cache:'no-store',signal:controller.signal});
+      const type=response.headers.get('content-type')||'';
+      if(!response.ok||!type.includes('application/json'))throw new Error('invalid_hub');
+      const data=await response.json();
+      if(!data||typeof data!=='object')throw new Error('invalid_hub');
+      return true;
+    }finally{clearTimeout(timeout);}
+  }
+
+  button.addEventListener('click',async()=>{
+    const base=normalize(input.value);
+    if(!base){status.textContent='Bitte eine gültige Server-Adresse eingeben.';input.focus();return;}
+    button.disabled=true;status.textContent='Verbindung wird geprüft …';
+    try{
+      await testHub(base);
+      localStorage.setItem(key,base);
+      input.value=base;
+      status.textContent='Verbunden · '+new URL(base).host;
+      window.dispatchEvent(new CustomEvent('dgos-hub-connected',{detail:{url:base}}));
+    }catch(_){
+      status.textContent='Nicht erreichbar · Server-Adresse oder Deployment prüfen.';
+    }finally{button.disabled=false;}
+  });
+
+  showSaved();
 })();

@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="./icon-192.png" />
   <link rel="stylesheet" href="./styles.css?v=0.45.3" />
   <link rel="stylesheet" href="./wow.css?v=0.37.1" />
-  <link rel="stylesheet" href="./personal.css?v=0.48.0" />
+  <link rel="stylesheet" href="./personal.css?v=0.50.0" />
   <link rel="stylesheet" href="./social.css?v=0.45.3" />
   <link rel="stylesheet" href="./navigation.css?v=0.48.0" />
   <link rel="stylesheet" href="./mobile.css?v=0.46.3" />
@@ -132,6 +132,31 @@
         <div class="personal-task-ingest-actions">
           <span id="taskInboxBadge" class="personal-status">0</span>
           <button id="taskTelegramSetup" type="button">Telegram</button>
+        </div>
+      </div>
+
+      <div class="personal-organizer">
+        <div class="personal-organizer-head">
+          <div><div class="personal-kicker">PRIVAT ORGANISIERT</div><h3>Alles an seinem Ort.</h3></div>
+          <small id="privateOrganizerStatus">Wird geladen …</small>
+        </div>
+        <div class="personal-organizer-grid">
+          <details class="personal-organizer-card" open>
+            <summary><span>📅 Termine</span><strong id="privateAppointmentCount">0</strong></summary>
+            <div id="privateAppointmentList" class="personal-organizer-list"><p class="personal-empty">Keine Termine.</p></div>
+          </details>
+          <details class="personal-organizer-card">
+            <summary><span>💳 Rechnungen</span><strong id="privateBillCount">0</strong></summary>
+            <div id="privateBillList" class="personal-organizer-list"><p class="personal-empty">Keine Rechnungen.</p></div>
+          </details>
+          <details class="personal-organizer-card">
+            <summary><span>🛒 Einkauf</span><strong id="privateShoppingCount">0</strong></summary>
+            <div id="privateShoppingList" class="personal-organizer-list"><p class="personal-empty">Keine Einträge.</p></div>
+          </details>
+          <details class="personal-organizer-card">
+            <summary><span>📝 Notizen</span><strong id="privateNoteCount">0</strong></summary>
+            <div id="privateNoteList" class="personal-organizer-list"><p class="personal-empty">Keine Notizen.</p></div>
+          </details>
         </div>
       </div>
     </section>
@@ -746,7 +771,7 @@
   </form></dialog>
   <script src="./marketBrain.js"></script>
   <script src="./app.js?v=0.46.3"></script>
-  <script src="./personal.js?v=0.49.1"></script>\n  <script src="./social.js?v=0.45.3"></script>
+  <script src="./personal.js?v=0.50.0"></script>\n  <script src="./social.js?v=0.45.3"></script>
   <script src="./navigation.js?v=0.46.0"></script>
   <script src="./weather.js?v=0.46.2"></script>
 </body>

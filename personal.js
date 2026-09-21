@@ -809,7 +809,8 @@
   'use strict';
 
   const EDGE='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/tasks';
-  const SESSION_KEY='dgos.whoopSession';
+  const DEVICE_SESSION_KEY='dgos.deviceSession';
+  const LEGACY_SESSION_KEY='dgos.whoopSession';
   const $=id=>document.getElementById(id);
   const form=$('taskQuickForm');
   if(!form)return;
@@ -982,6 +983,81 @@
     }
   }
 
+
+  function organizerMeta(item){
+    const bits=[];
+    if(item.due_date)bits.push(new Intl.DateTimeFormat('de-CH',{day:'2-digit',month:'2-digit',year:'2-digit'}).format(new Date(item.due_date+'T12:00:00')));
+    if(item.due_time)bits.push(String(item.due_time).slice(0,5));
+    if(item.amount!=null)bits.push(String(Number(item.amount).toFixed(2)).replace('.00','')+' '+String(item.currency||''));
+    return bits.join(' · ');
+  }
+
+  function organizerRow(item,kind){
+    const row=document.createElement('div');
+    row.className='personal-organizer-row';
+
+    const check=document.createElement('button');
+    check.type='button';
+    check.className='personal-organizer-check';
+    check.textContent='✓';
+    check.setAttribute('aria-label',kind==='note'?'Notiz archivieren':'Als erledigt markieren');
+
+    const copy=document.createElement('div');
+    copy.className='personal-organizer-copy';
+    const strong=document.createElement('strong');strong.textContent=item.title||'Eintrag';
+    const small=document.createElement('small');small.textContent=organizerMeta(item)||'Telegram';
+    copy.append(strong,small);
+
+    const del=document.createElement('button');
+    del.type='button';del.className='personal-organizer-delete';del.textContent='×';del.setAttribute('aria-label','Löschen');
+
+    check.addEventListener('click',async()=>{
+      check.disabled=true;
+      try{await api('private-toggle',{method:'POST',body:{id:item.id,done:true}});await loadOrganizer();}
+      catch(_){note('Eintrag konnte nicht aktualisiert werden.','error');}
+    });
+    del.addEventListener('click',async()=>{
+      del.disabled=true;
+      try{await api('private-delete',{method:'POST',body:{id:item.id}});await loadOrganizer();}
+      catch(_){note('Eintrag konnte nicht gelöscht werden.','error');}
+    });
+
+    row.append(check,copy,del);
+    return row;
+  }
+
+  function renderOrganizer(data){
+    const map=[
+      ['appointment','privateAppointmentList','privateAppointmentCount','Termine'],
+      ['bill','privateBillList','privateBillCount','Rechnungen'],
+      ['shopping','privateShoppingList','privateShoppingCount','Einträge'],
+      ['note','privateNoteList','privateNoteCount','Notizen']
+    ];
+    let total=0;
+    map.forEach(([kind,listId,countId,label])=>{
+      const items=Array.isArray(data&&data[kind])?data[kind]:[];
+      total+=items.length;
+      set(countId,String(items.length));
+      const list=$(listId);if(!list)return;
+      list.replaceChildren();
+      if(!items.length){
+        const p=document.createElement('p');p.className='personal-empty';p.textContent='Keine '+label+'.';
+        list.append(p);
+      }else items.forEach(item=>list.append(organizerRow(item,kind)));
+    });
+    set('privateOrganizerStatus',total?total+' offene Einträge':'Alles sortiert');
+  }
+
+  async function loadOrganizer(){
+    if(!session())return;
+    try{
+      const data=await api('organizer');
+      renderOrganizer(data);
+    }catch(_){
+      set('privateOrganizerStatus','Gerade nicht verfügbar');
+    }
+  }
+
   async function load(){
     const token=session();
     if(!token){
@@ -994,6 +1070,7 @@
       set('taskDateLabel',prettyDate(todayZurich()));
       const data=await api('today?date='+encodeURIComponent(todayZurich()));
       render(data);
+      await loadOrganizer();
       note('');
       form.querySelectorAll('input,select,button').forEach(el=>el.disabled=false);
     }catch(err){
@@ -1080,8 +1157,7 @@
   function setConnected(data){
     button.disabled=true;
     button.textContent='Telegram ✓';
-    const mode=data&&data.mode==='private'?'Privat/Jarvis':'Trading';
-    status.textContent='Ein Bot verbunden · aktuell '+mode+' · /private oder /trading zum Wechseln';
+    status.textContent='Privater Jarvis-Bot verbunden · Trading-Meldungen bleiben separat gekennzeichnet';
   }
 
   async function refresh(){

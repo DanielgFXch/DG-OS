@@ -1,3 +1,19 @@
+# v0.46.1 — Mobile Formation & Responsive Layout
+
+## Verbessert
+- Eigener Mobile-Layer statt zusammengedrücktem Desktop-Layout.
+- Heute-Screen auf iPhone kompakter aufgebaut: Begrüssung, Uhrzeit und Wetter bleiben übersichtlich und der Kalender rückt höher.
+- Alle Hauptbereiche verwenden auf Mobile eine klare Einspalten-Struktur.
+- Kalender für schmale Displays optimiert: kompaktere Tagesfelder, passende Abstände und keine horizontale Überbreite.
+- Gesundheit mit sauberem 3-Spalten-Werteblock.
+- Social Media Hub als echter mobiler Screen statt Desktop-Modal-Formation.
+- Trading-Screen auf Mobile auf eine Spalte reduziert; Status- und Metrik-Karten bleiben lesbar.
+- Bottom-Navigation für 5 Tabs auf iPhone optimiert und mit zusätzlichem Content-Abstand abgesichert.
+- Safe Areas, Dialogbreiten und sehr schmale Geräte bis 380px berücksichtigt.
+
+## Unverändert
+- Keine Änderungen an Datenlogik, Trading Brain, Social-Cleanup-Regeln oder gespeicherten Nutzerzuständen.
+
 # v0.46.0 — Echte In-App-Seiten & Zurück-Navigation
 
 ## Neu

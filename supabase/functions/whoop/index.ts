@@ -8,6 +8,7 @@ const WHOOP_TOKEN = "https://api.prod.whoop.com/oauth/oauth2/token";
 const WHOOP_API = "https://api.prod.whoop.com/developer/v2";
 const SCOPES = ["offline","read:recovery","read:cycles","read:sleep","read:workout","read:profile","read:body_measurement"];
 const ALLOWED_ORIGIN = "https://danielgfxch.github.io";
+const WHOOP_SESSION_TTL_MS = 180*24*60*60*1000;
 
 const cors = {
   "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
@@ -72,13 +73,38 @@ async function internalAuthorized(req: Request) {
   return supplied===expected;
 }
 
-async function validSession(req: Request) {
+async function bearerHash(req: Request) {
   const header=req.headers.get("Authorization")||"";
-  if(!header.startsWith("Bearer ")) return false;
-  const token=header.slice(7).trim(); if(!token) return false;
-  const hash=await sha256(token);
-  const {data}=await db.from("dgos_whoop_sessions").select("token_hash").eq("token_hash",hash).gt("expires_at",new Date().toISOString()).maybeSingle();
-  return Boolean(data);
+  if(!header.startsWith("Bearer ")) return "";
+  const token=header.slice(7).trim(); if(!token) return "";
+  return sha256(token);
+}
+async function validSession(req: Request) {
+  const hash=await bearerHash(req); if(!hash) return false;
+  const now=new Date().toISOString();
+  const {data}=await db.from("dgos_whoop_sessions").select("token_hash").eq("token_hash",hash).gt("expires_at",now).maybeSingle();
+  if(!data) return false;
+  await db.from("dgos_whoop_sessions").update({expires_at:new Date(Date.now()+WHOOP_SESSION_TTL_MS).toISOString()}).eq("token_hash",hash);
+  return true;
+}
+async function validDeviceSession(req: Request) {
+  const hash=await bearerHash(req); if(!hash) return false;
+  const now=new Date().toISOString();
+  const {data}=await db.from("dgos_device_sessions").select("token_hash").eq("token_hash",hash).gt("expires_at",now).maybeSingle();
+  if(!data) return false;
+  await db.from("dgos_device_sessions").update({last_seen_at:now}).eq("token_hash",hash);
+  return true;
+}
+async function issueWhoopSession() {
+  const session=randomToken();
+  const sessionHash=await sha256(session);
+  await db.from("dgos_whoop_sessions").delete().lt("expires_at",new Date().toISOString());
+  const {error}=await db.from("dgos_whoop_sessions").insert({
+    token_hash:sessionHash,
+    expires_at:new Date(Date.now()+WHOOP_SESSION_TTL_MS).toISOString()
+  });
+  if(error) throw error;
+  return session;
 }
 
 async function loadToken() {
@@ -196,11 +222,17 @@ Deno.serve(async (req: Request) => {
         scope:String(token.scope||SCOPES.join(" "))
       });
 
-      const session=randomToken();
-      const sessionHash=await sha256(session);
-      await db.from("dgos_whoop_sessions").delete().lt("expires_at",new Date().toISOString());
-      await db.from("dgos_whoop_sessions").insert({token_hash:sessionHash,expires_at:new Date(Date.now()+90*24*60*60*1000).toISOString()});
+      const session=await issueWhoopSession();
       return redirect(REDIRECT_URI+"#session="+encodeURIComponent(session));
+    }
+
+    if(action==="device-session"){
+      if(req.method!=="POST") return json({error:"method_not_allowed"},405);
+      if(!(await validDeviceSession(req))) return json({error:"device_session_required"},401);
+      const row=await loadToken();
+      if(!row) return json({error:"whoop_not_connected"},409);
+      const session=await issueWhoopSession();
+      return json({session,expiresInDays:180});
     }
 
     if(action==="summary"){

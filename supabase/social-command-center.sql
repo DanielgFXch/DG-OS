@@ -58,6 +58,9 @@ create table if not exists public.dgos_social_events (
 create index if not exists dgos_social_events_account_time_idx
   on public.dgos_social_events (account_key, occurred_at desc);
 
+create index if not exists dgos_social_events_snapshot_idx
+  on public.dgos_social_events (snapshot_id);
+
 alter table public.dgos_social_accounts enable row level security;
 alter table public.dgos_social_snapshots enable row level security;
 alter table public.dgos_social_relationships enable row level security;

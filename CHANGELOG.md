@@ -1,3 +1,24 @@
+# v0.54.0 — Social Command Center Foundation
+
+## Social
+- Social Hub upgraded from local-only cleanup to a private snapshot-based follower intelligence foundation.
+- Business and private Instagram accounts remain fully separated.
+- Instagram export imports now sync securely to the DG OS backend when a trusted DG OS device session is available.
+- New follower metrics: 24h, 7d and 30d change, plus backend cleanup count.
+- New follower history chart based on stored snapshots.
+- Repeated imports detect new followers, lost followers, started-following and stopped-following events.
+- Existing local cleanup flow and whitelist remain available; no automated Instagram unfollow actions are performed.
+
+## Backend
+- Added service-only social tables for accounts, snapshots, relationship state and change events.
+- Added authenticated `social` Edge Function with dashboard, import-snapshot, cleanup and decision endpoints.
+- Social tables use RLS and are not accessible to anon/authenticated browser roles.
+- No Instagram passwords or Meta access tokens are stored in frontend code.
+
+## Scope
+- This release does not yet add Meta/Instagram OAuth. Direct professional-account sync will be implemented separately after the Meta authorization step.
+- No changes to Trading Brain, Market Brain, Decision Engine or trading rules.
+
 # v0.53.2 — Persistente WHOOP-Verbindung
 
 ## Fix

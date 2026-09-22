@@ -1,0 +1,560 @@
+/* DG OS v0.55.0 — Jarvis Visual Overhaul
+   Presentation-only layer. No data, trading or integration logic. */
+
+:root{
+  --jv-bg:#02060b;
+  --jv-bg-2:#04101a;
+  --jv-cyan:#69f7ff;
+  --jv-teal:#43e7d8;
+  --jv-blue:#4d8dff;
+  --jv-violet:#8c79ff;
+  --jv-text:#f2fbff;
+  --jv-soft:#9eb7c5;
+  --jv-glass:rgba(7,18,29,.58);
+  --jv-glass-strong:rgba(6,17,29,.78);
+  --jv-line:rgba(137,231,255,.16);
+  --jv-line-hot:rgba(112,244,255,.34);
+  --jv-shadow:0 24px 70px rgba(0,0,0,.38);
+}
+
+html{
+  background:#010409;
+}
+
+body{
+  position:relative;
+  isolation:isolate;
+  min-height:100vh;
+  color:var(--jv-text);
+  background:
+    radial-gradient(1000px 650px at 76% -12%,rgba(69,140,255,.12),transparent 64%),
+    radial-gradient(780px 520px at 6% 16%,rgba(62,231,216,.08),transparent 66%),
+    radial-gradient(880px 760px at 55% 92%,rgba(121,89,255,.075),transparent 68%),
+    linear-gradient(180deg,#02060b 0%,#030a12 44%,#02070c 100%) !important;
+  background-attachment:fixed !important;
+}
+
+body::before,
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  z-index:-1;
+}
+
+body::before{
+  opacity:.56;
+  background-image:
+    radial-gradient(circle,rgba(109,241,255,.20) 0 1px,transparent 1.2px),
+    radial-gradient(circle,rgba(128,112,255,.15) 0 .85px,transparent 1.05px),
+    linear-gradient(rgba(103,225,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(103,225,255,.025) 1px,transparent 1px);
+  background-size:24px 24px,48px 48px,96px 96px,96px 96px;
+  background-position:0 0,12px 12px,0 0,0 0;
+  -webkit-mask-image:linear-gradient(180deg,rgba(0,0,0,.78),rgba(0,0,0,.30) 50%,rgba(0,0,0,.68));
+  mask-image:linear-gradient(180deg,rgba(0,0,0,.78),rgba(0,0,0,.30) 50%,rgba(0,0,0,.68));
+  animation:jv-pixel-drift 34s linear infinite;
+}
+
+body::after{
+  opacity:.72;
+  background:
+    radial-gradient(600px 340px at 50% 14%,rgba(74,236,255,.07),transparent 70%),
+    linear-gradient(180deg,transparent 0 47%,rgba(97,228,255,.026) 49.8%,rgba(97,228,255,.05) 50%,rgba(97,228,255,.026) 50.2%,transparent 53% 100%);
+  background-size:auto,100% 360px;
+  animation:jv-scan-drift 18s ease-in-out infinite;
+}
+
+@keyframes jv-pixel-drift{
+  to{background-position:24px 24px,-36px 60px,96px 96px,96px 96px}
+}
+@keyframes jv-scan-drift{
+  0%,100%{background-position:center,0 -360px}
+  50%{background-position:center,0 calc(100vh + 360px)}
+}
+@keyframes jv-aurora{
+  0%,100%{transform:translate3d(-2%,0,0) scale(1);opacity:.58}
+  50%{transform:translate3d(3%,-2%,0) scale(1.04);opacity:.88}
+}
+@keyframes jv-orbit{
+  to{transform:rotate(360deg)}
+}
+@keyframes jv-orbit-reverse{
+  to{transform:rotate(-360deg)}
+}
+@keyframes jv-core-breathe{
+  0%,100%{transform:scale(.96);filter:brightness(.92)}
+  50%{transform:scale(1.035);filter:brightness(1.18)}
+}
+@keyframes jv-ring-pulse{
+  0%,100%{opacity:.34;transform:scale(.96)}
+  50%{opacity:.9;transform:scale(1.025)}
+}
+@keyframes jv-pixel-flicker{
+  0%,100%{opacity:.28}
+  35%{opacity:.62}
+  58%{opacity:.32}
+  74%{opacity:.72}
+}
+
+/* Glass system */
+.topbar{
+  background:linear-gradient(180deg,rgba(3,10,17,.88),rgba(3,10,17,.56)) !important;
+  border-bottom-color:rgba(113,231,255,.12) !important;
+  box-shadow:0 18px 48px rgba(0,0,0,.28),inset 0 -1px 0 rgba(255,255,255,.018);
+  backdrop-filter:blur(30px) saturate(155%) !important;
+  -webkit-backdrop-filter:blur(30px) saturate(155%) !important;
+}
+
+.logo{
+  border-color:rgba(107,239,255,.40) !important;
+  background:
+    radial-gradient(circle at 35% 20%,rgba(106,246,255,.15),transparent 48%),
+    linear-gradient(145deg,rgba(11,35,50,.94),rgba(6,15,26,.96)) !important;
+  box-shadow:
+    0 0 0 1px rgba(100,238,255,.04),
+    0 0 34px rgba(51,216,255,.12),
+    0 16px 34px rgba(0,0,0,.30),
+    inset 0 1px 0 rgba(255,255,255,.08) !important;
+}
+
+.personal-panel,
+.personal-stats article,
+.personal-quick-info,
+.social-glass,
+.personal-trading,
+.card{
+  border-color:rgba(137,231,255,.13) !important;
+  background:
+    linear-gradient(145deg,rgba(15,35,50,.62),rgba(4,13,23,.68) 58%,rgba(8,13,29,.60)) !important;
+  box-shadow:
+    0 26px 72px rgba(0,0,0,.28),
+    inset 0 1px 0 rgba(255,255,255,.055),
+    inset 0 0 0 1px rgba(121,228,255,.018) !important;
+  backdrop-filter:blur(28px) saturate(148%) !important;
+  -webkit-backdrop-filter:blur(28px) saturate(148%) !important;
+}
+
+.personal-panel{
+  position:relative;
+}
+
+.personal-panel::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  pointer-events:none;
+  background:
+    linear-gradient(115deg,rgba(255,255,255,.045),transparent 18%,transparent 72%,rgba(80,119,255,.025)),
+    radial-gradient(360px 120px at 14% 0%,rgba(93,236,255,.045),transparent 72%);
+  opacity:.8;
+}
+
+.personal-kicker{
+  color:#8ff7f0 !important;
+  text-shadow:0 0 18px rgba(77,230,224,.18);
+  letter-spacing:.19em !important;
+}
+
+.personal-panel h2,
+.personal-welcome h2{
+  color:#f4fbff !important;
+  text-shadow:0 0 32px rgba(110,226,255,.08);
+  letter-spacing:-.035em;
+}
+
+.personal-status,
+.badge{
+  border-color:rgba(127,230,255,.18) !important;
+  background:rgba(8,20,33,.56) !important;
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+/* Today hero */
+.personal-welcome{
+  position:relative;
+}
+.personal-welcome::before{
+  content:"";
+  position:absolute;
+  left:-12vw;
+  right:-12vw;
+  top:-90px;
+  height:290px;
+  pointer-events:none;
+  z-index:-1;
+  background:
+    radial-gradient(420px 180px at 38% 44%,rgba(77,231,255,.11),transparent 68%),
+    radial-gradient(360px 210px at 63% 32%,rgba(117,92,255,.08),transparent 70%);
+  filter:blur(8px);
+  animation:jv-aurora 11s ease-in-out infinite;
+}
+
+.personal-quick-info{
+  overflow:hidden;
+}
+.personal-quick-info::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:.20;
+  background-image:radial-gradient(circle,rgba(116,243,255,.40) 0 .7px,transparent .95px);
+  background-size:18px 18px;
+  -webkit-mask-image:linear-gradient(90deg,transparent,black 22%,black 100%);
+  mask-image:linear-gradient(90deg,transparent,black 22%,black 100%);
+}
+
+/* JARVIS hero */
+#personalJarvis.personal-jarvis-panel{
+  isolation:isolate;
+  overflow:hidden;
+  border-color:rgba(105,241,255,.26) !important;
+  background:
+    radial-gradient(520px 280px at 50% 42%,rgba(32,211,244,.13),transparent 62%),
+    radial-gradient(420px 250px at 86% 8%,rgba(107,86,255,.12),transparent 68%),
+    radial-gradient(360px 240px at 10% 12%,rgba(48,226,210,.08),transparent 70%),
+    linear-gradient(155deg,rgba(7,24,38,.82),rgba(3,10,20,.82) 62%,rgba(9,7,25,.76)) !important;
+  box-shadow:
+    0 30px 90px rgba(0,0,0,.42),
+    0 0 0 1px rgba(89,229,255,.025),
+    inset 0 1px 0 rgba(255,255,255,.07),
+    inset 0 0 90px rgba(52,217,255,.025) !important;
+}
+
+#personalJarvis::before{
+  content:"";
+  position:absolute;
+  inset:-35%;
+  z-index:-1;
+  pointer-events:none;
+  background:
+    conic-gradient(from 0deg at 50% 50%,transparent 0 13%,rgba(87,235,255,.035) 18%,transparent 25% 54%,rgba(117,89,255,.03) 62%,transparent 72%);
+  animation:jv-orbit 42s linear infinite;
+}
+
+#personalJarvis::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  border-radius:inherit;
+  opacity:.48;
+  background-image:
+    radial-gradient(circle,rgba(108,243,255,.34) 0 .65px,transparent .9px),
+    linear-gradient(rgba(100,230,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(100,230,255,.025) 1px,transparent 1px);
+  background-size:20px 20px,80px 80px,80px 80px;
+  -webkit-mask-image:radial-gradient(circle at 50% 45%,black 0 28%,rgba(0,0,0,.38) 56%,transparent 90%);
+  mask-image:radial-gradient(circle at 50% 45%,black 0 28%,rgba(0,0,0,.38) 56%,transparent 90%);
+  animation:jv-pixel-flicker 7s ease-in-out infinite;
+}
+
+.jarvis-orb-stage{
+  min-height:286px;
+  justify-content:center;
+  padding:20px 0 8px !important;
+}
+
+.jarvis-orb-stage::before{
+  content:"";
+  position:absolute;
+  width:min(430px,88vw);
+  aspect-ratio:1;
+  border-radius:50%;
+  pointer-events:none;
+  background:
+    repeating-radial-gradient(circle,rgba(83,228,255,.055) 0 1px,transparent 1px 18px),
+    radial-gradient(circle,rgba(53,222,255,.07),transparent 66%);
+  -webkit-mask-image:radial-gradient(circle,black 0 20%,rgba(0,0,0,.72) 45%,transparent 72%);
+  mask-image:radial-gradient(circle,black 0 20%,rgba(0,0,0,.72) 45%,transparent 72%);
+  animation:jv-orbit-reverse 34s linear infinite;
+}
+
+.jarvis-orb{
+  width:224px !important;
+  height:224px !important;
+  filter:drop-shadow(0 18px 34px rgba(0,0,0,.32));
+}
+
+.jarvis-orb::before,
+.jarvis-orb::after{
+  content:"";
+  position:absolute;
+  border-radius:50%;
+  pointer-events:none;
+}
+
+.jarvis-orb::before{
+  inset:-13px;
+  border:1px solid rgba(103,239,255,.16);
+  background:
+    conic-gradient(from 110deg,transparent 0 8%,rgba(100,246,255,.88) 9% 10%,transparent 11% 29%,rgba(130,108,255,.62) 30% 31%,transparent 32% 56%,rgba(65,228,218,.72) 57% 58%,transparent 59% 100%);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1.5px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1.5px));
+  animation:jv-orbit 16s linear infinite;
+}
+
+.jarvis-orb::after{
+  inset:-31px;
+  border:1px dashed rgba(101,221,255,.13);
+  box-shadow:0 0 36px rgba(43,208,255,.06);
+  animation:jv-orbit-reverse 28s linear infinite;
+}
+
+.jarvis-orb-halo{
+  inset:-44px !important;
+  background:
+    radial-gradient(circle,rgba(78,239,255,.18) 0,rgba(58,179,255,.095) 28%,rgba(110,88,255,.055) 48%,transparent 72%) !important;
+  filter:blur(7px) !important;
+  animation:jv-ring-pulse 4.2s ease-in-out infinite !important;
+}
+
+.jarvis-orb-ring-one{
+  inset:4px !important;
+  border:1px solid rgba(116,245,255,.70) !important;
+  background:
+    conic-gradient(from 15deg,transparent 0 10%,rgba(111,250,255,.95) 12%,transparent 14% 33%,rgba(67,226,213,.82) 35%,transparent 38% 58%,rgba(132,107,255,.88) 61%,transparent 64% 84%,rgba(97,229,255,.78) 87%,transparent 90%) !important;
+  box-shadow:
+    0 0 28px rgba(47,220,255,.34),
+    inset 0 0 24px rgba(56,221,255,.10) !important;
+  animation:jv-orbit 7.5s linear infinite !important;
+}
+
+.jarvis-orb-ring-two{
+  inset:20px !important;
+  border:1px dotted rgba(119,232,255,.55) !important;
+  box-shadow:
+    0 0 0 8px rgba(85,230,255,.018),
+    0 0 0 20px rgba(117,93,255,.018),
+    0 0 34px rgba(60,208,255,.16) !important;
+  animation:jv-orbit-reverse 12s linear infinite !important;
+}
+
+.jarvis-orb-core{
+  inset:35px !important;
+  overflow:hidden;
+  border:1px solid rgba(152,247,255,.80) !important;
+  background:
+    radial-gradient(circle at 37% 29%,rgba(196,253,255,.22),transparent 18%),
+    radial-gradient(circle at 46% 42%,rgba(69,235,255,.28),transparent 36%),
+    radial-gradient(circle at 58% 72%,rgba(114,84,255,.34),transparent 52%),
+    radial-gradient(circle at 50% 50%,rgba(7,39,58,.98),rgba(2,12,25,.98) 70%) !important;
+  box-shadow:
+    inset 0 0 18px rgba(177,252,255,.10),
+    inset 0 0 54px rgba(49,218,255,.28),
+    0 0 14px rgba(112,244,255,.28),
+    0 0 48px rgba(35,203,255,.30),
+    0 0 88px rgba(89,91,255,.10) !important;
+  animation:jv-core-breathe 3.6s ease-in-out infinite;
+}
+
+.jarvis-orb-core::before{
+  inset:12% !important;
+  border:1px solid rgba(180,250,255,.24) !important;
+  background:
+    repeating-conic-gradient(from 0deg,rgba(103,244,255,.16) 0 1deg,transparent 1deg 13deg);
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1px));
+  animation:jv-orbit 19s linear infinite;
+}
+
+.jarvis-orb-core::after{
+  width:68% !important;
+  height:68% !important;
+  left:16% !important;
+  top:16% !important;
+  background:
+    radial-gradient(circle at 50% 50%,rgba(116,249,255,.18),transparent 54%),
+    repeating-radial-gradient(circle,rgba(108,243,255,.06) 0 1px,transparent 1px 9px) !important;
+  animation:jv-ring-pulse 2.8s ease-in-out infinite !important;
+}
+
+.jarvis-orb-wave{
+  left:16% !important;
+  right:16% !important;
+  height:1.5px !important;
+  background:#8df8ff !important;
+  box-shadow:
+    0 0 8px #5deeff,
+    0 0 20px rgba(65,216,255,.82),
+    0 0 34px rgba(125,99,255,.42) !important;
+}
+
+.jarvis-orb-state{
+  margin-top:8px !important;
+  border-color:rgba(111,239,255,.28) !important;
+  background:linear-gradient(180deg,rgba(10,39,53,.70),rgba(6,22,34,.68)) !important;
+  box-shadow:0 12px 36px rgba(0,0,0,.24),inset 0 1px rgba(255,255,255,.055) !important;
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+.personal-jarvis-panel.is-listening .jarvis-orb{
+  filter:drop-shadow(0 0 20px rgba(79,235,255,.24)) drop-shadow(0 20px 34px rgba(0,0,0,.34));
+}
+.personal-jarvis-panel.is-listening .jarvis-orb-halo{
+  background:radial-gradient(circle,rgba(100,251,255,.28),rgba(55,205,255,.12) 35%,rgba(117,91,255,.07) 54%,transparent 74%) !important;
+}
+.personal-jarvis-panel.is-speaking .jarvis-orb-core{
+  box-shadow:
+    inset 0 0 58px rgba(122,102,255,.40),
+    0 0 22px rgba(126,112,255,.40),
+    0 0 62px rgba(70,184,255,.32) !important;
+}
+
+/* Premium controls */
+.personal-panel button,
+.social-glass button,
+.personal-dialog button{
+  transition:transform .22s ease,border-color .22s ease,background .22s ease,box-shadow .22s ease,filter .22s ease;
+}
+
+.personal-panel button:hover,
+.social-glass button:hover,
+.personal-dialog button:hover{
+  transform:translateY(-1px);
+  border-color:rgba(113,238,255,.34) !important;
+  box-shadow:0 10px 28px rgba(0,0,0,.20),inset 0 1px rgba(255,255,255,.045);
+}
+
+.personal-panel button:active,
+.social-glass button:active,
+.personal-dialog button:active{
+  transform:translateY(0) scale(.985);
+}
+
+/* Floating OS dock */
+.bottom-nav{
+  left:50% !important;
+  right:auto !important;
+  bottom:calc(10px + env(safe-area-inset-bottom)) !important;
+  width:min(720px,calc(100vw - 24px)) !important;
+  transform:translateX(-50%);
+  padding:6px !important;
+  gap:4px !important;
+  border:1px solid rgba(126,231,255,.18) !important;
+  border-top-color:rgba(190,248,255,.27) !important;
+  border-radius:24px !important;
+  background:
+    linear-gradient(180deg,rgba(11,29,45,.76),rgba(4,13,24,.80)) !important;
+  box-shadow:
+    0 24px 70px rgba(0,0,0,.46),
+    0 0 44px rgba(42,204,255,.055),
+    inset 0 1px 0 rgba(255,255,255,.075) !important;
+  backdrop-filter:blur(30px) saturate(165%) !important;
+  -webkit-backdrop-filter:blur(30px) saturate(165%) !important;
+}
+
+.bottom-nav::before{
+  content:"";
+  position:absolute;
+  left:8%;
+  right:8%;
+  top:-1px;
+  height:1px;
+  background:linear-gradient(90deg,transparent,rgba(111,244,255,.62),rgba(136,111,255,.38),transparent);
+  opacity:.72;
+}
+
+.bottom-nav button{
+  position:relative;
+  min-height:50px;
+  border:1px solid transparent !important;
+  border-radius:17px !important;
+  background:transparent !important;
+  color:#7893a3 !important;
+  transition:color .22s ease,background .22s ease,border-color .22s ease,box-shadow .22s ease,transform .22s ease !important;
+}
+
+.bottom-nav button[aria-pressed="true"],
+.bottom-nav button.active{
+  color:#c7fdff !important;
+  border-color:rgba(107,235,255,.16) !important;
+  background:
+    radial-gradient(120px 45px at 50% 100%,rgba(74,231,255,.13),transparent 72%),
+    linear-gradient(180deg,rgba(67,210,238,.105),rgba(26,92,125,.055)) !important;
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.045),
+    0 0 24px rgba(44,210,255,.055) !important;
+}
+
+.bottom-nav button[aria-pressed="true"]::after,
+.bottom-nav button.active::after{
+  content:"";
+  position:absolute;
+  left:34%;
+  right:34%;
+  bottom:4px;
+  height:2px;
+  border-radius:999px;
+  background:linear-gradient(90deg,var(--jv-teal),var(--jv-cyan),var(--jv-violet));
+  box-shadow:0 0 10px rgba(93,241,255,.58);
+}
+
+@media(max-width:700px){
+  body{
+    background-attachment:scroll !important;
+  }
+  body::before{
+    opacity:.42;
+    background-size:22px 22px,44px 44px,88px 88px,88px 88px;
+  }
+  #personalJarvis.personal-jarvis-panel{
+    padding:18px 14px !important;
+  }
+  .jarvis-orb-stage{
+    min-height:246px;
+    padding:14px 0 4px !important;
+  }
+  .jarvis-orb{
+    width:196px !important;
+    height:196px !important;
+  }
+  .jarvis-orb-core{
+    inset:31px !important;
+  }
+  .bottom-nav{
+    width:calc(100vw - 16px) !important;
+    bottom:calc(7px + env(safe-area-inset-bottom)) !important;
+    border-radius:21px !important;
+    padding:5px !important;
+  }
+  .bottom-nav button{
+    min-height:48px !important;
+    border-radius:15px !important;
+  }
+}
+
+@media(max-width:390px){
+  .jarvis-orb{
+    width:178px !important;
+    height:178px !important;
+  }
+  .jarvis-orb-core{
+    inset:29px !important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  body::before,
+  body::after,
+  #personalJarvis::before,
+  #personalJarvis::after,
+  .jarvis-orb-stage::before,
+  .jarvis-orb::before,
+  .jarvis-orb::after,
+  .jarvis-orb-halo,
+  .jarvis-orb-ring-one,
+  .jarvis-orb-ring-two,
+  .jarvis-orb-core,
+  .jarvis-orb-core::before,
+  .jarvis-orb-core::after,
+  .personal-welcome::before{
+    animation:none !important;
+  }
+}

@@ -36,7 +36,7 @@ struct DGOSRootView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.015, green: 0.043, blue: 0.075)
+            Color(red: 0.005, green: 0.016, blue: 0.032)
                 .ignoresSafeArea()
 
             DGOSWebView(url: DGOSConfig.homeURL)
@@ -59,87 +59,154 @@ struct DGOSRootView: View {
 struct JarvisLaunchView: View {
     @State private var pulse = false
     @State private var rotate = false
+    @State private var reverseRotate = false
 
-    private let cyan = Color(red: 0.18, green: 0.88, blue: 0.94)
-    private let violet = Color(red: 0.50, green: 0.36, blue: 0.95)
+    private let cyan = Color(red: 0.41, green: 0.97, blue: 1.00)
+    private let teal = Color(red: 0.27, green: 0.91, blue: 0.85)
+    private let violet = Color(red: 0.55, green: 0.47, blue: 1.00)
 
     var body: some View {
         ZStack {
             LinearGradient(
                 colors: [
-                    Color(red: 0.015, green: 0.043, blue: 0.075),
-                    Color(red: 0.025, green: 0.032, blue: 0.075)
+                    Color(red: 0.005, green: 0.016, blue: 0.032),
+                    Color(red: 0.010, green: 0.035, blue: 0.060),
+                    Color(red: 0.014, green: 0.018, blue: 0.050)
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
             .ignoresSafeArea()
 
-            Circle()
-                .fill(cyan.opacity(0.08))
-                .frame(width: pulse ? 260 : 190, height: pulse ? 260 : 190)
-                .blur(radius: 24)
+            RadialGradient(
+                colors: [cyan.opacity(0.12), Color.clear],
+                center: UnitPoint(x: 0.52, y: 0.38),
+                startRadius: 8,
+                endRadius: 330
+            )
+            .ignoresSafeArea()
+
+            RadialGradient(
+                colors: [violet.opacity(0.08), Color.clear],
+                center: UnitPoint(x: 0.80, y: 0.18),
+                startRadius: 10,
+                endRadius: 280
+            )
+            .ignoresSafeArea()
+
+            Canvas { context, size in
+                let spacing: CGFloat = 22
+                for x in stride(from: CGFloat(0), through: size.width, by: spacing) {
+                    for y in stride(from: CGFloat(0), through: size.height, by: spacing) {
+                        let fade = max(0.12, 1.0 - abs((y / max(size.height, 1)) - 0.42))
+                        let rect = CGRect(x: x, y: y, width: 1.1, height: 1.1)
+                        context.fill(Path(ellipseIn: rect), with: .color(cyan.opacity(0.11 * fade)))
+                    }
+                }
+            }
+            .ignoresSafeArea()
+            .opacity(0.82)
 
             Circle()
+                .fill(cyan.opacity(0.10))
+                .frame(width: pulse ? 330 : 250, height: pulse ? 330 : 250)
+                .blur(radius: 42)
+
+            Circle()
+                .stroke(cyan.opacity(0.10), lineWidth: 1)
+                .frame(width: 230, height: 230)
+
+            Circle()
+                .trim(from: 0.04, to: 0.82)
                 .stroke(
                     AngularGradient(
-                        colors: [cyan.opacity(0.15), cyan, violet, cyan.opacity(0.15)],
+                        colors: [Color.clear, cyan, teal, Color.clear, violet, Color.clear],
                         center: .center
                     ),
-                    lineWidth: 3
+                    style: StrokeStyle(lineWidth: 2.2, lineCap: .round)
                 )
-                .frame(width: 154, height: 154)
+                .frame(width: 194, height: 194)
                 .rotationEffect(.degrees(rotate ? 360 : 0))
-                .shadow(color: cyan.opacity(0.55), radius: 18)
+                .shadow(color: cyan.opacity(0.42), radius: 15)
 
             Circle()
-                .stroke(cyan.opacity(0.28), lineWidth: 1)
-                .frame(width: pulse ? 126 : 112, height: pulse ? 126 : 112)
+                .trim(from: 0.12, to: 0.92)
+                .stroke(
+                    AngularGradient(
+                        colors: [violet.opacity(0.8), Color.clear, cyan.opacity(0.8), Color.clear],
+                        center: .center
+                    ),
+                    style: StrokeStyle(lineWidth: 1, dash: [2, 7])
+                )
+                .frame(width: 168, height: 168)
+                .rotationEffect(.degrees(reverseRotate ? -360 : 0))
+                .shadow(color: violet.opacity(0.25), radius: 12)
+
+            Circle()
+                .stroke(cyan.opacity(0.22), lineWidth: 1)
+                .frame(width: pulse ? 140 : 128, height: pulse ? 140 : 128)
 
             Circle()
                 .fill(
                     RadialGradient(
                         colors: [
-                            Color.white.opacity(0.92),
-                            cyan.opacity(0.76),
-                            violet.opacity(0.25),
-                            Color.clear
+                            Color.white.opacity(0.96),
+                            cyan.opacity(0.86),
+                            teal.opacity(0.34),
+                            violet.opacity(0.20),
+                            Color(red: 0.02, green: 0.10, blue: 0.17).opacity(0.16)
                         ],
-                        center: .center,
+                        center: UnitPoint(x: 0.42, y: 0.36),
                         startRadius: 1,
-                        endRadius: 54
+                        endRadius: 66
                     )
                 )
-                .frame(width: 108, height: 108)
-                .scaleEffect(pulse ? 1.04 : 0.92)
+                .overlay(
+                    Circle()
+                        .stroke(cyan.opacity(0.58), lineWidth: 1)
+                )
+                .frame(width: 116, height: 116)
+                .scaleEffect(pulse ? 1.035 : 0.94)
+                .shadow(color: cyan.opacity(0.46), radius: 26)
+                .shadow(color: violet.opacity(0.16), radius: 48)
 
             VStack(spacing: 7) {
                 Text("DG")
-                    .font(.system(size: 27, weight: .bold, design: .rounded))
-                    .tracking(2)
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .tracking(2.5)
                     .foregroundStyle(Color.white)
+                    .shadow(color: cyan.opacity(0.18), radius: 12)
 
                 Text("JARVIS")
                     .font(.system(size: 10, weight: .semibold, design: .rounded))
-                    .tracking(4)
-                    .foregroundStyle(cyan.opacity(0.95))
+                    .tracking(4.5)
+                    .foregroundStyle(cyan.opacity(0.96))
             }
 
             VStack {
                 Spacer()
-                Text("DEINE PERSÖNLICHE ZENTRALE")
-                    .font(.system(size: 9, weight: .medium, design: .rounded))
-                    .tracking(3)
-                    .foregroundStyle(Color.white.opacity(0.45))
-                    .padding(.bottom, 54)
+                HStack(spacing: 7) {
+                    Circle()
+                        .fill(teal)
+                        .frame(width: 4, height: 4)
+                        .shadow(color: teal, radius: 6)
+                    Text("SYSTEM ONLINE")
+                        .font(.system(size: 8, weight: .medium, design: .rounded))
+                        .tracking(2.8)
+                        .foregroundStyle(Color.white.opacity(0.46))
+                }
+                .padding(.bottom, 55)
             }
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+            withAnimation(.easeInOut(duration: 1.15).repeatForever(autoreverses: true)) {
                 pulse = true
             }
-            withAnimation(.linear(duration: 2.8).repeatForever(autoreverses: false)) {
+            withAnimation(.linear(duration: 4.8).repeatForever(autoreverses: false)) {
                 rotate = true
+            }
+            withAnimation(.linear(duration: 7.6).repeatForever(autoreverses: false)) {
+                reverseRotate = true
             }
         }
         .accessibilityElement(children: .combine)
@@ -168,7 +235,7 @@ struct DGOSWebView: UIViewRepresentable {
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         webView.isOpaque = false
-        webView.backgroundColor = UIColor(red: 0.015, green: 0.043, blue: 0.075, alpha: 1)
+        webView.backgroundColor = UIColor(red: 0.005, green: 0.016, blue: 0.032, alpha: 1)
         webView.scrollView.backgroundColor = webView.backgroundColor
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.allowsBackForwardNavigationGestures = true

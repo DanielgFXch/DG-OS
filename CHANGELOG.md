@@ -1,3 +1,23 @@
+# v0.55.0 — Jarvis Visual Overhaul
+
+## Design
+- New animated pixel-field background with cinematic cyan/teal/violet depth.
+- New premium glass system across DG OS cards, panels and status surfaces.
+- Jarvis voice panel upgraded into a dedicated visual hero with layered pixel atmosphere.
+- Jarvis Orb rebuilt visually with multi-ring orbital motion, stronger core depth, glow and listening/speaking states.
+- Bottom navigation upgraded into a floating OS-style glass dock.
+- Today hero and quick-info surfaces gain stronger depth and ambient lighting.
+- PWA theme/background colours aligned with the new dark Jarvis visual system.
+
+## Native iOS
+- Native launch experience upgraded with pixel field, layered orbital rings, cyan/teal/violet glow and SYSTEM ONLINE state.
+- Native shell background aligned with the web experience.
+
+## Safety / Scope
+- Presentation-only web changes; no task, calendar, WHOOP, Social, Telegram or trading logic changed.
+- No Trading Brain, Market Brain, Decision Engine or trading-rule changes.
+- Reduced-motion users keep a static version of the visual system.
+
 # v0.54.0 — Social Command Center Foundation
 
 ## Social

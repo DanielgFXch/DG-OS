@@ -36,7 +36,7 @@ struct DGOSRootView: View {
 
     var body: some View {
         ZStack {
-            Color(red: 0.015, green: 0.043, blue: 0.075)
+            Color(red: 0.005, green: 0.016, blue: 0.032)
                 .ignoresSafeArea()
 
             DGOSWebView(url: DGOSConfig.homeURL)
@@ -235,7 +235,7 @@ struct DGOSWebView: UIViewRepresentable {
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
         webView.isOpaque = false
-        webView.backgroundColor = UIColor(red: 0.015, green: 0.043, blue: 0.075, alpha: 1)
+        webView.backgroundColor = UIColor(red: 0.005, green: 0.016, blue: 0.032, alpha: 1)
         webView.scrollView.backgroundColor = webView.backgroundColor
         webView.scrollView.contentInsetAdjustmentBehavior = .never
         webView.allowsBackForwardNavigationGestures = true

@@ -4,6 +4,9 @@
 
   const $ = id => document.getElementById(id);
   const STORAGE_KEY = 'dgos.social.hub.v1';
+  const EDGE = 'https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/social';
+  const DEVICE_SESSION_KEY = 'dgos.deviceSession';
+  const LEGACY_SESSION_KEY = 'dgos.whoopSession';
   const ACCOUNT_LABELS = { business: 'Business', private: 'Privat' };
   const USERNAME_RE = /^[A-Za-z0-9._]{1,30}$/;
 
@@ -23,6 +26,7 @@
   });
 
   let state = loadState();
+  const cloud = { business: null, private: null };
 
   function loadState() {
     try {
@@ -72,6 +76,136 @@
     return state.accounts[state.active];
   }
 
+  function session() {
+    return localStorage.getItem(DEVICE_SESSION_KEY) || localStorage.getItem(LEGACY_SESSION_KEY) || '';
+  }
+
+  function apiHeaders(json = false) {
+    const headers = {};
+    const token = session();
+    if (token) headers.Authorization = 'Bearer ' + token;
+    if (json) headers['Content-Type'] = 'application/json';
+    return headers;
+  }
+
+  async function api(action, options = {}) {
+    const response = await fetch(EDGE + '/' + action, Object.assign({
+      cache: 'no-store',
+      headers: apiHeaders(Boolean(options.body))
+    }, options));
+    let body = null;
+    try { body = await response.json(); } catch (_) {}
+    if (!response.ok) {
+      const error = new Error(body && body.error ? body.error : 'request_failed');
+      error.status = response.status;
+      throw error;
+    }
+    return body || {};
+  }
+
+  function formatDelta(value) {
+    if (value === null || value === undefined || !Number.isFinite(Number(value))) return '—';
+    const n = Number(value);
+    return n > 0 ? '+' + n : String(n);
+  }
+
+  function deltaClass(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n === 0) return '';
+    return n > 0 ? 'is-positive' : 'is-negative';
+  }
+
+  function renderCloud() {
+    const data = cloud[state.active];
+    const metrics = data && data.metrics ? data.metrics : null;
+    const status = $('socialCloudStatus');
+    if (status) {
+      if (!session()) status.textContent = 'Nur lokal · DG OS Gerät nicht verbunden';
+      else if (!metrics) status.textContent = 'Noch keine Cloud-Historie';
+      else status.textContent = 'DG OS Cloud · ' + formatDate(metrics.capturedAt);
+    }
+
+    const mapping = [
+      ['socialMetricToday', metrics && metrics.delta1d],
+      ['socialMetric7d', metrics && metrics.delta7d],
+      ['socialMetric30d', metrics && metrics.delta30d]
+    ];
+    for (const [id, value] of mapping) {
+      const el = $(id);
+      if (!el) continue;
+      el.textContent = formatDelta(value);
+      el.classList.remove('is-positive', 'is-negative');
+      const cls = deltaClass(value);
+      if (cls) el.classList.add(cls);
+    }
+
+    const cleanup = $('socialMetricCloudCleanup');
+    if (cleanup) cleanup.textContent = metrics ? String(metrics.cleanup || 0) : '—';
+    renderHistoryChart(data && Array.isArray(data.history) ? data.history : []);
+  }
+
+  function renderHistoryChart(history) {
+    const host = $('socialHistoryChart');
+    if (!host) return;
+    host.replaceChildren();
+    if (!history || history.length < 2) {
+      const empty = document.createElement('span');
+      empty.className = 'social-chart-empty';
+      empty.textContent = 'Nach mindestens zwei Snapshots zeigt DG OS hier deinen Follower-Verlauf.';
+      host.append(empty);
+      return;
+    }
+    const values = history.map(item => Number(item.followers_count)).filter(Number.isFinite);
+    if (values.length < 2) return;
+    const min = Math.min(...values), max = Math.max(...values), span = Math.max(1, max - min);
+    const points = history.map((item, index) => {
+      const x = history.length === 1 ? 50 : (index / (history.length - 1)) * 100;
+      const y = 90 - ((Number(item.followers_count) - min) / span) * 72;
+      return x.toFixed(2) + ',' + y.toFixed(2);
+    }).join(' ');
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    svg.classList.add('social-history-svg');
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    line.setAttribute('points', points);
+    line.setAttribute('fill', 'none');
+    line.setAttribute('vector-effect', 'non-scaling-stroke');
+    svg.append(line);
+    host.append(svg);
+  }
+
+  async function loadCloudDashboard(accountKey = state.active) {
+    if (!session()) {
+      cloud[accountKey] = null;
+      if (accountKey === state.active) renderCloud();
+      return;
+    }
+    try {
+      const data = await api('dashboard?accountKey=' + encodeURIComponent(accountKey));
+      cloud[accountKey] = data;
+    } catch (_) {
+      cloud[accountKey] = null;
+    }
+    if (accountKey === state.active) renderCloud();
+  }
+
+  async function syncSnapshot(acc, accountKey) {
+    if (!session()) return { synced: false, reason: 'no_session' };
+    const result = await api('import-snapshot', {
+      method: 'POST',
+      body: JSON.stringify({
+        accountKey,
+        handle: acc.handle || null,
+        followers: acc.followers,
+        following: acc.following,
+        sourceRef: (acc.sourceFiles || []).slice(0, 8).join(', ')
+      })
+    });
+    await loadCloudDashboard(accountKey);
+    return { synced: true, result };
+  }
+
   function notice(message, tone = '') {
     const el = $('socialNotice');
     if (!el) return;
@@ -83,6 +217,7 @@
     if (accountKey === 'business' || accountKey === 'private') state.active = accountKey;
     persist();
     render();
+    loadCloudDashboard(state.active);
     const workspace = $('socialWorkspace');
     workspace.classList.remove('hidden');
     document.body.classList.add('social-workspace-open');
@@ -158,6 +293,7 @@
     $('socialMetricFollowing').textContent = String(acc.following.length);
     $('socialMetricNonFollowers').textContent = String(nonFollowers(acc).length);
     $('socialMetricWhitelist').textContent = String(acc.whitelist.length);
+    renderCloud();
 
     const counts = decisionCounts(acc);
     $('socialCleanupProgress').textContent = `${counts.removed} entfernt · ${counts.kept} behalten · ${counts.later} später`;
@@ -231,6 +367,7 @@
     account().handle = cleaned;
     persist();
     render();
+    loadCloudDashboard(state.active);
     notice(`@${cleaned} als ${ACCOUNT_LABELS[state.active]} gespeichert.`, 'success');
   }
 
@@ -362,7 +499,21 @@
 
     if (!persist()) return;
     render();
-    notice(`${acc.followers.length} Followers und ${acc.following.length} Following importiert. ${nonFollowers(acc).length} folgen dir aktuell nicht zurück.`, 'success');
+    notice(`${acc.followers.length} Followers und ${acc.following.length} Following importiert. DG OS synchronisiert den Snapshot …`);
+    try {
+      const sync = await syncSnapshot(acc, state.active);
+      if (sync.synced) {
+        const changes = sync.result && sync.result.changes;
+        const suffix = changes
+          ? ` · +${changes.newFollowers || 0} neue / -${changes.lostFollowers || 0} verlorene Followers`
+          : ' · erster Snapshot gespeichert';
+        notice(`${acc.followers.length} Followers · ${nonFollowers(acc).length} Cleanup-Kandidaten${suffix}`, 'success');
+      } else {
+        notice(`${acc.followers.length} Followers lokal importiert. Cloud-Sync folgt, sobald dieses DG-OS-Gerät autorisiert ist.`, 'success');
+      }
+    } catch (_) {
+      notice(`${acc.followers.length} Followers lokal importiert. Cloud-Sync war gerade nicht erreichbar; die lokalen Daten bleiben erhalten.`, 'error');
+    }
   }
 
   function resetAccountData() {
@@ -402,6 +553,7 @@
         state.active = button.dataset.socialAccount;
         persist();
         render();
+        loadCloudDashboard(state.active);
         notice('');
       });
     });
@@ -445,4 +597,10 @@
   ensureSocialBottomNav();
   bind();
   render();
+  loadCloudDashboard('business');
+  loadCloudDashboard('private');
+  window.addEventListener('dgos-device-session', () => {
+    loadCloudDashboard('business');
+    loadCloudDashboard('private');
+  });
 })();

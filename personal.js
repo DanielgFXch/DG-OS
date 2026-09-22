@@ -720,8 +720,8 @@
   const LEGACY_SESSION_KEY='dgos.whoopSession';
 
   function session(){return localStorage.getItem(LEGACY_SESSION_KEY)||'';}
-  function headers(){
-    const token=session();
+  function deviceSession(){return localStorage.getItem(DEVICE_SESSION_KEY)||'';}
+  function headers(token=session()){
     return token?{Authorization:'Bearer '+token}:{};
   }
   function fmtHours(value){
@@ -795,9 +795,7 @@
     try{
       const response=await fetch(EDGE+'/summary',{cache:'no-store',headers:headers()});
       if(response.status===401){
-        localStorage.removeItem(SESSION_KEY);
-        showDisconnected('Deine WHOOP-Sitzung ist abgelaufen. Verbinde WHOOP bitte einmal neu.');
-        connect.textContent='WHOOP neu verbinden';connect.disabled=false;
+        localStorage.removeItem(LEGACY_SESSION_KEY);
         return false;
       }
       if(!response.ok)throw new Error('summary_failed');
@@ -805,6 +803,26 @@
       return true;
     }catch(_){
       set('whoopHealthMeta','WHOOP ist verbunden, aber die Daten konnten gerade nicht geladen werden.');
+      return false;
+    }
+  }
+
+  async function restoreFromDeviceSession(){
+    const token=deviceSession();
+    if(!token)return false;
+    try{
+      const response=await fetch(EDGE+'/device-session',{
+        method:'POST',
+        cache:'no-store',
+        headers:headers(token)
+      });
+      if(!response.ok)return false;
+      const data=await response.json();
+      if(!data||typeof data.session!=='string'||!data.session)return false;
+      localStorage.setItem(LEGACY_SESSION_KEY,data.session);
+      window.dispatchEvent(new Event('dgos-whoop-session'));
+      return true;
+    }catch(_){
       return false;
     }
   }
@@ -822,14 +840,20 @@
       }
 
       if(status.authenticated&&session()){
-        await loadSummary();
-        return;
+        if(await loadSummary())return;
+      }
+
+      if(status.connected&&deviceSession()){
+        set('whoopHealthMeta','WHOOP-Verbindung wird automatisch wiederhergestellt …');
+        if(await restoreFromDeviceSession()){
+          if(await loadSummary())return;
+        }
       }
 
       showDisconnected(status.connected
-        ?'WHOOP ist eingerichtet. Verbinde dein Konto einmal neu mit diesem Gerät.'
+        ?'WHOOP ist serverseitig verbunden. Dieses Gerät konnte nicht automatisch autorisiert werden.'
         :'WHOOP ist bereit. Einmal verbinden, danach lädt Jarvis deine Werte automatisch.');
-      connect.textContent=status.connected?'WHOOP neu verbinden':'WHOOP verbinden';
+      connect.textContent=status.connected?'Dieses Gerät autorisieren':'WHOOP verbinden';
       connect.disabled=false;
     }catch(_){
       showDisconnected('Der kostenlose WHOOP-Connector ist gerade nicht erreichbar. Bitte später erneut versuchen.');
@@ -852,7 +876,9 @@
   }
 
   check();
-  setInterval(()=>{if(session())loadSummary();},10*60*1000);
+  window.addEventListener('dgos-device-session',check);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)check();});
+  setInterval(check,10*60*1000);
 })();
 
 

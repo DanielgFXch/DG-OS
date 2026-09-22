@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="./styles.css?v=0.45.3" />
   <link rel="stylesheet" href="./wow.css?v=0.37.1" />
   <link rel="stylesheet" href="./personal.css?v=0.53.1" />
-  <link rel="stylesheet" href="./social.css?v=0.45.3" />
+  <link rel="stylesheet" href="./social.css?v=0.54.0" />
   <link rel="stylesheet" href="./navigation.css?v=0.51.0" />
   <link rel="stylesheet" href="./mobile.css?v=0.46.3" />
   <title>DG OS · Dein Tag</title>
@@ -304,7 +304,7 @@
         <section id="personalSocial" class="personal-panel social-panel">
           <div class="personal-kicker">SOCIAL MEDIA</div>
           <div class="social-panel-head"><h2>Dein Social Hub.</h2><span class="personal-status">BETA</span></div>
-          <p>Zwei Instagram-Accounts, sauber getrennt. DG OS analysiert deinen Datenexport lokal und baut daraus deine Cleanup-Queue.</p>
+          <p>Zwei Instagram-Accounts, sauber getrennt. DG OS baut aus deinen Snapshots eine private Follower-Historie, Wachstum und Cleanup-Queue.</p>
           <div class="social-account-grid">
             <button class="social-account-card" type="button" data-social-open="business">
               <span class="social-account-type">Instagram Business</span>
@@ -393,7 +393,7 @@
               </div>
               <label class="social-file-label">Dateien wählen<input id="socialImportFiles" type="file" multiple accept=".json,.html,.htm,application/json,text/html" /></label>
             </div>
-            <small class="social-help">Die Listen werden nur in deinem Browser gespeichert. DG OS sendet sie nicht an Instagram und speichert keine Instagram-Zugangsdaten.</small>
+            <small class="social-help">DG OS speichert keine Instagram-Passwörter. Für Verlauf und Unfollower-Vergleiche werden deine importierten Listen zusätzlich sicher im privaten DG-OS-Backend gespeichert.</small>
           </section>
 
           <section class="social-glass">
@@ -403,6 +403,19 @@
               <div class="social-metric"><span>Following</span><strong id="socialMetricFollowing">0</strong></div>
               <div class="social-metric is-accent"><span>Folgen nicht zurück</span><strong id="socialMetricNonFollowers">0</strong></div>
               <div class="social-metric"><span>Whitelist</span><strong id="socialMetricWhitelist">0</strong></div>
+            </div>
+          </section>
+
+          <section class="social-glass social-intelligence">
+            <div class="social-glass-head"><h3>Follower Intelligence</h3><small id="socialCloudStatus">Noch keine Cloud-Historie</small></div>
+            <div class="social-growth-grid">
+              <div class="social-growth-card"><span>24 Stunden</span><strong id="socialMetricToday">—</strong></div>
+              <div class="social-growth-card"><span>7 Tage</span><strong id="socialMetric7d">—</strong></div>
+              <div class="social-growth-card"><span>30 Tage</span><strong id="socialMetric30d">—</strong></div>
+              <div class="social-growth-card"><span>Cleanup offen</span><strong id="socialMetricCloudCleanup">—</strong></div>
+            </div>
+            <div id="socialHistoryChart" class="social-history-chart" aria-label="Follower-Verlauf">
+              <span class="social-chart-empty">Nach mindestens zwei Snapshots zeigt DG OS hier deinen Follower-Verlauf.</span>
             </div>
           </section>
 
@@ -439,7 +452,7 @@
             <div class="social-glass-head"><h3>Cleanup Verlauf</h3><small id="socialCleanupProgress">0 entfernt · 0 behalten · 0 später</small></div>
             <p class="social-help">Deine Entscheidungen bleiben pro Business-/Privat-Account getrennt gespeichert.</p>
             <div class="social-footer-actions">
-              <span class="social-help">V1 · lokale Analyse ohne Instagram-Login</span>
+              <span class="social-help">V2 · private Snapshots + Wachstum · Meta Direct Sync folgt separat</span>
               <button id="socialResetData" class="secondary social-danger" type="button">Importdaten löschen</button>
             </div>
           </section>
@@ -845,7 +858,7 @@
   </form></dialog>
   <script src="./marketBrain.js"></script>
   <script src="./app.js?v=0.46.3"></script>
-  <script src="./personal.js?v=0.53.2"></script>\n  <script src="./social.js?v=0.45.3"></script>
+  <script src="./personal.js?v=0.53.2"></script>\n  <script src="./social.js?v=0.54.0"></script>
   <script src="./navigation.js?v=0.46.0"></script>
   <script src="./weather.js?v=0.46.2"></script>
 </body>

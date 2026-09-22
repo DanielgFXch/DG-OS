@@ -199,11 +199,30 @@
         handle: acc.handle || null,
         followers: acc.followers,
         following: acc.following,
+        whitelist: acc.whitelist,
+        decisions: acc.decisions,
         sourceRef: (acc.sourceFiles || []).slice(0, 8).join(', ')
       })
     });
     await loadCloudDashboard(accountKey);
     return { synced: true, result };
+  }
+
+  async function syncDecision(username, patch) {
+    if (!session()) return false;
+    try {
+      await api('decision', {
+        method: 'POST',
+        body: JSON.stringify(Object.assign({
+          accountKey: state.active,
+          username
+        }, patch || {}))
+      });
+      await loadCloudDashboard(state.active);
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 
   function notice(message, tone = '') {
@@ -323,6 +342,7 @@
         acc.whitelist = acc.whitelist.filter(v => v !== username);
         persist();
         render();
+        syncDecision(username, { whitelisted: false });
       });
       container.append(chip);
     }
@@ -384,6 +404,7 @@
     input.value = '';
     persist();
     render();
+    syncDecision(username, { whitelisted: true });
     notice(`@${username} wird beim Cleanup geschützt.`, 'success');
   }
 
@@ -393,6 +414,7 @@
     account().decisions[clean] = decision;
     persist();
     render();
+    syncDecision(clean, { decision });
     const labels = { keep: 'behalten', removed: 'als entfernt markiert', later: 'auf später verschoben' };
     notice(`@${clean} wurde ${labels[decision]}.`, 'success');
   }

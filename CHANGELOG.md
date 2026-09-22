@@ -1,3 +1,35 @@
+# v0.53.0 — Morning Intelligence Briefing
+
+## Proaktives Morgenbriefing
+- Jarvis sendet morgens automatisch ein persönliches Telegram-Briefing.
+- Standardzeit ist **07:00 Europe/Zurich**; die Zeit kann direkt in Telegram mit `/morning HH:MM` geändert werden.
+- `/morning off` deaktiviert die automatische Zustellung.
+- Tages-Deduplizierung verhindert doppelte Morgenbriefings nach Restarts oder mehrfachen Cron-Läufen.
+
+## Inhalt
+- Persönliche Begrüssung mit aktuellem Datum.
+- Echte Tagesprognose für Oetwil am See: Wetterlage, Min/Max, Regenrisiko, Sonnenaufgang und Sonnenuntergang.
+- WHOOP-Zustand, wenn verbunden und verfügbar: Recovery, Schlaf/Schlafdauer und Strain.
+- Heutige Aufgaben, Termine, fällige Rechnungen, Einkauf und Jarvis Inbox.
+- Automatischer **Jarvis Fokus** priorisiert Überfälliges, fällige Rechnungen, wichtige Aufgaben und heutige Termine.
+- Das bestehende manuelle Telegram-**Tagesbriefing** nutzt dieselbe reichere Übersicht.
+
+## Backend
+- Neue Supabase-Cron-Konfiguration mit geschütztem internen Secret.
+- `pg_cron` + `pg_net` prüfen das Briefing alle 5 Minuten im Morgenfenster; die Edge Function entscheidet anhand der Europe/Zurich-Zeit, ob gesendet wird.
+- WHOOP erhält einen internen server-to-server Summary-Zugriff; Browser- und OAuth-Schutz bleiben unverändert.
+- Keine Trading-Regeln, Decision Engine oder Trade-Ausführung verändert.
+
+## Geänderte/Neue Dateien
+- `supabase/functions/telegram-tasks/index.ts`
+- `supabase/functions/telegram-tasks/deno.json`
+- `supabase/functions/whoop/index.ts`
+- `supabase/functions/whoop/deno.json`
+- `supabase/migrations/20260922051500_morning_briefing.sql`
+- `supabase/migrations/20260922052000_adjust_morning_briefing_cron_window.sql`
+- `package.json`
+- `CHANGELOG.md`
+
 # v0.52.0 — Jarvis Voice Orb + Obsidian Bridge
 
 ## Home / Mobile

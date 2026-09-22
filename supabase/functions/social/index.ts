@@ -182,6 +182,15 @@ Deno.serve(async(req:Request)=>{
       const handle=cleanUsername(body.handle);
       const followers=cleanUsers(body.followers);
       const following=cleanUsers(body.following);
+      const whitelist=cleanUsers(body.whitelist);
+      const whitelistSet=new Set(whitelist);
+      const rawDecisions=body.decisions && typeof body.decisions==="object" ? body.decisions : {};
+      const decisions=new Map<string,string>();
+      for(const [key,value] of Object.entries(rawDecisions)){
+        const username=cleanUsername(key);
+        const decision=cleanDecision(value);
+        if(username && decision) decisions.set(username,decision);
+      }
       if(!accountKey)return json({error:"invalid_account"},400);
       if(!followers.length && !following.length)return json({error:"empty_import"},400);
 
@@ -229,8 +238,8 @@ Deno.serve(async(req:Request)=>{
           username,
           is_follower:nextFollower,
           is_following:nextFollowing,
-          whitelisted:Boolean(old?.whitelisted),
-          decision:old?.decision||null,
+          whitelisted:whitelistSet.has(username),
+          decision:decisions.get(username)||null,
           first_seen_at:old?.first_seen_at||now,
           last_seen_at:now,
           state_changed_at:changed?now:(old?.state_changed_at||now)

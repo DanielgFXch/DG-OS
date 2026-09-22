@@ -6,6 +6,15 @@ import UIKit
 private enum DGOSConfig {
     static let homeURL = URL(string: "https://danielgfxch.github.io/DG-OS/?native=ios")!
     static let internalHost = "danielgfxch.github.io"
+    static let whoopOAuthHosts: Set<String> = [
+        "jzvnmhfhyvmmbontsoej.supabase.co",
+        "api.prod.whoop.com"
+    ]
+
+    static func shouldStayInApp(_ url: URL) -> Bool {
+        guard url.scheme?.lowercased() == "https", let host = url.host?.lowercased() else { return false }
+        return host == internalHost || whoopOAuthHosts.contains(host) || host.hasSuffix(".whoop.com")
+    }
 }
 
 @main
@@ -199,7 +208,7 @@ struct DGOSWebView: UIViewRepresentable {
             }
 
             if navigationAction.navigationType == .linkActivated,
-               url.host != DGOSConfig.internalHost {
+               !DGOSConfig.shouldStayInApp(url) {
                 UIApplication.shared.open(url)
                 decisionHandler(.cancel)
                 return
@@ -216,7 +225,7 @@ struct DGOSWebView: UIViewRepresentable {
         ) -> WKWebView? {
             guard let url = navigationAction.request.url else { return nil }
 
-            if url.host == DGOSConfig.internalHost {
+            if DGOSConfig.shouldStayInApp(url) {
                 webView.load(URLRequest(url: url))
             } else {
                 UIApplication.shared.open(url)

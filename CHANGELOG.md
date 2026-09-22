@@ -1,3 +1,17 @@
+# v0.53.2 — Persistente WHOOP-Verbindung
+
+## Fix
+- WHOOP kann eine fehlende lokale WHOOP-Sitzung automatisch aus einer gültigen DG-OS-Gerätesitzung wiederherstellen.
+- Bestehende WHOOP-OAuth-Tokens bleiben serverseitig die Quelle der Verbindung; keine WHOOP-Secrets wandern ins Frontend.
+- WHOOP-Sitzungen werden bei erfolgreicher Nutzung automatisch verlängert.
+- Der fehlerhafte Zugriff auf einen nicht definierten Session-Key beim Ablauf einer WHOOP-Sitzung wurde korrigiert.
+- In der nativen iOS-App bleibt der WHOOP-OAuth-Flow innerhalb von DG OS, damit die erfolgreiche Sitzung im selben WKWebView gespeichert wird.
+
+## Sicherheit
+- Die automatische Wiederherstellung funktioniert nur mit einer gültigen, nicht abgelaufenen DG-OS-Gerätesitzung.
+- WHOOP- und Telegram-/Aufgaben-Sitzungen bleiben als getrennte Session-Typen gespeichert.
+- Keine Änderungen an Trading Brain, Market Brain, Decision Engine oder Trading-Regeln.
+
 # v0.53.1 — Telegram → Kalender Sync
 
 ## Fix

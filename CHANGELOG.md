@@ -1,3 +1,20 @@
+# v0.53.1 — Telegram → Kalender Sync
+
+## Fix
+- Telegram-/Jarvis-Termine werden direkt im DG-OS-Kalender angezeigt.
+- Termine ohne Uhrzeit erscheinen ganztägig; Termine mit Uhrzeit zeigen die gespeicherte Uhrzeit.
+- Jarvis-Termine sind als eigene Quelle „Jarvis · Telegram“ und mit violetter Kalender-Markierung erkennbar.
+- Beim Zurückwechseln zu DG OS sowie nach einer neuen Gerätesitzung wird der Jarvis-Kalender neu geladen.
+- WHOOP liest wieder den separaten gespeicherten WHOOP-Session-Key; Telegram-/Aufgaben-Sitzungen bleiben davon unabhängig.
+
+## Backend verifiziert
+- Mehrzeilen-Eingaben, 23.09 / 23..09, Zivilschutz/Kurs/Schicht/Training/Geburtstag und Wochentag-Datum-Konfliktprüfung sind im aktuellen Telegram-Backend vorhanden.
+- Die aktive tasks-Edge-Function stellt offene Jarvis-Termine über /calendar bereit.
+
+## Unverändert
+- Keine Änderungen an Trading Brain, Market Brain, Decision Engine oder Trading-Regeln.
+- Keine Änderungen an LiveUP, Trading Academy oder Prestige.
+
 # v0.53.0 — Morning Intelligence Briefing
 
 ## Proaktives Morgenbriefing

@@ -718,11 +718,29 @@
   const EDGE='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/whoop';
   const DEVICE_SESSION_KEY='dgos.deviceSession';
   const LEGACY_SESSION_KEY='dgos.whoopSession';
+  const CLAIM_KEY='dgos.whoopClaimSecret';
 
   function session(){return localStorage.getItem(LEGACY_SESSION_KEY)||'';}
   function deviceSession(){return localStorage.getItem(DEVICE_SESSION_KEY)||'';}
-  function headers(token=session()){
-    return token?{Authorization:'Bearer '+token}:{};
+  function headers(token=session(),json=false){
+    const h=token?{Authorization:'Bearer '+token}:{};
+    if(json)h['Content-Type']='application/json';
+    return h;
+  }
+  function randomClaimSecret(){
+    const bytes=crypto.getRandomValues(new Uint8Array(32));
+    let raw='';bytes.forEach(value=>raw+=String.fromCharCode(value));
+    return btoa(raw).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  }
+  async function post(action,body){
+    const response=await fetch(EDGE+'/'+action,{
+      method:'POST',
+      cache:'no-store',
+      headers:headers('',true),
+      body:JSON.stringify(body||{})
+    });
+    let data={};try{data=await response.json();}catch(_){}
+    return {response,data};
   }
   function fmtHours(value){
     const n=Number(value); if(!Number.isFinite(n))return'—';
@@ -807,6 +825,44 @@
     }
   }
 
+  async function claimPendingAuthorization(){
+    const claim=localStorage.getItem(CLAIM_KEY)||'';
+    if(!claim)return false;
+    try{
+      const {response,data}=await post('device-auth-claim',{claimSecret:claim});
+      if(response.status===409)return false;
+      if(response.status===410||response.status===400){
+        localStorage.removeItem(CLAIM_KEY);
+        return false;
+      }
+      if(!response.ok||!data||typeof data.session!=='string'||!data.session)return false;
+      localStorage.setItem(LEGACY_SESSION_KEY,data.session);
+      localStorage.removeItem(CLAIM_KEY);
+      window.dispatchEvent(new Event('dgos-whoop-session'));
+      return true;
+    }catch(_){
+      return false;
+    }
+  }
+
+  async function startPersistentAuthorization(){
+    const claim=randomClaimSecret();
+    localStorage.setItem(CLAIM_KEY,claim);
+    set('whoopHealthMeta','WHOOP-Autorisierung wird sicher vorbereitet …');
+    connect.textContent='WHOOP wird geöffnet …';
+    connect.disabled=true;
+    try{
+      const {response,data}=await post('device-auth-start',{claimSecret:claim});
+      if(!response.ok||!data||typeof data.authorizationUrl!=='string')throw new Error('auth_start_failed');
+      location.href=data.authorizationUrl;
+    }catch(_){
+      localStorage.removeItem(CLAIM_KEY);
+      connect.disabled=false;
+      connect.textContent='Dieses Gerät autorisieren';
+      set('whoopHealthMeta','WHOOP-Autorisierung konnte nicht gestartet werden. Bitte erneut versuchen.');
+    }
+  }
+
   async function restoreFromDeviceSession(){
     const token=deviceSession();
     if(!token)return false;
@@ -829,6 +885,13 @@
 
   async function check(){
     try{
+      if(!session() && localStorage.getItem(CLAIM_KEY)){
+        set('whoopHealthMeta','WHOOP-Autorisierung wird übernommen …');
+        if(await claimPendingAuthorization()){
+          if(await loadSummary())return;
+        }
+      }
+
       const response=await fetch(EDGE+'/status',{cache:'no-store',headers:headers()});
       if(!response.ok)throw new Error('status_failed');
       const status=await response.json();
@@ -850,10 +913,13 @@
         }
       }
 
-      showDisconnected(status.connected
-        ?'WHOOP ist serverseitig verbunden. Dieses Gerät konnte nicht automatisch autorisiert werden.'
-        :'WHOOP ist bereit. Einmal verbinden, danach lädt Jarvis deine Werte automatisch.');
-      connect.textContent=status.connected?'Dieses Gerät autorisieren':'WHOOP verbinden';
+      const pending=Boolean(localStorage.getItem(CLAIM_KEY));
+      showDisconnected(pending
+        ?'WHOOP wurde bestätigt. Wechsle zurück zu DG OS – die Sitzung wird automatisch übernommen.'
+        :status.connected
+          ?'WHOOP ist serverseitig verbunden. Autorisiere dieses Gerät einmal; danach bleibt die Sitzung dauerhaft erhalten.'
+          :'WHOOP ist bereit. Einmal verbinden, danach lädt Jarvis deine Werte automatisch.');
+      connect.textContent=pending?'Autorisierung prüfen':status.connected?'Dieses Gerät einmal autorisieren':'WHOOP verbinden';
       connect.disabled=false;
     }catch(_){
       showDisconnected('Der kostenlose WHOOP-Connector ist gerade nicht erreichbar. Bitte später erneut versuchen.');
@@ -862,9 +928,15 @@
     }
   }
 
-  connect.addEventListener('click',()=>{
+  connect.addEventListener('click',async()=>{
     if(connect.disabled)return;
-    location.href=EDGE+'/start';
+    if(localStorage.getItem(CLAIM_KEY)){
+      if(await claimPendingAuthorization()){
+        await loadSummary();
+        return;
+      }
+    }
+    startPersistentAuthorization();
   });
 
   const params=new URLSearchParams(location.search);

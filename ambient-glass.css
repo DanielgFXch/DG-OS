@@ -352,3 +352,253 @@ body[data-dgos-route="trading"]{
     transform:none!important;
   }
 }
+
+
+/* v0.58.1 — Precision Liquid Glass controls */
+:root{
+  --lg-panel-a:rgba(19,46,62,.20);
+  --lg-panel-b:rgba(4,15,27,.27);
+  --lg-panel-c:rgba(13,10,34,.20);
+  --lg-button-a:rgba(37,78,94,.18);
+  --lg-button-b:rgba(7,21,35,.24);
+  --lg-edge:rgba(220,251,255,.20);
+  --lg-edge-soft:rgba(151,231,250,.105);
+  --lg-cyan:rgba(103,244,255,.72);
+  --lg-violet:rgba(144,121,255,.54);
+}
+
+/* Cards: clearer glass, less paint, more depth. */
+.personal-panel,
+.personal-stats article,
+.personal-quick-info,
+.social-glass,
+.personal-trading,
+.card,
+.trading-command-center,
+.trading-focus-card,
+.trading-scenario-card,
+.personal-dialog{
+  border:1px solid var(--lg-edge-soft)!important;
+  border-top-color:var(--lg-edge)!important;
+  background:
+    radial-gradient(460px 135px at 10% -8%,rgba(233,254,255,.055),transparent 70%),
+    radial-gradient(320px 145px at 93% 3%,rgba(144,121,255,.030),transparent 72%),
+    linear-gradient(145deg,var(--lg-panel-a),var(--lg-panel-b) 54%,var(--lg-panel-c))!important;
+  box-shadow:
+    0 28px 82px rgba(0,0,0,.235),
+    0 9px 34px rgba(26,112,133,.026),
+    inset 0 1px 0 rgba(255,255,255,.145),
+    inset 1px 0 0 rgba(255,255,255,.035),
+    inset 0 -1px 0 rgba(88,197,225,.040),
+    inset -1px 0 0 rgba(132,112,255,.020)!important;
+  backdrop-filter:blur(52px) saturate(192%) brightness(1.035)!important;
+  -webkit-backdrop-filter:blur(52px) saturate(192%) brightness(1.035)!important;
+}
+
+/* Secondary glass surfaces should feel nested rather than opaque. */
+.personal-stats article,
+.personal-task-row,
+.personal-agenda-row,
+.personal-health-values>div,
+.social-metric,
+.social-growth-card,
+.trading-glance-grid article,
+.trading-session-level,
+.trading-zone-row,
+.trading-scenario-meta>div,
+.jarvis-life-stats>div,
+.jarvis-command-deck button{
+  border-color:rgba(181,238,255,.085)!important;
+  border-top-color:rgba(230,252,255,.135)!important;
+  background:
+    radial-gradient(180px 65px at 10% 0%,rgba(227,253,255,.034),transparent 72%),
+    linear-gradient(145deg,rgba(27,60,75,.115),rgba(5,18,30,.17))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.045),
+    0 12px 36px rgba(0,0,0,.075)!important;
+  backdrop-filter:blur(26px) saturate(170%)!important;
+  -webkit-backdrop-filter:blur(26px) saturate(170%)!important;
+}
+
+/* Controls: genuinely translucent instead of dark filled buttons. */
+button:not(.jarvis-orb):not(.personal-task-check),
+.personal-panel button:not(.jarvis-orb):not(.personal-task-check),
+.social-glass button,
+.trading-command-center button,
+.dgos-route-bar button,
+.personal-dialog button,
+button.primary,
+button.secondary{
+  position:relative;
+  border:1px solid rgba(186,241,255,.13)!important;
+  border-top-color:rgba(235,254,255,.23)!important;
+  background:
+    radial-gradient(125px 46px at 22% -3%,rgba(240,255,255,.070),transparent 70%),
+    radial-gradient(100px 52px at 90% 115%,rgba(142,119,255,.035),transparent 74%),
+    linear-gradient(145deg,var(--lg-button-a),var(--lg-button-b))!important;
+  box-shadow:
+    0 11px 32px rgba(0,0,0,.135),
+    inset 0 1px 0 rgba(255,255,255,.105),
+    inset 0 -1px 0 rgba(78,186,215,.028)!important;
+  backdrop-filter:blur(30px) saturate(188%) brightness(1.025)!important;
+  -webkit-backdrop-filter:blur(30px) saturate(188%) brightness(1.025)!important;
+  transform:translateZ(0);
+  transition:
+    transform .24s cubic-bezier(.2,.85,.25,1),
+    border-color .24s ease,
+    background .24s ease,
+    box-shadow .24s ease,
+    color .20s ease,
+    filter .20s ease!important;
+}
+
+@media(hover:hover){
+  button:not(.jarvis-orb):not(.personal-task-check):hover,
+  .personal-panel button:not(.jarvis-orb):not(.personal-task-check):hover,
+  .social-glass button:hover,
+  .trading-command-center button:hover,
+  .dgos-route-bar button:hover,
+  .personal-dialog button:hover,
+  button.primary:hover,
+  button.secondary:hover{
+    transform:translate3d(0,-1.5px,0);
+    border-color:rgba(125,240,255,.26)!important;
+    border-top-color:rgba(239,255,255,.34)!important;
+    background:
+      radial-gradient(145px 58px at 24% -4%,rgba(241,255,255,.105),transparent 70%),
+      radial-gradient(115px 62px at 88% 115%,rgba(144,121,255,.060),transparent 74%),
+      linear-gradient(145deg,rgba(39,85,101,.22),rgba(7,23,38,.27))!important;
+    box-shadow:
+      0 15px 38px rgba(0,0,0,.15),
+      0 0 24px rgba(71,224,243,.040),
+      inset 0 1px 0 rgba(255,255,255,.145)!important;
+  }
+}
+
+/* Touch feedback: short, soft and tactile. */
+button:not(.jarvis-orb):not(.personal-task-check):active,
+.personal-panel button:not(.jarvis-orb):not(.personal-task-check):active,
+.social-glass button:active,
+.trading-command-center button:active,
+.dgos-route-bar button:active,
+.personal-dialog button:active,
+button.primary:active,
+button.secondary:active{
+  transform:translate3d(0,.5px,0) scale(.972)!important;
+  filter:brightness(1.08);
+  border-color:rgba(139,242,255,.32)!important;
+  box-shadow:
+    0 6px 18px rgba(0,0,0,.12),
+    0 0 18px rgba(79,226,245,.045),
+    inset 0 1px 0 rgba(255,255,255,.13)!important;
+  transition-duration:.10s!important;
+}
+
+/* Active state: cyan core with a restrained violet edge. */
+.bottom-nav button.active,
+.bottom-nav button[aria-pressed="true"],
+.personal-tabs button[aria-pressed="true"],
+.social-account-tabs button[aria-pressed="true"],
+.personal-calendar-grid .personal-day[aria-pressed="true"],
+button[aria-pressed="true"]:not(.personal-task-check):not(.jarvis-orb){
+  color:#d7fdff!important;
+  border-color:rgba(110,244,255,.27)!important;
+  border-top-color:rgba(226,254,255,.36)!important;
+  background:
+    radial-gradient(145px 60px at 50% 115%,rgba(84,239,255,.12),transparent 72%),
+    radial-gradient(100px 75px at 92% 8%,rgba(145,119,255,.095),transparent 72%),
+    linear-gradient(145deg,rgba(35,93,105,.21),rgba(12,25,46,.25))!important;
+  box-shadow:
+    0 12px 34px rgba(0,0,0,.13),
+    0 0 26px rgba(71,232,247,.065),
+    0 0 22px rgba(143,120,255,.035),
+    inset 0 1px 0 rgba(255,255,255,.145),
+    inset 0 -1px 0 rgba(107,236,255,.05)!important;
+}
+
+/* Focus treatment stays elegant but visible. */
+button:focus-visible,
+.personal-task-copy:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible{
+  outline:none!important;
+  border-color:rgba(111,243,255,.48)!important;
+  box-shadow:
+    0 0 0 2px rgba(90,229,244,.075),
+    0 0 24px rgba(81,222,242,.055),
+    inset 0 1px 0 rgba(255,255,255,.11)!important;
+}
+
+/* Inputs get the same material language. */
+input,
+textarea,
+select,
+.field-settings input[type=text],
+.field-settings input[type=password]{
+  border-color:rgba(176,235,252,.105)!important;
+  border-top-color:rgba(228,252,255,.15)!important;
+  background:
+    linear-gradient(145deg,rgba(8,24,37,.24),rgba(4,15,27,.31))!important;
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.035),
+    0 8px 28px rgba(0,0,0,.08)!important;
+  backdrop-filter:blur(24px) saturate(165%)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(165%)!important;
+}
+
+/* The dock should look like one continuous piece of curved glass. */
+.bottom-nav{
+  border-color:rgba(191,243,255,.15)!important;
+  border-top-color:rgba(238,254,255,.25)!important;
+  background:
+    radial-gradient(260px 85px at 50% 112%,rgba(82,237,255,.060),transparent 72%),
+    radial-gradient(180px 90px at 86% 0%,rgba(143,120,255,.035),transparent 72%),
+    linear-gradient(180deg,rgba(13,37,52,.40),rgba(4,15,27,.49))!important;
+  box-shadow:
+    0 28px 76px rgba(0,0,0,.36),
+    0 0 44px rgba(50,214,239,.034),
+    inset 0 1px 0 rgba(255,255,255,.13),
+    inset 0 -1px 0 rgba(75,187,216,.035)!important;
+  backdrop-filter:blur(44px) saturate(198%) brightness(1.025)!important;
+  -webkit-backdrop-filter:blur(44px) saturate(198%) brightness(1.025)!important;
+}
+
+/* Mobile keeps the same material, but avoids excessive blur cost. */
+@media(max-width:700px){
+  .personal-panel,
+  .personal-stats article,
+  .personal-quick-info,
+  .social-glass,
+  .personal-trading,
+  .card,
+  .trading-command-center,
+  .trading-focus-card,
+  .trading-scenario-card,
+  .personal-dialog{
+    backdrop-filter:blur(40px) saturate(182%) brightness(1.025)!important;
+    -webkit-backdrop-filter:blur(40px) saturate(182%) brightness(1.025)!important;
+  }
+
+  button:not(.jarvis-orb):not(.personal-task-check),
+  input,
+  textarea,
+  select{
+    backdrop-filter:blur(22px) saturate(172%)!important;
+    -webkit-backdrop-filter:blur(22px) saturate(172%)!important;
+  }
+
+  .bottom-nav{
+    backdrop-filter:blur(36px) saturate(188%)!important;
+    -webkit-backdrop-filter:blur(36px) saturate(188%)!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  button,
+  input,
+  textarea,
+  select{
+    transition:none!important;
+  }
+}

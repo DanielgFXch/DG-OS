@@ -134,13 +134,22 @@
       </div>
 
       <div class="jarvis-orb-stage">
-        <button id="personalJarvisOrbBtn" class="jarvis-orb" type="button" aria-label="Mit Jarvis sprechen" aria-pressed="false">
+        <button id="personalJarvisOrbBtn" class="jarvis-orb" type="button" data-state="idle" aria-label="Mit Jarvis sprechen" aria-pressed="false">
           <span class="jarvis-orb-halo" aria-hidden="true"></span>
+          <span class="jarvis-orb-pixel-field" aria-hidden="true"></span>
+          <span class="jarvis-orb-wave-ring jarvis-orb-wave-ring-one" aria-hidden="true"></span>
+          <span class="jarvis-orb-wave-ring jarvis-orb-wave-ring-two" aria-hidden="true"></span>
           <span class="jarvis-orb-ring jarvis-orb-ring-one" aria-hidden="true"></span>
           <span class="jarvis-orb-ring jarvis-orb-ring-two" aria-hidden="true"></span>
+          <span class="jarvis-orb-ring jarvis-orb-ring-three" aria-hidden="true"></span>
           <span class="jarvis-orb-core" aria-hidden="true">
+            <span class="jarvis-orb-scan"></span>
+            <span class="jarvis-orb-waveform">
+              <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            </span>
             <span class="jarvis-orb-wave"></span>
           </span>
+          <span class="jarvis-orb-particles" aria-hidden="true"></span>
         </button>
         <div class="jarvis-orb-state"><span class="jarvis-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><strong id="personalJarvisStatus">Bereit</strong></div>
         <p id="personalJarvisReply" class="jarvis-reply" aria-live="polite">Sag mir, was du brauchst.</p>

@@ -124,11 +124,11 @@
     <section id="personalJarvis" class="personal-panel personal-jarvis-panel" aria-labelledby="personalJarvisTitle">
       <div class="personal-jarvis-head">
         <div>
-          <div class="personal-kicker">JARVIS VOICE</div>
-          <h2 id="personalJarvisTitle">Sprich mit Jarvis</h2>
-          <p>Tippe den Orb an, um zu sprechen.</p>
+          <div class="personal-kicker">JARVIS · PERSONAL INTELLIGENCE</div>
+          <h2 id="personalJarvisTitle">Was kann ich für dich tun?</h2>
+          <p>Ich ordne deinen Tag, Aufgaben, Termine, Rechnungen und Ideen.</p>
         </div>
-        <button id="obsidianVaultButton" type="button" class="jarvis-vault-button" aria-label="Obsidian Vault verbinden">Obsidian verbinden</button>
+        <div class="jarvis-system-badge" aria-label="Jarvis System bereit"><i aria-hidden="true"></i><span>ONLINE</span></div>
       </div>
 
       <div class="jarvis-orb-stage">
@@ -141,22 +141,52 @@
           </span>
         </button>
         <div class="jarvis-orb-state"><span class="jarvis-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><strong id="personalJarvisStatus">Bereit</strong></div>
-        <p id="personalJarvisReply" class="jarvis-reply" aria-live="polite">Jarvis ist bereit.</p>
+        <p id="personalJarvisReply" class="jarvis-reply" aria-live="polite">Sag mir, was du brauchst.</p>
       </div>
 
-      <div class="jarvis-obsidian-actions" aria-label="Obsidian Schnellaktionen">
-        <button id="obsidianNoteButton" type="button"><span class="jarvis-action-icon">✎</span><span><strong>Notiz speichern</strong><small>In Obsidian</small></span><b>›</b></button>
-        <button id="obsidianInboxButton" type="button"><span class="jarvis-action-icon jarvis-obsidian-gem">◆</span><span><strong>Obsidian Inbox</strong><small>Schnell erfassen</small></span><b>›</b></button>
-        <button id="obsidianDailyButton" type="button"><span class="jarvis-action-icon">▣</span><span><strong>Daily Note</strong><small>Heute öffnen</small></span><b>›</b></button>
+      <div class="jarvis-life-stats" aria-label="Dein aktueller Tag">
+        <div><span>Aufgaben</span><strong id="jarvisLifeTasks">0</strong></div>
+        <div><span>Termine</span><strong id="jarvisLifeAppointments">0</strong></div>
+        <div><span>Rechnungen</span><strong id="jarvisLifeBills">0</strong></div>
+        <div><span>Inbox</span><strong id="jarvisLifeInbox">0</strong></div>
       </div>
 
-      <form id="obsidianCaptureForm" class="jarvis-capture hidden" autocomplete="off">
-        <input id="obsidianCaptureInput" type="text" maxlength="1200" placeholder="Gedanke, Idee oder Notiz für Obsidian …" aria-label="Obsidian Notiz" />
-        <button type="submit">Speichern</button>
-        <button id="obsidianCaptureCancel" type="button" class="jarvis-capture-cancel">Abbrechen</button>
+      <div class="jarvis-command-deck" aria-label="Jarvis Schnellbefehle">
+        <button type="button" data-jarvis-action="briefing"><span class="jarvis-command-icon">✦</span><span><strong>Was ist heute wichtig?</strong><small>Jarvis Briefing</small></span></button>
+        <button type="button" data-jarvis-action="task"><span class="jarvis-command-icon">✓</span><span><strong>Aufgabe hinzufügen</strong><small>Sofort erfassen</small></span></button>
+        <button type="button" data-jarvis-action="appointment"><span class="jarvis-command-icon">◫</span><span><strong>Termin erfassen</strong><small>Kalender öffnen</small></span></button>
+        <button type="button" data-jarvis-action="organize"><span class="jarvis-command-icon">⌁</span><span><strong>Alles sortieren</strong><small>Deine Zentrale</small></span></button>
+      </div>
+
+      <form id="jarvisLifeCommandForm" class="jarvis-life-command" autocomplete="off">
+        <span aria-hidden="true">⌘</span>
+        <input id="jarvisLifeCommandInput" type="text" maxlength="320" placeholder="Frag Jarvis … z. B. «Zeig mir meinen Tag»" aria-label="Jarvis Befehl" />
+        <button type="submit" aria-label="Befehl ausführen">→</button>
       </form>
 
-      <div class="jarvis-obsidian-status"><span aria-hidden="true">⌁</span><span id="obsidianStatus">Jarvis verbindet deine Gedanken mit Obsidian.</span></div>
+      <details class="jarvis-integrations">
+        <summary><span>Integrationen</span><small>Optional · Obsidian</small><b aria-hidden="true">⌄</b></summary>
+        <div class="jarvis-integration-body">
+          <div class="jarvis-integration-head">
+            <div><strong>Obsidian</strong><small>Nur wenn du es aktiv nutzen willst.</small></div>
+            <button id="obsidianVaultButton" type="button" class="jarvis-vault-button" aria-label="Obsidian Vault verbinden">Obsidian verbinden</button>
+          </div>
+
+          <div class="jarvis-obsidian-actions" aria-label="Obsidian Schnellaktionen">
+            <button id="obsidianNoteButton" type="button"><span class="jarvis-action-icon">✎</span><span><strong>Notiz speichern</strong><small>In Obsidian</small></span><b>›</b></button>
+            <button id="obsidianInboxButton" type="button"><span class="jarvis-action-icon jarvis-obsidian-gem">◆</span><span><strong>Inbox</strong><small>Schnell erfassen</small></span><b>›</b></button>
+            <button id="obsidianDailyButton" type="button"><span class="jarvis-action-icon">▣</span><span><strong>Daily Note</strong><small>Heute öffnen</small></span><b>›</b></button>
+          </div>
+
+          <form id="obsidianCaptureForm" class="jarvis-capture hidden" autocomplete="off">
+            <input id="obsidianCaptureInput" type="text" maxlength="1200" placeholder="Gedanke, Idee oder Notiz für Obsidian …" aria-label="Obsidian Notiz" />
+            <button type="submit">Speichern</button>
+            <button id="obsidianCaptureCancel" type="button" class="jarvis-capture-cancel">Abbrechen</button>
+          </form>
+
+          <div class="jarvis-obsidian-status"><span aria-hidden="true">⌁</span><span id="obsidianStatus">Obsidian ist optional und aktuell nicht im Vordergrund.</span></div>
+        </div>
+      </details>
     </section>
 
     <section id="personalTasks" class="personal-panel personal-tasks-panel" aria-labelledby="personalTasksTitle">

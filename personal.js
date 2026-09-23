@@ -1581,7 +1581,7 @@
 })();
 
 
-/* v0.52.0 — Home Jarvis Orb + Obsidian URI bridge. */
+/* v0.56.0 — Home Jarvis Life OS + optional Obsidian bridge. */
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -1591,61 +1591,248 @@
 
   const status = $('personalJarvisStatus');
   const reply = $('personalJarvisReply');
-  const sourceMic = $('assistantMicBtn');
-  const sourceStatus = $('assistantStatus');
-  const sourceLog = $('assistantLog');
-  const sourceText = $('assistantTextInput');
+  const commandForm = $('jarvisLifeCommandForm');
+  const commandInput = $('jarvisLifeCommandInput');
   const OBSIDIAN_VAULT_KEY = 'dgos.obsidianVault';
 
   function setStatus(text) {
     if (status) status.textContent = text || 'Bereit';
   }
+  function setReply(text) {
+    if (reply) reply.textContent = text || 'Sag mir, was du brauchst.';
+  }
+  function scrollToElement(el) {
+    if (!el) return false;
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    return true;
+  }
+  function showReply(text) {
+    panel.classList.add('is-speaking');
+    setStatus('Erledigt');
+    setReply(text);
+    clearTimeout(panel._jarvisSpeakingTimer);
+    panel._jarvisSpeakingTimer = setTimeout(() => {
+      panel.classList.remove('is-speaking');
+      setStatus('Bereit');
+    }, 2200);
+  }
 
-  function syncVoiceState() {
-    const listening = !!(sourceMic && sourceMic.classList.contains('listening'));
-    panel.classList.toggle('is-listening', listening);
-    orb.setAttribute('aria-pressed', String(listening));
-    if (listening) {
-      setStatus('Ich höre zu …');
+  function navTo(target) {
+    const button = document.querySelector('.bottom-nav button[data-target="' + target + '"]');
+    if (button) {
+      button.click();
+      return true;
+    }
+    return scrollToElement($(target));
+  }
+
+  function openOrganizer(label) {
+    const cards = Array.from(document.querySelectorAll('.personal-organizer-card'));
+    const card = cards.find(item => {
+      const summary = item.querySelector('summary');
+      return summary && summary.textContent.toLowerCase().includes(label.toLowerCase());
+    });
+    if (!card) return false;
+    card.open = true;
+    scrollToElement(card);
+    return true;
+  }
+
+  function focusTask(prefill = '') {
+    const input = $('taskQuickTitle');
+    const form = $('taskQuickForm');
+    if (!input || !form) return false;
+    scrollToElement($('personalTasks') || form);
+    setTimeout(() => {
+      if (prefill) input.value = prefill;
+      input.focus();
+      if (prefill && !input.disabled) form.requestSubmit();
+    }, 280);
+    return true;
+  }
+
+  function runLifeAction(action, payload = '') {
+    switch (action) {
+      case 'briefing':
+        $('dailyBriefingButton')?.click();
+        scrollToElement($('personalAttention'));
+        showReply('Dein Tagesbriefing ist offen. Ich habe das Wichtige für heute nach Priorität sortiert.');
+        return true;
+      case 'task':
+        if (focusTask(payload)) {
+          showReply(payload ? 'Aufgabe wurde an deine Aufgabenliste übergeben.' : 'Aufgabenliste ist bereit. Was möchtest du erledigen?');
+          return true;
+        }
+        break;
+      case 'appointment':
+        $('newLocalEvent')?.click();
+        showReply('Termin-Erfassung ist geöffnet.');
+        return true;
+      case 'calendar':
+        navTo('personalCalendar');
+        showReply('Ich habe deinen Kalender geöffnet.');
+        return true;
+      case 'organize':
+        if (scrollToElement(document.querySelector('.personal-organizer'))) {
+          showReply('Hier ist deine persönliche Zentrale mit Terminen, Rechnungen, Einkauf und Notizen.');
+          return true;
+        }
+        break;
+      case 'bills':
+        if (openOrganizer('Rechnungen')) {
+          showReply('Ich habe deine offenen Rechnungen geöffnet.');
+          return true;
+        }
+        break;
+      case 'shopping':
+        if (openOrganizer('Einkauf')) {
+          showReply('Deine Einkaufsliste ist geöffnet.');
+          return true;
+        }
+        break;
+      case 'notes':
+        if (openOrganizer('Notizen')) {
+          showReply('Deine Notizen sind geöffnet.');
+          return true;
+        }
+        break;
+      case 'health':
+        navTo('personalHealth');
+        showReply('Gesundheit ist geöffnet.');
+        return true;
+      case 'social':
+        navTo('personalSocial');
+        showReply('Social Command Center ist geöffnet.');
+        return true;
+      case 'trading':
+        navTo('tradingWorkspace');
+        showReply('Trading ist separat geöffnet. Deine persönlichen Jarvis-Befehle bleiben davon getrennt.');
+        return true;
+    }
+    setStatus('Bereit');
+    setReply('Diesen Befehl kann ich noch nicht sicher ausführen.');
+    return false;
+  }
+
+  function interpretCommand(raw) {
+    const original = String(raw || '').trim();
+    if (!original) return false;
+    const q = original.toLowerCase().replace(/[?!.,;:]+/g,' ').replace(/\s+/g,' ').trim();
+
+    if (/^(aufgabe|todo)\s+/.test(q)) {
+      const task = original.replace(/^(aufgabe|todo)\s+/i,'').trim();
+      return runLifeAction('task', task);
+    }
+    if (/was.*heute.*wichtig|tagesbriefing|briefing|mein tag|zeig.*tag|heute.*an/.test(q)) return runLifeAction('briefing');
+    if (/aufgabe|todo|erledigen/.test(q)) return runLifeAction('task');
+    if (/termin|appointment/.test(q)) return runLifeAction('appointment');
+    if (/kalender/.test(q)) return runLifeAction('calendar');
+    if (/rechnung|bezahlen|fällig/.test(q)) return runLifeAction('bills');
+    if (/einkauf|einkaufen|shopping/.test(q)) return runLifeAction('shopping');
+    if (/notiz|notizen|idee|gedanke/.test(q)) return runLifeAction('notes');
+    if (/gesundheit|whoop|recovery|schlaf/.test(q)) return runLifeAction('health');
+    if (/social|instagram|follower/.test(q)) return runLifeAction('social');
+    if (/trading|gold|xau|markt/.test(q)) return runLifeAction('trading');
+    if (/sortier|organisier|ordnung|zentrale|übersicht/.test(q)) return runLifeAction('organize');
+
+    setStatus('Noch nicht gelernt');
+    setReply('Versuch z. B. «Was ist heute wichtig?», «Aufgabe Steuerrechnung prüfen», «Kalender», «Rechnungen» oder «Social».');
+    return false;
+  }
+
+  document.querySelectorAll('[data-jarvis-action]').forEach(button => {
+    button.addEventListener('click', () => runLifeAction(button.dataset.jarvisAction || ''));
+  });
+
+  commandForm?.addEventListener('submit', event => {
+    event.preventDefault();
+    const value = commandInput ? commandInput.value.trim() : '';
+    if (!value) {
+      commandInput?.focus();
       return;
     }
-    const sourceTextValue = sourceStatus ? sourceStatus.textContent.trim() : '';
-    if (sourceTextValue && !sourceTextValue.toLowerCase().startsWith('frag z.b.')) setStatus(sourceTextValue);
-    else setStatus('Bereit');
+    interpretCommand(value);
+    if (commandInput) commandInput.value = '';
+  });
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let recognition = null;
+  let listening = false;
+
+  if (SpeechRecognition) {
+    recognition = new SpeechRecognition();
+    recognition.lang = 'de-CH';
+    recognition.interimResults = false;
+    recognition.continuous = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.addEventListener('start', () => {
+      listening = true;
+      panel.classList.add('is-listening');
+      orb.setAttribute('aria-pressed','true');
+      setStatus('Ich höre zu …');
+      setReply('Sag einfach, was du brauchst.');
+    });
+    recognition.addEventListener('result', event => {
+      const transcript = event.results?.[0]?.[0]?.transcript || '';
+      if (transcript) {
+        setReply('«' + transcript + '»');
+        setTimeout(() => interpretCommand(transcript), 180);
+      }
+    });
+    recognition.addEventListener('end', () => {
+      listening = false;
+      panel.classList.remove('is-listening');
+      orb.setAttribute('aria-pressed','false');
+      if (status && status.textContent === 'Ich höre zu …') setStatus('Bereit');
+    });
+    recognition.addEventListener('error', event => {
+      listening = false;
+      panel.classList.remove('is-listening');
+      orb.setAttribute('aria-pressed','false');
+      if (event.error === 'not-allowed') {
+        setStatus('Mikrofon nicht erlaubt');
+        setReply('Du kannst Jarvis auch direkt unten eintippen.');
+      } else {
+        setStatus('Sprache gerade nicht verfügbar');
+        setReply('Nutze kurz die Texteingabe.');
+      }
+    });
   }
 
   orb.addEventListener('click', () => {
-    if (!sourceMic || sourceMic.disabled) {
-      setStatus('Sprache hier nicht verfügbar');
-      if (reply) reply.textContent = 'Text-Eingabe bleibt verfügbar. Öffne den DG OS Assistant oder nutze einen Browser mit Spracherkennung.';
-      if (sourceText) {
-        sourceText.scrollIntoView({behavior:'smooth', block:'center'});
-        setTimeout(() => sourceText.focus(), 280);
-      }
+    if (!recognition) {
+      setStatus('Textmodus');
+      setReply('Spracherkennung ist hier nicht verfügbar. Schreib mir deinen Befehl.');
+      commandInput?.focus();
       return;
     }
-    sourceMic.click();
-    setTimeout(syncVoiceState, 0);
+    if (listening) {
+      try { recognition.stop(); } catch (_) {}
+      return;
+    }
+    try { recognition.start(); }
+    catch (_) { commandInput?.focus(); }
   });
 
-  if (sourceMic) new MutationObserver(syncVoiceState).observe(sourceMic, {attributes:true, attributeFilter:['class','disabled']});
-  if (sourceStatus) new MutationObserver(syncVoiceState).observe(sourceStatus, {childList:true, subtree:true, characterData:true});
-  if (sourceLog) {
-    new MutationObserver(() => {
-      const messages = sourceLog.querySelectorAll('.assistant-msg-assistant .assistant-msg-text');
-      const latest = messages[messages.length - 1];
-      if (!latest || !latest.textContent.trim()) return;
-      panel.classList.add('is-speaking');
-      setStatus('Antwortet …');
-      if (reply) reply.textContent = latest.textContent.trim();
-      clearTimeout(panel._jarvisSpeakingTimer);
-      panel._jarvisSpeakingTimer = setTimeout(() => {
-        panel.classList.remove('is-speaking');
-        syncVoiceState();
-      }, 3600);
-    }).observe(sourceLog, {childList:true, subtree:true});
+  const statMap = [
+    ['attentionTaskStat','jarvisLifeTasks'],
+    ['attentionAppointmentStat','jarvisLifeAppointments'],
+    ['attentionBillStat','jarvisLifeBills'],
+    ['attentionInboxStat','jarvisLifeInbox']
+  ];
+  function syncLifeStats() {
+    statMap.forEach(([sourceId,targetId]) => {
+      const source = $(sourceId);
+      const target = $(targetId);
+      if (source && target) target.textContent = source.textContent.trim() || '0';
+    });
   }
-  syncVoiceState();
+  statMap.forEach(([sourceId]) => {
+    const source = $(sourceId);
+    if (source) new MutationObserver(syncLifeStats).observe(source,{childList:true,subtree:true,characterData:true});
+  });
+  syncLifeStats();
 
   const obsidianStatus = $('obsidianStatus');
   const vaultButton = $('obsidianVaultButton');
@@ -1660,7 +1847,8 @@
   }
   function updateVaultButton() {
     const value = vaultName();
-    if (vaultButton) vaultButton.textContent = value ? 'Obsidian · ' + value : 'Obsidian verbinden';
+    if (vaultButton) vaultButton.textContent = value ? 'Verbunden · ' + value : 'Obsidian verbinden';
+    setObsidianStatus(value ? 'Obsidian ist verbunden und bleibt als optionale Integration verfügbar.' : 'Obsidian ist optional und aktuell nicht verbunden.');
   }
   function requestVault() {
     const current = vaultName();
@@ -1669,12 +1857,10 @@
     const clean = value.trim();
     if (!clean) {
       try { localStorage.removeItem(OBSIDIAN_VAULT_KEY); } catch (_) {}
-      setObsidianStatus('Kein Obsidian Vault verbunden.');
       updateVaultButton();
       return '';
     }
     try { localStorage.setItem(OBSIDIAN_VAULT_KEY, clean); } catch (_) {}
-    setObsidianStatus('Obsidian Vault verbunden: ' + clean);
     updateVaultButton();
     return clean;
   }
@@ -1732,4 +1918,6 @@
   });
 
   updateVaultButton();
+  setStatus('Bereit');
+  setReply('Sag mir, was du brauchst.');
 })();

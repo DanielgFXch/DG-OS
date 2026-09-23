@@ -358,3 +358,231 @@ body.email-window-open{overflow:hidden}
   .jarvis-capture{grid-template-columns:1fr 1fr}.jarvis-capture input{grid-column:1/-1}
 }
 @media(prefers-reduced-motion:reduce){.jarvis-orb-halo,.jarvis-orb-ring,.jarvis-orb-wave,.jarvis-eq i{animation:none!important}}
+
+
+/* v0.57.1 — Fluid persistent task checkoff */
+.personal-task-notice[data-kind="success"]{
+  color:#86eadb;
+  text-shadow:0 0 18px rgba(104,235,218,.18);
+}
+
+.personal-task-row{
+  position:relative;
+  overflow:hidden;
+  transition:
+    transform .26s cubic-bezier(.2,.8,.2,1),
+    opacity .28s ease,
+    border-color .25s ease,
+    background .25s ease,
+    box-shadow .25s ease;
+  will-change:transform,opacity;
+}
+
+.personal-task-row::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:0;
+  background:
+    radial-gradient(170px 70px at 8% 50%,rgba(107,239,216,.12),transparent 72%),
+    linear-gradient(90deg,rgba(107,239,216,.03),transparent 58%);
+  transition:opacity .22s ease;
+}
+
+.personal-task-row:hover{
+  border-color:rgba(154,235,226,.17);
+  background:rgba(8,22,33,.52);
+}
+
+.personal-task-row.is-saving{
+  pointer-events:none;
+}
+
+.personal-task-row.is-completing{
+  transform:scale(.992);
+  border-color:rgba(104,236,216,.24);
+  background:rgba(20,65,61,.13);
+  box-shadow:
+    inset 0 1px rgba(255,255,255,.045),
+    0 10px 28px rgba(44,212,193,.04);
+}
+
+.personal-task-row.is-completing::after,
+.personal-task-row.is-saved::after{
+  opacity:1;
+}
+
+.personal-task-row.is-reopening{
+  transform:scale(.995);
+  border-color:rgba(127,205,244,.18);
+}
+
+.personal-task-check{
+  position:relative;
+  display:grid;
+  place-items:center;
+  overflow:visible;
+  transition:
+    transform .25s cubic-bezier(.2,.9,.25,1.35),
+    border-color .22s ease,
+    background .22s ease,
+    box-shadow .22s ease;
+}
+
+.personal-task-check::before{
+  content:"";
+  position:absolute;
+  inset:-5px;
+  border:1px solid rgba(105,238,216,0);
+  border-radius:13px;
+  transform:scale(.75);
+  opacity:0;
+}
+
+.personal-task-check-glyph{
+  display:grid;
+  place-items:center;
+  width:100%;
+  height:100%;
+  opacity:0;
+  transform:scale(.35) rotate(-18deg);
+  color:#cafff5;
+  font-size:16px;
+  font-weight:700;
+  text-shadow:0 0 14px rgba(117,244,222,.72);
+  transition:
+    opacity .18s ease,
+    transform .30s cubic-bezier(.2,.95,.28,1.38);
+}
+
+.personal-task-check[aria-pressed="true"]{
+  transform:scale(1.03);
+  border-color:rgba(105,239,217,.72);
+  background:
+    radial-gradient(circle at 35% 25%,rgba(221,255,249,.18),transparent 42%),
+    linear-gradient(145deg,rgba(74,222,202,.34),rgba(41,151,145,.18));
+  box-shadow:
+    0 0 0 1px rgba(112,239,220,.06),
+    0 0 24px rgba(64,222,202,.14),
+    inset 0 1px rgba(255,255,255,.16);
+}
+
+.personal-task-check[aria-pressed="true"]::before{
+  animation:taskCheckPulse .46s ease-out;
+}
+
+.personal-task-check[aria-pressed="true"] .personal-task-check-glyph{
+  opacity:1;
+  transform:scale(1) rotate(0);
+}
+
+.personal-task-check:active{
+  transform:scale(.90);
+}
+
+.personal-task-check:disabled{
+  opacity:1;
+}
+
+.personal-task-copy{
+  cursor:pointer;
+  border-radius:8px;
+  outline:0;
+}
+
+.personal-task-copy:focus-visible{
+  outline:1px solid rgba(117,239,222,.50);
+  outline-offset:4px;
+}
+
+.personal-task-copy strong{
+  position:relative;
+  transition:color .24s ease,opacity .24s ease;
+}
+
+.personal-task-copy strong::after{
+  content:"";
+  position:absolute;
+  left:0;
+  top:54%;
+  width:0;
+  height:1px;
+  border-radius:999px;
+  background:linear-gradient(90deg,rgba(127,236,220,.8),rgba(127,236,220,.35));
+  box-shadow:0 0 8px rgba(111,231,214,.23);
+  transition:width .34s cubic-bezier(.2,.75,.2,1);
+}
+
+.personal-task-row.is-done{
+  opacity:.64;
+}
+
+.personal-task-row.is-done .personal-task-copy strong{
+  text-decoration:none;
+  color:rgba(190,214,220,.64);
+}
+
+.personal-task-row.is-done .personal-task-copy strong::after{
+  width:100%;
+}
+
+.personal-task-row.is-done .personal-task-copy small{
+  color:rgba(111,143,155,.56);
+}
+
+.personal-task-done{
+  transition:opacity .2s ease;
+}
+
+.personal-task-done summary{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  list-style:none;
+}
+
+.personal-task-done summary::-webkit-details-marker{
+  display:none;
+}
+
+.personal-task-done summary::before{
+  content:"✓";
+  display:grid;
+  place-items:center;
+  width:18px;
+  height:18px;
+  border:1px solid rgba(106,225,207,.16);
+  border-radius:7px;
+  color:#78dcca;
+  background:rgba(77,194,179,.05);
+  font-size:9px;
+}
+
+.personal-task-done summary span{
+  display:grid;
+  place-items:center;
+  min-width:20px;
+  height:20px;
+  padding:0 5px;
+  border-radius:999px;
+  color:#82dacc;
+  background:rgba(105,226,207,.07);
+  font-size:8px;
+}
+
+@keyframes taskCheckPulse{
+  0%{opacity:0;transform:scale(.6)}
+  35%{opacity:.9;border-color:rgba(108,242,220,.34)}
+  100%{opacity:0;transform:scale(1.35);border-color:rgba(108,242,220,0)}
+}
+
+@media(prefers-reduced-motion:reduce){
+  .personal-task-row,
+  .personal-task-check,
+  .personal-task-check-glyph,
+  .personal-task-copy strong::after{
+    transition:none!important;
+    animation:none!important;
+  }
+}

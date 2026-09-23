@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="./navigation.css?v=0.51.0" />
   <link rel="stylesheet" href="./mobile.css?v=0.46.3" />
   <link rel="stylesheet" href="./jarvis-visuals.css?v=0.56.0" />
+  <link rel="stylesheet" href="./trading-command.css?v=0.57.0" />
   <title>DG OS · Dein Tag</title>
 </head>
 <body>
@@ -491,6 +492,80 @@
       </div>
     </section>
     <details id="tradingWorkspace" class="personal-trading"><summary><span><span class="personal-kicker">DEIN MARKET WORKSPACE</span><strong>Trading</strong></span><span class="personal-trading-hint">Aufklappen <span aria-hidden="true">↗</span></span></summary>
+      <section id="tradingCommandCenter" class="trading-command-center" aria-labelledby="tradingCommandTitle">
+        <div class="trading-command-top">
+          <button id="tradingBackPersonal" class="trading-back-personal" type="button" aria-label="Zurück zur persönlichen Zentrale">← <span>Personal Zentrale</span></button>
+          <div id="tradingCommandDataState" class="trading-command-data-state"><i aria-hidden="true"></i><span>DATEN WERDEN GEPRÜFT</span></div>
+        </div>
+
+        <div class="trading-session-hero">
+          <div class="trading-session-copy">
+            <span id="tradingActiveSession" class="trading-session-kicker">SESSION —</span>
+            <h2 id="tradingCommandTitle">Was zählt jetzt?</h2>
+            <p id="tradingSessionSummary">Jarvis prüft Session, Liquidity, Zonen und Entry-Status.</p>
+          </div>
+          <div id="tradingDecisionBadge" class="trading-decision-badge is-wait">
+            <span>STATUS</span>
+            <strong id="tradingDecisionStage">WAIT</strong>
+            <small id="tradingDecisionDirection">Kein Entry</small>
+          </div>
+        </div>
+
+        <div class="trading-glance-grid">
+          <article>
+            <span>Trading Bias</span>
+            <strong id="tradingBiasNow">—</strong>
+            <small id="tradingBiasContext">Noch keine echten Brain-Daten.</small>
+          </article>
+          <article>
+            <span>Liquidity</span>
+            <strong id="tradingLiquidityState">—</strong>
+            <small id="tradingLiquidityDetail">Session-Liquidity wird geprüft.</small>
+          </article>
+          <article>
+            <span>Warte auf</span>
+            <strong id="tradingWaitingFor">—</strong>
+            <small id="tradingWaitingDetail">Nur echte DG-Regeln.</small>
+          </article>
+        </div>
+
+        <div class="trading-focus-grid">
+          <section class="trading-focus-card">
+            <div class="trading-focus-head">
+              <div><span>SESSION MAP</span><strong>Relevante Liquidity</strong></div>
+              <small id="tradingZoneSession">AUTO</small>
+            </div>
+            <div id="tradingSessionLevels" class="trading-session-levels">
+              <div class="trading-empty">Noch keine Session-Daten.</div>
+            </div>
+          </section>
+
+          <section class="trading-focus-card">
+            <div class="trading-focus-head">
+              <div><span>POI MAP</span><strong>Relevante Zonen</strong></div>
+              <small>Daily · 4H · H1</small>
+            </div>
+            <div id="tradingRelevantZones" class="trading-relevant-zones">
+              <div class="trading-empty">Trading Brain noch nicht verbunden.</div>
+            </div>
+          </section>
+        </div>
+
+        <section class="trading-scenario-card">
+          <div class="trading-scenario-head">
+            <span>JARVIS · SESSION READ</span>
+            <strong id="tradingScenarioTitle">Noch kein valides Szenario</strong>
+          </div>
+          <p id="tradingScenarioText">Sobald echte Trading-Brain-Daten verfügbar sind, fasst Jarvis hier nur das Entscheidende für die aktuelle Session zusammen.</p>
+          <div class="trading-scenario-meta">
+            <div><span>Liquidity geholt</span><strong id="tradingSweptSummary">—</strong></div>
+            <div><span>Nächstes Ziel</span><strong id="tradingPrimaryTarget">—</strong></div>
+          </div>
+        </section>
+
+        <details id="tradingAdvanced" class="trading-advanced">
+          <summary><span>Erweiterte Analyse &amp; Technik</span><small>Trading Brain · Live-Daten · Engines · Assistant</small><b aria-hidden="true">⌄</b></summary>
+          <div class="trading-advanced-body">
       <div id="connectionBadge" class="badge"><span class="live-dot"></span>OFFLINE DEMO</div>
       <div class="personal-news"><span aria-hidden="true">●</span> Wirtschaftsnews · Quelle noch nicht verbunden</div>
   <div class="ticker">
@@ -857,6 +932,8 @@
         </section>
       </div>
     </div>
+          </div>
+        </details>
 
     </details>
     <footer class="app-footer">DG OS <span id="appVersion">v0.0.0</span> · <a href="https://github.com/DanielgFXch/DG-OS/blob/main/CHANGELOG.md" target="_blank" rel="noopener">Changelog</a></footer>
@@ -891,6 +968,7 @@
   <script src="./app.js?v=0.46.3"></script>
   <script src="./personal.js?v=0.56.1"></script>\n  <script src="./social.js?v=0.54.0"></script>
   <script src="./navigation.js?v=0.46.0"></script>
+  <script src="./trading-command.js?v=0.57.0"></script>
   <script src="./weather.js?v=0.46.2"></script>
 </body>
 </html>

@@ -1,3 +1,26 @@
+# v0.57.0 — Trading Session Command Center
+
+## Trading Mode
+- Trading now opens as a distinct DG TRADING mode instead of a continuation of the personal dashboard.
+- Added a dedicated “Personal Zentrale” back control while the bottom Trading navigation stays available.
+- Removed greeting, timezone and technical system-status clutter from the primary Trading view.
+- The first screen is now session-first: active/upcoming session, WAIT/WATCH/READY, Trading Bias, session Liquidity and what Jarvis is waiting for.
+- London automatically focuses on Asia + London liquidity; New York focuses on Asia + London + New York context.
+- Relevant Daily/4H/H1 bullish/bearish POIs are surfaced in one compact zone map.
+- Session Liquidity clearly shows OPEN / TOUCHED / SWEPT and a concise “Liquidity geholt” summary.
+- The scenario card summarizes only existing DG Trading Brain output and the matching primary target when available.
+- No direction is invented when the real Trading Brain is offline.
+
+## Interface
+- Added an immersive trading-specific visual shell and DG TRADING / Session Intelligence chrome.
+- Existing detailed Trading Brain, assistant, engines, server settings and technical cards remain available under “Erweiterte Analyse & Technik”.
+- Personal greeting remains exclusively in the personal centre.
+
+## Safety / Logic
+- Presentation-only Trading redesign.
+- Trading Brain, Market Brain, Entry Decision Engine, targets, confirmations and all DG trading rules are unchanged.
+- No automatic order execution was added.
+
 # v0.56.1 — Persistent WHOOP Device Handoff
 
 ## Fix

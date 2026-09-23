@@ -1,3 +1,23 @@
+# v0.59.0 — Fixed Dock + Jarvis Pixel Wave OS
+
+## Navigation
+- Bottom navigation is now explicitly anchored to the viewport with a high fixed z-index and GPU-stable transform.
+- Safe-area spacing is reserved at page level so content cannot disappear behind the dock.
+- Mobile keeps the dock fixed above the iPhone home indicator.
+
+## Jarvis Orb
+- Rebuilt Jarvis into a layered pixel-based OS orb.
+- Added circular pixel matrix, three concentric HUD rings, orbital particles and two expanding wave shells.
+- Added a central scan layer and animated waveform bars.
+- Orb now has explicit visual states: idle, listening, thinking and speaking.
+- Voice recognition drives listening/thinking automatically; replies drive speaking; the orb returns to idle after completion.
+- Typed Jarvis commands also enter a short thinking state before execution.
+- Reduced-motion users get a static version of the same design.
+
+## Scope
+- Presentation/state animation only.
+- No task, calendar, WHOOP, Social, Trading Brain, Market Brain or decision-rule changes.
+
 # v0.58.1 — Precision Liquid Glass Controls
 
 ## Liquid Glass

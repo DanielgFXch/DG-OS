@@ -1,5 +1,5 @@
-const CACHE='dgos-personal-shell-35';
-const ASSETS=['./','./index.html','./styles.css?v=0.45.3','./wow.css?v=0.37.1','./personal.css?v=0.57.1','./social.css?v=0.54.0','./navigation.css?v=0.51.0','./mobile.css?v=0.46.3','./jarvis-visuals.css?v=0.56.0','./trading-command.css?v=0.57.0','./ambient-glass.css?v=0.58.1','./personal.js?v=0.57.1','./social.js?v=0.54.0','./navigation.js?v=0.46.0','./trading-command.js?v=0.57.0','./weather.js?v=0.46.2','./marketBrain.js','./app.js?v=0.46.3','./manifest.webmanifest','./icon-192.png','./icon-512.png',
+const CACHE='dgos-personal-shell-36';
+const ASSETS=['./','./index.html','./styles.css?v=0.45.3','./wow.css?v=0.37.1','./personal.css?v=0.57.1','./social.css?v=0.54.0','./navigation.css?v=0.51.0','./mobile.css?v=0.46.3','./jarvis-visuals.css?v=0.56.0','./trading-command.css?v=0.57.0','./ambient-glass.css?v=0.58.1','./jarvis-os-v2.css?v=0.59.0','./personal.js?v=0.59.0','./social.js?v=0.54.0','./navigation.js?v=0.46.0','./trading-command.js?v=0.57.0','./weather.js?v=0.46.2','./marketBrain.js','./app.js?v=0.46.3','./manifest.webmanifest','./icon-192.png','./icon-512.png',
   './fonts/chakra-petch-500.woff2','./fonts/chakra-petch-600.woff2','./fonts/chakra-petch-700.woff2',
   './fonts/jetbrains-mono-400.woff2','./fonts/jetbrains-mono-500.woff2','./fonts/jetbrains-mono-700.woff2'];
 

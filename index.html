@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="./jarvis-visuals.css?v=0.56.0" />
   <link rel="stylesheet" href="./trading-command.css?v=0.57.0" />
   <link rel="stylesheet" href="./ambient-glass.css?v=0.58.1" />
+  <link rel="stylesheet" href="./jarvis-os-v2.css?v=0.59.0" />
   <title>DG OS · Dein Tag</title>
 </head>
 <body>
@@ -134,13 +135,22 @@
       </div>
 
       <div class="jarvis-orb-stage">
-        <button id="personalJarvisOrbBtn" class="jarvis-orb" type="button" aria-label="Mit Jarvis sprechen" aria-pressed="false">
+        <button id="personalJarvisOrbBtn" class="jarvis-orb" type="button" data-state="idle" aria-label="Mit Jarvis sprechen" aria-pressed="false">
           <span class="jarvis-orb-halo" aria-hidden="true"></span>
+          <span class="jarvis-orb-pixel-field" aria-hidden="true"></span>
+          <span class="jarvis-orb-wave-ring jarvis-orb-wave-ring-one" aria-hidden="true"></span>
+          <span class="jarvis-orb-wave-ring jarvis-orb-wave-ring-two" aria-hidden="true"></span>
           <span class="jarvis-orb-ring jarvis-orb-ring-one" aria-hidden="true"></span>
           <span class="jarvis-orb-ring jarvis-orb-ring-two" aria-hidden="true"></span>
+          <span class="jarvis-orb-ring jarvis-orb-ring-three" aria-hidden="true"></span>
           <span class="jarvis-orb-core" aria-hidden="true">
+            <span class="jarvis-orb-scan"></span>
+            <span class="jarvis-orb-waveform">
+              <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+            </span>
             <span class="jarvis-orb-wave"></span>
           </span>
+          <span class="jarvis-orb-particles" aria-hidden="true"></span>
         </button>
         <div class="jarvis-orb-state"><span class="jarvis-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><strong id="personalJarvisStatus">Bereit</strong></div>
         <p id="personalJarvisReply" class="jarvis-reply" aria-live="polite">Sag mir, was du brauchst.</p>
@@ -967,7 +977,7 @@
   </form></dialog>
   <script src="./marketBrain.js"></script>
   <script src="./app.js?v=0.46.3"></script>
-  <script src="./personal.js?v=0.57.1"></script>\n  <script src="./social.js?v=0.54.0"></script>
+  <script src="./personal.js?v=0.59.0"></script>\n  <script src="./social.js?v=0.54.0"></script>
   <script src="./navigation.js?v=0.46.0"></script>
   <script src="./trading-command.js?v=0.57.0"></script>
   <script src="./weather.js?v=0.46.2"></script>

@@ -1,3 +1,24 @@
+# v0.58.0 — Ambient Pixel Glass
+
+## Visual System
+- New multi-layer animated pixel/grid background across DG OS.
+- Adds sparse starfield pixels, precision-grid depth and slow independent parallax drift.
+- Adds cinematic cyan/teal/violet light fields with a very subtle moving shimmer/scan layer.
+- Adds a soft luminous horizon behind the app for extra depth without a gaming look.
+- Trading keeps the same visual language with a slightly stronger cyan/violet atmosphere.
+
+## Liquid Glass
+- Cards and panels are more transparent so the animated world is visible behind the interface.
+- Blur, saturation, specular top edges and inner reflections were refined for a more premium liquid-glass effect.
+- Buttons now use lighter translucent glass with softer hover/tap feedback.
+- Bottom navigation is more transparent while keeping enough contrast for readability.
+
+## Performance / Accessibility
+- Pure CSS visual layer; no new runtime data or application logic.
+- Mobile uses reduced ambient intensity and lower visual density.
+- Reduced-motion users get a static premium background with all ambient animations disabled.
+- No Trading Brain, task, calendar, WHOOP, Social or integration logic changed.
+
 # v0.57.1 — Fluid Persistent Task Checkoff
 
 ## Tasks

@@ -55,6 +55,13 @@ function randomState() {
   return Array.from(b,x=>chars[x%chars.length]).join("");
 }
 function randomToken() { return b64url(crypto.getRandomValues(new Uint8Array(32))); }
+function validClaimSecret(value: unknown) {
+  const v=String(value||"").trim();
+  return /^[A-Za-z0-9_-]{40,120}$/.test(v) ? v : "";
+}
+async function readJson(req: Request) {
+  try { return await req.json(); } catch { return {}; }
+}
 
 const supabaseUrl=Deno.env.get("SUPABASE_URL")!;
 let serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -180,6 +187,63 @@ Deno.serve(async (req: Request) => {
 
     if(!clientSecret) return json({error:"whoop_not_configured"},503);
 
+    if(action==="device-auth-start"){
+      if(req.method!=="POST") return json({error:"method_not_allowed"},405);
+      if(origin!==ALLOWED_ORIGIN) return json({error:"origin_required"},403);
+      const body=await readJson(req);
+      const claimSecret=validClaimSecret(body.claimSecret);
+      if(!claimSecret) return json({error:"invalid_claim"},400);
+
+      const now=new Date().toISOString();
+      await Promise.all([
+        db.from("dgos_whoop_oauth_states").delete().lt("expires_at",now),
+        db.from("dgos_whoop_device_claims").delete().lt("expires_at",now)
+      ]);
+
+      const state=randomState();
+      const stateHash=await sha256(state);
+      const claimHash=await sha256(claimSecret);
+      const expiresAt=new Date(Date.now()+10*60*1000).toISOString();
+
+      const {error:stateError}=await db.from("dgos_whoop_oauth_states").insert({state_hash:stateHash,expires_at:expiresAt});
+      if(stateError) throw stateError;
+      const {error:claimError}=await db.from("dgos_whoop_device_claims").insert({
+        state_hash:stateHash,
+        claim_hash:claimHash,
+        expires_at:expiresAt
+      });
+      if(claimError){
+        await db.from("dgos_whoop_oauth_states").delete().eq("state_hash",stateHash);
+        throw claimError;
+      }
+
+      const p=new URLSearchParams({client_id:CLIENT_ID,redirect_uri:REDIRECT_URI,response_type:"code",scope:SCOPES.join(" "),state});
+      return json({authorizationUrl:WHOOP_AUTH+"?"+p.toString(),expiresInSeconds:600});
+    }
+
+    if(action==="device-auth-claim"){
+      if(req.method!=="POST") return json({error:"method_not_allowed"},405);
+      if(origin!==ALLOWED_ORIGIN) return json({error:"origin_required"},403);
+      const body=await readJson(req);
+      const claimSecret=validClaimSecret(body.claimSecret);
+      if(!claimSecret) return json({error:"invalid_claim"},400);
+
+      const claimHash=await sha256(claimSecret);
+      const now=new Date().toISOString();
+      const {data:claim,error:claimError}=await db.from("dgos_whoop_device_claims")
+        .select("state_hash,session_cipher,session_iv,completed_at,expires_at")
+        .eq("claim_hash",claimHash)
+        .gt("expires_at",now)
+        .maybeSingle();
+      if(claimError) throw claimError;
+      if(!claim) return json({error:"claim_expired"},410);
+      if(!claim.completed_at||!claim.session_cipher||!claim.session_iv) return json({error:"claim_pending"},409);
+
+      const session=await decrypt(clientSecret,claim.session_cipher,claim.session_iv);
+      await db.from("dgos_whoop_device_claims").delete().eq("claim_hash",claimHash);
+      return json({session,expiresInDays:180});
+    }
+
     if(action==="start"){
       const state=randomState();
       const hash=await sha256(state);
@@ -213,7 +277,6 @@ Deno.serve(async (req: Request) => {
         await diagnostic("token_payload",tokenResponse.status,!token.access_token?"missing_access_token":"missing_refresh_token","offline scope or token payload incomplete");
         return redirect(REDIRECT_URI+"#error=missing_token");
       }
-      await db.from("dgos_whoop_oauth_states").delete().eq("state_hash",hash);
       const [accessEnc,refreshEnc]=await Promise.all([encrypt(clientSecret,token.access_token),encrypt(clientSecret,token.refresh_token)]);
       await saveToken({
         refresh_token_cipher:refreshEnc.cipher,refresh_token_iv:refreshEnc.iv,
@@ -223,6 +286,26 @@ Deno.serve(async (req: Request) => {
       });
 
       const session=await issueWhoopSession();
+      const {data:handoff}=await db.from("dgos_whoop_device_claims")
+        .select("claim_hash")
+        .eq("state_hash",hash)
+        .gt("expires_at",new Date().toISOString())
+        .maybeSingle();
+
+      await db.from("dgos_whoop_oauth_states").delete().eq("state_hash",hash);
+
+      if(handoff){
+        const sessionEnc=await encrypt(clientSecret,session);
+        const {error:handoffError}=await db.from("dgos_whoop_device_claims").update({
+          session_cipher:sessionEnc.cipher,
+          session_iv:sessionEnc.iv,
+          completed_at:new Date().toISOString(),
+          expires_at:new Date(Date.now()+15*60*1000).toISOString()
+        }).eq("state_hash",hash);
+        if(handoffError) throw handoffError;
+        return redirect(REDIRECT_URI+"#handoff=complete");
+      }
+
       return redirect(REDIRECT_URI+"#session="+encodeURIComponent(session));
     }
 

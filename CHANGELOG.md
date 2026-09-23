@@ -1,3 +1,25 @@
+# v0.56.1 — Persistent WHOOP Device Handoff
+
+## Fix
+- WHOOP authorization now survives the iOS PWA/Safari context switch.
+- DG OS creates a private high-entropy handoff secret before opening WHOOP.
+- After WHOOP authorization, the server holds the new DG-OS WHOOP session only for that handoff.
+- Returning to the installed DG OS app automatically claims and stores the session locally.
+- WHOOP sessions still use a 180-day sliding expiry and are renewed during normal use.
+- Existing direct device-session recovery remains available when a DG OS device token exists.
+
+## Security
+- The handoff secret never appears in the OAuth URL.
+- Only a SHA-256 hash of the handoff secret is stored server-side.
+- The temporary WHOOP session is encrypted at rest and expires after 15 minutes if unclaimed.
+- The handoff table is protected by RLS and is inaccessible to anon/authenticated browser roles.
+- WHOOP access and refresh tokens remain encrypted server-side.
+
+## Scope
+- One final WHOOP authorization may be required on an installation that currently has no local session.
+- After that successful handoff, repeated authorization should no longer be necessary.
+- No Trading Brain, Market Brain, Decision Engine or trading-rule changes.
+
 # v0.56.0 — Jarvis Life OS
 
 ## Jarvis

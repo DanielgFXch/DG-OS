@@ -1,0 +1,354 @@
+/* DG OS v0.58.0 — Ambient Pixel Glass
+   Global presentation layer: premium pixel atmosphere + deeper liquid glass.
+   No application, trading, task or integration logic. */
+
+:root{
+  --ambient-cyan:105,247,255;
+  --ambient-teal:67,231,216;
+  --ambient-blue:77,141,255;
+  --ambient-violet:140,121,255;
+  --glass-surface:rgba(7,19,31,.34);
+  --glass-surface-strong:rgba(6,17,29,.46);
+  --glass-line:rgba(190,244,255,.16);
+  --glass-line-hot:rgba(218,252,255,.27);
+}
+
+html{
+  background:#010409!important;
+}
+
+body{
+  background:
+    radial-gradient(1150px 720px at 8% 10%,rgba(var(--ambient-cyan),.075),transparent 66%),
+    radial-gradient(980px 700px at 94% 12%,rgba(var(--ambient-violet),.075),transparent 66%),
+    radial-gradient(1100px 900px at 52% 92%,rgba(var(--ambient-blue),.055),transparent 70%),
+    linear-gradient(180deg,#01050a 0%,#03101a 44%,#02070d 72%,#01050a 100%)!important;
+  background-attachment:fixed!important;
+}
+
+body::before,
+body::after{
+  content:""!important;
+  position:fixed!important;
+  inset:-8%!important;
+  width:auto!important;
+  height:auto!important;
+  pointer-events:none!important;
+  z-index:-1!important;
+  transform:translate3d(0,0,0);
+  backface-visibility:hidden;
+  will-change:transform,background-position,opacity;
+}
+
+/* Depth layer 1: micro pixels + sparse stars + precision grid. */
+body::before{
+  opacity:.58!important;
+  background-image:
+    radial-gradient(circle,rgba(126,247,255,.30) 0 .72px,transparent 1px),
+    radial-gradient(circle,rgba(158,139,255,.22) 0 .62px,transparent .92px),
+    radial-gradient(circle,rgba(230,252,255,.18) 0 .48px,transparent .75px),
+    linear-gradient(rgba(103,225,255,.024) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(103,225,255,.024) 1px,transparent 1px),
+    linear-gradient(rgba(143,123,255,.012) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(143,123,255,.012) 1px,transparent 1px)!important;
+  background-size:
+    21px 21px,
+    43px 43px,
+    71px 71px,
+    96px 96px,
+    96px 96px,
+    192px 192px,
+    192px 192px!important;
+  background-position:
+    0 0,
+    13px 9px,
+    29px 37px,
+    0 0,
+    0 0,
+    48px 48px,
+    48px 48px!important;
+  -webkit-mask-image:
+    radial-gradient(ellipse at 50% 36%,#000 0 40%,rgba(0,0,0,.76) 62%,rgba(0,0,0,.28) 88%,transparent 100%)!important;
+  mask-image:
+    radial-gradient(ellipse at 50% 36%,#000 0 40%,rgba(0,0,0,.76) 62%,rgba(0,0,0,.28) 88%,transparent 100%)!important;
+  animation:
+    ambientPixelParallax 52s linear infinite,
+    ambientPixelBreathe 9s ease-in-out infinite!important;
+}
+
+/* Depth layer 2: cinematic light fields + slow shimmer + scan energy. */
+body::after{
+  opacity:.82!important;
+  background:
+    radial-gradient(54vw 42vh at 8% 28%,rgba(var(--ambient-teal),.075),transparent 72%),
+    radial-gradient(48vw 42vh at 92% 18%,rgba(var(--ambient-violet),.085),transparent 72%),
+    radial-gradient(56vw 46vh at 58% 82%,rgba(var(--ambient-blue),.05),transparent 75%),
+    linear-gradient(116deg,transparent 0 36%,rgba(179,249,255,.024) 44%,rgba(139,121,255,.026) 49%,rgba(179,249,255,.018) 54%,transparent 64%),
+    linear-gradient(180deg,transparent 0 46.8%,rgba(112,235,255,.018) 49.5%,rgba(150,247,255,.046) 50%,rgba(112,235,255,.018) 50.5%,transparent 53.2% 100%)!important;
+  background-size:
+    auto,
+    auto,
+    auto,
+    225% 100%,
+    100% 440px!important;
+  background-position:
+    center,
+    center,
+    center,
+    -120% 0,
+    0 -440px!important;
+  filter:saturate(115%);
+  animation:ambientLightFlow 24s ease-in-out infinite!important;
+}
+
+@keyframes ambientPixelParallax{
+  0%{
+    transform:translate3d(-1.2%,-.8%,0) scale(1.02);
+    background-position:0 0,13px 9px,29px 37px,0 0,0 0,48px 48px,48px 48px;
+  }
+  50%{
+    transform:translate3d(1.2%,1%,0) scale(1.025);
+    background-position:34px 22px,-18px 41px,56px 8px,48px 32px,32px 48px,96px 76px,76px 96px;
+  }
+  100%{
+    transform:translate3d(-1.2%,-.8%,0) scale(1.02);
+    background-position:68px 44px,-49px 73px,83px -21px,96px 64px,64px 96px,144px 104px,104px 144px;
+  }
+}
+
+@keyframes ambientPixelBreathe{
+  0%,100%{opacity:.48}
+  35%{opacity:.60}
+  52%{opacity:.53}
+  76%{opacity:.64}
+}
+
+@keyframes ambientLightFlow{
+  0%{
+    transform:translate3d(-1.4%,0,0) scale(1.03);
+    background-position:center,center,center,-120% 0,0 -440px;
+    opacity:.72;
+  }
+  35%{
+    transform:translate3d(1.6%,-1.1%,0) scale(1.045);
+    background-position:8% 26%,88% 22%,55% 78%,15% 0,0 30vh;
+    opacity:.90;
+  }
+  65%{
+    transform:translate3d(.4%,1.2%,0) scale(1.04);
+    background-position:12% 32%,94% 14%,62% 84%,95% 0,0 72vh;
+    opacity:.80;
+  }
+  100%{
+    transform:translate3d(-1.4%,0,0) scale(1.03);
+    background-position:center,center,center,215% 0,0 calc(100vh + 440px);
+    opacity:.72;
+  }
+}
+
+/* A faint luminous horizon creates depth without a gaming look. */
+.app{
+  position:relative;
+}
+
+.app::before{
+  content:"";
+  position:fixed;
+  left:8vw;
+  right:8vw;
+  top:24vh;
+  height:42vh;
+  z-index:-1;
+  pointer-events:none;
+  opacity:.55;
+  background:
+    radial-gradient(ellipse at 38% 46%,rgba(var(--ambient-cyan),.042),transparent 55%),
+    radial-gradient(ellipse at 72% 38%,rgba(var(--ambient-violet),.038),transparent 58%);
+  filter:blur(42px);
+  transform:translateZ(0);
+  animation:ambientHorizon 17s ease-in-out infinite;
+}
+
+@keyframes ambientHorizon{
+  0%,100%{transform:translate3d(-1.5%,0,0) scale(1);opacity:.42}
+  50%{transform:translate3d(1.8%,-2%,0) scale(1.05);opacity:.64}
+}
+
+/* Premium liquid glass: let the ambient world show through the interface. */
+.personal-panel,
+.personal-stats article,
+.personal-quick-info,
+.social-glass,
+.personal-trading,
+.card,
+.trading-command-center,
+.trading-focus-card,
+.trading-scenario-card{
+  border-color:var(--glass-line)!important;
+  border-top-color:var(--glass-line-hot)!important;
+  background:
+    radial-gradient(420px 125px at 8% -8%,rgba(219,252,255,.052),transparent 70%),
+    radial-gradient(300px 120px at 94% 0%,rgba(var(--ambient-violet),.036),transparent 72%),
+    linear-gradient(145deg,rgba(18,42,57,.27),rgba(5,15,27,.34) 55%,rgba(11,9,31,.27))!important;
+  box-shadow:
+    0 30px 82px rgba(0,0,0,.26),
+    0 7px 28px rgba(20,99,122,.035),
+    inset 0 1px 0 rgba(255,255,255,.115),
+    inset 1px 0 0 rgba(255,255,255,.028),
+    inset 0 -1px 0 rgba(80,181,218,.045)!important;
+  backdrop-filter:blur(46px) saturate(185%) brightness(1.035)!important;
+  -webkit-backdrop-filter:blur(46px) saturate(185%) brightness(1.035)!important;
+}
+
+.topbar{
+  background:
+    linear-gradient(180deg,rgba(3,11,19,.55),rgba(3,10,18,.34))!important;
+  border-bottom-color:rgba(176,241,255,.105)!important;
+  box-shadow:
+    0 18px 54px rgba(0,0,0,.20),
+    inset 0 -1px 0 rgba(255,255,255,.025)!important;
+  backdrop-filter:blur(38px) saturate(180%)!important;
+  -webkit-backdrop-filter:blur(38px) saturate(180%)!important;
+}
+
+/* Buttons feel like translucent controls floating above the glass. */
+.personal-panel button:not(.jarvis-orb),
+.social-glass button,
+.trading-command-center button,
+.dgos-route-bar button,
+.personal-dialog button,
+button.primary,
+button.secondary{
+  border-color:rgba(185,241,255,.15)!important;
+  border-top-color:rgba(231,253,255,.24)!important;
+  background:
+    radial-gradient(110px 45px at 20% 0%,rgba(218,253,255,.065),transparent 72%),
+    linear-gradient(145deg,rgba(28,61,77,.22),rgba(6,18,31,.27))!important;
+  box-shadow:
+    0 12px 34px rgba(0,0,0,.16),
+    inset 0 1px 0 rgba(255,255,255,.095),
+    inset 0 -1px 0 rgba(96,203,229,.035)!important;
+  backdrop-filter:blur(26px) saturate(178%)!important;
+  -webkit-backdrop-filter:blur(26px) saturate(178%)!important;
+  transition:
+    transform .22s cubic-bezier(.2,.8,.2,1),
+    border-color .22s ease,
+    background .22s ease,
+    box-shadow .22s ease,
+    color .22s ease!important;
+}
+
+.personal-panel button:not(.jarvis-orb):hover,
+.social-glass button:hover,
+.trading-command-center button:hover,
+.dgos-route-bar button:hover,
+.personal-dialog button:hover,
+button.primary:hover,
+button.secondary:hover{
+  transform:translateY(-1px);
+  border-color:rgba(128,241,255,.30)!important;
+  background:
+    radial-gradient(130px 55px at 22% 0%,rgba(219,253,255,.095),transparent 72%),
+    linear-gradient(145deg,rgba(34,75,91,.27),rgba(8,22,37,.31))!important;
+  box-shadow:
+    0 16px 38px rgba(0,0,0,.17),
+    0 0 24px rgba(72,222,241,.045),
+    inset 0 1px 0 rgba(255,255,255,.125)!important;
+}
+
+.personal-panel button:not(.jarvis-orb):active,
+.social-glass button:active,
+.trading-command-center button:active,
+.dgos-route-bar button:active,
+.personal-dialog button:active,
+button.primary:active,
+button.secondary:active{
+  transform:translateY(0) scale(.982);
+}
+
+/* Floating dock: slightly clearer, still transparent enough to show motion behind it. */
+.bottom-nav{
+  background:
+    radial-gradient(220px 70px at 50% 100%,rgba(var(--ambient-cyan),.055),transparent 72%),
+    linear-gradient(180deg,rgba(11,31,46,.54),rgba(4,13,24,.60))!important;
+  border-color:rgba(183,241,255,.17)!important;
+  border-top-color:rgba(229,253,255,.27)!important;
+  box-shadow:
+    0 26px 72px rgba(0,0,0,.40),
+    0 0 46px rgba(52,213,237,.04),
+    inset 0 1px 0 rgba(255,255,255,.105)!important;
+  backdrop-filter:blur(38px) saturate(190%)!important;
+  -webkit-backdrop-filter:blur(38px) saturate(190%)!important;
+}
+
+/* Trading gets the same world, with a barely stronger violet/cyan tension. */
+body[data-dgos-route="trading"]{
+  background:
+    radial-gradient(1100px 740px at 2% 13%,rgba(var(--ambient-cyan),.07),transparent 67%),
+    radial-gradient(960px 700px at 98% 12%,rgba(var(--ambient-violet),.09),transparent 68%),
+    radial-gradient(1100px 860px at 54% 94%,rgba(var(--ambient-blue),.045),transparent 72%),
+    linear-gradient(180deg,#01050a 0%,#03101a 42%,#040817 70%,#01050a 100%)!important;
+}
+
+/* Small polish. */
+::selection{
+  color:#031015;
+  background:rgba(118,244,245,.82);
+}
+
+@media(max-width:700px){
+  body{
+    background-attachment:scroll!important;
+  }
+
+  body::before,
+  body::after{
+    inset:-10%!important;
+  }
+
+  body::before{
+    opacity:.46!important;
+    background-size:
+      20px 20px,
+      41px 41px,
+      67px 67px,
+      88px 88px,
+      88px 88px,
+      176px 176px,
+      176px 176px!important;
+  }
+
+  body::after{
+    opacity:.70!important;
+    filter:saturate(108%);
+  }
+
+  .app::before{
+    left:-12vw;
+    right:-12vw;
+    filter:blur(50px);
+    opacity:.44;
+  }
+
+  .personal-panel,
+  .personal-stats article,
+  .personal-quick-info,
+  .social-glass,
+  .personal-trading,
+  .card,
+  .trading-command-center,
+  .trading-focus-card,
+  .trading-scenario-card{
+    backdrop-filter:blur(38px) saturate(175%)!important;
+    -webkit-backdrop-filter:blur(38px) saturate(175%)!important;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  body::before,
+  body::after,
+  .app::before{
+    animation:none!important;
+    transform:none!important;
+  }
+}

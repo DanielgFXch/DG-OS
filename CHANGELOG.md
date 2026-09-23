@@ -1,3 +1,21 @@
+# v0.58.1 — Precision Liquid Glass Controls
+
+## Liquid Glass
+- Cards and panels are more transparent with clearer background visibility and stronger premium blur.
+- Refined specular top edges, inner reflections and softer floating shadows.
+- Nested cards now feel like secondary glass layers instead of opaque blocks.
+- Buttons are more translucent with finer borders, subtle inner light and softer shadows.
+- Active controls now use a restrained cyan core with a subtle violet edge.
+- Touch feedback is faster and softer with a short scale/brightness response.
+- Hover feedback remains understated and premium on pointer devices.
+- Inputs, selects and dialogs now use the same glass material language.
+- Bottom navigation is treated as one continuous curved glass surface.
+
+## Performance / Accessibility
+- Mobile uses reduced blur values for smoother performance.
+- Reduced-motion disables control transitions.
+- CSS-only visual change; no application, task, calendar, WHOOP, Social or Trading logic changed.
+
 # v0.58.0 — Ambient Pixel Glass
 
 ## Visual System

@@ -945,6 +945,9 @@
     history.replaceState(null,'',location.pathname+location.hash);
   }else if(params.get('whoop')==='connected'){
     history.replaceState(null,'',location.pathname+location.hash);
+  }else if(params.get('whoop')==='handoff'){
+    set('whoopHealthMeta','WHOOP wird dauerhaft mit dieser DG-OS-Installation verknüpft …');
+    history.replaceState(null,'',location.pathname+location.hash);
   }
 
   check();

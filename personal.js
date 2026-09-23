@@ -1379,9 +1379,9 @@
 
     let committedDone=done;
     async function toggleTask(){
-      if(row.classList.contains('is-saving'))return;
+      if(row.classList.contains('is-saving')||row.classList.contains('is-settling'))return;
       const nextDone=!committedDone;
-      row.classList.add('is-saving','is-transitioning');
+      row.classList.add('is-saving');
       row.classList.toggle('is-done',nextDone);
       row.classList.toggle('is-completing',nextDone);
       row.classList.toggle('is-reopening',!nextDone);
@@ -1401,7 +1401,11 @@
         if(nextDone)taskFeedback('Erledigt ✓');
         else taskFeedback('Aufgabe wieder geöffnet');
         if(result&&result.task&&result.task.completed_at)task.completed_at=result.task.completed_at;
-        setTimeout(()=>load(),nextDone?430:260);
+        row.classList.add('is-settling');
+        setTimeout(async()=>{
+          await load();
+          row.classList.remove('is-settling');
+        },nextDone?430:260);
       }catch(_){
         row.classList.toggle('is-done',committedDone);
         row.classList.remove('is-completing','is-reopening','is-saved');

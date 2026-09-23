@@ -1276,11 +1276,51 @@
     if(value==='image')return'Bild';
     return'Jarvis';
   }
-  function dueMeta(task){
+  function completedMeta(task){
+    if(!task.completed_at)return'';
+    try{
+      const time=new Intl.DateTimeFormat('de-CH',{
+        timeZone:'Europe/Zurich',hour:'2-digit',minute:'2-digit',hour12:false
+      }).format(new Date(task.completed_at));
+      return'Erledigt '+time;
+    }catch(_){return'Erledigt';}
+  }
+  function dueMeta(task,done=false){
     const bits=[];
-    if(task.due_time) bits.push(String(task.due_time).slice(0,5));
+    if(done){
+      const completed=completedMeta(task);
+      if(completed)bits.push(completed);
+    }else if(task.due_time){
+      bits.push(String(task.due_time).slice(0,5));
+    }
     bits.push(sourceLabel(task.source));
     return bits.join(' · ');
+  }
+  function readTaskCounters(){
+    const progress=String($('taskProgress')?.textContent||'0/0').split('/');
+    const done=Number(progress[0]||0);
+    const total=Number(progress[1]||0);
+    return{done:Number.isFinite(done)?done:0,total:Number.isFinite(total)?total:0};
+  }
+  function setTaskCounters(done,total){
+    const safeDone=Math.max(0,Math.min(total,done));
+    const open=Math.max(0,total-safeDone);
+    set('taskProgress',safeDone+'/'+total);
+    set('taskOpenCount',open+' offen');
+    set('taskDoneCount',String(safeDone));
+  }
+  function optimisticCounters(nextDone,overdue){
+    if(overdue)return;
+    const current=readTaskCounters();
+    setTaskCounters(current.done+(nextDone?1:-1),current.total);
+  }
+  function taskFeedback(message,kind='success'){
+    note(message,kind);
+    clearTimeout(taskFeedback.timer);
+    taskFeedback.timer=setTimeout(()=>{
+      const el=$('taskNotice');
+      if(el&&el.textContent===message)note('');
+    },1300);
   }
 
   function makeTaskRow(task,opts={}){
@@ -1295,14 +1335,17 @@
     check.className='personal-task-check';
     check.setAttribute('aria-label',done?'Aufgabe wieder öffnen':'Aufgabe erledigen');
     check.setAttribute('aria-pressed',done?'true':'false');
-    check.textContent=done?'✓':'';
+    const checkGlyph=document.createElement('span');
+    checkGlyph.className='personal-task-check-glyph';
+    checkGlyph.textContent='✓';
+    check.append(checkGlyph);
 
     const body=document.createElement('div');
     body.className='personal-task-copy';
     const title=document.createElement('strong');
     title.textContent=task.title;
     const meta=document.createElement('small');
-    meta.textContent=(overdue?('Fällig '+prettyDate(task.due_date)+' · '):'')+dueMeta(task);
+    meta.textContent=(overdue?('Fällig '+prettyDate(task.due_date)+' · '):'')+dueMeta(task,done);
     body.append(title,meta);
 
     const side=document.createElement('div');
@@ -1334,14 +1377,57 @@
     });
     side.append(del);
 
-    check.addEventListener('click',async()=>{
+    let committedDone=done;
+    async function toggleTask(){
+      if(row.classList.contains('is-saving')||row.classList.contains('is-settling'))return;
+      const nextDone=!committedDone;
+      row.classList.add('is-saving');
+      row.classList.toggle('is-done',nextDone);
+      row.classList.toggle('is-completing',nextDone);
+      row.classList.toggle('is-reopening',!nextDone);
+      check.setAttribute('aria-pressed',nextDone?'true':'false');
+      check.setAttribute('aria-label',nextDone?'Aufgabe wieder öffnen':'Aufgabe erledigen');
       check.disabled=true;
+      optimisticCounters(nextDone,overdue);
+
       try{
-        await api('toggle',{method:'POST',body:{id:task.id,done:!done}});
-        await load();
+        if(navigator.vibrate)navigator.vibrate(nextDone?18:10);
+      }catch(_){}
+
+      try{
+        const result=await api('toggle',{method:'POST',body:{id:task.id,done:nextDone}});
+        committedDone=nextDone;
+        row.classList.add('is-saved');
+        if(nextDone)taskFeedback('Erledigt ✓');
+        else taskFeedback('Aufgabe wieder geöffnet');
+        if(result&&result.task&&result.task.completed_at)task.completed_at=result.task.completed_at;
+        row.classList.add('is-settling');
+        setTimeout(async()=>{
+          await load();
+          row.classList.remove('is-settling');
+        },nextDone?430:260);
       }catch(_){
+        row.classList.toggle('is-done',committedDone);
+        row.classList.remove('is-completing','is-reopening','is-saved');
+        check.setAttribute('aria-pressed',committedDone?'true':'false');
+        check.setAttribute('aria-label',committedDone?'Aufgabe wieder öffnen':'Aufgabe erledigen');
+        optimisticCounters(committedDone,overdue);
         note('Aufgabe konnte nicht aktualisiert werden.','error');
+      }finally{
+        row.classList.remove('is-saving');
         check.disabled=false;
+      }
+    }
+
+    check.addEventListener('click',toggleTask);
+    body.tabIndex=0;
+    body.setAttribute('role','button');
+    body.setAttribute('aria-label',(done?'Aufgabe wieder öffnen: ':'Aufgabe erledigen: ')+task.title);
+    body.addEventListener('click',toggleTask);
+    body.addEventListener('keydown',event=>{
+      if(event.key==='Enter'||event.key===' '){
+        event.preventDefault();
+        toggleTask();
       }
     });
 

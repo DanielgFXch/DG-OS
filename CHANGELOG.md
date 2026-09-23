@@ -1,3 +1,25 @@
+# v0.57.1 — Fluid Persistent Task Checkoff
+
+## Tasks
+- To-do items now react instantly when checked instead of waiting for a full network reload.
+- Checking a task immediately animates the glass checkbox, strikes the task through and updates today’s progress.
+- The persistent Supabase `toggle` endpoint remains the source of truth: status is stored as `done/open` and `completed_at` is recorded server-side.
+- After persistence succeeds, the task moves cleanly into the collapsed “Erledigt” section.
+- Completed tasks can be reopened with the same checkbox and are persisted back to `open`.
+- If saving fails, the optimistic UI automatically rolls back instead of pretending the task was saved.
+- Tapping the task title/copy now also toggles completion for a larger mobile touch target.
+- Completed tasks show their completion time in Europe/Zurich.
+
+## Design
+- New animated liquid-glass checkbox state with glow/pulse confirmation.
+- Smooth strike-through and row transition.
+- “Erledigt” section gets a clearer completed-state treatment.
+- Reduced-motion accessibility remains respected.
+
+## Scope
+- Existing Supabase Tasks backend and database schema are reused; no data migration is required.
+- Trading logic and Trading Command Center are unchanged.
+
 # v0.57.0 — Trading Session Command Center
 
 ## Trading Mode

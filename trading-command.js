@@ -395,8 +395,18 @@
     }
   });
 
-  const oldRouteBar=$('dgosRouteBar');
+  const brandTitle=document.querySelector('.topbar .brand h1');
+  const brandSub=document.querySelector('.topbar .brand .sub');
+
+  function updateChrome(){
+    const trading=document.body.dataset.dgosRoute==='trading';
+    if(brandTitle) brandTitle.textContent=trading?'DG TRADING':'DG OS';
+    if(brandSub) brandSub.textContent=trading?'Session Intelligence':'Deine persönliche Zentrale';
+    document.body.classList.toggle('trading-mode-active',trading);
+  }
+
   function routeChanged(){
+    updateChrome();
     if(document.body.dataset.dgosRoute==='trading') render();
   }
 
@@ -407,6 +417,7 @@
 
   // Existing trading data can update every 3s from the real Always-On server.
   // This display polls the already-computed state only; it never recomputes rules.
-  setInterval(render,3000);
+  setInterval(()=>{ updateChrome(); render(); },3000);
+  updateChrome();
   render();
 })();

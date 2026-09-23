@@ -1,3 +1,23 @@
+# v0.56.0 — Jarvis Life OS
+
+## Jarvis
+- Home Jarvis is now a dedicated personal Life OS instead of reusing the Trading assistant.
+- New Jarvis command field and dedicated voice recognition for personal commands.
+- Quick actions for Daily Briefing, tasks, appointments and the private organizer.
+- Voice/text commands can open calendar, bills, shopping, notes, health, social and trading without mixing personal and trading logic.
+- Current task, appointment, bill and inbox counts are mirrored into the Jarvis hero in real time.
+
+## Design
+- Stronger transparent Liquid Glass across DG OS surfaces.
+- Jarvis hero uses lighter glass, stronger blur, specular highlights and deeper layered reflections.
+- New glass command deck, life-status strip and command bar.
+- Obsidian moved out of the main Jarvis experience into a collapsed optional Integrations section.
+- Obsidian remains fully functional when explicitly opened.
+
+## Scope
+- Trading Brain, Market Brain, Decision Engine and trading rules are unchanged.
+- No Instagram/Meta or other external account authorization changes.
+
 # v0.55.0 — Jarvis Visual Overhaul
 
 ## Design

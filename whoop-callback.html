@@ -27,7 +27,21 @@
 
   const hash=new URLSearchParams(location.hash.replace(/^#/,''));
   const session=hash.get('session');
+  const handoff=hash.get('handoff');
   const edgeError=hash.get('error');
+
+  if(handoff==='complete'){
+    history.replaceState(null,'',location.pathname);
+    title.textContent='WHOOP autorisiert ✓';
+    const pending=Boolean(localStorage.getItem('dgos.whoopClaimSecret'));
+    if(pending){
+      message.textContent='DG OS übernimmt die Verbindung jetzt automatisch …';
+      setTimeout(()=>location.replace('./?whoop=handoff#health'),450);
+    }else{
+      message.textContent='Wechsle jetzt zurück zur DG OS App. Deine App übernimmt die WHOOP-Sitzung automatisch – du musst WHOOP danach nicht erneut verbinden.';
+    }
+    return;
+  }
 
   if(session){
     localStorage.setItem('dgos.whoopSession',session);

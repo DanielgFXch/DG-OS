@@ -1756,6 +1756,10 @@
   const commandInput = $('jarvisLifeCommandInput');
   const OBSIDIAN_VAULT_KEY = 'dgos.obsidianVault';
 
+  function setOrbState(state) {
+    const allowed = new Set(['idle','listening','thinking','speaking']);
+    orb.dataset.state = allowed.has(state) ? state : 'idle';
+  }
   function setStatus(text) {
     if (status) status.textContent = text || 'Bereit';
   }
@@ -1768,12 +1772,15 @@
     return true;
   }
   function showReply(text) {
+    panel.classList.remove('is-listening');
     panel.classList.add('is-speaking');
+    setOrbState('speaking');
     setStatus('Erledigt');
     setReply(text);
     clearTimeout(panel._jarvisSpeakingTimer);
     panel._jarvisSpeakingTimer = setTimeout(() => {
       panel.classList.remove('is-speaking');
+      setOrbState('idle');
       setStatus('Bereit');
     }, 2200);
   }
@@ -1912,7 +1919,9 @@
       commandInput?.focus();
       return;
     }
-    interpretCommand(value);
+    setOrbState('thinking');
+    setStatus('Ich ordne das …');
+    setTimeout(() => interpretCommand(value), 180);
     if (commandInput) commandInput.value = '';
   });
 
@@ -1930,6 +1939,7 @@
     recognition.addEventListener('start', () => {
       listening = true;
       panel.classList.add('is-listening');
+      setOrbState('listening');
       orb.setAttribute('aria-pressed','true');
       setStatus('Ich höre zu …');
       setReply('Sag einfach, was du brauchst.');
@@ -1937,19 +1947,23 @@
     recognition.addEventListener('result', event => {
       const transcript = event.results?.[0]?.[0]?.transcript || '';
       if (transcript) {
+        setOrbState('thinking');
+        setStatus('Ich ordne das …');
         setReply('«' + transcript + '»');
-        setTimeout(() => interpretCommand(transcript), 180);
+        setTimeout(() => interpretCommand(transcript), 220);
       }
     });
     recognition.addEventListener('end', () => {
       listening = false;
       panel.classList.remove('is-listening');
       orb.setAttribute('aria-pressed','false');
+      if (orb.dataset.state === 'listening') setOrbState('idle');
       if (status && status.textContent === 'Ich höre zu …') setStatus('Bereit');
     });
     recognition.addEventListener('error', event => {
       listening = false;
       panel.classList.remove('is-listening');
+      setOrbState('idle');
       orb.setAttribute('aria-pressed','false');
       if (event.error === 'not-allowed') {
         setStatus('Mikrofon nicht erlaubt');
@@ -2079,6 +2093,7 @@
   });
 
   updateVaultButton();
+  setOrbState('idle');
   setStatus('Bereit');
   setReply('Sag mir, was du brauchst.');
 })();

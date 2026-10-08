@@ -13,7 +13,7 @@
   <link rel="stylesheet" href="./wow.css?v=0.37.1" />
   <link rel="stylesheet" href="./personal.css?v=0.57.1" />
   <link rel="stylesheet" href="./social.css?v=0.61.0" />
-  <link rel="stylesheet" href="./navigation.css?v=0.70.0" />
+  <link rel="stylesheet" href="./navigation.css?v=0.71.0" />
   <link rel="stylesheet" href="./mobile.css?v=0.46.3" />
   <link rel="stylesheet" href="./jarvis-visuals.css?v=0.56.0" />
   <link rel="stylesheet" href="./trading-command.css?v=0.57.0" />
@@ -74,6 +74,13 @@
       </div>
     </div>
     <section id="personalHome" class="personal-welcome">
+      <div class="dg-cinematic-caption" aria-hidden="true">DG OS · PERSONAL OPERATING SYSTEM</div>
+      <div class="dg-hero-orb-zone">
+        <button type="button" id="dgHeroJarvis" class="dg-hero-orb-button" aria-label="Jarvis öffnen">
+          <span class="dg-orb-sphere"><span class="dg-orb-inner"></span><span class="dg-orb-streak"></span><span class="dg-orb-specular"></span></span>
+        </button>
+        <div class="dg-hero-orb-label">J A R V I S <small>Bereit, wenn du es bist.</small></div>
+      </div>
       <div class="personal-welcome-copy"><div class="personal-kicker">DEIN TAG. DEIN RHYTHMUS.</div><h2 id="personalGreeting">Willkommen, Gomes.</h2><p id="personalDate"></p></div>
       <div class="personal-time"><time id="personalClock">--:--:--</time><span>Europe/Zurich</span></div>
       <div class="personal-quick-info" aria-label="Tagesinformationen">
@@ -85,6 +92,16 @@
           <div><span>Heute geplant</span><strong id="personalCount">0</strong><small>Termine</small></div>
         </div>
         <div class="quick-info-footer"><span id="weatherFeels">Gefühlt — °C</span><span id="weatherStatus" role="status">Wetter lädt …</span></div>
+      </div>
+    </section>
+    <section id="dgHomeOverview" class="dg-home-overview" aria-label="Heute auf einen Blick">
+      <div class="dg-overview-kicker">HEUTE AUF EINEN BLICK <span>DEINE PERSÖNLICHE ZENTRALE</span></div>
+      <div class="dg-overview-grid">
+        <button type="button" data-dg-go="personalTasks" class="dg-overview-card"><span class="dg-ov-icon">✓</span><span class="dg-ov-label">Aufgaben <b>↗</b></span><strong id="dgOvTasks">—</strong><small>Heute im Überblick</small><span class="dg-ov-line"></span></button>
+        <button type="button" data-dg-go="personalCalendar" class="dg-overview-card"><span class="dg-ov-icon">▦</span><span class="dg-ov-label">Termine <b>↗</b></span><strong id="dgOvAppointments">—</strong><small>Heute geplant</small><span class="dg-ov-line"></span></button>
+        <button type="button" data-dg-go="personalHealth" class="dg-overview-card"><span class="dg-ov-icon">♡</span><span class="dg-ov-label">Gesundheit <b>↗</b></span><strong>Deine Werte</strong><small>Schlaf und Erholung</small><span class="dg-ov-line"></span></button>
+        <button type="button" data-dg-go="tradingWorkspace" class="dg-overview-card"><span class="dg-ov-icon">▥</span><span class="dg-ov-label">Trading <b>↗</b></span><strong>Market Desk</strong><small>Analysen und Setups</small><span class="dg-ov-line"></span></button>
+        <button type="button" data-dg-go="personalSocial" class="dg-overview-card"><span class="dg-ov-icon">◎</span><span class="dg-ov-label">Social Media <b>↗</b></span><strong id="dgOvSocial">—</strong><small>Ohne Followback</small><span class="dg-ov-line"></span></button>
       </div>
     </section>
 
@@ -982,5 +999,21 @@
   <script src="./navigation.js?v=0.60.0"></script>
   <script src="./trading-command.js?v=0.57.0"></script>
   <script src="./weather.js?v=0.46.2"></script>
+<script>
+  (() => {
+    const nav = target => document.querySelector('.bottom-nav button[data-target="'+target+'"]');
+    document.getElementById('dgHeroJarvis')?.addEventListener('click',()=>nav('personalJarvis')?.click());
+    document.querySelectorAll('[data-dg-go]').forEach(button => button.addEventListener('click',()=>{
+      const target=button.dataset.dgGo;
+      if(target==='personalTasks'){nav('personalHome')?.click();document.getElementById('personalTasks')?.scrollIntoView({behavior:'smooth'});}
+      else nav(target)?.click();
+    }));
+    function mirror(){
+      const pairs=[['attentionTaskStat','dgOvTasks'],['personalCount','dgOvAppointments'],['socialMetricNonFollowers','dgOvSocial']];
+      for(const [source,destination] of pairs){const from=document.getElementById(source),to=document.getElementById(destination);if(from && to)to.textContent=from.textContent.trim()||'—';}
+    }
+    mirror();setInterval(mirror,5000);
+  })();
+  </script>
 </body>
 </html>

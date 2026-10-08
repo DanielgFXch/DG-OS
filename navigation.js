@@ -4,6 +4,7 @@
 
   const ROUTES = {
     home: { target: 'personalHome', title: 'Heute' },
+    jarvis: { target: 'personalJarvis', title: 'Jarvis' },
     calendar: { target: 'personalCalendar', title: 'Kalender' },
     health: { target: 'personalHealth', title: 'Gesundheit' },
     social: { target: 'personalSocial', title: 'Social Media' },

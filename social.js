@@ -16,6 +16,7 @@
     following: [],
     whitelist: [],
     decisions: {},
+    removedAt: {},
     importedAt: null,
     sourceFiles: []
   });
@@ -42,6 +43,7 @@
           following: cleanUserList(src.following),
           whitelist: cleanUserList(src.whitelist),
           decisions: src.decisions && typeof src.decisions === 'object' ? src.decisions : {},
+          removedAt: src.removedAt && typeof src.removedAt === 'object' ? src.removedAt : {},
           importedAt: typeof src.importedAt === 'string' ? src.importedAt : null,
           sourceFiles: Array.isArray(src.sourceFiles) ? src.sourceFiles.filter(v => typeof v === 'string').slice(0, 30) : []
         };
@@ -320,6 +322,7 @@
     renderWhitelist();
     renderQueue();
     renderExplorer();
+    renderCleanupStats();
   }
 
   function renderWhitelist() {
@@ -377,6 +380,7 @@
       if (['keep', 'removed', 'later', 'undo'].includes(action)) {
         if (action === 'undo') {
           delete account().decisions[username];
+          delete account().removedAt[username];
           persist();
           render();
           syncDecision(username, { decision: null });
@@ -444,6 +448,78 @@
     }
   }
 
+  function localDay(date) {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Zurich', year:'numeric', month:'2-digit', day:'2-digit' }).format(date);
+  }
+
+  function dailyRemovedCount(acc, day) {
+    return Object.entries(acc.removedAt || {}).filter(([user, at]) =>
+      acc.decisions[user] === 'removed' && typeof at === 'string' &&
+      !Number.isNaN(Date.parse(at)) && localDay(new Date(at)) === day
+    ).length;
+  }
+
+  function ensureCleanupStats() {
+    const section = $('socialCleanupSection');
+    if (!section || $('socialCleanupStats')) return;
+    const el = document.createElement('div');
+    el.id = 'socialCleanupStats';
+    el.className = 'social-daily-stats';
+    const card = $('socialCleanupCard');
+    if (card && card.parentNode) card.parentNode.insertBefore(el, card);
+    else section.prepend(el);
+  }
+
+  function renderCleanupStats() {
+    const el = $('socialCleanupStats');
+    if (!el) return;
+    const acc = account();
+    const now = new Date();
+    const day = localDay(now);
+    const yesterday = new Date(now.getTime() - 86400000);
+    const todayCount = dailyRemovedCount(acc, day);
+    const yesterdayCount = dailyRemovedCount(acc, localDay(yesterday));
+    const timestamped = Object.keys(acc.removedAt || {}).filter(u => acc.decisions[u] === 'removed').length;
+    const total = decisionCounts(acc).removed;
+    el.replaceChildren();
+    const heading = document.createElement('div');
+    heading.className = 'social-daily-title';
+    heading.textContent = 'Cleanup-Statistik · Europe/Zurich';
+    el.append(heading);
+    const grid = document.createElement('div');
+    grid.className = 'social-daily-grid';
+    for (const [label, value] of [['Heute',todayCount], ['Gestern',yesterdayCount], ['Insgesamt',total]]) {
+      const item = document.createElement('div');
+      const small = document.createElement('small'); small.textContent = label;
+      const strong = document.createElement('strong'); strong.textContent = String(value);
+      item.append(small,strong); grid.append(item);
+    }
+    el.append(grid);
+    const progress = document.createElement('div');
+    progress.className = 'social-daily-progress';
+    progress.textContent = todayCount >= 20 ? '⚠️ 20er-Warnschwelle erreicht – heute bitte pausieren.' :
+      todayCount + ' von 20 heute markiert · Warnung bei 20';
+    el.append(progress);
+    const history = document.createElement('div');
+    history.className = 'social-daily-history';
+    const title = document.createElement('strong');title.textContent='Letzte 7 Tage';
+    history.append(title);
+    for (let offset=0; offset<7; offset++) {
+      const date = new Date(now.getTime() - offset*86400000);
+      const d = localDay(date);
+      const line = document.createElement('div');
+      const left = document.createElement('span');
+      left.textContent = offset===0?'Heute':offset===1?'Gestern':new Intl.DateTimeFormat('de-CH',{timeZone:'Europe/Zurich',weekday:'short',day:'2-digit',month:'2-digit'}).format(date);
+      const right = document.createElement('b');right.textContent=String(dailyRemovedCount(acc,d));
+      line.append(left,right);history.append(line);
+    }
+    el.append(history);
+    const info = document.createElement('small');
+    info.className='social-daily-note';
+    info.textContent='Gezählt werden Bestätigungen in Jarvis, nicht live bestätigte Instagram-Entfolgungen. Alte Markierungen ohne Datum: '+Math.max(0,total-timestamped)+'. 20 ist ein selbst gewählter Vorsichtswert und garantiert keinen Schutz vor Einschränkungen.';
+    el.append(info);
+  }
+
   function renderQueue() {
     const acc = account();
     const all = queue(acc);
@@ -507,12 +583,19 @@
   function setDecision(username, decision) {
     const clean = cleanUsername(username);
     if (!clean) return;
-    account().decisions[clean] = decision;
+    const acc = account();
+    const previous = acc.decisions[clean];
+    acc.decisions[clean] = decision;
+    if (decision === 'removed' && previous !== 'removed') acc.removedAt[clean] = new Date().toISOString();
+    if (decision !== 'removed') delete acc.removedAt[clean];
     persist();
     render();
     syncDecision(clean, { decision });
     const labels = { keep: 'behalten', removed: 'als entfernt markiert', later: 'auf später verschoben' };
     notice(`@${clean} wurde ${labels[decision]}.`, 'success');
+    if (decision === 'removed' && previous !== 'removed' && dailyRemovedCount(acc, localDay(new Date())) >= 20) {
+      notice('⚠️ Tagesziel von 20 als entfernt markierten Accounts erreicht. Bitte pausiere deine Instagram-Aktivität. Das ist keine offiziell sichere Grenze.', 'error');
+    }
   }
 
   function extractUsernameFromUrl(value) {
@@ -645,6 +728,7 @@
     acc.followers = [];
     acc.following = [];
     acc.decisions = {};
+    acc.removedAt = {};
     acc.importedAt = null;
     acc.sourceFiles = [];
     persist();
@@ -720,6 +804,7 @@
 
   ensureSocialBottomNav();
   ensureCleanupExplorer();
+  ensureCleanupStats();
   bind();
   render();
   loadCloudDashboard('business');

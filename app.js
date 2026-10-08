@@ -65,7 +65,7 @@ function renderTicker(){
   const now=new Date();
   $('tickerSession').textContent=`SESSION: ${currentSession(now).name.toUpperCase()}`;
   $('tickerClock').textContent=now.toLocaleTimeString('de-CH',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
-  renderHeaderDateTime(now);
+  // Header displays the page-load snapshot, not the live ticker clock.
 }
 
 const MARKET_DATA_URL='./data/market.json';

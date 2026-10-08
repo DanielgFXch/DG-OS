@@ -118,6 +118,44 @@ html.dgos-route-changing .app{opacity:.985}
   }
 }
 
-body[data-dgos-route]:not([data-dgos-route="jarvis"]) #personalJarvis{display:none!important}
+body[data-dgos-route]:not([data-dgos-route="jarvis"]):not([data-dgos-route="home"]) #personalJarvis{display:none!important}
 body[data-dgos-route="jarvis"] #personalHome,body[data-dgos-route="jarvis"] #personalAttention,body[data-dgos-route="jarvis"] #personalTasks,body[data-dgos-route="jarvis"] .personal-columns,body[data-dgos-route="jarvis"] #socialWorkspace,body[data-dgos-route="jarvis"] #tradingWorkspace,body[data-dgos-route="jarvis"] #dashboardHome{display:none!important}
 body[data-dgos-route="jarvis"] #personalJarvis{display:block!important}
+
+/* Six-item, single-line premium dock at every viewport width. */
+.bottom-nav{
+  display:grid!important;
+  grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  grid-template-rows:1fr!important;
+  grid-auto-flow:row!important;
+  gap:4px!important;
+  padding:6px!important;
+  width:min(760px,calc(100vw - 16px))!important;
+  max-width:760px!important;
+  border:1px solid rgba(142,222,240,.19)!important;
+  border-radius:20px!important;
+  background:rgba(6,24,37,.94)!important;
+  box-shadow:0 15px 46px rgba(0,0,0,.40),inset 0 1px rgba(255,255,255,.045)!important;
+}
+.bottom-nav button{
+  min-width:0!important;
+  width:100%!important;
+  min-height:44px!important;
+  padding:9px 2px!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  border-radius:13px!important;
+  font-size:clamp(9px,1.65vw,11px)!important;
+  font-weight:550!important;
+  letter-spacing:0!important;
+}
+.bottom-nav button.active{
+  color:#d5fffa!important;
+  background:linear-gradient(135deg,rgba(27,115,134,.28),rgba(44,93,159,.18))!important;
+  box-shadow:inset 0 0 0 1px rgba(111,234,229,.32),0 0 18px rgba(44,196,211,.07)!important;
+}
+@media(max-width:480px){
+  .bottom-nav{gap:2px!important;padding:4px!important;border-radius:16px!important}
+  .bottom-nav button{min-height:45px!important;font-size:9px!important;padding:8px 1px!important}
+}

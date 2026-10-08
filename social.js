@@ -319,6 +319,7 @@
     $('socialWhitelistCount').textContent = `${acc.whitelist.length} geschützt`;
     renderWhitelist();
     renderQueue();
+    renderExplorer();
   }
 
   function renderWhitelist() {
@@ -345,6 +346,101 @@
         syncDecision(username, { whitelisted: false });
       });
       container.append(chip);
+    }
+  }
+
+  let cleanupSearch = '';
+  let cleanupFilter = 'open';
+
+  function ensureCleanupExplorer() {
+    const section = $('socialCleanupSection');
+    if (!section || $('socialCleanupExplorer')) return;
+    const root = document.createElement('div');
+    root.id = 'socialCleanupExplorer';
+    root.className = 'social-cleanup-explorer';
+    root.innerHTML = `<div class="social-explorer-heading"><div><strong>Accounts verwalten</strong><small>Profil auf Instagram öffnen, dort entfolgen und hier bestätigen.</small></div><span id="socialExplorerResults"></span></div><div class="social-explorer-controls"><input id="socialExplorerSearch" type="search" placeholder="Instagram-Username suchen …" aria-label="Accounts suchen" autocomplete="off" /><select id="socialExplorerFilter" aria-label="Cleanup-Status filtern"><option value="open">Offen</option><option value="later">Später</option><option value="keep">Behalten</option><option value="removed">Als entfernt markiert</option><option value="all">Alle Kandidaten</option></select></div><div id="socialExplorerList" class="social-explorer-list"></div><small class="social-explorer-help">„Als entfernt markieren“ bestätigt nur deine Angabe in Jarvis – Instagram wird nicht automatisch geändert. Ein erneuter Instagram-Export kann den Status später abgleichen.</small>`;
+    const card = $('socialCleanupCard');
+    if (card && card.parentElement) card.parentElement.insertBefore(root, card);
+    else section.append(root);
+    $('socialExplorerSearch').addEventListener('input', e => { cleanupSearch = e.target.value.trim().toLowerCase().replace(/^@/, ''); renderExplorer(); });
+    $('socialExplorerFilter').addEventListener('change', e => { cleanupFilter = e.target.value; renderExplorer(); });
+    $('socialExplorerList').addEventListener('click', e => {
+      const button = e.target.closest('button[data-social-explorer-action]');
+      if (!button) return;
+      const username = cleanUsername(button.dataset.username);
+      if (!username) return;
+      const action = button.dataset.socialExplorerAction;
+      if (action === 'open') {
+        window.open('https://www.instagram.com/' + encodeURIComponent(username) + '/', '_blank', 'noopener,noreferrer');
+        return;
+      }
+      if (['keep', 'removed', 'later', 'undo'].includes(action)) {
+        if (action === 'undo') {
+          delete account().decisions[username];
+          persist();
+          render();
+          syncDecision(username, { decision: null });
+          notice('@' + username + ' ist wieder offen.', 'success');
+        } else setDecision(username, action);
+      }
+    });
+  }
+
+  function renderExplorer() {
+    const host = $('socialExplorerList');
+    if (!host) return;
+    const acc = account();
+    const protectedUsers = new Set(acc.whitelist);
+    const candidates = nonFollowers(acc).filter(u => !protectedUsers.has(u));
+    const filtered = candidates.filter(username => {
+      if (cleanupSearch && !username.includes(cleanupSearch)) return false;
+      const status = acc.decisions[username] || 'open';
+      return cleanupFilter === 'all' || status === cleanupFilter;
+    });
+    $('socialExplorerResults').textContent = filtered.length + ' Accounts';
+    host.replaceChildren();
+    if (!filtered.length) {
+      const empty = document.createElement('p');
+      empty.className = 'social-explorer-empty';
+      empty.textContent = acc.following.length ? 'Keine passenden Accounts gefunden.' : 'Importiere zuerst deine Instagram-Daten.';
+      host.append(empty);
+      return;
+    }
+    for (const username of filtered.slice(0, 80)) {
+      const item = document.createElement('div');
+      item.className = 'social-explorer-item';
+      const info = document.createElement('div');
+      info.className = 'social-explorer-identity';
+      const name = document.createElement('strong');
+      name.textContent = '@' + username;
+      const status = document.createElement('small');
+      const choice = acc.decisions[username] || 'open';
+      status.textContent = ({open:'Offen',later:'Später',keep:'Behalten',removed:'Als entfernt markiert'})[choice];
+      info.append(name,status);
+      const actions = document.createElement('div');
+      actions.className = 'social-explorer-actions';
+      const add = (action,label) => {
+        const b = document.createElement('button');
+        b.type='button';
+        b.dataset.socialExplorerAction=action;
+        b.dataset.username=username;
+        b.textContent=label;
+        actions.append(b);
+      };
+      add('open','Instagram öffnen ↗');
+      if (choice === 'open' || choice === 'later') {
+        add('removed','Erledigt ✓');
+        add('keep','Behalten');
+        if (choice === 'open') add('later','Später');
+      } else add('undo','Rückgängig');
+      item.append(info,actions);
+      host.append(item);
+    }
+    if (filtered.length > 80) {
+      const tip = document.createElement('p');
+      tip.className = 'social-explorer-empty';
+      tip.textContent = '80 von ' + filtered.length + ' angezeigt – Suche nutzen, um weitere Accounts zu finden.';
+      host.append(tip);
     }
   }
 
@@ -617,6 +713,7 @@
   }
 
   ensureSocialBottomNav();
+  ensureCleanupExplorer();
   bind();
   render();
   loadCloudDashboard('business');

@@ -117,3 +117,7 @@ html.dgos-route-changing .app{opacity:.985}
     border-radius:18px;
   }
 }
+
+body[data-dgos-route]:not([data-dgos-route="jarvis"]) #personalJarvis{display:none!important}
+body[data-dgos-route="jarvis"] #personalHome,body[data-dgos-route="jarvis"] #personalAttention,body[data-dgos-route="jarvis"] #personalTasks,body[data-dgos-route="jarvis"] .personal-columns,body[data-dgos-route="jarvis"] #socialWorkspace,body[data-dgos-route="jarvis"] #tradingWorkspace,body[data-dgos-route="jarvis"] #dashboardHome{display:none!important}
+body[data-dgos-route="jarvis"] #personalJarvis{display:block!important}

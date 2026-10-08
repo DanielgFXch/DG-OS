@@ -519,7 +519,9 @@
     try {
       const url = new URL(value);
       if (!/(^|\.)instagram\.com$/i.test(url.hostname)) return '';
-      const part = url.pathname.split('/').filter(Boolean)[0] || '';
+      const segments = url.pathname.split('/').filter(Boolean);
+      const part = segments[0] === '_u' ? segments[1] : segments[0];
+      if (!part || ['accounts','explore','p','reel','stories'].includes(part.toLowerCase())) return '';
       return cleanUsername(part);
     } catch (_) {
       return '';
@@ -537,6 +539,10 @@
       if (typeof node !== 'object') return;
 
       if (Array.isArray(node.string_list_data)) {
+        // Instagram's following.json stores the username in title,
+        // while followers_1.json normally stores it in string_list_data.value.
+        const titleUser = cleanUsername(node.title || '');
+        if (titleUser) found.add(titleUser);
         for (const item of node.string_list_data) {
           if (!item || typeof item !== 'object') continue;
           const direct = cleanUsername(item.value || '');

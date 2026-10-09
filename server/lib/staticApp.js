@@ -14,6 +14,8 @@ const ALLOWED = new Set([
   'personal.css',
   'personal.js',
   'jarvis-voice.js',
+  'voice-studio.js',
+  'voice-studio.html',
   'weather.js',
   'marketBrain.js',
   'app.js',

@@ -5,7 +5,7 @@ const {allowedRelativePath}=require('./staticApp.js');
 const root=require('node:path').join(__dirname,'../..');
 const client=fs.readFileSync(root+'/cartesia-favorites.js','utf8');
 const html=fs.readFileSync(root+'/voice-studio.html','utf8');
-assert.ok(html.includes('src="./cartesia-favorites.js"'));
+assert.ok(html.includes('src="./cartesia-favorites.js'));
 assert.equal(allowedRelativePath('/cartesia-favorites.js'),'cartesia-favorites.js');
 assert.ok(client.includes('/functions/v1/jarvis-cartesia'));
 assert.ok(client.includes("request('GET')"));

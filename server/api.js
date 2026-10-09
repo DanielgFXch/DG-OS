@@ -5,6 +5,7 @@ const { URL } = require('url');
 const MB = require('../marketBrain.js');
 const { handleTelegramUpdate } = require('./lib/telegramAssistant.js');
 const { serveStatic } = require('./lib/staticApp.js');
+const { readStrategy, getStrategyContext } = require('./lib/jarvisStrategyMemory.js');
 
 function sendJson(res, status, body) {
   const json = JSON.stringify(body, null, 2);
@@ -84,7 +85,7 @@ function createApiServer(marketState, telegram, gmail, calendar, whoop) {
     const url = new URL(req.url, 'http://localhost');
 
     if (req.method === 'OPTIONS') {
-      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname.startsWith('/api/whoop/') || url.pathname === '/api/hub/status') {
+      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname.startsWith('/api/whoop/') || url.pathname === '/api/hub/status' || url.pathname.startsWith('/api/jarvis/strategy')) {
         sendPrivateJson(res, 403, { error: 'same_origin_required' });
       } else {
         sendJson(res, 204, {});
@@ -93,6 +94,37 @@ function createApiServer(marketState, telegram, gmail, calendar, whoop) {
     }
 
     try {
+      // Jarvis strategy knowledge is private and strictly read-only.
+      // Reuse the existing authenticated Hub session; never publish full rules via a public endpoint.
+      if (req.method === 'GET' && (url.pathname === '/api/jarvis/strategy' || url.pathname === '/api/jarvis/strategy/context')) {
+        if (!gmail || !gmail.configured || !gmail.isAuthorized(req)) {
+          sendPrivateJson(res, 401, { error: 'hub_session_required' });
+          return;
+        }
+        if (url.pathname === '/api/jarvis/strategy') {
+          const strategy = readStrategy();
+          sendPrivateJson(res, 200, {
+            source: strategy.source,
+            sha256: strategy.sha256,
+            chapters: strategy.chapters.map(({ number, title, status }) => ({ number, title, status })),
+            note: 'DEFINED describes source documentation, not a live trading signal.'
+          });
+        } else {
+          const raw = url.searchParams.get('chapters') || '';
+          if (!/^(?:[0-9]{1,2})(?:,[0-9]{1,2}){0,7}$/.test(raw)) {
+            sendPrivateJson(res, 400, { error: 'invalid_chapters' });
+            return;
+          }
+          const ids = raw.split(',').map(Number);
+          if (ids.some(n => n > 16)) {
+            sendPrivateJson(res, 400, { error: 'invalid_chapters' });
+            return;
+          }
+          sendPrivateJson(res, 200, getStrategyContext(ids));
+        }
+        return;
+      }
+
       if (req.method === 'GET' && url.pathname === '/api/health') {
         sendJson(res, 200, marketState.getHealth());
         return;

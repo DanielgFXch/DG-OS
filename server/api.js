@@ -120,7 +120,7 @@ function createApiServer(marketState, telegram, gmail, calendar, whoop) {
       // Memory uses Supabase Auth bearer credentials and user-scoped RLS.
       // No cookie auth and no cross-origin access to private memories.
       if (req.method === 'GET' && url.pathname === '/api/memory/status') {
-        sendPrivateJson(res, 200, { configured: memory.configured, auth: 'supabase_bearer' });
+        sendPrivateJson(res, 200, { configured: memory.configured, auth: 'supabase_bearer', supabaseUrl: memory.configured ? 'https://jzvnmhfhyvmmbontsoej.supabase.co' : null, publishableKey: memory.configured ? memory.key : null });
         return;
       }
       if (url.pathname === '/api/memory/items' && (req.method === 'GET' || req.method === 'POST')) {

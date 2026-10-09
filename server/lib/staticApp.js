@@ -8,6 +8,8 @@ const ROOT = path.resolve(__dirname, '..', '..');
 const ALLOWED = new Set([
   'index.html',
   'privacy.html',
+  'jarvis-memory.html',
+  'jarvis-memory.js',
   'whoop-callback.html',
   'styles.css',
   'wow.css',

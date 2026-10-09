@@ -15,6 +15,7 @@ const ALLOWED = new Set([
   'wow.css',
   'personal.css',
   'personal.js',
+  'jarvis-voice.js',
   'weather.js',
   'marketBrain.js',
   'app.js',

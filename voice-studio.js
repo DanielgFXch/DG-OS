@@ -10,12 +10,12 @@ function notify(message){$('notice').textContent=message;}
 function refresh(){
 document.querySelectorAll('[data-provider]').forEach(button=>{button.dataset.active=String(button.dataset.provider===provider);button.setAttribute('aria-pressed',String(button.dataset.provider===provider));});
 const browser=provider==='browser';
-$('providerStatus').textContent=browser?'Lokal verfügbar':provider==='openai'?'Realtime: vorbereitet':'Server-Zugang benötigt';
+$('providerStatus').textContent=browser?'Lokal verfügbar':provider==='openai'?'Realtime: vorbereitet':provider==='cartesia'?'Unten Cartesia verbinden':'Nicht verbunden';
 $('voiceSelect').disabled=!browser||!synth;
 $('preview').disabled=!browser||!synth;
 if(!browser)notify(provider==='openai'
 ?'OpenAI Realtime erfordert einen serverseitigen kurzlebigen Session-Token und eine bestätigte private Anmeldung. Noch nicht aktiviert.'
-:'Für '+(provider==='cartesia'?'Cartesia Sonic':'ElevenLabs')+' fehlt noch die sichere serverseitige API-Anbindung und Freigabe. Kein API-Key wird im Browser gespeichert.');
+:provider==='cartesia'?'Bitte unten bei Meine Jarvis-Stimmen anmelden und deine Stimme auswählen.':'ElevenLabs ist noch nicht verbunden.');
 else notify(synth?'Lokale Stimme ist bereit. Du kannst sie jetzt testen.':'Sprachausgabe wird von diesem Browser nicht unterstützt.');
 }
 function populate(){

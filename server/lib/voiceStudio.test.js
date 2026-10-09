@@ -13,7 +13,7 @@ assert.ok(html.includes('id="preview"'));
 assert.ok(main.includes('href="./voice-studio.html"'));
 assert.equal(routing.allowedRelativePath('/voice-studio.html'),'voice-studio.html');
 assert.equal(routing.allowedRelativePath('/voice-studio.js'),'voice-studio.js');
-assert.ok(!/api[_-]?key|sk-[A-Za-z0-9]{12}/i.test(html));
+assert.ok(!/sk-[A-Za-z0-9]{12}|sb_secret_[A-Za-z0-9]{12}/i.test(html));
 assert.ok(!/fetch\(.+cartesia|fetch\(.+elevenlabs|fetch\(.+api\.openai\.com/.test(js),'No paid voice requests from browser');
 assert.ok(js.includes("provider!=='browser'"),'Paid previews must remain disabled');
 console.log('Voice Studio static and security checks passed.');

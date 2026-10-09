@@ -1,0 +1,21 @@
+name: Cartesia Studio Checks
+on:
+  push:
+    branches: [feature/cartesia-secure-connect]
+  pull_request:
+    paths:
+      - 'cartesia-connect.js'
+      - 'voice-studio.html'
+      - 'server/lib/staticApp.js'
+      - 'server/lib/cartesiaStudio.test.js'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check cartesia-connect.js
+      - run: node --check voice-studio.js
+      - run: node server/lib/cartesiaStudio.test.js

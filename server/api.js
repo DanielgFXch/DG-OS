@@ -5,6 +5,7 @@ const { URL } = require('url');
 const MB = require('../marketBrain.js');
 const { handleTelegramUpdate } = require('./lib/telegramAssistant.js');
 const { serveStatic } = require('./lib/staticApp.js');
+const { JarvisMemory } = require('./lib/jarvisMemory.js');
 
 function sendJson(res, status, body) {
   const json = JSON.stringify(body, null, 2);
@@ -79,12 +80,13 @@ function requireMailSession(req, res, gmail) {
 
 function createApiServer(marketState, telegram, gmail, calendar, whoop) {
   telegram = telegram || {};
+  const memory = new JarvisMemory();
 
   return http.createServer(async (req, res) => {
     const url = new URL(req.url, 'http://localhost');
 
     if (req.method === 'OPTIONS') {
-      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname.startsWith('/api/whoop/') || url.pathname === '/api/hub/status') {
+      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname.startsWith('/api/whoop/') || url.pathname === '/api/hub/status' || url.pathname.startsWith('/api/memory/')) {
         sendPrivateJson(res, 403, { error: 'same_origin_required' });
       } else {
         sendJson(res, 204, {});
@@ -112,6 +114,32 @@ function createApiServer(marketState, telegram, gmail, calendar, whoop) {
         const limitParam = url.searchParams.get('limit');
         const limit = limitParam ? Math.max(1, Math.min(500, parseInt(limitParam, 10) || 50)) : 50;
         sendJson(res, 200, { events: marketState.getRecentEvents(limit) });
+        return;
+      }
+
+      // Memory uses Supabase Auth bearer credentials and user-scoped RLS.
+      // No cookie auth and no cross-origin access to private memories.
+      if (req.method === 'GET' && url.pathname === '/api/memory/status') {
+        sendPrivateJson(res, 200, { configured: memory.configured, auth: 'supabase_bearer' });
+        return;
+      }
+      if (url.pathname === '/api/memory/items' && (req.method === 'GET' || req.method === 'POST')) {
+        try {
+          const identity = await memory.identity(req);
+          if (req.method === 'GET') {
+            const items = await memory.list(identity, {
+              category: url.searchParams.get('category'),
+              query: url.searchParams.get('q'),
+              limit: url.searchParams.get('limit')
+            });
+            sendPrivateJson(res, 200, { items });
+          } else {
+            const item = await memory.create(identity, await readJson(req));
+            sendPrivateJson(res, 201, { item });
+          }
+        } catch (err) {
+          sendPrivateJson(res, err.status || 500, { error: err.status ? err.message : 'memory_request_failed' });
+        }
         return;
       }
 
@@ -378,11 +406,11 @@ function createApiServer(marketState, telegram, gmail, calendar, whoop) {
       }
 
       if (!url.pathname.startsWith('/api/') && serveStatic(req, res)) return;
-      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname.startsWith('/api/whoop/') || url.pathname === '/api/hub/status') sendPrivateJson(res, 404, { error: 'not_found' });
+      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname.startsWith('/api/whoop/') || url.pathname === '/api/hub/status' || url.pathname.startsWith('/api/memory/')) sendPrivateJson(res, 404, { error: 'not_found' });
       else sendJson(res, 404, { error: 'not_found' });
     } catch (err) {
       console.error('[server] request failed:', err.message);
-      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname.startsWith('/api/whoop/') || url.pathname === '/api/hub/status') sendPrivateJson(res, 500, { error: 'internal_error' });
+      if (url.pathname.startsWith('/api/gmail/') || url.pathname.startsWith('/api/calendar/') || url.pathname.startsWith('/api/whoop/') || url.pathname === '/api/hub/status' || url.pathname.startsWith('/api/memory/')) sendPrivateJson(res, 500, { error: 'internal_error' });
       else sendJson(res, 500, { error: 'internal_error' });
     }
   });

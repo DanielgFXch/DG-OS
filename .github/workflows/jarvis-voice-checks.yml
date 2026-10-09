@@ -1,0 +1,27 @@
+name: Jarvis Voice Checks
+on:
+  push:
+    branches:
+      - feature/secure-jarvis-memory
+  pull_request:
+    paths:
+      - 'jarvis-voice.js'
+      - 'index.html'
+      - 'server/lib/staticApp.js'
+      - '.github/workflows/jarvis-voice-checks.yml'
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check voice JavaScript
+        run: node --check jarvis-voice.js
+      - name: Check server static routing
+        run: node --check server/lib/staticApp.js
+      - name: Check voice script references
+        run: |
+          grep -q 'jarvis-voice.js' index.html
+          grep -q "'jarvis-voice.js'" server/lib/staticApp.js

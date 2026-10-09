@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Jarvis Memory | DG OS</title>
+<style>
+:root{color-scheme:dark;--bg:#080d14;--panel:#111b29;--border:#26374a;--muted:#91a7ba;--cyan:#55d5d0;--text:#f2f7fa}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font:15px system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:radial-gradient(circle at top left,#122c3b,var(--bg) 57%);color:var(--text)}
+main{max-width:1020px;margin:auto;padding:40px 20px 80px}.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.brand{color:var(--cyan);font-size:12px;font-weight:750;letter-spacing:.18em}.back{color:var(--muted);text-decoration:none}h1{font-size:clamp(28px,5vw,43px);margin:14px 0 7px;letter-spacing:-.035em}p{color:var(--muted);line-height:1.6}.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:18px;margin-top:26px}.card{background:rgba(16,27,40,.88);border:1px solid var(--border);border-radius:18px;padding:22px;min-width:0}.card h2{font-size:18px;margin:0 0 18px}label{display:block;font-size:12px;color:var(--muted);font-weight:650;margin:17px 0 7px}input,textarea,select{width:100%;font:inherit;background:#0a121e;color:var(--text);border:1px solid #385064;border-radius:10px;padding:12px;outline:none}input:focus,textarea:focus,select:focus{border-color:var(--cyan)}textarea{resize:vertical;min-height:130px}.button{display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font:inherit;border-radius:10px;border:1px solid #38677a;color:var(--text);background:#153547;padding:11px 17px}.button.primary{background:var(--cyan);border-color:var(--cyan);color:#07131c;font-weight:750}.button:disabled{opacity:.5;cursor:not-allowed}.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}.muted{font-size:13px;color:var(--muted)}.pill{font-size:12px;border:1px solid #345c6f;color:var(--cyan);border-radius:30px;padding:5px 10px}.memory{padding:16px 0;border-top:1px solid var(--border)}.memory h3{margin:0 0 7px;font-size:16px}.memory p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}.row{display:flex;justify-content:space-between;gap:10px;align-items:center}.alert{margin-top:18px;padding:12px 14px;border-radius:10px;background:#18303d;color:#bdeee9;border:1px solid #365b69}.error{background:#3c202a;color:#ffd7d7;border-color:#7d394f}[hidden]{display:none!important}
+@media(max-width:760px){.grid{grid-template-columns:1fr}main{padding-top:26px}}
+</style>
+</head>
+<body>
+<main>
+<div class="top"><div class="brand">DG OS <span aria-hidden="true">/</span> JARVIS</div><a class="back" href="/">← Zurück zum Hub</a></div>
+<h1>Persönliches Gedächtnis</h1>
+<p>Deine Erinnerungen. Deine Entscheidungen. Private Daten bleiben an dein Supabase-Konto gebunden. Trading-Regeln werden hier nicht verändert.</p>
+<div id="notice" class="alert" role="status" aria-live="polite">Prüfe sichere Verbindung ...</div>
+<section id="login" class="card" hidden style="margin-top:24px;max-width:470px">
+<h2>Mit Supabase anmelden</h2>
+<form id="loginForm">
+<label for="email">E-Mail</label><input id="email" type="email" autocomplete="username" required>
+<label for="password">Passwort</label><input id="password" type="password" autocomplete="current-password" required>
+<div class="actions"><button class="button primary" type="submit">Sicher anmelden</button></div>
+</form>
+<p class="muted">Verwende einen in DG-OS Supabase Auth angelegten Benutzer. Der Login gilt nur für diesen geöffneten Tab und wird nicht dauerhaft im Browser gespeichert.</p>
+</section>
+<section id="workspace" hidden>
+<div class="actions"><span id="account" class="pill"></span><button class="button" id="logout" type="button">Abmelden</button></div>
+<div class="grid">
+<div class="card"><h2>Neue Erinnerung</h2><form id="memoryForm">
+<label for="category">Kategorie</label><select id="category"><option value="note">Notiz</option><option value="goal">Ziel</option><option value="preference">Vorliebe</option><option value="project">Projekt</option><option value="routine">Routine</option><option value="knowledge">Wissen</option><option value="profile">Profil</option><option value="person">Person</option><option value="other">Sonstiges</option></select>
+<label for="title">Titel</label><input id="title" maxlength="240" required>
+<label for="content">Was soll Jarvis behalten?</label><textarea id="content" maxlength="20000" required></textarea>
+<div class="actions"><button class="button primary" type="submit">Erinnerung speichern</button></div></form>
+<p class="muted">Dieses Gedächtnis ist keine Quelle für Änderungen an deiner Trading-Strategie.</p></div>
+<div class="card"><div class="row"><h2>Gespeicherte Erinnerungen</h2><button id="reload" class="button" type="button">Aktualisieren</button></div>
+<label for="search">Suchen</label><input id="search" type="search" placeholder="Titel oder Inhalt ...">
+<div id="memories" aria-live="polite"><p>Noch keine Erinnerungen geladen.</p></div>
+</div></div></section></main>
+<script src="/jarvis-memory.js" defer></script>
+</body></html>

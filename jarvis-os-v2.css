@@ -443,3 +443,63 @@ main.app{
     animation:none!important;
   }
 }
+
+/* v0.59.1 — refined personal Jarvis interaction, safe-area and accessibility polish.
+   Visual only: no impact on commands, private data, trading or integrations. */
+#personalJarvis .jarvis-orb:focus-visible,
+#dgHeroJarvis:focus-visible{
+  outline:2px solid #b4faff!important;
+  outline-offset:9px!important;
+}
+#personalJarvis .jarvis-orb{
+  cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+#personalJarvis .jarvis-orb-state strong,
+#personalJarvis #personalJarvisStatus{
+  color:#eafcff;
+  letter-spacing:.035em;
+}
+#personalJarvis #personalJarvisReply{
+  max-width:48ch;
+  margin-inline:auto;
+  line-height:1.55;
+  text-wrap:pretty;
+}
+@media(hover:hover) and (pointer:fine){
+  #personalJarvis .jarvis-orb{
+    transition:filter .25s ease;
+  }
+  #personalJarvis .jarvis-orb:hover{
+    filter:drop-shadow(0 0 16px rgba(111,246,255,.23));
+  }
+}
+@media(max-width:700px){
+  #personalJarvis .jarvis-orb-stage{
+    max-width:100%;
+    padding-inline:8px;
+  }
+  #personalJarvis #personalJarvisReply{
+    max-width:min(100%,36ch);
+    padding-inline:12px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #personalJarvis .jarvis-orb,
+  #personalJarvis .jarvis-orb *,
+  #personalJarvis .jarvis-orb::before,
+  #personalJarvis .jarvis-orb::after,
+  #dgHeroJarvis,
+  #dgHeroJarvis *{
+    animation:none!important;
+    transition:none!important;
+  }
+}
+@media(prefers-reduced-transparency:reduce){
+  #personalJarvis.personal-jarvis-panel{
+    background:#071724!important;
+    backdrop-filter:none!important;
+    -webkit-backdrop-filter:none!important;
+  }
+}

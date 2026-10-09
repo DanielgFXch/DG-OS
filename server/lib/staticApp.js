@@ -15,6 +15,7 @@ const ALLOWED = new Set([
   'personal.js',
   'jarvis-voice.js',
   'voice-studio.js',
+  'cartesia-connect.js',
   'voice-studio.html',
   'weather.js',
   'marketBrain.js',

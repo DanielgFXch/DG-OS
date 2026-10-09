@@ -1,0 +1,24 @@
+name: DG-OS Voice Studio checks
+on:
+  push:
+    branches:
+      - feature/premium-voice-studio
+  pull_request:
+    paths:
+      - 'voice-studio.html'
+      - 'voice-studio.js'
+      - 'index.html'
+      - 'server/lib/staticApp.js'
+      - 'server/lib/voiceStudio.test.js'
+      - '.github/workflows/voice-studio-checks.yml'
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check voice-studio.js
+      - run: node --check server/lib/staticApp.js
+      - run: node server/lib/voiceStudio.test.js

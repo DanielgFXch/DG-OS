@@ -1,0 +1,233 @@
+/* DG OS Jarvis · Cinematic Home Orb
+ * Reuses navigation.css .dg-orb-* markup and gradients from the actual home hero.
+ * Scoped to #personalJarvis so Home, Trading and other DG OS areas are untouched.
+ * Keeps the existing Jarvis button ID, data-state and voice controls operational.
+ */
+#personalJarvis .jarvis-cinematic-hero{
+  position:relative;
+  isolation:isolate;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(250px,340px) minmax(0,1fr);
+  align-items:center;
+  column-gap:clamp(16px,3vw,46px);
+  min-height:400px;
+  padding:50px clamp(24px,4vw,62px);
+  margin:-22px -22px 30px;
+  border-radius:20px;
+  border:1px solid rgba(121,223,244,.18);
+  overflow:hidden;
+  background:
+    linear-gradient(0deg,rgba(1,9,23,.84),rgba(1,11,28,.3) 43%,rgba(5,22,44,.52)),
+    radial-gradient(ellipse 60% 45% at 50% 38%,rgba(21,113,164,.26),transparent),
+    linear-gradient(155deg,#143856 0%,#081a30 42%,#020a1b 100%);
+  box-shadow:inset 0 1px rgba(219,251,255,.075);
+}
+#personalJarvis .jarvis-cinematic-hero::before{
+  content:"";
+  position:absolute;inset:0;pointer-events:none;z-index:-1;
+  background:
+    radial-gradient(ellipse 72% 24% at 44% 79%,rgba(48,125,166,.23),transparent),
+    linear-gradient(158deg,transparent 43%,rgba(5,22,37,.56) 75%);
+}
+#personalJarvis .jarvis-cinematic-hero .personal-jarvis-head{
+  display:contents;
+}
+#personalJarvis .jarvis-cinematic-hero .personal-jarvis-head>div:first-child{
+  grid-column:1;
+  grid-row:1;
+  align-self:center;
+  min-width:0;
+  position:relative;
+  z-index:2;
+}
+#personalJarvis .jarvis-cinematic-hero .personal-kicker{
+  font-size:11px;
+  letter-spacing:.22em;
+  font-weight:700;
+  color:#80eceb;
+  line-height:1.6;
+}
+#personalJarvis .jarvis-cinematic-hero #personalJarvisTitle{
+  margin:15px 0 13px;
+  color:#f0f8ff;
+  font-size:clamp(32px,3.55vw,54px);
+  font-weight:780;
+  letter-spacing:-.05em;
+  line-height:1.03;
+  text-wrap:balance;
+  text-shadow:0 0 35px rgba(113,227,247,.09);
+}
+#personalJarvis .jarvis-cinematic-hero .personal-jarvis-head p{
+  max-width:340px;
+  margin:0;
+  font-size:13px;
+  line-height:1.7;
+  color:#a8c3d3;
+}
+#personalJarvis .jarvis-cinematic-hero .jarvis-system-badge{
+  grid-column:3;
+  grid-row:1;
+  align-self:start;
+  justify-self:end;
+  position:relative;
+  z-index:2;
+}
+#personalJarvis .jarvis-cinematic-hero .jarvis-orb-stage{
+  grid-column:2;
+  grid-row:1;
+  position:relative;
+  z-index:2;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:0!important;
+  min-height:0!important;
+  width:100%;
+}
+#personalJarvis .jarvis-cinematic-hero .jarvis-cinematic-orb{
+  display:grid!important;
+  place-items:center;
+  position:relative!important;
+  flex:none;
+  width:clamp(230px,21vw,275px)!important;
+  height:clamp(230px,21vw,275px)!important;
+  min-width:0!important;
+  min-height:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  padding:0!important;
+  overflow:visible!important;
+  isolation:isolate;
+  filter:drop-shadow(0 0 24px rgba(11,194,246,.30));
+  cursor:pointer;
+  transition:filter .25s ease;
+}
+#personalJarvis .jarvis-cinematic-hero .jarvis-cinematic-orb>.dg-orb-sphere{
+  position:relative!important;
+  inset:auto!important;
+  display:block!important;
+  width:96%!important;
+  height:96%!important;
+  pointer-events:none;
+  border-radius:50%!important;
+  overflow:hidden!important;
+}
+#personalJarvis .jarvis-cinematic-hero .jarvis-cinematic-orb .dg-orb-inner,
+#personalJarvis .jarvis-cinematic-hero .jarvis-cinematic-orb .dg-orb-streak,
+#personalJarvis .jarvis-cinematic-hero .jarvis-cinematic-orb .dg-orb-specular{
+  pointer-events:none;
+}
+#personalJarvis .jarvis-cinematic-hero .jarvis-cinematic-orb:focus-visible{
+  outline:2px solid #8bedda!important;
+  outline-offset:12px;
+}
+#personalJarvis .jarvis-cinematic-hero .jarvis-cinematic-label{
+  margin-top:24px;
+  font-size:12px;
+  font-weight:750;
+  letter-spacing:.22em;
+  color:#d5f8ff;
+}
+#personalJarvis .jarvis-cinematic-hero .jarvis-cinematic-label small{
+  margin-top:9px;
+  font-size:12px;
+  color:#abc5d7;
+  letter-spacing:.01em;
+}
+#personalJarvis .jarvis-cinematic-hero #personalJarvisReply{
+  max-width:310px;
+  margin:11px 0 0!important;
+  color:#9bbdcb!important;
+  font-size:11px!important;
+  line-height:1.55!important;
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+/* Keep the familiar soft glass styling while letting the Orb dominate. */
+#personalJarvis>.jarvis-voice-console{
+  position:relative;
+  z-index:2;
+  margin:0 auto 26px;
+  width:min(100%,720px);
+}
+#personalJarvis>.jarvis-device-pair{
+  width:min(100%,720px);
+  max-width:720px;
+  margin:0 auto 28px;
+  position:relative;
+  z-index:2;
+}
+#personalJarvis .jarvis-life-stats{margin-top:0;}
+/* Existing state data attributes continue to work without the old HUD rings. */
+#personalJarvis .jarvis-cinematic-orb[data-state="listening"]{
+  filter:drop-shadow(0 0 32px rgba(28,232,254,.52));
+}
+#personalJarvis .jarvis-cinematic-orb[data-state="thinking"] .dg-orb-inner{
+  animation-duration:2.5s;
+}
+#personalJarvis .jarvis-cinematic-orb[data-state="speaking"]{
+  filter:drop-shadow(0 0 34px rgba(126,115,255,.45));
+}
+#personalJarvis .jarvis-cinematic-orb[data-state="speaking"] .dg-orb-streak{
+  filter:blur(2px) brightness(1.2);
+}
+@media(max-width:1000px){
+  #personalJarvis .jarvis-cinematic-hero{
+    grid-template-columns:minmax(0,1fr) minmax(220px,300px);
+    gap:20px;
+    min-height:360px;
+  }
+  #personalJarvis .jarvis-cinematic-hero .personal-jarvis-head>div:first-child{grid-column:1}
+  #personalJarvis .jarvis-cinematic-hero .jarvis-orb-stage{grid-column:2}
+  #personalJarvis .jarvis-cinematic-hero .jarvis-system-badge{
+    position:absolute;top:20px;right:23px;
+  }
+}
+@media(max-width:700px){
+  #personalJarvis .jarvis-cinematic-hero{
+    grid-template-columns:minmax(0,1fr);
+    gap:18px;
+    padding:39px 20px 29px;
+    min-height:0;
+    margin:-16px -12px 24px;
+    border-radius:17px;
+  }
+  #personalJarvis .jarvis-cinematic-hero .personal-jarvis-head>div:first-child{
+    grid-column:1;grid-row:1;padding-right:60px;
+  }
+  #personalJarvis .jarvis-cinematic-hero .personal-kicker{
+    font-size:9px;letter-spacing:.14em;
+  }
+  #personalJarvis .jarvis-cinematic-hero #personalJarvisTitle{
+    margin:11px 0 10px;
+    font-size:clamp(31px,8vw,45px)!important;
+    line-height:1.05;
+  }
+  #personalJarvis .jarvis-cinematic-hero .personal-jarvis-head p{
+    font-size:12px;max-width:360px;line-height:1.6;
+  }
+  #personalJarvis .jarvis-cinematic-hero .jarvis-system-badge{
+    top:16px;right:15px;
+  }
+  #personalJarvis .jarvis-cinematic-hero .jarvis-orb-stage{
+    grid-column:1;grid-row:2;padding:18px 0 0!important;
+  }
+  #personalJarvis .jarvis-cinematic-hero .jarvis-cinematic-orb{
+    width:clamp(195px,58vw,250px)!important;
+    height:clamp(195px,58vw,250px)!important;
+  }
+  #personalJarvis .jarvis-cinematic-hero .jarvis-cinematic-label{margin-top:21px;}
+  #personalJarvis>.jarvis-voice-console,
+  #personalJarvis>.jarvis-device-pair{margin-left:auto;margin-right:auto;}
+}
+@media(prefers-reduced-motion:reduce){
+  #personalJarvis .jarvis-cinematic-orb .dg-orb-inner,
+  #personalJarvis .jarvis-cinematic-orb .dg-orb-streak,
+  #personalJarvis .jarvis-cinematic-orb .dg-orb-sphere{
+    animation:none!important;
+    transition:none!important;
+  }
+}

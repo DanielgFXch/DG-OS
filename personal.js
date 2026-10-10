@@ -1992,7 +1992,8 @@
       setReply('Was genau soll ich für '+planned.dateLabel+' ('+planned.dueDate+') notieren? Sag zum Beispiel: «Ich muss nächste Woche die Stromrechnung bezahlen.» Oder fotografiere die Rechnung.');
       return true;
     }
-    if(/^(?:foto|fotografieren|fotografier|kamera|bild|rechnung fotografieren)\b/i.test(q)){
+    const photoCommand=window.DGOSLifeIntent?.stripWake(original)||q;
+    if(/^(?:foto|fotografieren|fotografier|kamera|bild|rechnung fotografieren|mach(?:e)?\s+(?:ein\s+)?foto)\b/i.test(photoCommand)){
       window.DGOSJarvisPhoto?.open();
       return true;
     }

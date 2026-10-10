@@ -99,6 +99,16 @@
     Object.entries(stagesMap).forEach(([id,key])=>showMetric(id,fmt(stages(key))));
     showMetric('dgwEfficiency',percent(stages('efficiency')));
     showMetric('dgwConsistency',percent(stages('consistency')));
+    // WHOOP records sleep onset, not the time taken to fall asleep:
+    // do not infer a sleep-latency metric from these timestamps.
+    const localClock=value=>{
+      if(!value)return '—';
+      const epoch=new Date(value);
+      if(!Number.isFinite(epoch.getTime()))return '—';
+      return new Intl.DateTimeFormat('de-CH',{timeZone:'Europe/Zurich',hour:'2-digit',minute:'2-digit'}).format(epoch);
+    };
+    showMetric('dgwSleepStart',period==='day'?localClock(today?.sleep_start):'—');
+    showMetric('dgwWakeTime',period==='day'?localClock(today?.wake_time):'—');
     if(period==='day'){
       diff('dgwVsYesterday','dgwVsYesterdayNote',today,summary.yesterday,'Vortag');
       diff('dgwVsLastWeek','dgwVsLastWeekNote',today,summary.lastWeek,'Gleicher Wochentag');

@@ -199,10 +199,22 @@
   window.addEventListener('dgos-device-session',()=>{if(provider!=='browser')loadVoices();});
   synth?.addEventListener?.('voiceschanged',()=>{if(provider==='browser')render();});
   lastText=reply.textContent||'';
-  new MutationObserver(()=>{
-    const text=reply.textContent||'';
-    if(text!==lastText){lastText=text;if($('jvEnabled').checked&&!(provider!=='browser'&&!voices.length))speak(text);}
-  }).observe(reply,{childList:true,characterData:true,subtree:true});
+  // Never read out microphone status, interim transcripts or thinking states.
+  // Only completed Jarvis responses produce speech after an explicit user command.
+  window.addEventListener('dgos-jarvis-microphone-state',event=>{
+    const state=event.detail?.state;
+    if(state==='starting'||state==='listening'||state==='processing'){
+      stop(); // No audio feedback into the recording microphone.
+      setMessage(state==='listening'?'Ich höre zu. Sprich jetzt; tippe zum Beenden.':
+        state==='processing'?'Aufnahme wird in Text umgewandelt …':'Mikrofon wird geöffnet …','ZUHÖREN');
+    }
+  });
+  window.addEventListener('dgos-jarvis-final-response',event=>{
+    const text=String(event.detail?.text||'').trim();
+    if(!text||text===lastText)return;
+    lastText=text;
+    if($('jvEnabled').checked)void speak(text);
+  });
   render();
   if(provider!=='browser'&&deviceSession())loadVoices();
 })();

@@ -1,0 +1,66 @@
+/* DG OS · Jarvis Voice legibility patch.
+   iOS WebKit may retain an inherited text-fill colour. Force contrast
+   on controls without modifying any other DG OS panel. */
+#personalJarvis .jarvis-voice-console .jv-voice-actions button,
+#personalJarvis .jarvis-voice-console .jv-voice-actions button:not(:disabled){
+  appearance:none;
+  -webkit-appearance:none;
+  color:#f0fcff!important;
+  -webkit-text-fill-color:#f0fcff!important;
+  background:#163b4e!important;
+  border:1px solid #497a8d!important;
+  font-size:14px!important;
+  font-weight:700!important;
+  line-height:1.35!important;
+  text-shadow:none!important;
+  opacity:1!important;
+  min-height:46px;
+  white-space:normal;
+}
+#personalJarvis .jarvis-voice-console .jv-voice-actions #jvPreview:not(:disabled){
+  background:#7debe7!important;
+  border-color:#7debe7!important;
+  color:#052c35!important;
+  -webkit-text-fill-color:#052c35!important;
+  font-weight:800!important;
+}
+#personalJarvis .jarvis-voice-console .jv-voice-actions button:disabled{
+  background:#172c3a!important;
+  border-color:#315066!important;
+  color:#c7d7e1!important;
+  -webkit-text-fill-color:#c7d7e1!important;
+  opacity:.75!important;
+  cursor:not-allowed!important;
+}
+#personalJarvis .jarvis-voice-console #jvNotice{
+  color:#d2eaf3!important;
+  -webkit-text-fill-color:#d2eaf3!important;
+  font-size:13px!important;
+  line-height:1.55!important;
+  overflow-wrap:anywhere;
+}
+#personalJarvis .jarvis-voice-console:has(#jvVoiceBadge) #jvVoiceBadge{
+  color:#a7eae8;
+}
+#personalJarvis .jarvis-voice-console:has(#jvVoiceBadge) #jvVoiceBadge:not(:empty){
+  -webkit-text-fill-color:currentColor;
+}
+#personalJarvis .jarvis-voice-console .jv-voice-actions button:focus-visible{
+  outline:2px solid #c9feff!important;
+  outline-offset:3px!important;
+}
+#personalJarvis .jarvis-device-pair #jdpStart:not(:disabled){
+  background:#7debe7!important;
+  color:#052c35!important;
+  -webkit-text-fill-color:#052c35!important;
+}
+@media(max-width:600px){
+  #personalJarvis .jarvis-voice-console .jv-voice-actions{
+    gap:9px;
+  }
+  #personalJarvis .jarvis-voice-console .jv-voice-actions button{
+    font-size:13px!important;
+    min-height:48px;
+    padding:12px 14px;
+  }
+}

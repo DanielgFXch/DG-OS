@@ -18,6 +18,12 @@ assert.match(studio,/voice-studio\.js\?v=7/);
 assert.ok(html.includes('jarvis-native-voice.js?v=1'));
 assert.ok(studio.includes('jarvis-native-voice.js?v=1'));
 assert.ok(html.includes('jarvis-sound-check.js?v=1'));
+const contrast=file('jarvis-voice-contrast.css');
+assert.ok(html.includes('jarvis-voice-contrast.css?v=1'),'Main app must load readable voice styles');
+assert.ok(contrast.includes('#jvPreview:not(:disabled)'),'Preview contrast should be explicit');
+assert.ok(contrast.includes('-webkit-text-fill-color'),'iOS text fill must be set');
+assert.ok(contrast.includes('#jvNotice'),'Voice error feedback must stay readable');
+
 assert.ok(studio.includes('jarvis-sound-check.js?v=1'));
 const browser=file('jarvis-voice.js');
 const favorites=file('cartesia-favorites.js');

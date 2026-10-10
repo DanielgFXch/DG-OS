@@ -1,62 +1,134 @@
 'use strict';
+/* Voice Lab: browser-local audition is available independently of selected paid provider.
+   No premium provider is simulated; Cartesia preview is in its own authenticated card. */
 (() => {
-const $ = id => document.getElementById(id);
-const providers = ['cartesia','elevenlabs','openai','browser'];
-const storageKey='dgos.voiceStudio.preferences.v1';
-const synth=window.speechSynthesis;
-let provider='browser';
-let utterance=null;
-function notify(message){$('notice').textContent=message;}
-function refresh(){
-document.querySelectorAll('[data-provider]').forEach(button=>{button.dataset.active=String(button.dataset.provider===provider);button.setAttribute('aria-pressed',String(button.dataset.provider===provider));});
-const browser=provider==='browser';
-$('providerStatus').textContent=browser?'Lokal verfügbar':provider==='openai'?'Realtime: vorbereitet':provider==='cartesia'?'Gerätekopplung prüfen':'Nicht verbunden';
-$('voiceSelect').disabled=!browser||!synth;
-$('preview').disabled=!browser||!synth;
-if(!browser)notify(provider==='openai'
-?'OpenAI Realtime erfordert einen serverseitigen kurzlebigen Session-Token und eine bestätigte private Anmeldung. Noch nicht aktiviert.'
-:provider==='cartesia'?'Cartesia nutzt deine Telegram-Gerätekopplung. Wähle unten eine Premium-Stimme und teste sie.':'ElevenLabs ist noch nicht verbunden.');
-else notify(synth?'Lokale Stimme ist bereit. Du kannst sie jetzt testen.':'Sprachausgabe wird von diesem Browser nicht unterstützt.');
-}
-function populate(){
-const previous=$('voiceSelect').value;
-$('voiceSelect').replaceChildren(new Option('Systemstandard',''));
-if(!synth)return;
-for(const v of synth.getVoices().slice().sort((a,b)=>a.name.localeCompare(b.name)))$('voiceSelect').add(new Option(v.name+' · '+v.lang,v.voiceURI));
-$('voiceSelect').value=[...$('voiceSelect').options].some(o=>o.value===previous)?previous:'';
-}
-function stop(){synth?.cancel();utterance=null;}
-function read(){
-try {
-const o=JSON.parse(localStorage.getItem(storageKey)||'{}');
-if(providers.includes(o.provider))provider=o.provider;
-if(['de-DE','en-GB','pt-PT'].includes(o.language))$('language').value=o.language;
-if(Number(o.pace)>=0.7&&Number(o.pace)<=1.3)$('pace').value=String(o.pace);
-populate();
-if(typeof o.voice==='string'&&[...$('voiceSelect').options].some(x=>x.value===o.voice))$('voiceSelect').value=o.voice;
-}catch(_){}
-$('paceOut').textContent=Number($('pace').value).toFixed(2)+'×';refresh();
-}
-document.querySelectorAll('[data-provider]').forEach(b=>b.addEventListener('click',()=>{stop();provider=b.dataset.provider;refresh();}));
-$('pace').addEventListener('input',()=>$('paceOut').textContent=Number($('pace').value).toFixed(2)+'×');
-$('preview').addEventListener('click',()=>{
-if(provider!=='browser'||!synth)return;
-stop();
-const text=$('sample').value.trim();
-if(!text)return notify('Bitte zuerst einen Testtext eingeben.');
-utterance=new SpeechSynthesisUtterance(text);
-utterance.lang=$('language').value;utterance.rate=Number($('pace').value);
-const voice=synth.getVoices().find(x=>x.voiceURI===$('voiceSelect').value);
-if(voice){utterance.voice=voice;utterance.lang=voice.lang;}
-utterance.onerror=()=>notify('Die Sprachausgabe ist auf diesem Gerät nicht verfügbar.');
-synth.speak(utterance);notify('Browser-Stimme wird abgespielt.');
-});
-$('stop').addEventListener('click',()=>{stop();notify('Wiedergabe gestoppt.');});
-$('save').addEventListener('click',()=>{
-localStorage.setItem(storageKey,JSON.stringify({provider,voice:$('voiceSelect').value,language:$('language').value,pace:Number($('pace').value)}));
-notify('Gespeichert. '+(provider==='browser'?'Lokale Vorschau aktiviert.':'Anbieter gespeichert. Premium-Wiedergabe wird nur bei Verwendung gestartet.'));
-});
-if(synth)synth.addEventListener?.('voiceschanged',populate);
-document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
-read();
+  const $=id=>document.getElementById(id);
+  const providers=['cartesia','elevenlabs','openai','browser'];
+  const storageKey='dgos.voiceStudio.preferences.v1';
+  const synth=window.speechSynthesis||null;
+  const supported=Boolean(synth&&window.SpeechSynthesisUtterance);
+  let provider='browser',utterance=null,watchdog=null,speechStarted=false;
+  let savedVoice='';
+  const mobileApple=/iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const note=message=>$('notice').textContent=message;
+  function statusText(){
+    if(!supported)return 'Dieses Gerät unterstützt die lokale Sprachausgabe nicht.';
+    if(provider==='openai')return 'OpenAI Realtime ist noch NICHT aktiv. Die oben gewählte Stimme ist nur die lokale iPhone-Stimme. Mit «Gerätestimme anhören» kannst du sie trotzdem testen.';
+    if(provider==='elevenlabs')return 'ElevenLabs ist noch nicht verbunden. Die lokale Gerätestimme lässt sich unabhängig davon testen.';
+    if(provider==='cartesia')return 'Cartesia-Stimmen werden unten unter «Meine Cartesia-Stimmen» nach der Gerätekopplung geladen. Dieser Testknopf spielt nur die iPhone-Gerätestimme ab.';
+    return 'Die lokale Stimme ist bereit. Drücke «Gerätestimme anhören». Keine Anmeldung nötig.';
+  }
+  function refresh(){
+    document.querySelectorAll('[data-provider]').forEach(b=>{
+      const active=b.dataset.provider===provider;
+      b.dataset.active=String(active);
+      b.setAttribute('aria-pressed',String(active));
+    });
+    $('providerStatus').textContent=!supported?'Lokal nicht unterstützt':
+      provider==='browser'?'Lokale Vorschau bereit':
+      provider==='openai'?'Realtime noch nicht aktiv':
+      provider==='cartesia'?'Cartesia: unten verbinden':'Noch nicht verbunden';
+    $('voiceSelect').disabled=!supported;
+    $('preview').disabled=!supported;
+    $('preview').textContent='▶ Gerätestimme anhören';
+    $('preview').setAttribute('aria-label','Lokale Gerätestimme anhören – kein Premium-Test');
+    note(statusText());
+  }
+  function populate(){
+    const selection=$('voiceSelect');
+    const selected=selection.value||savedVoice;
+    selection.replaceChildren(new Option('Systemstimme · automatisch',''));
+    if(!supported)return;
+    const list=synth.getVoices().slice().sort((a,b)=>{
+      const lang=$('language').value.slice(0,2);
+      return Number(b.lang.startsWith(lang))-Number(a.lang.startsWith(lang))||a.name.localeCompare(b.name);
+    });
+    list.forEach(v=>selection.add(new Option(v.name+' · '+v.lang,v.voiceURI)));
+    selection.value=list.some(v=>v.voiceURI===selected)?selected:'';
+  }
+  function stop(){
+    if(watchdog){clearTimeout(watchdog);watchdog=null;}
+    utterance=null;
+    speechStarted=false;
+    try{synth?.cancel();}catch{}
+  }
+  function read(){
+    try{
+      const settings=JSON.parse(localStorage.getItem(storageKey)||'{}');
+      if(providers.includes(settings.provider))provider=settings.provider;
+      if(['de-DE','en-GB','pt-PT'].includes(settings.language))$('language').value=settings.language;
+      if(Number(settings.pace)>=.7&&Number(settings.pace)<=1.3)$('pace').value=String(settings.pace);
+      if(typeof settings.voice==='string')savedVoice=settings.voice;
+    }catch{}
+    populate();
+    $('paceOut').textContent=Number($('pace').value).toFixed(2)+'×';
+    refresh();
+  }
+  function preview(){
+    if(!supported)return note('Auf diesem Gerät ist die Browser-Sprachausgabe nicht verfügbar.');
+    const text=$('sample').value.trim();
+    if(!text)return note('Bitte zuerst einen Testtext eingeben.');
+    // Speak synchronously in the tap handler. iOS Safari requires a real user gesture.
+    stop();
+    const speech=new SpeechSynthesisUtterance(text.slice(0,850));
+    utterance=speech;
+    speech.lang=$('language').value;
+    speech.rate=Number($('pace').value);
+    speech.pitch=1;
+    speech.volume=1;
+    const selected=synth.getVoices().find(v=>v.voiceURI===$('voiceSelect').value);
+    if(selected){speech.voice=selected;speech.lang=selected.lang;}
+    speech.onstart=()=>{
+      if(utterance!==speech)return;
+      speechStarted=true;
+      if(watchdog){clearTimeout(watchdog);watchdog=null;}
+      note('Die iPhone-Gerätestimme spricht jetzt. Dies ist keine OpenAI- oder Cartesia-Stimme.');
+    };
+    speech.onend=()=>{
+      if(utterance!==speech)return;
+      if(watchdog){clearTimeout(watchdog);watchdog=null;}
+      utterance=null;
+      note('Wiedergabe beendet. Du kannst eine andere Stimme wählen und nochmals testen.');
+    };
+    speech.onerror=event=>{
+      if(utterance!==speech)return;
+      if(watchdog){clearTimeout(watchdog);watchdog=null;}
+      utterance=null;
+      const detail=event.error?' ('+event.error+')':'';
+      note('Sprachausgabe fehlgeschlagen'+detail+'. '+(mobileApple?'Prüfe Lautstärke und Stummmodus und teste in Safari.':'Bitte andere Stimme wählen und nochmals testen.'));
+    };
+    try{
+      synth.speak(speech);
+      if(synth.paused)synth.resume();
+      note('Test gestartet. Warte kurz auf die iPhone-Gerätestimme …');
+      watchdog=setTimeout(()=>{
+        if(utterance===speech&&!speechStarted){
+          note('iPhone startet die Sprachausgabe nicht. Prüfe Medienlautstärke und Stummmodus. Öffne das Voice Studio direkt in Safari und versuche «Systemstimme · automatisch».');
+        }
+      },4500);
+    }catch{
+      utterance=null;
+      note('Audio konnte auf diesem Gerät nicht gestartet werden. Bitte in Safari testen.');
+    }
+  }
+  document.querySelectorAll('[data-provider]').forEach(b=>b.addEventListener('click',()=>{
+    stop();provider=b.dataset.provider;refresh();
+  }));
+  $('language').addEventListener('change',()=>{populate();});
+  $('pace').addEventListener('input',()=>{$('paceOut').textContent=Number($('pace').value).toFixed(2)+'×';});
+  $('preview').addEventListener('click',preview);
+  $('stop').addEventListener('click',()=>{stop();note('Wiedergabe gestoppt.');});
+  $('save').addEventListener('click',()=>{
+    try{
+      localStorage.setItem(storageKey,JSON.stringify({
+        provider,voice:$('voiceSelect').value,language:$('language').value,pace:Number($('pace').value)
+      }));
+      savedVoice=$('voiceSelect').value;
+      note('Gespeichert. '+(provider==='browser'?'Deine Gerätestimme ist ausgewählt.':'Der Anbieter ist vorgemerkt. Die lokale Vorschau testet weiterhin nur die Gerätestimme.'));
+    }catch{note('Einstellungen konnten auf diesem Gerät nicht gespeichert werden.');}
+  });
+  if(supported)synth.addEventListener?.('voiceschanged',populate);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
+  window.addEventListener('pagehide',stop);
+  read();
 })();

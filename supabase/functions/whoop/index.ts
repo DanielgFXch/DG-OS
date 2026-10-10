@@ -164,6 +164,24 @@ async function whoopFetch(path: string, access: string) {
   if(r.status===204) return {};
   return r.json();
 }
+// Read only a bounded WHOOP window. Never expose OAuth credentials to the browser.
+async function pagedWhoopRecords(resource: string, access: string, since: string, maxPages: number) {
+  const rows: any[] = [];
+  let nextToken = "";
+  const seen = new Set<string>();
+  for (let page = 0; page < maxPages; page++) {
+    const params = new URLSearchParams({ start: since, limit: "25" });
+    if (nextToken) params.set("nextToken", nextToken);
+    const result = await whoopFetch(resource + "?" + params.toString(), access);
+    if (Array.isArray(result.records)) rows.push(...result.records);
+    const next = typeof result.next_token === "string" ? result.next_token : "";
+    if (!next || seen.has(next)) break;
+    seen.add(next);
+    nextToken = next;
+  }
+  return rows;
+}
+
 function scored(records: any[]) { return (Array.isArray(records)?records:[]).find(x=>x&&x.score_state==="SCORED"&&x.score)||null; }
 function hours(ms: any) { const n=Number(ms); return Number.isFinite(n)?n/3600000:null; }
 function sleepMs(s: any) { s=s||{}; return Number(s.total_light_sleep_time_milli||0)+Number(s.total_slow_wave_sleep_time_milli||0)+Number(s.total_rem_sleep_time_milli||0); }
@@ -316,6 +334,53 @@ Deno.serve(async (req: Request) => {
       if(!row) return json({error:"whoop_not_connected"},409);
       const session=await issueWhoopSession();
       return json({session,expiresInDays:180});
+    }
+
+    if(action==="history"){
+      if(req.method!=="GET") return json({error:"method_not_allowed"},405);
+      // A valid, owner-authorized WHOOP session is required. No public access.
+      if(!(await validSession(req))) return json({error:"session_required"},401);
+      const daysParam=Number(url.searchParams.get("days")||30);
+      const days=[7,30,90].includes(daysParam)?daysParam:30;
+      const earliest=new Date(Date.now()-(days+2)*86400000).toISOString();
+      const access=await getAccessToken(clientSecret);
+      const maxPages=days===90?10:days===30?6:3;
+      const [sleepRows,recoveryRows]=await Promise.all([
+        pagedWhoopRecords("/activity/sleep",access,earliest,maxPages),
+        pagedWhoopRecords("/recovery",access,earliest,maxPages)
+      ]);
+      const recoveryBySleep=new Map<string,any>();
+      for(const record of recoveryRows){
+        if(record&&record.sleep_id!=null&&record.score_state==="SCORED"&&record.score){
+          recoveryBySleep.set(String(record.sleep_id),record.score);
+        }
+      }
+      const nights=sleepRows.filter((s:any)=>s&&!s.nap&&s.score_state==="SCORED"&&s.score)
+        .sort((a:any,b:any)=>new Date(b.end).getTime()-new Date(a.end).getTime())
+        .slice(0,days).map((s:any)=>{
+          const score=s.score||{},stage=score.stage_summary||{},need=score.sleep_needed||{};
+          const recovery=recoveryBySleep.get(String(s.id))||null;
+          return {
+            id:s.id,start:s.start,end:s.end,
+            durationHours:hours(sleepMs(stage)),
+            timeInBedHours:hours(stage.total_in_bed_time_milli),
+            lightHours:hours(stage.total_light_sleep_time_milli),
+            deepHours:hours(stage.total_slow_wave_sleep_time_milli),
+            remHours:hours(stage.total_rem_sleep_time_milli),
+            awakeHours:hours(stage.total_awake_time_milli),
+            neededHours:hours(neededMs(need)),
+            performance:score.sleep_performance_percentage??null,
+            consistency:score.sleep_consistency_percentage??null,
+            efficiency:score.sleep_efficiency_percentage??null,
+            respiratoryRate:score.respiratory_rate??null,
+            disturbances:stage.disturbance_count??null,
+            cycles:stage.sleep_cycle_count??null,
+            recovery:recovery?.recovery_score??null,
+            hrvMs:recovery?.hrv_rmssd_milli??null,
+            restingHeartRate:recovery?.resting_heart_rate??null
+          };
+        });
+      return json({days,updatedAt:new Date().toISOString(),nights});
     }
 
     if(action==="summary"){

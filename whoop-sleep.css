@@ -121,3 +121,8 @@
  #personalHealth .personal-health-values>div>strong{width:min(100%,78px)!important}
 }
 @media(prefers-reduced-motion:reduce){#personalHealth .dgw-sleep-ring,#personalHealth .personal-health-values>div>strong{transition:none!important;animation:none!important}}
+
+/* Full 30-day mobile chart stays scrollable and legible. */
+#personalHealth .dgw-sleep-bars[data-range="month"]{overflow-x:auto;justify-content:flex-start;padding-bottom:8px}
+#personalHealth .dgw-sleep-bars[data-range="month"] .dgw-bar{flex:0 0 16px;width:16px}
+#personalHealth .dgw-sleep-bars[data-range="month"] .dgw-bar-day{font-size:8px}

@@ -1,0 +1,30 @@
+name: Jarvis Conversational Voice Responses
+on:
+  pull_request:
+    paths:
+      - 'jarvis-replies.js'
+      - 'jarvis-voice.js'
+      - 'personal.js'
+      - 'index.html'
+      - 'sw.js'
+      - 'scripts/test-jarvis-replies.js'
+      - '.github/workflows/jarvis-conversational-replies.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'jarvis-replies.js'
+      - 'jarvis-voice.js'
+      - 'personal.js'
+      - 'scripts/test-jarvis-replies.js'
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check jarvis-replies.js
+      - run: node --check jarvis-voice.js
+      - run: node --check personal.js
+      - run: node scripts/test-jarvis-replies.js

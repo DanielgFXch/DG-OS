@@ -39,7 +39,7 @@ for(const phrase of [
 assert.equal(parse('Jarvis, füge irgendetwas total Ungenaues auf die Einkaufsliste').intent,'shopping_clarify');
 const html=read('index.html'),client=read('personal.js'),backend=read('supabase/functions/jarvis-private/index.ts'),hub=read('private-hub.js');
 assert.ok(html.includes('jarvis-shopping-intent.js?v=2'));
-assert.ok(html.indexOf('jarvis-shopping-intent.js?v=2')<html.indexOf('personal.js?v=0.59.5'),'Parser must load before Jarvis');
+assert.ok(html.indexOf('jarvis-shopping-intent.js?v=2')<html.indexOf('personal.js?v=0.59.6'),'Parser must load before Jarvis');
 assert.ok(html.includes('private-hub.js?v=2'));
 assert.doesNotThrow(()=>new Function(read('jarvis-shopping-intent.js')));
 assert.doesNotThrow(()=>new Function(client));

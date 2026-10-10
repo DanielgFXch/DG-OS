@@ -53,6 +53,7 @@
       }
     }}
   ];
+  document.body.classList.add('ux-premium-ready');
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('de-CH');
 
   // A real, keyboard-accessible shortcut in the existing header.
@@ -166,7 +167,7 @@
       event.preventDefault();
       if (shown.length) select(selected+(event.key === 'ArrowDown' ? 1 : -1));
     }
-    if (event.key === 'Enter' && !event.isComposing) {
+    if (event.key === 'Enter' && !event.isComposing && (event.target === search || event.target === dialog)) {
       event.preventDefault();choose(shown[selected]);
     }
   });

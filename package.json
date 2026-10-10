@@ -8,7 +8,8 @@
     "start": "node server/index.js",
     "test:calendar": "node server/lib/googleCalendarIntegration.test.js",
     "test:integrations": "npm run test:gmail && npm run test:calendar && npm run test:whoop",
-    "test:whoop": "node server/lib/whoopIntegration.test.js"
+    "test:whoop": "node server/lib/whoopIntegration.test.js",
+    "test:voice": "node scripts/test-jarvis-voice.js"
   },
   "engines": {
     "node": ">=22"

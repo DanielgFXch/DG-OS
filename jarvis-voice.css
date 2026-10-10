@@ -1,0 +1,75 @@
+/* Jarvis Voice Control — isolated premium UI, no impact on trading views. */
+#personalJarvis .jarvis-voice-console{
+  --jv-line:rgba(107,233,239,.20);
+  margin:10px auto 22px;
+  padding:18px;
+  width:min(100%,630px);
+  border:1px solid var(--jv-line);
+  border-radius:19px;
+  background:linear-gradient(140deg,rgba(12,38,51,.85),rgba(4,14,26,.78));
+  box-shadow:inset 0 1px rgba(220,255,255,.06),0 17px 50px rgba(0,0,0,.2);
+  position:relative;
+  z-index:2;
+  text-align:left;
+  color:#ebfbff;
+}
+#personalJarvis .jv-console-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;
+}
+#personalJarvis .jv-console-title{
+  letter-spacing:.15em;font-weight:800;font-size:11px;color:#c4eff8;
+}
+#personalJarvis .jv-console-title span{color:#56dcd9;font-weight:600}
+#personalJarvis .jv-voice-badge{
+  border:1px solid rgba(92,233,228,.24);color:#80eee7;
+  border-radius:999px;background:rgba(29,108,111,.15);
+  font-size:10px;padding:5px 9px;letter-spacing:.08em;font-weight:700;
+}
+#personalJarvis .jv-voice-fields{
+  display:grid;grid-template-columns:1.05fr 1.2fr 1fr;gap:10px;
+}
+#personalJarvis .jv-voice-fields label{font-size:11px;color:#a6c6d4;display:grid;gap:7px}
+#personalJarvis .jv-voice-fields select{
+  min-width:0;width:100%;height:43px;background:rgba(3,18,31,.85);
+  border:1px solid rgba(117,188,206,.29);border-radius:10px;
+  padding:8px 10px;font-size:12px;color:#effcff;
+}
+#personalJarvis .jv-voice-fields select:focus-visible,
+#personalJarvis .jv-voice-actions button:focus-visible,
+#personalJarvis .jv-studio-link:focus-visible{
+  outline:2px solid #85f3f2;outline-offset:2px;
+}
+#personalJarvis .jv-voice-actions{
+  display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:14px;
+}
+#personalJarvis .jv-voice-actions button{
+  appearance:none;border:1px solid rgba(121,210,221,.27);border-radius:10px;
+  color:#d7eff7;background:rgba(9,36,50,.65);
+  padding:10px 12px;min-height:41px;cursor:pointer;font-size:12px;
+}
+#personalJarvis .jv-voice-actions .jv-action-primary{
+  color:#04232d;background:#76eae8;border-color:#76eae8;font-weight:750;
+}
+#personalJarvis .jv-voice-actions button:disabled{opacity:.45;cursor:not-allowed}
+#personalJarvis .jv-autospeak{
+  display:inline-flex;gap:6px;align-items:center;
+  color:#dcf4f7;font-size:12px;margin-right:auto;
+}
+#personalJarvis .jv-autospeak input{accent-color:#53eee0;width:17px;height:17px}
+#personalJarvis .jv-voice-notice{
+  min-height:19px;margin:13px 0 0;font-size:12px;
+  color:#accbdb;line-height:1.5;
+}
+#personalJarvis .jv-studio-link{
+  display:inline-block;font-size:12px;color:#7eebe7;
+  margin-top:9px;text-decoration:none;
+}
+@media(max-width:680px){
+  #personalJarvis .jarvis-voice-console{padding:14px;margin:9px auto 17px}
+  #personalJarvis .jv-voice-fields{grid-template-columns:1fr 1fr}
+  #personalJarvis .jv-voice-fields label:last-child{grid-column:1 / -1}
+  #personalJarvis .jv-voice-actions .jv-autospeak{flex:1 0 100%;margin-bottom:2px}
+}
+@media(prefers-reduced-transparency:reduce){
+  #personalJarvis .jarvis-voice-console{background:#071c2a}
+}

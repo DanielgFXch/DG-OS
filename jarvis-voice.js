@@ -42,7 +42,10 @@
     <p class="jv-voice-notice" id="jvNotice" role="status" aria-live="polite"></p>
     <a class="jv-studio-link" href="./voice-studio.html">Premium Voice Studio ↗</a>
   `;
-  reply.insertAdjacentElement('afterend',controls);
+  // Keep Voice Control outside the hero so the home-style sphere is the focus.
+  // The Telegram pairing widget anchors to this same console afterwards.
+  const voiceLocation=panel.querySelector('.jarvis-cinematic-hero')||reply;
+  voiceLocation.insertAdjacentElement('afterend',controls);
   const $=id=>document.getElementById(id);
   const setMessage=(message,badge='BEREIT')=>{$('jvNotice').textContent=message;$('jvVoiceBadge').textContent=badge;};
   $('jvEngine').value=provider;

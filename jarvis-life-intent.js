@@ -69,7 +69,7 @@
       .replace(/^(?:noch|bitte|daran|dass|das|die|den|dem|mir|für|fuer)\s+/i,'')
       .replace(/\s+/g,' ').replace(/^[,:-]+|[.!?]+$/g,'').trim();
     // "Ich muss DAS morgen bezahlen" without image/item does not identify what.
-    if(/^(?:das|dies|dieses|es|etwas|irgendetwas|eine\s+rechnung|einen\s+beleg)(?:\s+(?:bezahlen|zahlen|machen|erledigen|kaufen))?$/i.test(desc) || !desc || desc.length>160)
+    if(/^(?:das|dies|dieses|es|etwas|irgendetwas|eine\s+rechnung|einen\s+beleg)(?:\s+(?:bezahlen|zahlen|machen|erledigen|kaufen))?$/i.test(desc) || /^(?:zahlen|bezahlen|kaufen|machen|erledigen|bestellen|prüfen|pruefen)$/i.test(desc) || !desc || desc.length>160)
       return {intent:'task_clarify',dueDate:when.date,dateLabel:when.label};
     // Strongly bound to actionable statement; never infer an amount/recipient.
     const hasVerb=/\b(?:kaufen|holen|besorgen|zahlen|bezahlen|überweisen|ueberweisen|machen|erledigen|abholen|anrufen|buchen|schicken|abgeben|bestellen|prüfen|pruefen|einreichen|kündigen|kuendigen|putzen|waschen|einzahlen)\b/i.test(desc);

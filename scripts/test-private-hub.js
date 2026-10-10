@@ -19,7 +19,7 @@ for(const id of ['personalPrivate','dgPrivForm','dgPrivList','dgPrivMic','dgPriv
   assert.ok(html.includes('id="'+id+'"'),'Missing private UI '+id);
 }
 assert.match(html,/data-target="personalPrivate"/);
-assert.match(html,/private-hub\.js\?v=1/);
+assert.match(html,/private-hub\.js\?v=2/);
 assert.match(html,/private-hub\.css\?v=1/);
 assert.match(html,/navigation\.js\?v=0\.60\.1/);
 assert.match(html,/navigation\.css\?v=0\.73\.1/);

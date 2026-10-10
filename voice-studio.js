@@ -6,8 +6,9 @@
   const providers=['cartesia','elevenlabs','openai','browser'];
   const storageKey='dgos.voiceStudio.preferences.v1';
   const synth=window.speechSynthesis||null;
-  const supported=Boolean(synth&&window.SpeechSynthesisUtterance);
-  let provider='browser',utterance=null,watchdog=null,speechStarted=false;
+  const player=window.DGOSLocalVoice;
+  const supported=Boolean(player?.isSupported());
+  let provider='browser';
   let savedVoice='';
   const mobileApple=/iPhone|iPad|iPod/i.test(navigator.userAgent);
   const note=message=>$('notice').textContent=message;
@@ -46,12 +47,7 @@
     list.forEach(v=>selection.add(new Option(v.name+' · '+v.lang,v.voiceURI)));
     selection.value=list.some(v=>v.voiceURI===selected)?selected:'';
   }
-  function stop(){
-    if(watchdog){clearTimeout(watchdog);watchdog=null;}
-    utterance=null;
-    speechStarted=false;
-    try{synth?.cancel();}catch{}
-  }
+  function stop(){player?.stop();}
   function read(){
     try{
       const settings=JSON.parse(localStorage.getItem(storageKey)||'{}');
@@ -65,51 +61,17 @@
     refresh();
   }
   function preview(){
-    if(!supported)return note('Auf diesem Gerät ist die Browser-Sprachausgabe nicht verfügbar.');
+    if(!supported)return note('Dieser Browser unterstützt keine lokale Sprachausgabe.');
     const text=$('sample').value.trim();
     if(!text)return note('Bitte zuerst einen Testtext eingeben.');
-    // Speak synchronously in the tap handler. iOS Safari requires a real user gesture.
-    stop();
-    const speech=new SpeechSynthesisUtterance(text.slice(0,850));
-    utterance=speech;
-    speech.lang=$('language').value;
-    speech.rate=Number($('pace').value);
-    speech.pitch=1;
-    speech.volume=1;
-    const selected=synth.getVoices().find(v=>v.voiceURI===$('voiceSelect').value);
-    if(selected){speech.voice=selected;speech.lang=selected.lang;}
-    speech.onstart=()=>{
-      if(utterance!==speech)return;
-      speechStarted=true;
-      if(watchdog){clearTimeout(watchdog);watchdog=null;}
-      note('Die iPhone-Gerätestimme spricht jetzt. Dies ist keine OpenAI- oder Cartesia-Stimme.');
-    };
-    speech.onend=()=>{
-      if(utterance!==speech)return;
-      if(watchdog){clearTimeout(watchdog);watchdog=null;}
-      utterance=null;
-      note('Wiedergabe beendet. Du kannst eine andere Stimme wählen und nochmals testen.');
-    };
-    speech.onerror=event=>{
-      if(utterance!==speech)return;
-      if(watchdog){clearTimeout(watchdog);watchdog=null;}
-      utterance=null;
-      const detail=event.error?' ('+event.error+')':'';
-      note('Sprachausgabe fehlgeschlagen'+detail+'. '+(mobileApple?'Prüfe Lautstärke und Stummmodus und teste in Safari.':'Bitte andere Stimme wählen und nochmals testen.'));
-    };
-    try{
-      synth.speak(speech);
-      if(synth.paused)synth.resume();
-      note('Test gestartet. Warte kurz auf die iPhone-Gerätestimme …');
-      watchdog=setTimeout(()=>{
-        if(utterance===speech&&!speechStarted){
-          note('iPhone startet die Sprachausgabe nicht. Prüfe Medienlautstärke und Stummmodus. Öffne das Voice Studio direkt in Safari und versuche «Systemstimme · automatisch».');
-        }
-      },4500);
-    }catch{
-      utterance=null;
-      note('Audio konnte auf diesem Gerät nicht gestartet werden. Bitte in Safari testen.');
-    }
+    const voice=synth.getVoices().find(v=>v.voiceURI===$('voiceSelect').value);
+    player.play({
+      text,voice,lang:$('language').value,rate:Number($('pace').value),pitch:1,
+      onState:({state,message})=>{
+        // Error messages include the native iOS error code and a specific next step.
+        note(state==='speaking'?'Gerätestimme gestartet. '+message:message);
+      }
+    });
   }
   document.querySelectorAll('[data-provider]').forEach(b=>b.addEventListener('click',()=>{
     stop();provider=b.dataset.provider;refresh();

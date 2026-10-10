@@ -12,13 +12,13 @@ for(const id of ['personalJarvis','personalJarvisOrbBtn','jarvisLifeCommandForm'
   if(['jvEnabled','jdpBadge'].includes(id))continue; // inserted by existing JS
   assert.ok(html.includes('id="'+id+'"'),'Preserve original Jarvis id: '+id);
 }
-assert.ok(html.includes('jarvis-dashboard.js?v=1'));
+assert.ok(html.includes('jarvis-dashboard.js?v=2'));
 assert.ok(html.includes('jarvis-dashboard.css?v=1'));
-assert.ok(html.indexOf('jarvis-device-pairing.js?v=1')<html.indexOf('jarvis-dashboard.js?v=1'),
+assert.ok(html.indexOf('jarvis-device-pairing.js?v=1')<html.indexOf('jarvis-dashboard.js?v=2'),
   'Keep pairing/voice controls initialized before layout composition');
-assert.ok(sw.includes('dgos-personal-shell-40'));
+assert.ok(sw.includes('dgos-personal-shell-41'));
 assert.ok(sw.includes('jarvis-dashboard.css?v=1'));
-assert.ok(sw.includes('jarvis-dashboard.js?v=1'));
+assert.ok(sw.includes('jarvis-dashboard.js?v=2'));
 assert.ok(css.includes('#personalJarvis.jarvis-dashboard-ready'));
 assert.ok(css.includes('@media(max-width:700px)'));
 assert.ok(css.includes('prefers-reduced-motion'));

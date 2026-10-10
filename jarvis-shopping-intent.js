@@ -53,7 +53,7 @@
       .replace(/\s+(?:auf|in|zu)\s+(?:die|der|meine|meiner)\s+(?:einkaufs?liste|liste)\s*[.!?]*$/i,'')
       .replace(/^(?:auf\s+die\s+)?einkaufsliste\s*[:\s]+/i,'')
       .replace(/[.!?]+\s*$/,'').trim();
-    if(!text||forbidden.test(text)||/\boder\b/i.test(text))return null;
+    if(!text||forbidden.test(text)||/\boder\b/i.test(text)||/\b(?:irgendwas|irgendetwas|sachen|dinge|zeug|vielleicht|unklar|ungenaues)\b/i.test(text))return null;
     let parts=text.split(/\s*[,;\n]+\s*|\s+\bund\b\s+/i).filter(Boolean);
     if(parts.length===1){
       const knownParts=tryKnownWords(parts[0]);

@@ -31,14 +31,14 @@ assert.ok(app.includes("return 'expired'"),'Only invalid owner session must be r
 assert.ok(app.includes("await restoreFromDeviceSession()"),'Restore via authenticated Telegram-linked device');
 assert.ok(app.includes("lastWhoopHealth==='reauthorize'"),'Only explicit revocation starts new OAuth');
 const html=read('index.html'),sw=read('sw.js');
-assert.ok(html.includes('personal.js?v=0.59.9'));
-assert.ok(sw.includes('dgos-personal-shell-44'));
+assert.ok(html.includes('personal.js?v=0.59.10'));
+assert.ok(sw.includes('dgos-personal-shell-45'));
 
 function fakeElement(id){
  const handlers={};
  return {
   id, textContent:'',disabled:false,
-  classList:{add(){},remove(){}},
+  classList:{add(){},remove(){}},setAttribute(){},
   addEventListener(n,fn){handlers[n]=fn;},click(){handlers.click?.();},
   replaceChildren(){},append(){},
   get handlers(){return handlers;}
@@ -94,7 +94,7 @@ async function scenario({existingSession='',deviceSession='',claim='',summarySta
  // Case 1: owner has valid signed 180d WHOOP session but upstream WHOOP
  // temporarily fails. Do not mark "disconnected" or request new OAuth.
  const first=await scenario({existingSession:'old-session',summaryStatuses:[502,502],authenticated:true});
- assert.equal(first.elements.get('whoopStatus').textContent,'WHOOP · verbunden');
+ assert.equal(first.elements.get('whoopStatus').textContent,'WHOOP · Synchronisierung pausiert');
  assert.equal(first.elements.get('whoopConnect').textContent,'Erneut laden');
  assert.equal(first.values.get('dgos.whoopSession'),'old-session');
  assert.equal(first.requests.filter(x=>x.target==='device-session').length,0);
@@ -113,8 +113,12 @@ async function scenario({existingSession='',deviceSession='',claim='',summarySta
  assert.equal(second.elements.get('whoopConnect').disabled,true);
  // Case 3: refresh token revoked => visible message, not pretending it is online.
  const third=await scenario({existingSession:'old-session',summaryStatuses:[409],authenticated:true});
- assert.equal(third.elements.get('whoopStatus').textContent,'WHOOP · verbunden');
+ assert.equal(third.elements.get('whoopStatus').textContent,'WHOOP · Freigabe erforderlich');
  assert.equal(third.elements.get('whoopConnect').textContent,'WHOOP erneut autorisieren');
- assert.ok(third.elements.get('whoopHealthMeta').textContent.includes('einmal neu autorisieren'));
+ assert.ok(third.elements.get('whoopHealthMeta').textContent.includes('erneut autorisieren'));
+ // Verified archive survives an expired upstream WHOOP token.
+ third.windowHandlers['dgos-whoop-history-loaded']({detail:{latestDate:'2026-10-10',latest:{performance:84,durationMin:435}}});
+ assert.equal(third.elements.get('whoopSleep').textContent,'84 %');
+ assert.ok(third.elements.get('whoopSleepPerformance').textContent.includes('Gespeichert 10.10.2026'));
  console.log('WHOOP persistence: 180d session reuse, flaky sync, paired-device recovery, stale handoff and refresh lease contracts passed');
 })().catch(e=>{console.error(e);process.exitCode=1;});

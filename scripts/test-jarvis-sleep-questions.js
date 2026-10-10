@@ -4,7 +4,7 @@ require('../jarvis-sleep-questions.js');
 const api=globalThis.DGJarvisSleep;
 assert.equal(api.intent('Wie habe ich gestern geschlafen?'),'yesterday');
 assert.equal(api.intent('Jarvis wie habe ich letzte Nacht geschlafen?'),'latest');
-assert.equal(api.intent('Vergleich mit der letzten Woche bitte'),'week');
+assert.equal(api.intent('Wie war mein Schlaf letzte Woche?'),'week');
 assert.equal(api.intent('Wie ist der Gold Markt?'),null);
 const date=new Date().toISOString();
 (async()=>{

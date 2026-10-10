@@ -35,6 +35,7 @@
       <label class="jv-autospeak"><input id="jvEnabled" type="checkbox"> Antworten vorlesen</label>
       <button id="jvReload" type="button">Stimmen laden</button>
       <button id="jvPreview" type="button" class="jv-action-primary">Stimme testen</button>
+      <button id="jvSoundCheck" type="button">🔊 Ton prüfen</button>
       <button id="jvRead" type="button">Antwort vorlesen</button>
       <button id="jvStop" type="button">Stopp</button>
     </div>
@@ -166,6 +167,10 @@
   $('jvReload').addEventListener('click',loadVoices);
   $('jvPreview').addEventListener('click',()=>speak('Guten Morgen. Jarvis ist bereit. Deine Trading-Strategie hat Priorität.',true));
   $('jvRead').addEventListener('click',()=>speak(lastText||reply.textContent||'',true));
+  $('jvSoundCheck').addEventListener('click',async()=>{
+    const result=await window.DGOSSoundCheck?.playTestTone();
+    setMessage(result?.reason||'Audiotest nicht verfügbar.',result?.ok?'TON-TEST':'FEHLER');
+  });
   $('jvStop').addEventListener('click',()=>{stop();setMessage('Wiedergabe gestoppt.','BEREIT');});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
   window.addEventListener('dgos-device-session',()=>{if(provider==='cartesia')loadVoices();});

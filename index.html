@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="./styles.css?v=0.45.3" />
   <link rel="stylesheet" href="./wow.css?v=0.37.1" />
   <link rel="stylesheet" href="./personal.css?v=0.57.1" />
+  <link rel="stylesheet" href="./whoop-sleep.css?v=1" />
   <link rel="stylesheet" href="./social.css?v=0.61.1" />
   <link rel="stylesheet" href="./navigation.css?v=0.73.1" />
   <link rel="stylesheet" href="./private-hub.css?v=1" />
@@ -498,11 +499,65 @@
             <div class="personal-health-actions"><span id="whoopStatus" class="personal-status">WHOOP · wird geprüft</span><button id="whoopConnect" type="button">WHOOP verbinden</button></div>
           </div>
           <div class="personal-health-values">
-            <div><span>Schlaf</span><strong id="whoopSleep">—</strong><small id="whoopSleepPerformance">—</small></div>
-            <div><span>Recovery</span><strong id="whoopRecovery">—</strong><small id="whoopHrv">HRV —</small></div>
-            <div><span>Strain</span><strong id="whoopStrain">—</strong><small id="whoopCalories">—</small></div>
+            <div><span>Schlafdauer</span><strong id="whoopSleep">—</strong><small id="whoopSleepPerformance">—</small></div>
+            <div><span>Erholung</span><strong id="whoopRecovery">—</strong><small id="whoopHrv">HRV —</small></div>
+            <div><span>Belastung</span><strong id="whoopStrain">—</strong><small id="whoopCalories">—</small></div>
           </div>
           <p id="whoopHealthMeta">Verbinde WHOOP einmal sicher mit DG OS. Danach werden deine Werte automatisch geladen.</p>
+          <section id="whoopSleepAnalysis" class="dgw-sleep-panel" aria-labelledby="dgwSleepTitle">
+            <div class="dgw-sleep-header">
+              <div><span class="dgw-eyebrow">WHOOP · SCHLAFANALYSE</span>
+                <h3 id="dgwSleepTitle">Wie hast du geschlafen?</h3>
+                <p id="dgwSleepSource">Deine Daten werden sicher geladen …</p>
+              </div>
+              <button type="button" id="dgwSleepRefresh" class="dgw-icon-button" aria-label="Schlafanalyse neu laden">↻</button>
+            </div>
+            <div class="dgw-sleep-tabs" role="group" aria-label="Schlafauswertung">
+              <button type="button" data-dgw-period="day" aria-pressed="true">Tag</button>
+              <button type="button" data-dgw-period="week" aria-pressed="false">Woche</button>
+              <button type="button" data-dgw-period="month" aria-pressed="false">Monat</button>
+            </div>
+            <div class="dgw-day-navigation">
+              <button type="button" id="dgwSleepPrev" aria-label="Vorheriger Tag oder Zeitraum">‹</button>
+              <strong id="dgwSleepRange">Letzte Schlafdaten</strong>
+              <button type="button" id="dgwSleepNext" aria-label="Nächster Tag oder Zeitraum">›</button>
+            </div>
+            <div class="dgw-sleep-hero">
+              <div class="dgw-sleep-ring" id="dgwSleepCircle" role="img" aria-label="Schlafleistung noch nicht geladen">
+                <div><strong id="dgwSleepPercent">—</strong><span>Schlafleistung</span></div>
+              </div>
+              <div class="dgw-sleep-main-metrics">
+                <span>Erholsamer Schlaf im Überblick</span>
+                <strong id="dgwSleepDuration">—</strong>
+                <small id="dgwSleepNeed">Schlafbedarf: —</small>
+                <p id="dgwSleepInsight">Wir vergleichen deine echten WHOOP-Werte, sobald sie geladen sind.</p>
+              </div>
+            </div>
+            <div class="dgw-comparison-grid">
+              <div class="dgw-comparison"><span>Gestern</span><strong id="dgwVsYesterday">—</strong><small id="dgwVsYesterdayNote">Noch kein Vergleich</small></div>
+              <div class="dgw-comparison"><span>Vor einer Woche</span><strong id="dgwVsLastWeek">—</strong><small id="dgwVsLastWeekNote">Noch kein Vergleich</small></div>
+              <div class="dgw-comparison"><span>Ø 7 Tage</span><strong id="dgwAverage7">—</strong><small id="dgwAverage7Note">Vergleich mit Vorwoche</small></div>
+            </div>
+            <div class="dgw-sleep-trend">
+              <div class="dgw-sleep-trend-head"><strong id="dgwTrendTitle">Schlafverlauf</strong><span id="dgwTrendDescription">Letzte 14 Tage</span></div>
+              <div id="dgwSleepBars" class="dgw-sleep-bars" role="group" aria-label="Schlafdauer pro Tag"></div>
+              <p class="dgw-trend-caption">Balken zeigen die erfasste Schlafdauer. Fehlende Tage werden nicht als 0 Stunden bewertet.</p>
+            </div>
+            <div class="dgw-sleep-stages">
+              <div><span>Tiefschlaf</span><strong id="dgwDeep">—</strong></div>
+              <div><span>REM-Schlaf</span><strong id="dgwRem">—</strong></div>
+              <div><span>Leichtschlaf</span><strong id="dgwLight">—</strong></div>
+              <div><span>Wachphasen</span><strong id="dgwAwake">—</strong></div>
+              <div><span>Schlafeffizienz</span><strong id="dgwEfficiency">—</strong></div>
+              <div><span>Regelmässigkeit</span><strong id="dgwConsistency">—</strong></div>
+            </div>
+            <div class="dgw-sleep-import">
+              <div><strong>WHOOP-Verlauf importieren</strong><p>Einmal die Datei <b>Schlaf.csv</b> oder den WHOOP-ZIP-Export wählen. Deine Daten werden nur privat in deinem verbundenen DG OS gespeichert.</p></div>
+              <label class="dgw-sleep-import-button" for="dgwWhoopImportFile">Export wählen <input type="file" id="dgwWhoopImportFile" accept=".csv,.zip,text/csv,application/zip" /></label>
+            </div>
+            <p id="dgwSleepNotice" class="dgw-sleep-notice" role="status" aria-live="polite"></p>
+            <p class="dgw-disclaimer">Auswertung deiner WHOOP-Aufzeichnungen; ersetzt keine medizinische Beurteilung. Schlafdauer allein bedeutet nicht zwingend bessere Schlafqualität.</p>
+          </section>
           <details id="whoopDetails" class="personal-whoop-details hidden">
             <summary>Mehr WHOOP-Daten <span aria-hidden="true">↗</span></summary>
             <div class="personal-whoop-metrics">
@@ -1250,7 +1305,9 @@
   <script src="./jarvis-life-photo.js?v=1"></script>
   <script src="./jarvis-microphone.js?v=2"></script>
   <script src="./jarvis-replies.js?v=1"></script>
-  <script src="./personal.js?v=0.59.8"></script>
+  <script src="./personal.js?v=0.59.9"></script>
+  <script src="./whoop-sleep-analytics.js?v=1"></script>
+  <script src="./whoop-sleep-ui.js?v=1"></script>
   <script src="./jarvis-sound-check.js?v=1"></script>
   <script src="./jarvis-native-voice.js?v=2"></script>
   <script src="./jarvis-voice.js?v=10"></script>

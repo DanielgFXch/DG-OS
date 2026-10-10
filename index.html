@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="./personal.css?v=0.57.1" />
   <link rel="stylesheet" href="./social.css?v=0.61.0" />
   <link rel="stylesheet" href="./navigation.css?v=0.73.0" />
+  <link rel="stylesheet" href="./private-hub.css?v=1" />
   <link rel="stylesheet" href="./mobile.css?v=0.46.3" />
   <link rel="stylesheet" href="./jarvis-visuals.css?v=0.56.0" />
   <link rel="stylesheet" href="./trading-command.css?v=0.57.0" />
@@ -211,6 +212,80 @@
           <div class="jarvis-obsidian-status"><span aria-hidden="true">⌁</span><span id="obsidianStatus">Obsidian ist optional und aktuell nicht im Vordergrund.</span></div>
         </div>
       </details>
+    </section>
+
+    <section id="personalPrivate" class="personal-panel dg-private" aria-labelledby="privateHubTitle">
+      <div class="dg-private-hero">
+        <div>
+          <div class="personal-kicker">DG OS · PRIVATE LIFE</div>
+          <h2 id="privateHubTitle">Dein Leben. Organisiert.</h2>
+          <p>Einkaufen, Termine planen, Ideen festhalten. Dein privater Raum mit Jarvis.</p>
+        </div>
+        <span class="dg-private-lock" aria-label="Zugriff nur mit deiner Telegram-Gerätekopplung">◈ PRIVAT GESCHÜTZT</span>
+      </div>
+      <div class="dg-private-stats" aria-live="polite">
+        <div><small>Einkauf offen</small><strong id="dgPrivCountShopping">0</strong></div>
+        <div><small>Termine</small><strong id="dgPrivCountAppointment">0</strong></div>
+        <div><small>Ideen</small><strong id="dgPrivCountIdea">0</strong></div>
+        <div><small>Notizen</small><strong id="dgPrivCountNote">0</strong></div>
+      </div>
+      <div class="dg-private-tabs" role="tablist" aria-label="Private Bereiche">
+        <button type="button" role="tab" class="is-active" aria-selected="true" data-private-tab="shopping">🛒 Einkauf</button>
+        <button type="button" role="tab" aria-selected="false" data-private-tab="appointment">📅 Termine</button>
+        <button type="button" role="tab" aria-selected="false" data-private-tab="idea">✨ Ideen</button>
+        <button type="button" role="tab" aria-selected="false" data-private-tab="note">📝 Notizen</button>
+      </div>
+      <div class="dg-private-layout">
+        <div class="dg-private-main">
+          <article class="dg-private-card">
+            <div class="dg-private-card-title"><div><span class="personal-kicker">SCHNELL ERFASSEN</span><h3 id="dgPrivFormHeading">Was brauchst du?</h3></div><span class="dg-private-small">Text oder Stimme</span></div>
+            <form id="dgPrivForm" autocomplete="off">
+              <label class="dg-private-field"><span id="dgPrivTitleLabel">Produkt</span><input id="dgPrivTitle" type="text" maxlength="240" placeholder="z. B. Milch, Eier, Brot" required /></label>
+              <label class="dg-private-field" id="dgPrivDetailsWrap" hidden><span>Details (optional)</span><textarea id="dgPrivDetails" rows="2" maxlength="2000" placeholder="Weitere Gedanken oder Beschreibung"></textarea></label>
+              <div class="dg-private-date-row" id="dgPrivDateWrap" hidden>
+                <label class="dg-private-field"><span>Datum</span><input id="dgPrivDate" type="date" /></label>
+                <label class="dg-private-field"><span>Uhrzeit (optional)</span><input id="dgPrivTime" type="time" /></label>
+              </div>
+              <div class="dg-private-actions">
+                <button type="submit" id="dgPrivAdd" class="dg-private-primary">+ Hinzufügen</button>
+                <button type="button" id="dgPrivMic" class="dg-private-mic" aria-pressed="false" aria-label="Per Sprache eingeben">🎙️ Sprechen</button>
+              </div>
+              <p class="dg-private-hint" id="dgPrivVoiceHint">Sag beispielsweise «Milch, Eier und Brot». Jarvis zeigt den Text zur Bestätigung an.</p>
+            </form>
+          </article>
+          <article class="dg-private-card dg-private-list-card">
+            <div class="dg-private-card-title">
+              <div><span class="personal-kicker">MEINE ÜBERSICHT</span><h3 id="dgPrivListHeading">Deine Einkaufsliste</h3></div>
+              <button type="button" class="dg-private-refresh" id="dgPrivReload">↻ Aktualisieren</button>
+            </div>
+            <div id="dgPrivList" class="dg-private-list"><p class="dg-private-empty">Einträge werden geladen …</p></div>
+            <details class="dg-private-completed" id="dgPrivCompletedWrap" hidden><summary>Erledigte Einträge <span id="dgPrivDoneCount">0</span></summary><div class="dg-private-list" id="dgPrivCompleted"></div></details>
+          </article>
+        </div>
+        <aside class="dg-private-side">
+          <article class="dg-private-card dg-private-fridge" id="dgPrivFridgeCard">
+            <div class="dg-private-photo-icon" aria-hidden="true">▣</div>
+            <span class="personal-kicker">JARVIS · KÜHLSCHRANK-CHECK</span>
+            <h3>Foto machen. Einkauf planen.</h3>
+            <p>Fotografiere deinen Kühlschrank. Jarvis erkennt sichtbare Lebensmittel und macht Vorschläge, was du zusätzlich prüfen könntest.</p>
+            <input id="dgPrivPhoto" type="file" accept="image/*" capture="environment" hidden />
+            <button type="button" id="dgPrivPhotoButton" class="dg-private-photo-button">📸 Kühlschrank fotografieren</button>
+            <img id="dgPrivPhotoPreview" class="dg-private-photo-preview" alt="Vorschau des ausgewählten Kühlschrankfotos" hidden />
+            <p class="dg-private-photo-note">Ein Foto beweist nicht, was fehlt. Du bestätigst jeden Einkauf selbst. Das Bild wird nicht dauerhaft gespeichert.</p>
+            <div id="dgPrivSuggestions" hidden>
+              <div class="dg-private-findings"><strong>Auf dem Foto erkannt</strong><div class="dg-private-chips" id="dgPrivVisible"></div></div>
+              <div class="dg-private-findings"><strong>Zum Einkaufen prüfen</strong><div id="dgPrivCheckList" class="dg-private-check-list"></div></div>
+              <button type="button" class="dg-private-primary" id="dgPrivAddSuggestions">Ausgewählte zur Einkaufsliste hinzufügen</button>
+            </div>
+          </article>
+          <article class="dg-private-card dg-private-help">
+            <span class="personal-kicker">DEIN PRIVATER ASSISTENT</span>
+            <h3>Alles auch unterwegs.</h3>
+            <p>Einträge werden sicher im bestehenden DG-OS-Projekt gespeichert. Dein iPhone und Mac können dieselbe Liste verwenden, wenn beide mit deinem Jarvis gekoppelt sind.</p>
+          </article>
+        </aside>
+      </div>
+      <p id="dgPrivStatus" class="dg-private-status" aria-live="polite" role="status">Verbinde dein Gerät mit Telegram, um deine privaten Listen zu laden.</p>
     </section>
 
     <section id="personalTasks" class="personal-panel personal-tasks-panel" aria-labelledby="personalTasksTitle">
@@ -965,6 +1040,7 @@
   <nav class="bottom-nav" aria-label="DG OS Navigation">
     <button class="active" type="button" data-target="personalHome">Heute</button>
     <button type="button" data-target="personalJarvis">Jarvis</button>
+    <button type="button" data-target="personalPrivate">Privat</button>
     <button type="button" data-target="personalCalendar">Kalender</button>
     <button type="button" data-target="personalHealth">Gesundheit</button>
     <button type="button" data-target="personalSocial">Social</button>
@@ -995,7 +1071,8 @@
   <script src="./jarvis-native-voice.js?v=2"></script>
   <script src="./jarvis-voice.js?v=8"></script>
   <script src="./jarvis-device-pairing.js?v=1"></script>\n  <script src="./social.js?v=0.61.0"></script>
-  <script src="./navigation.js?v=0.60.0"></script>
+  <script src="./navigation.js?v=0.60.1"></script>
+  <script src="./private-hub.js?v=1"></script>
   <script src="./trading-command.js?v=0.57.0"></script>
   <script src="./weather.js?v=0.46.2"></script>
 <script>

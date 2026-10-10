@@ -7,9 +7,10 @@
     "test:gmail": "node server/lib/gmailIntegration.test.js",
     "start": "node server/index.js",
     "test:calendar": "node server/lib/googleCalendarIntegration.test.js",
-    "test:integrations": "npm run test:gmail && npm run test:calendar && npm run test:whoop",
+    "test:integrations": "npm run test:gmail && npm run test:calendar && npm run test:whoop && npm run test:sleep",
     "test:whoop": "node server/lib/whoopIntegration.test.js",
-    "test:voice": "node scripts/test-jarvis-voice.js"
+    "test:voice": "node scripts/test-jarvis-voice.js",
+    "test:sleep": "node scripts/test-sleep-insights.js"
   },
   "engines": {
     "node": ">=22"

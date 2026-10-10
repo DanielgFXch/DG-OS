@@ -772,8 +772,10 @@
   function render(data){
     const recovery=data&&data.recovery, sleep=data&&data.sleep, cycle=data&&data.cycle;
     set('whoopStatus','WHOOP · verbunden');
-    set('whoopSleep',sleep?fmtHours(sleep.durationHours):'—');
-    set('whoopSleepPerformance',sleep&&sleep.performance!=null&&Number.isFinite(Number(sleep.performance))?'Schlafleistung '+Math.round(Number(sleep.performance))+' %':'Schlafleistung —');
+    // WHOOP-like overview: the ring displays actual Sleep Performance (not
+    // hours); duration stays immediately underneath and in sleep analysis.
+    set('whoopSleep',sleep&&sleep.performance!=null&&Number.isFinite(Number(sleep.performance))?Math.round(Number(sleep.performance))+' %':'—');
+    set('whoopSleepPerformance',sleep?'Schlafdauer '+fmtHours(sleep.durationHours):'Schlafdauer —');
     set('whoopRecovery',recovery&&Number.isFinite(Number(recovery.score))?Math.round(Number(recovery.score))+'%':'—');
     set('whoopHrv',recovery&&Number.isFinite(Number(recovery.hrvMs))?'HRV '+Math.round(Number(recovery.hrvMs))+' ms':'HRV —');
     set('whoopStrain',cycle&&Number.isFinite(Number(cycle.strain))?Number(cycle.strain).toFixed(1):'—');

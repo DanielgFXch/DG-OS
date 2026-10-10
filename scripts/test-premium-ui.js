@@ -37,6 +37,7 @@ class Element {
   this.scrolls=0;this.clicks=0;
   this.classList={
    toggle:(name,enabled)=>{const words=new Set(this.className.split(/\s+/).filter(Boolean));if(enabled===undefined? !words.has(name):enabled)words.add(name);else words.delete(name);this.className=[...words].join(' ');},
+   add:name=>this.classList.toggle(name,true),
    contains:name=>this.className.split(/\s+/).includes(name)
   };
  }

@@ -34,4 +34,4 @@ jobs:
         with:
           deno-version: v2.x
       - name: Type-check WHOOP Edge Function
-        run: deno check supabase/functions/whoop/index.ts
+        run: deno check --node-modules-dir=auto supabase/functions/whoop/index.ts

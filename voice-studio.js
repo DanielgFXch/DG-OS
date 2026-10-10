@@ -4,7 +4,7 @@ const $ = id => document.getElementById(id);
 const providers = ['cartesia','elevenlabs','openai','browser'];
 const storageKey='dgos.voiceStudio.preferences.v1';
 const synth=window.speechSynthesis;
-let provider='cartesia';
+let provider='browser';
 let utterance=null;
 function notify(message){$('notice').textContent=message;}
 function refresh(){

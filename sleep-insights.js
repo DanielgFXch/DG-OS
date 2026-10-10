@@ -13,6 +13,15 @@
   const duration=value=>{const m=number(value);if(m===null)return '—';const n=Math.max(0,Math.round(m));return Math.floor(n/60)+'h '+String(n%60).padStart(2,'0')+'m';};
   const dateFormat=(value,opts)=>{const d=new Date(value);return value&&!Number.isNaN(d.getTime())?new Intl.DateTimeFormat('de-CH',{timeZone:ZONE,...opts}).format(d):'—';};
   const time=value=>dateFormat(value,{hour:'2-digit',minute:'2-digit',hourCycle:'h23'});
+  // Clock-time shift vs prior night, not a measure of falling-asleep speed.
+  function timeShift(current,prior){
+    const a=time(current),b=time(prior);
+    if(a==='—'||b==='—')return 'Kein Vergleich';
+    const toMin=t=>{const [h,m]=t.split(':').map(Number);return h*60+m;};
+    let diff=toMin(a)-toMin(b);
+    if(diff>720)diff-=1440;if(diff< -720)diff+=1440;
+    return diff===0?'Gleiche Uhrzeit':Math.abs(diff)+' Min. '+(diff<0?'früher':'später')+' als gestern';
+  }
   const label=value=>dateFormat(value,{weekday:'short',day:'2-digit',month:'2-digit'});
   const delta=(value,prior,unit,up=true)=>{
     const a=number(value),b=number(prior);if(a===null||b===null)return 'Noch kein Vergleich';
@@ -74,6 +83,8 @@
       set('sleepEfficiency',number(a.efficiency)===null?'—':Math.round(a.efficiency)+' %');set('sleepEfficiencyDelta',delta(a.efficiency,b?.efficiency,'Pkt.'));
       set('sleepRecovery',number(a.recovery)===null?'—':Math.round(a.recovery)+' %');set('sleepRecoveryDelta',delta(a.recovery,b?.recovery,'Pkt.'));
       set('sleepBedtime',time(a.start));set('sleepWake',time(a.end));
+      set('sleepBedtimeChange',b?timeShift(a.start,b.start):'Kein Vergleich');
+      set('sleepWakeChange',b?timeShift(a.end,b.end):'Kein Vergleich');
       set('sleepNeed',duration(mins(a.neededHours)));set('sleepAwake',duration(mins(a.awakeHours)));
       set('sleepWeeklyAvg',duration(s.week));set('sleepWeeklyPerformance',s.perf===null?'—':Math.round(s.perf)+' %');
       set('sleepWeeklyHrv',s.hrv===null?'—':Math.round(s.hrv)+' ms');set('sleepWeeklyRhr',s.rhr===null?'—':Math.round(s.rhr)+' bpm');

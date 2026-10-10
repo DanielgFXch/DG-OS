@@ -15,13 +15,15 @@ assert.equal(routing.allowedRelativePath('/voice-studio.html'),'voice-studio.htm
 assert.equal(routing.allowedRelativePath('/voice-studio.js'),'voice-studio.js');
 assert.ok(!/sk-[A-Za-z0-9]{12}|sb_secret_[A-Za-z0-9]{12}/i.test(html));
 assert.ok(!/fetch\(.+cartesia|fetch\(.+elevenlabs|fetch\(.+api\.openai\.com/.test(js),'No paid voice requests from browser');
-assert.ok(js.includes("const supported=Boolean(synth&&window.SpeechSynthesisUtterance)"),'Local playback requires supported browser');
+assert.ok(js.includes("const supported=Boolean(player?.isSupported())"),'Local playback uses available engine');
 assert.ok(js.includes("$('preview').disabled=!supported"),'Device preview must be available even if Realtime is selected');
 assert.ok(js.includes("player.play("),'Preview must use the shared iOS-safe local speech engine');
 assert.ok(js.includes("onState:"),'Preview must display native speech states');
 assert.ok(html.includes('jarvis-native-voice.js?v=1'),'Load shared audio player before studio script');
 require('../../scripts/test-jarvis-native-voice.js');
+assert.ok(html.includes('jarvis-sound-check.js?v=1'));
+assert.ok(js.includes("$('testTone').addEventListener"));
 assert.ok(js.includes("provider==='openai'"),'Realtime unavailability must be explained');
 assert.ok(html.includes('Gerätestimme anhören'),'User must see that preview is local, not premium');
-assert.ok(html.includes('voice-studio.js?v=5'),'Cache must refresh updated audition');
+assert.ok(html.includes('voice-studio.js?v=7'),'Cache must refresh updated audition');
 console.log('Voice Studio static and security checks passed.');

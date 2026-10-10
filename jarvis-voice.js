@@ -123,7 +123,7 @@
       player.play({
         text,voice,lang:$('jvLang').value,rate:.94,pitch:.96,
         onState:({state,message})=>{
-          const badge=state==='error'?'FEHLER':state==='speaking'?'SPRICHT':state==='starting'?'STARTET':'BEREIT';
+          const badge=state==='error'||state==='timeout'?'FEHLER':state==='speaking'?'SPRICHT':state==='starting'||state==='restarting'?'STARTET':'BEREIT';
           setMessage(message,badge);
         }
       });
@@ -165,7 +165,7 @@
   $('jvVoice').addEventListener('change',()=>{stop();if(provider==='cartesia'){voiceId=$('jvVoice').value;store(voiceKey,voiceId);}else prefs.voice=$('jvVoice').value;save();render();});
   $('jvEnabled').addEventListener('change',()=>{store(enabledKey,$('jvEnabled').checked?'1':'0');if(!$('jvEnabled').checked)stop();});
   $('jvReload').addEventListener('click',loadVoices);
-  $('jvPreview').addEventListener('click',()=>speak('Guten Morgen. Jarvis ist bereit. Deine Trading-Strategie hat Priorität.',true));
+  $('jvPreview').addEventListener('click',()=>speak('Hallo. Ich bin Jarvis. Hörst du mich?',true));
   $('jvRead').addEventListener('click',()=>speak(lastText||reply.textContent||'',true));
   $('jvSoundCheck').addEventListener('click',async()=>{
     const result=await window.DGOSSoundCheck?.playTestTone();

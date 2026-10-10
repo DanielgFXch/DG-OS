@@ -19,7 +19,7 @@ assert.ok(js.includes("const supported=Boolean(player?.isSupported())"),'Local p
 assert.ok(js.includes("$('preview').disabled=!supported"),'Device preview must be available even if Realtime is selected');
 assert.ok(js.includes("player.play("),'Preview must use the shared iOS-safe local speech engine');
 assert.ok(js.includes("onState:"),'Preview must display native speech states');
-assert.ok(html.includes('jarvis-native-voice.js?v=1'),'Load shared audio player before studio script');
+assert.ok(html.includes('jarvis-native-voice.js?v=2'),'Load shared audio player before studio script');
 require('../../scripts/test-jarvis-native-voice.js');
 assert.ok(html.includes('jarvis-sound-check.js?v=1'));
 assert.ok(js.includes("$('testTone').addEventListener"));

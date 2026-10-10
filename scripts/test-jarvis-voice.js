@@ -11,12 +11,12 @@ for(const name of ['jarvis-voice.js','voice-studio.js','cartesia-favorites.js'])
 }
 const html=file('index.html');
 const studio=file('voice-studio.html');
-assert.match(html,/jarvis-voice\.js\?v=5/);
+assert.match(html,/jarvis-voice\.js\?v=6/);
 assert.match(html,/jarvis-voice\.css\?v=2/);
 assert.match(studio,/cartesia-favorites\.js\?v=5/);
 assert.match(studio,/voice-studio\.js\?v=7/);
-assert.ok(html.includes('jarvis-native-voice.js?v=1'));
-assert.ok(studio.includes('jarvis-native-voice.js?v=1'));
+assert.ok(html.includes('jarvis-native-voice.js?v=2'));
+assert.ok(studio.includes('jarvis-native-voice.js?v=2'));
 assert.ok(html.includes('jarvis-sound-check.js?v=1'));
 const contrast=file('jarvis-voice-contrast.css');
 assert.ok(html.includes('jarvis-voice-contrast.css?v=1'),'Main app must load readable voice styles');

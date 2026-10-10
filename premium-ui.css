@@ -375,11 +375,11 @@ body[data-dgos-route="home"] #personalGreeting{
   .dg-overview-card{min-height:151px!important;padding:14px!important;border-radius:18px!important}
   .dg-ov-label{font-size:12px!important;margin:12px 0 7px!important}
   .dg-overview-card strong{font-size:clamp(18px,5vw,26px)!important;white-space:normal!important}
-  .bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;width:calc(100vw - 20px)!important;max-width:480px!important;border-radius:21px!important;bottom:calc(7px + env(safe-area-inset-bottom))!important}
+  body.ux-premium-ready .bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr))!important;width:calc(100vw - 20px)!important;max-width:480px!important;border-radius:21px!important;bottom:calc(7px + env(safe-area-inset-bottom))!important}
   .bottom-nav button{font-size:11px!important;min-height:52px!important;padding:7px 2px!important}
-  .bottom-nav button[data-target="personalPrivate"],
-  .bottom-nav button[data-target="personalSocial"],
-  .bottom-nav button[data-target="tradingWorkspace"]{display:none!important}
+  body.ux-premium-ready .bottom-nav button[data-target="personalPrivate"],
+  body.ux-premium-ready .bottom-nav button[data-target="personalSocial"],
+  body.ux-premium-ready .bottom-nav button[data-target="tradingWorkspace"]{display:none!important}
   .bottom-nav .ux-more-button{display:block!important}
   .bottom-nav .ux-more-button.active{color:var(--ux-text)!important;background:rgba(75,116,183,.32)!important;border-color:rgba(118,164,242,.22)!important}
   #personalJarvis .jarvis-dash-card{min-height:82px!important;padding:12px!important}

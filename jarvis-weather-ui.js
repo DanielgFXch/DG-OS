@@ -16,6 +16,7 @@
   coldControl.checked=coldSensitive;
   const clock=ms=>new Intl.DateTimeFormat('de-CH',{timeZone:'Europe/Zurich',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(ms));
   function clearCard(message){
+    forecast=null;
     lastAdvice=null;
     host.dataset.state='unavailable';
     show('jwaHeadline','Keine aktuelle Prognose');
@@ -63,8 +64,6 @@
   function update(data){
     if(!data){clearCard('Ohne aktuelle Wetterdaten kann Jarvis dir keine zuverlässige Kleidung empfehlen.');return;}
     forecast=data;
-    const dateType=engine.localDay(Date.now());
-    void dateType; // Temporal filtering and time zones are owned by the engine.
     let advice=getAdvice('today');
     if(!advice){
       // Late evening: show next morning rather than an empty card.
@@ -88,7 +87,7 @@
     host.scrollIntoView({behavior:'smooth',block:'nearest'});
     return speech;
   }
-  $('jwaAsk').addEventListener('click',()=>ask('today'));
+  $('jwaAsk').addEventListener('click',()=>ask(lastAdvice?.day==='tomorrow'?'tomorrow':'today'));
   coldControl.addEventListener('change',()=>{
     coldSensitive=coldControl.checked;
     try{localStorage.setItem(coldKey,coldSensitive?'1':'0');}catch{}

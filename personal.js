@@ -800,7 +800,7 @@
     connect.disabled=true;
     // Let the independent private sleep dashboard repaint the three real
     // WHOOP rings after authenticated values arrive. No copy in localStorage.
-    window.dispatchEvent(new CustomEvent('dgos-whoop-updated',{detail:data}));
+    if(typeof CustomEvent==='function')window.dispatchEvent(new CustomEvent('dgos-whoop-updated',{detail:data}));
 
 
     const box=$('whoopWorkouts');

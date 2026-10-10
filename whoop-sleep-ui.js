@@ -148,31 +148,46 @@
   }
   async function readZipFile(file){
     const buffer=await file.arrayBuffer(),view=new DataView(buffer);
-    if(view.byteLength<32)throw Error('ZIP-Datei ungültig.');
-    // Read ZIP local file records. WHOOP archive contains simple (non-encrypted)
-    // CSV entries. Do not upload unparsed archives or use external libraries.
-    let pos=0;
-    while(pos+30<=view.byteLength){
-      if(view.getUint32(pos,true)!==0x04034b50)break;
-      const flag=view.getUint16(pos+6,true),method=view.getUint16(pos+8,true);
-      const compressed=view.getUint32(pos+18,true),nameLength=view.getUint16(pos+26,true),extra=view.getUint16(pos+28,true);
-      const name=new TextDecoder().decode(new Uint8Array(buffer,pos+30,nameLength));
-      const dataStart=pos+30+nameLength+extra;
-      if(flag&8)throw Error('ZIP verwendet ein Format mit Datendeskriptor. Bitte «Schlaf.csv» aus dem ZIP entpacken und direkt auswählen.');
-      if(dataStart+compressed>view.byteLength)throw Error('ZIP-Eintrag unvollständig.');
-      if(name.toLowerCase().endsWith('schlaf.csv')){
-        const part=new Uint8Array(buffer,dataStart,compressed);
-        if(method===0)return new TextDecoder().decode(part);
-        if(method!==8||typeof DecompressionStream!=='function')
-          throw Error('Bitte «Schlaf.csv» in der Dateien-App aus dem ZIP entpacken.');
-        try{
-          const decoded=new Blob([part]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
-          return await new Response(decoded).text();
-        }catch{throw Error('ZIP-Entpackung nicht unterstützt. Bitte «Schlaf.csv» direkt auswählen.');}
-      }
-      pos=dataStart+compressed;
+    const total=view.byteLength;
+    if(total<44||total>650000)throw Error('ZIP-Datei ungültig oder zu gross.');
+    // Read ZIP central directory, not local-file sizes. WHOOP exports use
+    // general-purpose bit 3 (local header sizes absent, data descriptor).
+    let eocd=-1;
+    for(let i=total-22;i>=Math.max(0,total-66000);i--){
+      if(view.getUint32(i,true)===0x06054b50){eocd=i;break;}
     }
-    throw Error('Keine «Schlaf.csv» im ZIP gefunden. Bitte diese Datei einzeln auswählen.');
+    if(eocd<0)throw Error('ZIP-Verzeichnis nicht gefunden.');
+    const count=view.getUint16(eocd+10,true);
+    let pos=view.getUint32(eocd+16,true);
+    const decoder=new TextDecoder();
+    for(let i=0;i<count&&i<50;i++){
+      if(pos+46>total||view.getUint32(pos,true)!==0x02014b50)
+        throw Error('ZIP-Verzeichnis beschädigt.');
+      const flags=view.getUint16(pos+8,true),method=view.getUint16(pos+10,true);
+      const compressed=view.getUint32(pos+20,true),uncompressed=view.getUint32(pos+24,true);
+      const nameLength=view.getUint16(pos+28,true),extra=view.getUint16(pos+30,true),comment=view.getUint16(pos+32,true);
+      const localOffset=view.getUint32(pos+42,true);
+      if(pos+46+nameLength>total)throw Error('ZIP-Dateiname beschädigt.');
+      const name=decoder.decode(new Uint8Array(buffer,pos+46,nameLength));
+      pos+=46+nameLength+extra+comment;
+      if(!name.toLowerCase().endsWith('schlaf.csv'))continue;
+      if(flags&1)throw Error('Der WHOOP-Export ist verschlüsselt; bitte Schlaf.csv direkt auswählen.');
+      if(uncompressed>450000)throw Error('Die Schlafdatei ist zu gross.');
+      if(localOffset+30>total||view.getUint32(localOffset,true)!==0x04034b50)
+        throw Error('ZIP-Datei unvollständig.');
+      const localName=view.getUint16(localOffset+26,true),localExtra=view.getUint16(localOffset+28,true);
+      const start=localOffset+30+localName+localExtra;
+      if(start+compressed>total)throw Error('ZIP-Datei unvollständig.');
+      const part=new Uint8Array(buffer,start,compressed);
+      if(method===0)return decoder.decode(part);
+      if(method!==8||typeof DecompressionStream!=='function')
+        throw Error('Bitte «Schlaf.csv» in der Dateien-App aus dem ZIP entpacken.');
+      try{
+        const decoded=new Blob([part]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        return await new Response(decoded).text();
+      }catch{throw Error('ZIP-Entpackung nicht unterstützt. Bitte «Schlaf.csv» direkt auswählen.');}
+    }
+    throw Error('Keine «Schlaf.csv» im ZIP gefunden.');
   }
   async function importFile(file){
     if(!file)return;

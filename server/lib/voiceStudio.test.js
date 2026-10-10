@@ -10,7 +10,7 @@ const routing=require('../lib/staticApp.js');
 for(const provider of ['cartesia','elevenlabs','openai','browser'])assert.ok(html.includes('data-provider="'+provider+'"'));
 assert.ok(html.includes('id="voiceSelect"'));
 assert.ok(html.includes('id="preview"'));
-assert.ok(main.includes('jarvis-voice.js?v=7'),'Jarvis voice controls must be loaded');
+assert.ok(main.includes('jarvis-voice.js?v=8'),'Jarvis voice controls must be loaded');
 assert.ok(fs.readFileSync(path.join(root,'jarvis-voice.js'),'utf8').includes('href="./voice-studio.html"'),'Voice Studio link must be available in injected controls');
 assert.equal(routing.allowedRelativePath('/voice-studio.html'),'voice-studio.html');
 assert.equal(routing.allowedRelativePath('/voice-studio.js'),'voice-studio.js');

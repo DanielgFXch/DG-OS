@@ -1,13 +1,17 @@
 'use strict';
-/* DG OS Jarvis Voice v2. Browser voice + real server-side Cartesia TTS.
-   Cartesia API key stays in Supabase. Uses existing Telegram-paired DG OS device session. */
+/* Jarvis voice: local voice, Cartesia TTS and OpenAI TTS.
+   API secrets stay in the existing DG OS Supabase backend; device pairing is shared. */
 (() => {
   const panel=document.getElementById('personalJarvis');
   const reply=document.getElementById('personalJarvisReply');
   if(!panel || !reply) return;
   const synth=window.speechSynthesis || null;
-  const endpoint='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/jarvis-cartesia';
-  const storageKey='dgos.voiceStudio.preferences.v1', voiceKey='dgos.cartesia.voiceId';
+  const base='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/';
+  const endpoint=()=>base+(provider==='openai-tts'?'jarvis-openai-voice':'jarvis-cartesia');
+  const storageKey='dgos.voiceStudio.preferences.v1';
+  const cartesiaVoiceKey='dgos.cartesia.voiceId';
+  const openaiVoiceKey='dgos.openai.voiceId';
+  const providerVoiceKey=()=>provider==='openai-tts'?openaiVoiceKey:cartesiaVoiceKey;
   const enabledKey='dgos.jarvis.speech.enabled';
   const deviceSession=()=>{
     try{return localStorage.getItem('dgos.deviceSession')||'';}catch{return '';}
@@ -16,8 +20,8 @@
   const read=(key)=>{try{return localStorage.getItem(key)||'';}catch{return '';}};
   let prefs={};
   try{prefs=JSON.parse(read(storageKey)||'{}')||{};}catch{}
-  let provider=prefs.provider==='cartesia'?'cartesia':'browser';
-  let voiceId=read(voiceKey)||'';
+  let provider=['browser','cartesia','openai-tts'].includes(prefs.provider)?prefs.provider:'browser';
+  let voiceId=read(providerVoiceKey())||'';
   let voices=[],currentAudio=null,objectUrl='',abort=null,sequence=0,lastText='',lastPrepared='';
   const controls=document.createElement('div');
   controls.className='jarvis-voice-console';
@@ -27,7 +31,7 @@
       <span id="jvVoiceBadge" class="jv-voice-badge">BEREIT</span>
     </div>
     <div class="jv-voice-fields">
-      <label>Voice Engine<select id="jvEngine"><option value="browser">Geräte-Stimme · kostenlos</option><option value="cartesia">Cartesia · Premium</option></select></label>
+      <label>Voice Engine<select id="jvEngine"><option value="browser">Geräte-Stimme · kostenlos</option><option value="cartesia">Cartesia · Premium</option><option value="openai-tts">OpenAI · Premium-Stimmen</option></select></label>
       <label>Stimme<select id="jvVoice" aria-label="Jarvis Stimme auswählen"></select></label>
       <label>Sprache<select id="jvLang"><option value="de-DE">Deutsch</option><option value="en-GB">English</option><option value="pt-PT">Português (Portugal)</option></select></label>
     </div>
@@ -39,6 +43,7 @@
       <button id="jvRead" type="button">Antwort vorlesen</button>
       <button id="jvStop" type="button">Stopp</button>
     </div>
+    <audio id="jvAudioPlayer" controls preload="none" hidden aria-label="Erzeugte Jarvis Premium-Stimme abspielen"></audio>
     <p class="jv-voice-notice" id="jvNotice" role="status" aria-live="polite"></p>
     <a class="jv-studio-link" href="./voice-studio.html">Premium Voice Studio ↗</a>
   `;
@@ -60,7 +65,7 @@
     if(abort){abort.abort();abort=null;}
     if(window.DGOSLocalVoice)window.DGOSLocalVoice.stop();
     else if(synth && (synth.speaking || synth.pending || synth.paused))synth.cancel();
-    if(currentAudio){currentAudio.pause();currentAudio.removeAttribute('src');currentAudio.load();currentAudio=null;}
+    if(currentAudio){currentAudio.pause();currentAudio.removeAttribute('src');currentAudio.load();currentAudio.hidden=true;currentAudio=null;}
     if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl='';}
     lastPrepared='';
   }
@@ -76,13 +81,15 @@
     return [{id:'',name:'Systemstimme · automatisch'},...list.map(x=>({id:x.voiceURI,name:x.name+' · '+x.lang}))];
   }
   function render(){
-    const premium=provider==='cartesia';
+    const premium=provider!=='browser';
     $('jvReload').hidden=!premium;
+    $('jvPreview').disabled=premium&&!voices.length;
+    $('jvRead').disabled=premium&&!voices.length;
     if(premium){
       options(voices,voiceId);
-      if(!deviceSession())setMessage('Einmalig hier unten mit Telegram koppeln. Danach kannst du Premium-Stimmen laden.','KOPPLUNG');
-      else if(!voices.length)setMessage('Tippe auf «Stimmen laden» und wähle eine Cartesia-Stimme.','VERBINDEN');
-      else setMessage('Premium bereit. Wähle eine Stimme oder teste sie.','CARTESIA');
+      if(!deviceSession())setMessage('Verbinde dein Gerät einmalig mit Telegram.','KOPPLUNG');
+      else if(!voices.length)setMessage('Stimmen werden geladen. Falls ein Anbieter fehlt, prüfen wir den anderen.','VERBINDEN');
+      else setMessage((provider==='openai-tts'?'OpenAI':'Cartesia')+' bereit. Wähle eine Stimme und drücke «Stimme testen».','BEREIT');
     } else {
       options(nativeVoices(),prefs.voice||'');
       setMessage(synth?'Geräte-Stimme bereit. Kostenlos und ohne Anmeldung.':'Dieser Browser unterstützt keine lokale Sprachausgabe.','LOKAL');
@@ -91,15 +98,20 @@
   async function api(method,body,signal){
     const session=deviceSession();
     if(!session)throw Error('Verbinde dieses iPhone direkt unten über «Mit Telegram verbinden».');
-    const res=await fetch(endpoint,{method,signal,cache:'no-store',headers:{
+    const res=await fetch(endpoint(),{method,signal,cache:'no-store',headers:{
       Authorization:'Bearer '+session,...(body?{'Content-Type':'application/json'}:{})
     },...(body?{body:JSON.stringify(body)}:{})});
     if(!res.ok){
       const error=await res.json().catch(()=>({}));
       if(res.status===401){window.dispatchEvent(new Event('dgos-device-session-invalid'));throw Error('Dieses iPhone ist noch nicht mit Jarvis verbunden. Verwende unten «Mit Telegram verbinden».');}
-      if(error.error==='voice_not_configured')throw Error('Cartesia ist auf dem DG-OS-Server noch nicht konfiguriert.');
+      if(error.error==='voice_not_configured'){
+        const message=provider==='cartesia'?'Cartesia API-Key fehlt im bestehenden DG-OS-Projekt.':'OpenAI API-Key fehlt im bestehenden DG-OS-Projekt.';
+        const exception=new Error(message);exception.code='voice_not_configured';throw exception;
+      }
+      if(error.error==='voice_invalid_api_key')throw Error('OpenAI API-Key ist ungültig. Bitte den Schlüssel im bestehenden DG-OS-Projekt prüfen.');
+      if(error.error==='voice_provider_rate_limit')throw Error('Der Sprachanbieter ist gerade ausgelastet. Bitte später erneut testen.');
       if(error.error==='slow_down')throw Error('Bitte kurz warten und erneut testen.');
-      throw Error('Premium-Stimme nicht verfügbar ('+(error.upstream_status||res.status)+').');
+      throw Error((provider==='openai-tts'?'OpenAI':'Cartesia')+'-Stimme nicht verfügbar ('+(error.upstream_status||res.status)+').');
     }
     return res;
   }
@@ -111,10 +123,18 @@
       const response=await api('GET');
       const data=await response.json();
       voices=Array.isArray(data.voices)?data.voices.filter(x=>x&&typeof x.id==='string'&&typeof x.name==='string'):[];
-      if(!voices.length)throw Error('Keine Cartesia-Stimmen gefunden. Bitte Cartesia-Verbindung prüfen.');
+      if(!voices.length)throw Error('Keine Stimmen vom Anbieter erhalten. Bitte Verbindung prüfen.');
       voiceId=voices.some(v=>v.id===voiceId)?voiceId:voices[0].id;
-      store(voiceKey,voiceId);render();
-    }catch(error){setMessage(error.message||'Premium-Stimmen konnten nicht geladen werden.','FEHLER');}
+      store(providerVoiceKey(),voiceId);render();
+    }catch(error){
+      if(provider==='cartesia'&&error?.code==='voice_not_configured'){
+        provider='openai-tts';voiceId=read(providerVoiceKey())||'';
+        save();render();
+        setMessage('Cartesia fehlt. Prüfe automatisch die OpenAI Premium-Stimmen …','PRÜFEN');
+        await loadVoices();return;
+      }
+      setMessage(error.message||'Premium-Stimmen konnten nicht geladen werden.','FEHLER');
+    }
     finally{$('jvReload').disabled=false;}
   }
   async function speak(text,preview=false){
@@ -134,7 +154,7 @@
     }
     if(!voiceId){setMessage('Bitte erst «Stimmen laden» und eine Premium-Stimme auswählen.','VERBINDEN');return;}
     if(currentAudio&&lastPrepared===text){
-      try{currentAudio.currentTime=0;await currentAudio.play();setMessage('Jarvis spricht mit Cartesia.','SPRICHT');}
+      try{currentAudio.currentTime=0;await currentAudio.play();setMessage('Jarvis spricht mit '+(provider==='openai-tts'?'OpenAI':'Cartesia')+'.','SPRICHT');}
       catch{setMessage('Tippe nochmals auf «Antwort vorlesen», um die Audiofreigabe zu aktivieren.','STARTEN');}
       return;
     }
@@ -150,22 +170,22 @@
       if(thisRequest!==sequence)return;
       if(!blob.type.includes('audio')||!blob.size)throw Error('Keine Audiodaten empfangen.');
       objectUrl=URL.createObjectURL(blob);
-      currentAudio=new Audio(objectUrl);lastPrepared=text;
+      currentAudio=$('jvAudioPlayer');currentAudio.src=objectUrl;currentAudio.hidden=false;lastPrepared=text;
       currentAudio.onended=()=>setMessage('Wiedergabe beendet.','BEREIT');
       try{
         await currentAudio.play();
-        setMessage(text.length>300?'Jarvis spricht · die Antwort wurde für diesen Test auf 300 Zeichen gekürzt.':'Jarvis spricht mit Cartesia.','SPRICHT');
+        setMessage(text.length>300?'Jarvis spricht · die Antwort wurde auf 300 Zeichen gekürzt.':'Jarvis spricht mit '+(provider==='openai-tts'?'OpenAI':'Cartesia')+'.','SPRICHT');
       }catch{
-        setMessage('Audio bereit. Tippe auf «Antwort vorlesen», damit dein iPhone die Wiedergabe startet.','STARTEN');
+        setMessage('Audio ist bereit. Tippe auf ▶ im Audioplayer direkt über dieser Meldung.','STARTEN');
       }
     }catch(error){
       if(thisRequest!==sequence||error.name==='AbortError')return;
       setMessage(error.message||'Premium-Audio konnte nicht erstellt werden.','FEHLER');
     }finally{if(thisRequest===sequence)abort=null;}
   }
-  $('jvEngine').addEventListener('change',()=>{stop();provider=$('jvEngine').value;save();render();if(provider==='cartesia')loadVoices();});
+  $('jvEngine').addEventListener('change',()=>{stop();provider=$('jvEngine').value;voiceId=read(providerVoiceKey())||'';voices=[];save();render();if(provider!=='browser')loadVoices();});
   $('jvLang').addEventListener('change',save);
-  $('jvVoice').addEventListener('change',()=>{stop();if(provider==='cartesia'){voiceId=$('jvVoice').value;store(voiceKey,voiceId);}else prefs.voice=$('jvVoice').value;save();render();});
+  $('jvVoice').addEventListener('change',()=>{stop();if(provider!=='browser'){voiceId=$('jvVoice').value;store(providerVoiceKey(),voiceId);}else prefs.voice=$('jvVoice').value;save();render();});
   $('jvEnabled').addEventListener('change',()=>{store(enabledKey,$('jvEnabled').checked?'1':'0');if(!$('jvEnabled').checked)stop();});
   $('jvReload').addEventListener('click',loadVoices);
   $('jvPreview').addEventListener('click',()=>speak('Hallo. Ich bin Jarvis. Hörst du mich?',true));
@@ -176,13 +196,13 @@
   });
   $('jvStop').addEventListener('click',()=>{stop();setMessage('Wiedergabe gestoppt.','BEREIT');});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
-  window.addEventListener('dgos-device-session',()=>{if(provider==='cartesia')loadVoices();});
+  window.addEventListener('dgos-device-session',()=>{if(provider!=='browser')loadVoices();});
   synth?.addEventListener?.('voiceschanged',()=>{if(provider==='browser')render();});
   lastText=reply.textContent||'';
   new MutationObserver(()=>{
     const text=reply.textContent||'';
-    if(text!==lastText){lastText=text;if($('jvEnabled').checked)speak(text);}
+    if(text!==lastText){lastText=text;if($('jvEnabled').checked&&!(provider!=='browser'&&!voices.length))speak(text);}
   }).observe(reply,{childList:true,characterData:true,subtree:true});
   render();
-  if(provider==='cartesia'&&deviceSession())loadVoices();
+  if(provider!=='browser'&&deviceSession())loadVoices();
 })();

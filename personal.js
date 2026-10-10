@@ -1605,6 +1605,7 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)load();});
   window.addEventListener('focus',load);
   window.addEventListener('dgos-device-session',load);
+  window.addEventListener('dgos-private-updated',loadOrganizer);
 })();
 
 

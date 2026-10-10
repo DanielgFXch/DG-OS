@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="./styles.css?v=0.45.3" />
   <link rel="stylesheet" href="./wow.css?v=0.37.1" />
   <link rel="stylesheet" href="./personal.css?v=0.57.1" />
+  <link rel="stylesheet" href="./sleep-insights.css?v=1" />
   <link rel="stylesheet" href="./social.css?v=0.61.0" />
   <link rel="stylesheet" href="./navigation.css?v=0.73.0" />
   <link rel="stylesheet" href="./mobile.css?v=0.46.3" />
@@ -312,6 +313,68 @@
             <div><span>Strain</span><strong id="whoopStrain">—</strong><small id="whoopCalories">—</small></div>
           </div>
           <p id="whoopHealthMeta">Verbinde WHOOP einmal sicher mit DG OS. Danach werden deine Werte automatisch geladen.</p>
+
+          <section id="sleepIntelligence" aria-labelledby="sleepIntelligenceTitle" hidden>
+            <div class="dgos-sleep-head">
+              <div>
+                <div class="dgos-sleep-kicker">JARVIS · SLEEP INTELLIGENCE</div>
+                <h3 id="sleepIntelligenceTitle">Dein Schlaf. Im Detail.</h3>
+                <p id="sleepIntelligenceState" role="status">WHOOP-Schlafdaten werden geladen …</p>
+              </div>
+              <div class="dgos-sleep-actions">
+                <label for="sleepRange" class="sr-only">Zeitraum</label>
+                <select id="sleepRange" aria-label="Schlaf-Zeitraum">
+                  <option value="7">7 Tage</option>
+                  <option value="30" selected>30 Tage</option>
+                  <option value="90">90 Tage</option>
+                </select>
+                <button type="button" id="sleepRefresh">↻ Aktualisieren</button>
+              </div>
+            </div>
+            <p class="dgos-sleep-kicker" id="sleepNightLabel">LETZTE NACHT</p>
+            <div class="dgos-sleep-grid">
+              <div class="dgos-sleep-stat"><span>Schlafdauer</span><strong id="sleepDuration">—</strong><small id="sleepDurationDelta">—</small></div>
+              <div class="dgos-sleep-stat"><span>Schlafleistung</span><strong id="sleepPerformance">—</strong><small id="sleepPerformanceDelta">—</small></div>
+              <div class="dgos-sleep-stat"><span>Schlafeffizienz</span><strong id="sleepEfficiency">—</strong><small id="sleepEfficiencyDelta">—</small></div>
+              <div class="dgos-sleep-stat"><span>Recovery</span><strong id="sleepRecovery">—</strong><small id="sleepRecoveryDelta">—</small></div>
+            </div>
+            <div class="dgos-sleep-tiles">
+              <div class="dgos-sleep-tile">
+                <h4>Dein Schlafrhythmus</h4>
+                <div class="dgos-sleep-times">
+                  <div><span>Schlafbeginn (WHOOP)</span><strong id="sleepBedtime">—</strong></div>
+                  <div><span>Aufgewacht</span><strong id="sleepWake">—</strong></div>
+                </div>
+                <div class="dgos-sleep-summaryline">
+                  <span>Schlafbedarf <strong id="sleepNeed">—</strong></span>
+                  <span>Wachzeit <strong id="sleepAwake">—</strong></span>
+                </div>
+              </div>
+              <div class="dgos-sleep-tile">
+                <h4>Schlafphasen (WHOOP-Schätzungen)</h4>
+                <div id="sleepStageMix" class="dgos-sleep-stagebar" role="img" aria-label="Anteile der Schlafphasen"></div>
+                <div class="dgos-sleep-legend">
+                  <span id="sleepStageLight">Leichtschlaf: —</span><span id="sleepStageDeep">Tiefschlaf: —</span>
+                  <span id="sleepStageRem">REM: —</span><span id="sleepStageAwake">Wachzeit: —</span>
+                </div>
+              </div>
+            </div>
+            <div class="dgos-sleep-grid" aria-label="7-Nächte-Mittelwerte">
+              <div class="dgos-sleep-stat"><span>Ø Schlaf · 7 Nächte</span><strong id="sleepWeeklyAvg">—</strong></div>
+              <div class="dgos-sleep-stat"><span>Ø Schlafleistung</span><strong id="sleepWeeklyPerformance">—</strong></div>
+              <div class="dgos-sleep-stat"><span>Ø HRV</span><strong id="sleepWeeklyHrv">—</strong></div>
+              <div class="dgos-sleep-stat"><span>Ø Ruhepuls</span><strong id="sleepWeeklyRhr">—</strong></div>
+            </div>
+            <div class="dgos-sleep-tiles">
+              <div class="dgos-sleep-tile"><h4>Schlafdauer im Verlauf</h4><div id="sleepDurationBars" class="dgos-sleep-graph" aria-label="Schlafdauer nach Nacht"></div><p class="dgos-sleep-note">Von links alt nach rechts neu · bis zu 30 Nächte</p></div>
+              <div class="dgos-sleep-tile"><h4>HRV im Verlauf</h4><div id="sleepHrvBars" class="dgos-sleep-graph" aria-label="HRV nach Nacht"></div><p class="dgos-sleep-note">Nur Nächte mit vorhandener WHOOP-Recovery</p></div>
+            </div>
+            <h4 class="dgos-sleep-sectiontitle">Was hat sich verändert?</h4>
+            <ul id="sleepFindings" class="dgos-sleep-findings"></ul>
+            <h4 class="dgos-sleep-sectiontitle">Letzte 7 Nächte · Datum / Schlaf / Leistung / HRV</h4>
+            <div id="sleepNightHistory" class="dgos-sleep-history"></div>
+            <p class="dgos-sleep-note">Hinweis: WHOOP schätzt Schlafphasen. Eine echte Einschlafdauer lässt sich ohne die Uhrzeit des Zubettgehens nicht zuverlässig ableiten. Veränderungen über mehrere Nächte sind aussagekräftiger als eine einzelne Nacht. Keine medizinische Diagnose.</p>
+          </section>
           <details id="whoopDetails" class="personal-whoop-details hidden">
             <summary>Mehr WHOOP-Daten <span aria-hidden="true">↗</span></summary>
             <div class="personal-whoop-metrics">
@@ -991,6 +1054,7 @@
   <script src="./marketBrain.js"></script>
   <script src="./app.js?v=0.59.2"></script>
   <script src="./personal.js?v=0.59.0"></script>
+  <script src="./sleep-insights.js?v=1"></script>
   <script src="./jarvis-sound-check.js?v=1"></script>
   <script src="./jarvis-native-voice.js?v=2"></script>
   <script src="./jarvis-voice.js?v=8"></script>

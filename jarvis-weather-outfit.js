@@ -74,6 +74,8 @@
       });
     }
     if(hours.length<3)throw Error('forecast_not_enough_hours');
+    if(hours.filter(h=>h.rain!==null).length<3)
+      throw Error('forecast_precipitation_missing');
     const minFeels=Math.min(...hours.map(h=>h.feels));
     const maxFeels=Math.max(...hours.map(h=>h.feels));
     const maxTemp=Math.max(...hours.map(h=>h.temperature));
@@ -103,24 +105,25 @@
         };
       }).filter(Boolean);
     let outfit,lead,icon;
+    const dayWord=dateType==='tomorrow'?'Morgen':'Heute';
     if(snow||wardrobeFeel<=0){
       outfit='Warme Winterjacke, lange Hose und geschlossene Schuhe';
-      lead='Heute lieber richtig warm anziehen';icon='❄';
+      lead=dayWord+' lieber richtig warm anziehen';icon='❄';
     }else if(wardrobeFeel<7){
       outfit='Warme Jacke, Pullover und lange Hose';
-      lead='Heute warm anziehen';icon='◈';
+      lead=dayWord+' warm anziehen';icon='◈';
     }else if(wardrobeFeel<13){
       outfit='Leichte Jacke oder Übergangsjacke mit Pullover';
-      lead='Heute am besten mehrere Schichten tragen';icon='◐';
+      lead=dayWord+' am besten mehrere Schichten tragen';icon='◐';
     }else if(wardrobeFeel<18){
       outfit='T-Shirt mit leichter Jacke oder dünnem Pullover';
-      lead='Heute reicht eine leichte Schicht zum Drüberziehen';icon='◐';
+      lead=dayWord+' reicht eine leichte Schicht zum Drüberziehen';icon='◐';
     }else if(wardrobeFeel<24){
       outfit='Leichtes Oberteil; dünne Jacke für kühlere Stunden';
-      lead='Heute eher leicht anziehen, aber eine Schicht mitnehmen';icon='☀';
+      lead=dayWord+' eher leicht anziehen, aber eine Schicht mitnehmen';icon='☀';
     }else{
       outfit='Luftige Sommerkleidung und leichte Schuhe';
-      lead='Heute eher sommerlich anziehen';icon='☀';
+      lead=dayWord+' eher sommerlich anziehen';icon='☀';
     }
     const extras=[];
     if(storm)extras.push('Bei Gewittern besser Schutz suchen und die Prognose prüfen');
@@ -158,7 +161,7 @@
   function isWeatherQuestion(raw){
     if(typeof raw!=='string'||!raw.trim())return false;
     const q=raw.toLocaleLowerCase('de').replace(/^(?:hey|hallo|hi)\s*(?:jarvis)?[,\s:]*/,'').trim();
-    return /\b(?:wetter|temperatur|anziehen|anzieh|angezogen|sommerlich|warmanziehen|jacke|pullover|outfit|kleidung|regenjacke|regenschirm|regnen|kalt\s+heute|warm\s+heute|frieren|einkleiden)\b/u.test(q);
+    return /\b(?:wetter|temperatur|anziehen|anzieh|angezogen|sommerlich|warmanziehen|jacke|pullover|outfit|kleidung|regenjacke|regenschirm|schirm|regnen|kalt|warm\s+heute|frieren|einkleiden)\b/u.test(q);
   }
   return {calculate,validateForecast,localDay,periodFor,isWeatherQuestion};
 });

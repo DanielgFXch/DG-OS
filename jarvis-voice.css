@@ -73,3 +73,13 @@
 @media(prefers-reduced-transparency:reduce){
   #personalJarvis .jarvis-voice-console{background:#071c2a}
 }
+
+/* Native iPhone audio player stays visible after async TTS completes;
+   this lets Safari users play audio with an explicit user gesture. */
+#personalJarvis #jvAudioPlayer:not([hidden]){
+  display:block;width:100%;max-width:630px;
+  margin:13px 0 0;
+  border:1px solid rgba(105,224,222,.28);
+  border-radius:10px;
+}
+#personalJarvis #jvAudioPlayer[hidden]{display:none}

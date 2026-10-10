@@ -5,7 +5,7 @@
   if(!mount)return;
   const edge='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/jarvis-cartesia';
   const voiceKey='dgos.cartesia.voiceId', prefsKey='dgos.voiceStudio.preferences.v1';
-  const session=()=>{try{return localStorage.getItem('dgos.deviceSession')||localStorage.getItem('dgos.whoopSession')||'';}catch{return '';}};
+  const session=()=>{try{return localStorage.getItem('dgos.deviceSession')||'';}catch{return '';}};
   const card=document.createElement('section');
   card.className='card';card.style.marginTop='18px';
   card.innerHTML=`
@@ -31,7 +31,7 @@
   }
   async function api(method,body,signal){
     const token=session();
-    if(!token)throw Error('Bitte in DG OS → Aufgaben zuerst Telegram verbinden.');
+    if(!token)throw Error('Bitte direkt unten «Mit Telegram verbinden» verwenden.');
     const response=await fetch(edge,{
       method,signal,cache:'no-store',
       headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},
@@ -39,7 +39,7 @@
     });
     if(!response.ok){
       const result=await response.json().catch(()=>({}));
-      if(response.status===401)throw Error('Gerätesitzung nicht verbunden oder abgelaufen. Bitte Telegram in DG OS erneut koppeln.');
+      if(response.status===401){window.dispatchEvent(new Event('dgos-device-session-invalid'));throw Error('Dieses Gerät ist nicht gekoppelt. Nutze unten «Mit Telegram verbinden».');}
       if(result.error==='voice_not_configured')throw Error('Cartesia API-Key fehlt auf dem Supabase-Server.');
       if(result.error==='slow_down')throw Error('Bitte kurz warten und erneut versuchen.');
       throw Error('Cartesia antwortet mit Fehler '+(result.upstream_status||response.status)+'.');
@@ -68,7 +68,7 @@
     });
   }
   async function load(){
-    if(!session())return notify('Noch kein DG-OS-Gerät verbunden. Öffne DG OS → Aufgaben → Telegram verbinden und kehre anschliessend zurück.','KOPPLUNG');
+    if(!session())return notify('Noch kein Gerät verbunden. Verwende unten «Mit Telegram verbinden».','KOPPLUNG');
     $('cartesiaLoad').disabled=true;
     notify('Premium-Stimmen werden sicher geladen …','LÄDT');
     try{
@@ -114,6 +114,6 @@
   $('stop')?.addEventListener('click',clear);
   window.addEventListener('dgos-device-session',load);
   document.addEventListener('visibilitychange',()=>{if(document.hidden)clear();});
-  notify(session()?'Telegram-Gerät erkannt. Tippe auf «Stimmen laden».':'Erst DG OS → Aufgaben → Telegram verbinden, dann Stimmen laden.',session()?'BEREIT':'KOPPLUNG');
+  notify(session()?'Geräteverbindung erkannt. Tippe auf «Stimmen laden».':'Dieses Gerät einmalig unten mit Telegram verbinden.',session()?'BEREIT':'KOPPLUNG');
   if(session())load();
 })();

@@ -1,0 +1,25 @@
+/* Safe photo-to-shopping / due task drafting, scoped to Jarvis panel. */
+#personalJarvis .jarvis-photo-entry{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:12px 0 20px;padding:12px 14px;border:1px solid rgba(127,225,234,.17);border-radius:14px;background:rgba(13,46,64,.47)}
+#personalJarvis .jarvis-photo-entry button{min-height:43px;flex:none;padding:10px 15px!important;border:1px solid rgba(115,222,217,.34)!important;background:rgba(30,115,124,.18)!important;border-radius:11px!important;color:#aff9ed!important;font-weight:650!important;font-size:12px!important}
+#personalJarvis .jarvis-photo-entry p{flex:1;min-width:160px;font-size:10px;color:#91b7c3;margin:0;line-height:1.5}
+#personalJarvis .jarvis-photo-panel{margin:12px 0 21px;padding:clamp(13px,2vw,21px);border:1px solid rgba(106,226,224,.27);background:linear-gradient(160deg,rgba(14,43,62,.94),rgba(3,18,31,.96));border-radius:18px;color:#e8fcff}
+#personalJarvis .jarvis-photo-panel[hidden],#personalJarvis .jarvis-photo-form[hidden],#personalJarvis .jarvis-photo-preview[hidden]{display:none!important}
+#personalJarvis .jarvis-photo-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px}
+#personalJarvis .jarvis-photo-head h3{margin:7px 0;font-size:19px;font-weight:700;color:#e4fbfa}
+#personalJarvis #jarvisPhotoCancel{width:34px;height:34px;border-radius:9px!important;color:#b7d7e0!important;font-size:21px!important;background:rgba(38,93,109,.23)!important}
+#personalJarvis .jarvis-photo-preview{display:block;max-height:210px;width:auto;max-width:100%;border:1px solid rgba(150,220,228,.17);border-radius:12px;object-fit:contain;margin:10px auto}
+#personalJarvis .jarvis-photo-summary{font-size:12px;color:#b0cdd6;line-height:1.6;margin:10px 0 13px}
+#personalJarvis .jarvis-photo-field{display:grid;gap:7px;font-size:11px;font-weight:600;color:#bcd7dd;margin-bottom:11px}
+#personalJarvis .jarvis-photo-field select,#personalJarvis .jarvis-photo-field input{min-width:0;min-height:44px;padding:11px 13px;background:rgba(0,14,26,.6);border:1px solid rgba(147,221,238,.22);border-radius:10px;color:#e5fbff;font-size:13px;color-scheme:dark;outline:none}
+#personalJarvis .jarvis-photo-field input:focus-visible,#personalJarvis .jarvis-photo-field select:focus-visible{border-color:#78ebe1;box-shadow:0 0 0 3px rgba(86,217,220,.1)}
+#personalJarvis .jarvis-photo-form{padding:10px 0}
+#personalJarvis .jarvis-photo-label{font-size:11px;color:#a8c9d3;margin-bottom:7px}
+#personalJarvis .jarvis-photo-chips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px}
+#personalJarvis .jarvis-photo-chip{display:flex;gap:7px;align-items:center;padding:9px 11px;border:1px solid rgba(139,222,231,.19);border-radius:10px;color:#daeff6;font-size:12px;cursor:pointer}
+#personalJarvis .jarvis-photo-chip input{width:17px;height:17px;accent-color:#75e6d6}
+#personalJarvis .jarvis-photo-notice{font-size:11px;color:#91c8ce;line-height:1.6;margin:6px 0 12px}
+#personalJarvis .jarvis-photo-notice[data-error="true"]{color:#f2bbc0}
+#personalJarvis .jarvis-photo-save{min-height:45px;padding:11px 17px!important;border-radius:10px!important;color:#09272d!important;font-weight:750!important;background:linear-gradient(110deg,#87eee1,#7bdbed)!important;border:1px solid rgba(209,254,250,.21)!important}
+#personalJarvis .jarvis-photo-save:disabled,#personalJarvis #jarvisPhotoPick:disabled{opacity:.52;cursor:wait}
+#personalJarvis .jarvis-photo-disclaimer{font-size:10px;color:#7997a9;line-height:1.55;margin:12px 0 0}
+@media(max-width:620px){#personalJarvis .jarvis-photo-entry{display:grid}#personalJarvis .jarvis-photo-entry button{width:100%}#personalJarvis .jarvis-photo-panel{padding:13px}#personalJarvis .jarvis-photo-save{width:100%}}

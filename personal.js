@@ -719,6 +719,18 @@
   const DEVICE_SESSION_KEY='dgos.deviceSession';
   const LEGACY_SESSION_KEY='dgos.whoopSession';
   const CLAIM_KEY='dgos.whoopClaimSecret';
+  // WHOOP tokens are stored encrypted server-side. A 180-day owner session is
+  // restored from the existing Telegram-linked device without fresh OAuth.
+  let checkFlight=null;
+  let lastWhoopHealth='unknown';
+  function connectedButUnavailable(message){
+    lastWhoopHealth='unavailable';
+    set('whoopStatus','WHOOP · verbunden');
+    set('whoopHealthMeta',message||'WHOOP ist verbunden. Aktuelle Daten sind gerade nicht abrufbar. Versuch es später erneut.');
+    connect.textContent='Erneut laden';
+    connect.disabled=false;
+  }
+
 
   function session(){return localStorage.getItem(LEGACY_SESSION_KEY)||'';}
   function deviceSession(){return localStorage.getItem(DEVICE_SESSION_KEY)||'';}
@@ -809,19 +821,32 @@
 
   async function loadSummary(){
     const token=session();
-    if(!token)return false;
+    if(!token)return 'expired';
     try{
       const response=await fetch(EDGE+'/summary',{cache:'no-store',headers:headers()});
       if(response.status===401){
         localStorage.removeItem(LEGACY_SESSION_KEY);
-        return false;
+        lastWhoopHealth='expired';
+        return 'expired';
       }
-      if(!response.ok)throw new Error('summary_failed');
+      if(!response.ok){
+        const error=await response.json().catch(()=>({}));
+        const message=error.error==='whoop_reauthorize_required'
+          ?'WHOOP hat die Berechtigung zurückgezogen oder der Zugangsschlüssel ist ungültig. Bitte WHOOP einmal neu autorisieren.'
+          :'WHOOP bleibt verbunden. Die Daten konnten gerade nicht synchronisiert werden. Tippe auf «Erneut laden».';
+        connectedButUnavailable(message);
+        if(error.error==='whoop_reauthorize_required') {
+          lastWhoopHealth='reauthorize';
+          connect.textContent='WHOOP erneut autorisieren';
+        }
+        return 'unavailable';
+      }
       render(await response.json());
-      return true;
+      lastWhoopHealth='ok';
+      return 'ok';
     }catch(_){
-      set('whoopHealthMeta','WHOOP ist verbunden, aber die Daten konnten gerade nicht geladen werden.');
-      return false;
+      connectedButUnavailable('WHOOP bleibt verbunden. Verbindung oder Datenabruf gerade nicht verfügbar. Tippe auf «Erneut laden».');
+      return 'unavailable';
     }
   }
 
@@ -883,12 +908,15 @@
     }
   }
 
-  async function check(){
+  async function checkOnce(){
     try{
+      // Recover pending browser OAuth first, but do not let a stale claim
+      // override an already linked device or a valid WHOOP session.
       if(!session() && localStorage.getItem(CLAIM_KEY)){
-        set('whoopHealthMeta','WHOOP-Autorisierung wird übernommen …');
+        set('whoopHealthMeta','WHOOP-Autorisierung wird geprüft …');
         if(await claimPendingAuthorization()){
-          if(await loadSummary())return;
+          const result=await loadSummary();
+          if(result!=='expired')return;
         }
       }
 
@@ -897,46 +925,79 @@
       const status=await response.json();
 
       if(!status.configured){
-        showDisconnected('WHOOP ist vorbereitet. Es fehlt nur noch das einmalige Client Secret in Supabase.');
+        showDisconnected('WHOOP ist vorbereitet. Die WHOOP-Serverkonfiguration fehlt.');
         connect.textContent='WHOOP noch konfigurieren';connect.disabled=true;
         return;
       }
 
-      if(status.authenticated&&session()){
-        if(await loadSummary())return;
+      if(status.authenticated && session()){
+        const result=await loadSummary();
+        if(result!=='expired'){
+          // Already connected: do not exchange a new session every ten minutes.
+          localStorage.removeItem(CLAIM_KEY);
+          return;
+        }
       }
 
-      if(status.connected&&deviceSession()){
+      if(status.connected && deviceSession()){
         set('whoopHealthMeta','WHOOP-Verbindung wird automatisch wiederhergestellt …');
         if(await restoreFromDeviceSession()){
-          if(await loadSummary())return;
+          localStorage.removeItem(CLAIM_KEY);
+          const result=await loadSummary();
+          if(result!=='expired')return;
         }
       }
 
       const pending=Boolean(localStorage.getItem(CLAIM_KEY));
-      showDisconnected(pending
-        ?'WHOOP wurde bestätigt. Wechsle zurück zu DG OS – die Sitzung wird automatisch übernommen.'
-        :status.connected
-          ?'WHOOP ist serverseitig verbunden. Autorisiere dieses Gerät einmal; danach bleibt die Sitzung dauerhaft erhalten.'
-          :'WHOOP ist bereit. Einmal verbinden, danach lädt Jarvis deine Werte automatisch.');
-      connect.textContent=pending?'Autorisierung prüfen':status.connected?'Dieses Gerät einmal autorisieren':'WHOOP verbinden';
+      if(status.connected && !pending){
+        showDisconnected('WHOOP ist auf dem Server verbunden. Verbinde dieses Gerät einmal mit Jarvis über Telegram. Danach wird WHOOP automatisch geladen.');
+        connect.textContent=deviceSession()?'WHOOP prüfen':'Dieses Gerät verbinden';
+      }else{
+        showDisconnected(pending
+          ?'Die WHOOP-Freigabe wird noch übertragen. Falls sie nicht erscheint, tippe auf «Autorisierung prüfen».'
+          :status.connected
+            ?'WHOOP ist serverseitig verbunden. Die Gerätesitzung konnte gerade nicht bestätigt werden.'
+            :'WHOOP ist bereit. Verbinde WHOOP einmal, danach erneuert DG OS die Anmeldung automatisch.');
+        connect.textContent=pending?'Autorisierung prüfen':'WHOOP verbinden';
+      }
       connect.disabled=false;
     }catch(_){
-      showDisconnected('Der kostenlose WHOOP-Connector ist gerade nicht erreichbar. Bitte später erneut versuchen.');
-      connect.textContent='WHOOP verbinden';
-      connect.disabled=false;
+      // Network failure does not revoke the existing owner session or WHOOP
+      // tokens. Never pretend the owner disconnected merely due to an outage.
+      if(session() || deviceSession()){
+        connectedButUnavailable('WHOOP-Verbindung gespeichert. Der Server ist gerade nicht erreichbar. Bitte später erneut versuchen.');
+      }else{
+        showDisconnected('WHOOP-Server derzeit nicht erreichbar. Bitte später erneut versuchen.');
+        connect.textContent='Erneut prüfen';
+        connect.disabled=false;
+      }
     }
+  }
+
+  function check(){
+    if(checkFlight)return checkFlight;
+    checkFlight=checkOnce().finally(()=>{checkFlight=null;});
+    return checkFlight;
   }
 
   connect.addEventListener('click',async()=>{
     if(connect.disabled)return;
+    if(lastWhoopHealth==='reauthorize'){
+      // Only a confirmed refresh-revocation should offer a new WHOOP OAuth.
+      await startPersistentAuthorization();
+      return;
+    }
+    if(session() || deviceSession()){
+      await check();
+      return;
+    }
     if(localStorage.getItem(CLAIM_KEY)){
       if(await claimPendingAuthorization()){
         await loadSummary();
-        return;
-      }
+      }else await check();
+      return;
     }
-    startPersistentAuthorization();
+    await startPersistentAuthorization();
   });
 
   const params=new URLSearchParams(location.search);
@@ -953,6 +1014,7 @@
   check();
   window.addEventListener('dgos-device-session',check);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)check();});
+  window.addEventListener('pageshow',()=>{if(!document.hidden)check();});
   setInterval(check,10*60*1000);
 })();
 

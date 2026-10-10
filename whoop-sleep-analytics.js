@@ -144,10 +144,18 @@
       if(yesterday){
         const delta=current.duration_min-yesterday.duration_min;
         statements.push('Gegenüber gestern '+(delta>=0?'+'+duration(delta):'−'+duration(-delta))+' Schlaf.');
+        if(number(current.performance)!==null&&number(yesterday.performance)!==null){
+          const score=Math.round(number(current.performance)-number(yesterday.performance));
+          statements.push('Deine WHOOP-Schlafleistung liegt gegenüber gestern '+(score>=0?'um '+score+' Prozentpunkte höher.':'um '+Math.abs(score)+' Prozentpunkte niedriger.'));
+        }
       }
       if(lastWeek){
         const delta=current.duration_min-lastWeek.duration_min;
         statements.push('Gegenüber demselben Wochentag letzte Woche '+(delta>=0?'+'+duration(delta):'−'+duration(-delta))+'.');
+        if(number(current.performance)!==null&&number(lastWeek.performance)!==null){
+          const score=Math.round(number(current.performance)-number(lastWeek.performance));
+          statements.push('Schlafleistung im Vergleich zur Vorwoche: '+(score>=0?'+':'−')+Math.abs(score)+' Prozentpunkte.');
+        }
       }
       if(improvement!==null)statements.push('7-Tage-Durchschnitt '+(improvement>=0?'gestiegen':'gesunken')+' um '+duration(Math.abs(Math.round(improvement)))+' gegenüber der Vorwoche.');
     }

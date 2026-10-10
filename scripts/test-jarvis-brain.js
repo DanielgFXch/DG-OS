@@ -15,7 +15,7 @@ for(const id of ['jarvisIntelligence','jbPlanPanel','jbBrainPanel','jbMemoryForm
   'jbPlanFixed','jbPlanTasks','jbPlanShopping','jbStatus','jbMemoryCount']){
   assert.ok(html.includes('id="'+id+'"'), 'Missing Brain/Planner control '+id);
 }
-assert.match(html,/jarvis-brain\.js\?v=2/);
+assert.match(html,/jarvis-brain\.js\?v=3/);
 assert.match(html,/jarvis-brain\.css\?v=1/);
 assert.ok(html.includes('id="personalJarvisOrbBtn"'),'Keep cinematic Jarvis orb');
 assert.ok(html.includes('id="personalJarvisReply"'),'Keep voice reply target');

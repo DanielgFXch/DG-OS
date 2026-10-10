@@ -1,75 +1,119 @@
 'use strict';
-// Jarvis Cartesia favourites. Key remains in Supabase; only Supabase Auth token in memory.
+// Cartesia voice catalogue and secure test. Uses existing DG OS Telegram-paired device session.
 (() => {
- const mount=document.querySelector('#voiceSelect')?.closest('.card');
- if(!mount)return;
- const base='https://jzvnmhfhyvmmbontsoej.supabase.co';
- const anon='sb_publishable_vGHoMKyp3uNRoF6fsG0a8w_pgzVxefh';
- const edge=base+'/functions/v1/jarvis-cartesia';
- let token='',activeVoice='',voices=[],audio=null,audioUrl='';
- const card=document.createElement('section');card.className='card';card.style.marginTop='18px';
- card.innerHTML='<h2>Meine Jarvis-Stimmen</h2><p>Wähle Clive, Archie, Skylar oder Lindiwe und teste die Stimme direkt.</p>'+
- '<div id="voiceSignIn"><label for="voiceEmail">DG-OS E-Mail</label><input id="voiceEmail" type="email" autocomplete="username" style="width:100%;padding:12px;border-radius:10px;background:#081622;color:inherit;border:1px solid #345064">'+
- '<label for="voicePassword">Passwort</label><input id="voicePassword" type="password" autocomplete="current-password" style="width:100%;padding:12px;border-radius:10px;background:#081622;color:inherit;border:1px solid #345064">'+
- '<div class="buttons"><button type="button" class="action primary" id="voiceLogin">Verbinden</button></div></div>'+
- '<div id="voiceReady" hidden><div id="voiceChoices" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0"></div>'+
- '<div class="buttons"><button type="button" id="voicePlay" class="action primary">▶ Stimme testen</button><button type="button" id="voiceStop" class="action">■ Stopp</button><button type="button" id="voiceLogout" class="action">Abmelden</button></div></div>'+
- '<p id="voiceMessage" class="caption" aria-live="polite">Bitte einmalig anmelden. Der Zugang wird nicht gespeichert.</p>';
- mount.insertAdjacentElement('afterend',card);
- const $=x=>document.getElementById(x);
- const note=s=>$('voiceMessage').textContent=s;
- const clear=()=>{if(audio){audio.pause();audio.src='';audio=null;}if(audioUrl){URL.revokeObjectURL(audioUrl);audioUrl='';}};
- const logout=()=>{token='';voices=[];activeVoice='';clear();$('voiceReady').hidden=true;$('voiceSignIn').hidden=false;$('voicePassword').value='';note('Abgemeldet.');};
- async function request(method,body){
-   const r=await fetch(edge,{method,headers:{authorization:'Bearer '+token,apikey:anon,...(body?{'content-type':'application/json'}:{})},...(body?{body:JSON.stringify(body)}:{}),cache:'no-store'});
-   if(!r.ok){const result=await r.json().catch(()=>({}));if(r.status===401||r.status===403)logout();throw Error(result.error||('Server antwortet '+r.status));}
-   return r;
- }
- function draw(){
-  const root=$('voiceChoices');root.replaceChildren();
-  for(const voice of voices){
-   const button=document.createElement('button');button.type='button';button.className='action';button.style.cssText='padding:15px;text-align:left;min-height:70px';
-   button.textContent=(activeVoice===voice.id?'✓ ':'')+voice.name;
-   button.setAttribute('aria-pressed',String(activeVoice===voice.id));
-   button.style.borderColor=activeVoice===voice.id?'#55ded8':'#416d7a';
-   button.addEventListener('click',()=>{activeVoice=voice.id;localStorage.setItem('dgos.cartesia.voiceId',voice.id);draw();note(voice.name+' ausgewählt.');});
-   root.append(button);
+  const mount=document.querySelector('#voiceSelect')?.closest('.card');
+  if(!mount)return;
+  const edge='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/jarvis-cartesia';
+  const voiceKey='dgos.cartesia.voiceId', prefsKey='dgos.voiceStudio.preferences.v1';
+  const session=()=>{try{return localStorage.getItem('dgos.deviceSession')||localStorage.getItem('dgos.whoopSession')||'';}catch{return '';}};
+  const card=document.createElement('section');
+  card.className='card';card.style.marginTop='18px';
+  card.innerHTML=`
+    <div class="row"><h2>Meine Cartesia-Stimmen</h2><span class="status" id="cartesiaStatus">NICHT VERBUNDEN</span></div>
+    <p>Clive, Archie, Skylar und Lindiwe. Einmal in DG OS mit Telegram koppeln, danach Stimmen testen und auswählen. Kein zweites Konto nötig.</p>
+    <div class="buttons"><button id="cartesiaLoad" type="button" class="action primary">Stimmen laden</button></div>
+    <div id="cartesiaReady" hidden>
+      <div id="cartesiaChoices" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0"></div>
+      <div class="buttons"><button type="button" id="cartesiaPlay" class="action primary">▶ Stimme testen</button><button type="button" id="cartesiaStop" class="action">■ Stopp</button></div>
+    </div>
+    <p id="cartesiaNotice" class="caption" role="status" aria-live="polite"></p>
+  `;
+  mount.insertAdjacentElement('afterend',card);
+  const $=id=>document.getElementById(id);
+  const notify=(msg,status)=>{$('cartesiaNotice').textContent=msg;if(status)$('cartesiaStatus').textContent=status;};
+  let voices=[],activeId='',audio=null,objectUrl='',prepared='',abort=null;
+  try{activeId=localStorage.getItem(voiceKey)||'';}catch{}
+  function clear(){
+    if(abort){abort.abort();abort=null;}
+    if(audio){audio.pause();audio.removeAttribute('src');audio.load();audio=null;}
+    if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl='';}
+    prepared='';
   }
- }
- $('voiceLogin').addEventListener('click',async()=>{
-  const email=$('voiceEmail').value.trim(),password=$('voicePassword').value;
-  if(!email||!password)return note('E-Mail und Passwort eingeben.');
-  const button=$('voiceLogin');button.disabled=true;note('Anmeldung wird geprüft ...');
-  try{
-   const r=await fetch(base+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:anon,'content-type':'application/json'},body:JSON.stringify({email,password}),cache:'no-store'});
-   const data=await r.json().catch(()=>({}));
-   if(!r.ok)throw Error(data.error_description||data.msg||data.error||'Login fehlgeschlagen.');
-   if(!data.access_token)throw Error('Kein Auth-Token empfangen.');
-   if(!data.user?.email_confirmed_at)throw Error('Bitte deine E-Mail in Supabase Auth bestätigen.');
-   token=data.access_token;$('voicePassword').value='';
-   const vr=await request('GET');const result=await vr.json();
-   voices=Array.isArray(result.voices)?result.voices:[];
-   const favourites=['Clive','Archie','Skylar','Lindiwe'];
-   voices.sort((a,b)=>favourites.findIndex(n=>a.name.startsWith(n))-favourites.findIndex(n=>b.name.startsWith(n)));
-   if(!voices.length)throw Error('Keine der vier Stimmen über Cartesia gefunden. Bitte API-Key oder Voice-Liste prüfen.');
-   const saved=localStorage.getItem('dgos.cartesia.voiceId');
-   activeVoice=voices.find(v=>v.id===saved)?.id||voices.find(v=>v.name.startsWith('Clive'))?.id||voices[0].id;
-   draw();$('voiceSignIn').hidden=true;$('voiceReady').hidden=false;note('Verbunden! Stimme auswählen und testen.');
-  }catch(e){token='';note(e.message||'Verbindung fehlgeschlagen.');}
-  finally{button.disabled=false;}
- });
- $('voicePlay').addEventListener('click',async()=>{
-  const text=$('sample').value.trim();if(!activeVoice)return note('Bitte zuerst eine Stimme wählen.');
-  if(!text||text.length>300)return note('Bitte einen Testtext mit maximal 300 Zeichen verwenden.');
-  const button=$('voicePlay');button.disabled=true;clear();note('Premium-Stimme wird erstellt ...');
-  try{const response=await request('POST',{text,voice_id:activeVoice,language:$('language').value.slice(0,2)});
-   const blob=await response.blob();if(!blob.type.includes('audio'))throw Error('Keine Audiodaten erhalten.');
-   audioUrl=URL.createObjectURL(blob);audio=new Audio(audioUrl);audio.addEventListener('ended',clear,{once:true});
-   await audio.play();note('Jarvis spricht.');
-  }catch(e){note('Test nicht möglich: '+e.message);}finally{button.disabled=false;}
- });
- $('voiceStop').addEventListener('click',clear);
- $('stop').addEventListener('click',clear);
- $('voiceLogout').addEventListener('click',logout);
- document.addEventListener('visibilitychange',()=>{if(document.hidden)clear();});
+  async function api(method,body,signal){
+    const token=session();
+    if(!token)throw Error('Bitte in DG OS → Aufgaben zuerst Telegram verbinden.');
+    const response=await fetch(edge,{
+      method,signal,cache:'no-store',
+      headers:{Authorization:'Bearer '+token,...(body?{'Content-Type':'application/json'}:{})},
+      ...(body?{body:JSON.stringify(body)}:{})
+    });
+    if(!response.ok){
+      const result=await response.json().catch(()=>({}));
+      if(response.status===401)throw Error('Gerätesitzung nicht verbunden oder abgelaufen. Bitte Telegram in DG OS erneut koppeln.');
+      if(result.error==='voice_not_configured')throw Error('Cartesia API-Key fehlt auf dem Supabase-Server.');
+      if(result.error==='slow_down')throw Error('Bitte kurz warten und erneut versuchen.');
+      throw Error('Cartesia antwortet mit Fehler '+(result.upstream_status||response.status)+'.');
+    }
+    return response;
+  }
+  function draw(){
+    $('cartesiaChoices').replaceChildren();
+    voices.forEach(v=>{
+      const button=document.createElement('button');
+      button.type='button';button.className='action';
+      button.style.cssText='padding:15px;text-align:left;min-height:68px;border-color:'+(activeId===v.id?'#55ded8':'#416d7a');
+      button.textContent=(activeId===v.id?'✓ ':'')+v.name;
+      button.setAttribute('aria-pressed',String(activeId===v.id));
+      button.addEventListener('click',()=>{
+        clear();activeId=v.id;
+        localStorage.setItem(voiceKey,v.id);
+        try{
+          const p=JSON.parse(localStorage.getItem(prefsKey)||'{}')||{};
+          p.provider='cartesia';localStorage.setItem(prefsKey,JSON.stringify(p));
+        }catch{}
+        document.querySelector('[data-provider="cartesia"]')?.click();
+        draw();notify(v.name+' ausgewählt. Diese Stimme wird auch in Jarvis verwendet.','BEREIT');
+      });
+      $('cartesiaChoices').append(button);
+    });
+  }
+  async function load(){
+    if(!session())return notify('Noch kein DG-OS-Gerät verbunden. Öffne DG OS → Aufgaben → Telegram verbinden und kehre anschliessend zurück.','KOPPLUNG');
+    $('cartesiaLoad').disabled=true;
+    notify('Premium-Stimmen werden sicher geladen …','LÄDT');
+    try{
+      const res=await api('GET'),data=await res.json();
+      voices=Array.isArray(data.voices)?data.voices.filter(v=>v&&typeof v.id==='string'&&typeof v.name==='string'):[];
+      if(!voices.length)throw Error('Keine Stimmen gefunden. Bitte die Cartesia-Verbindung prüfen.');
+      const names=['Clive','Archie','Skylar','Lindiwe'];
+      voices.sort((a,b)=>names.findIndex(n=>a.name.startsWith(n))-names.findIndex(n=>b.name.startsWith(n)));
+      if(!voices.some(v=>v.id===activeId))activeId=voices[0].id;
+      localStorage.setItem(voiceKey,activeId);
+      $('cartesiaReady').hidden=false;draw();
+      notify('Verbunden. Stimme auswählen und ausprobieren.','CARTESIA ONLINE');
+    }catch(e){notify(e.message||'Premium-Stimmen konnten nicht geladen werden.','FEHLER');}
+    finally{$('cartesiaLoad').disabled=false;}
+  }
+  $('cartesiaLoad').addEventListener('click',load);
+  $('cartesiaPlay').addEventListener('click',async()=>{
+    const text=$('sample').value.trim();
+    if(!text||text.length>300)return notify('Bitte einen Testtext mit 1 bis 300 Zeichen wählen.');
+    if(!activeId)return notify('Bitte zuerst eine Stimme auswählen.');
+    const key=activeId+'|'+$('language').value+'|'+$('pace').value+'|'+text;
+    if(audio&&prepared===key){
+      try{audio.currentTime=0;await audio.play();notify('Jarvis spricht.','SPRICHT');}
+      catch{notify('Audio ist bereit. Tippe nochmals auf «Stimme testen».','STARTEN');}
+      return;
+    }
+    clear();
+    $('cartesiaPlay').disabled=true;
+    notify('Premium-Audio wird erzeugt …','GENERIEREN');
+    abort=new AbortController();
+    try{
+      const res=await api('POST',{voice_id:activeId,text,language:$('language').value.slice(0,2),pace:Number($('pace').value)},abort.signal);
+      const blob=await res.blob();
+      if(!blob.type.includes('audio')||!blob.size)throw Error('Keine gültigen Audiodaten empfangen.');
+      objectUrl=URL.createObjectURL(blob);audio=new Audio(objectUrl);prepared=key;
+      try{await audio.play();notify('Jarvis spricht.','SPRICHT');}
+      catch{notify('Audio ist bereit. Tippe nochmals auf «Stimme testen» für die iPhone-Audiofreigabe.','STARTEN');}
+    }catch(e){
+      if(e.name!=='AbortError')notify('Test fehlgeschlagen: '+(e.message||'Unbekannter Fehler'),'FEHLER');
+    }finally{abort=null;$('cartesiaPlay').disabled=false;}
+  });
+  $('cartesiaStop').addEventListener('click',()=>{clear();notify('Wiedergabe gestoppt.','BEREIT');});
+  $('stop')?.addEventListener('click',clear);
+  window.addEventListener('dgos-device-session',load);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)clear();});
+  notify(session()?'Telegram-Gerät erkannt. Tippe auf «Stimmen laden».':'Erst DG OS → Aufgaben → Telegram verbinden, dann Stimmen laden.',session()?'BEREIT':'KOPPLUNG');
+  if(session())load();
 })();

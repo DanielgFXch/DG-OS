@@ -289,6 +289,7 @@
     finally{button.disabled=false;}
   });
   window.addEventListener('dgos-device-session',load);
+  window.addEventListener('dgos-private-updated',load);
   window.addEventListener('focus',()=>{if(document.body.dataset.dgosRoute==='private')load();});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.body.dataset.dgosRoute==='private')load();});
   window.addEventListener('pagehide',()=>{stopRecording();if(photoObjectURL)URL.revokeObjectURL(photoObjectURL);});

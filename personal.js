@@ -1883,10 +1883,73 @@
     return false;
   }
 
+  // Natural spoken shopping is a narrow, explicitly requested write action.
+  // No generative classification: the deterministic parser must recognise
+  // a concrete shopping intention before any request reaches Supabase.
+  let shoppingInFlight = false;
+  const SHOPPING_URL = 'https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/jarvis-private?action=add-shopping';
+  function shoppingFailure(text) {
+    panel.classList.remove('is-listening','is-speaking');
+    setOrbState('idle');
+    setStatus('Nicht gespeichert');
+    setReply(text);
+  }
+  async function addSpokenShopping(items) {
+    if (shoppingInFlight) return true;
+    const token = (()=>{try{return localStorage.getItem('dgos.deviceSession') || '';}catch{return '';}})();
+    if (!token) {
+      shoppingFailure('Ich konnte nichts speichern. Bitte verbinde dieses Gerät zuerst mit Jarvis über Telegram.');
+      return true;
+    }
+    shoppingInFlight = true;
+    setOrbState('thinking');
+    setStatus('Einkauf wird gespeichert …');
+    setReply('Ich trage '+items.join(', ')+' in deine Einkaufsliste ein …');
+    try {
+      const res = await fetch(SHOPPING_URL, {
+        method:'POST',cache:'no-store',
+        headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+        body:JSON.stringify({items})
+      });
+      let body = {};
+      try { body = await res.json(); } catch(_) {}
+      if (!res.ok) {
+        if (res.status === 401) throw Error('Deine Jarvis-Gerätekopplung ist abgelaufen. Verbinde dein Gerät erneut mit Telegram.');
+        if (body.error === 'invalid_shopping_items') throw Error('Die Produkte wurden nicht eindeutig erkannt. Bitte noch einmal deutlich sprechen.');
+        throw Error('Die Einkaufsliste ist gerade nicht erreichbar. Es wurde nichts bestätigt.');
+      }
+      const added=Array.isArray(body.added)?body.added:[];
+      const skipped=Array.isArray(body.skipped)?body.skipped:[];
+      if (added.length) {
+        window.dispatchEvent(new Event('dgos-private-updated'));
+      }
+      let summary = '';
+      if (added.length) summary = 'Erledigt! '+added.join(', ')+' '+(added.length===1?'ist':'sind')+' jetzt auf deiner Einkaufsliste.';
+      if (skipped.length) summary += (summary?' ':'')+'Schon vorhanden: '+skipped.join(', ')+'.';
+      showReply(summary || 'Diese Produkte stehen bereits auf deiner Einkaufsliste.');
+    } catch (err) {
+      shoppingFailure(err && err.message ? err.message : 'Einkauf konnte nicht gespeichert werden. Bitte erneut versuchen.');
+    } finally {
+      shoppingInFlight = false;
+    }
+    return true;
+  }
+
   function interpretCommand(raw) {
     const original = String(raw || '').trim();
     if (!original) return false;
     const q = original.toLowerCase().replace(/[?!.,;:]+/g,' ').replace(/\s+/g,' ').trim();
+
+    const spokenShopping = window.DGShoppingIntent?.parseShoppingCommand(original);
+    if (spokenShopping?.intent === 'shopping_add') {
+      void addSpokenShopping(spokenShopping.items);
+      return true;
+    }
+    if (spokenShopping?.intent === 'shopping_clarify') {
+      setStatus('Bitte präzisieren');
+      setReply('Welche Produkte soll ich hinzufügen? Sag zum Beispiel: «Hey Jarvis, ich brauche Toast, Tomaten und Käse.»');
+      return true;
+    }
 
     if (/^(aufgabe|todo)\s+/.test(q)) {
       const task = original.replace(/^(aufgabe|todo)\s+/i,'').trim();

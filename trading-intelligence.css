@@ -1,0 +1,45 @@
+/* DG OS Trading Session Intelligence: read-only market evidence. */
+#tradingWorkspace .dg-session-intel{display:grid;gap:16px;margin:20px 0;padding:clamp(16px,2.5vw,24px);border:1px solid rgba(99,224,221,.23);border-radius:20px;color:#eafcff;background:radial-gradient(ellipse at 20% 0,rgba(39,159,188,.11),transparent 57%),linear-gradient(154deg,rgba(8,30,48,.96),rgba(4,16,29,.96));box-shadow:inset 0 1px rgba(185,247,248,.055),0 15px 42px rgba(0,0,0,.12)}
+#tradingWorkspace .dg-intel-top{display:flex;justify-content:space-between;align-items:flex-start;gap:15px}
+#tradingWorkspace .dg-intel-top h3{margin:7px 0;font-size:clamp(20px,2.4vw,29px);font-weight:730;letter-spacing:-.03em}
+#tradingWorkspace .dg-intel-top p{margin:0;font-size:12px;line-height:1.6;color:#98b6c4}
+#tradingWorkspace .dg-intel-kicker{font-size:9px;font-weight:760;letter-spacing:.12em;color:#7addd8}
+#tradingWorkspace .dg-intel-status{flex:none;padding:8px 11px;border:1px solid rgba(168,213,228,.18);border-radius:999px;background:rgba(36,76,89,.13);font-size:10px;letter-spacing:.05em;font-weight:760;color:#9db5c2}
+#tradingWorkspace .dg-intel-status[data-state="observed"]{border-color:rgba(106,230,195,.32);background:rgba(45,155,120,.12);color:#9cecd8}
+#tradingWorkspace .dg-intel-status[data-state="historical"]{border-color:rgba(226,179,96,.25);background:rgba(182,134,50,.08);color:#e6c596}
+#tradingWorkspace .dg-intel-bias{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+#tradingWorkspace .dg-intel-bias>div{min-width:0;border-radius:13px;padding:15px;background:linear-gradient(145deg,rgba(15,52,69,.65),rgba(3,17,30,.72));border:1px solid rgba(171,219,235,.13)}
+#tradingWorkspace .dg-intel-bias small{display:block;color:#8dcac9;font-size:9px;letter-spacing:.05em}
+#tradingWorkspace .dg-intel-bias strong{display:block;margin:8px 0 4px;color:#e7fbff;font-size:19px;font-weight:720;overflow-wrap:anywhere}
+#tradingWorkspace .dg-intel-bias strong[data-bias="BULLISH"]{color:#8df1cc}
+#tradingWorkspace .dg-intel-bias strong[data-bias="BEARISH"]{color:#f6a7ae}
+#tradingWorkspace .dg-intel-bias p{font-size:10px;line-height:1.45;color:#97b4c1;margin:0;overflow-wrap:anywhere}
+#tradingWorkspace .dg-intel-session-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+#tradingWorkspace .dg-intel-session-grid article{min-width:0;display:flex;flex-direction:column;gap:12px;border:1px solid rgba(153,225,232,.16);border-radius:15px;padding:15px;background:linear-gradient(148deg,rgba(12,40,60,.65),rgba(2,15,27,.85))}
+#tradingWorkspace .dg-intel-cardhead{display:flex;justify-content:space-between;gap:9px;align-items:center}
+#tradingWorkspace .dg-intel-cardhead span{font-size:10px;letter-spacing:.055em;font-weight:750;color:#a9cfd3}
+#tradingWorkspace .dg-intel-cardhead strong{font-size:10px;color:#83e5d9;white-space:nowrap}
+#tradingWorkspace .dg-intel-price-pair{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#tradingWorkspace .dg-intel-price-pair>div{padding:12px 10px;border:1px solid rgba(155,224,233,.11);border-radius:11px;background:rgba(2,16,29,.65)}
+#tradingWorkspace .dg-intel-price-pair small{display:block;color:#90b1c0;font-size:9px}
+#tradingWorkspace .dg-intel-price-pair strong{display:block;margin-top:5px;color:#eefbfe;font-variant-numeric:tabular-nums;font-size:clamp(14px,1.5vw,19px)}
+#tradingWorkspace .dg-intel-session-grid article p{font-size:11px;color:#9ab8c2;line-height:1.55;margin:0}
+#tradingWorkspace .dg-intel-sweep-row{display:flex;gap:8px;justify-content:space-between;align-items:center;min-height:38px;padding:8px 10px;border:1px solid rgba(159,221,235,.11);border-radius:9px;background:rgba(1,14,27,.43);font-size:11px}
+#tradingWorkspace .dg-intel-sweep-row span{color:#aec9d0}
+#tradingWorkspace .dg-intel-sweep-row strong{font-size:10px;color:#deeef3;text-align:right}
+#tradingWorkspace .dg-intel-sweep-row strong[data-observed="return"]{color:#8deac5}
+#tradingWorkspace .dg-intel-sweep-row strong[data-observed="taken"]{color:#ead49a}
+#tradingWorkspace #dgIntelNYRange{margin-top:auto;font-size:10px;color:#8eb2ba}
+#tradingWorkspace .dg-intel-lower{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);gap:10px}
+#tradingWorkspace .dg-intel-observation{padding:15px;border:1px solid rgba(135,217,223,.15);border-radius:13px;background:rgba(3,19,32,.75)}
+#tradingWorkspace .dg-intel-observation>div{display:grid;gap:6px}
+#tradingWorkspace .dg-intel-observation strong{font-size:13px;font-weight:670}
+#tradingWorkspace .dg-intel-observation ul{margin:12px 0 0;padding-left:20px;display:grid;gap:8px;font-size:11px;color:#adcad1;line-height:1.55}
+#tradingWorkspace .dg-intel-observation p{margin:10px 0 0;font-size:11px;line-height:1.55;color:#9db9c5}
+#tradingWorkspace .dg-intel-inducement strong{color:#dfce9d}
+#tradingWorkspace .dg-intel-footer{display:flex;justify-content:space-between;gap:10px;align-items:center;border-top:1px solid rgba(149,220,236,.12);padding-top:12px}
+#tradingWorkspace .dg-intel-footer span{font-size:10px;color:#8fabb9;line-height:1.45;overflow-wrap:anywhere}
+#tradingWorkspace .dg-intel-footer button{flex:none;border-radius:9px!important;padding:8px 12px!important;min-height:38px;background:rgba(33,99,104,.16)!important;border:1px solid rgba(115,210,218,.21)!important;color:#9fe7e0!important;font-size:11px!important}
+@media(max-width:1050px){#tradingWorkspace .dg-intel-session-grid{grid-template-columns:1fr 1fr}#tradingWorkspace .dg-intel-session-grid article:last-child{grid-column:1/-1}}
+@media(max-width:670px){#tradingWorkspace .dg-intel-session-grid{grid-template-columns:1fr}#tradingWorkspace .dg-intel-session-grid article:last-child{grid-column:auto}#tradingWorkspace .dg-intel-bias{grid-template-columns:1fr}#tradingWorkspace .dg-intel-lower{grid-template-columns:1fr}#tradingWorkspace .dg-intel-top{flex-direction:column}#tradingWorkspace .dg-intel-footer{align-items:flex-start;flex-direction:column}}
+@media(prefers-reduced-motion:reduce){#tradingWorkspace .dg-session-intel *{animation:none!important}}

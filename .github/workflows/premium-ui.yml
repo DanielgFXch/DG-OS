@@ -1,0 +1,40 @@
+name: DG OS Premium UI Safety Checks
+on:
+  pull_request:
+    paths:
+      - 'premium-ui.css'
+      - 'premium-ui.js'
+      - 'index.html'
+      - 'sw.js'
+      - 'scripts/test-premium-ui.js'
+      - '.github/workflows/premium-ui.yml'
+  push:
+    branches:
+      - 'feat/premium-ui-design-system-20261011'
+      - main
+    paths:
+      - 'premium-ui.css'
+      - 'premium-ui.js'
+      - 'scripts/test-premium-ui.js'
+      - '.github/workflows/premium-ui.yml'
+jobs:
+  premium-ux-and-regressions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax check
+        run: node --check premium-ui.js && node --check scripts/test-premium-ui.js
+      - name: Premium design, routing, keyboard and mobile menu
+        run: node scripts/test-premium-ui.js
+      - name: Existing Jarvis dashboard regression
+        run: node scripts/test-jarvis-dashboard.js
+      - name: Existing WHOOP analytics regression
+        run: node scripts/test-whoop-sleep-analytics.js
+      - name: Existing private and shopping regressions
+        run: |
+          node scripts/test-private-hub.js
+          node scripts/test-jarvis-shopping-voice.js

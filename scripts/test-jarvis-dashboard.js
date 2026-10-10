@@ -60,6 +60,9 @@ class Node{
    const matches=x=>{
     if(selector.startsWith('#'))return x.id===selector.slice(1);
     if(selector.startsWith('.'))return x.className.split(/\s+/).includes(selector.slice(1));
+    const tagAttr=selector.match(/^([a-z]+)\[data-([a-z-]+)="([^"]+)"\]$/);
+    if(tagAttr){const k=tagAttr[2].replace(/-([a-z])/g,(_,c)=>c.toUpperCase());
+      return x.tagName.toLowerCase()===tagAttr[1]&&x.dataset[k]===tagAttr[3];}
     const attr=selector.match(/^\[data-([a-z-]+)="([^"]+)"\]$/);
     if(attr){const k=attr[1].replace(/-([a-z])/g,(_,c)=>c.toUpperCase());return x.dataset[k]===attr[2];}
     return x.tagName.toLowerCase()===selector.toLowerCase();

@@ -1,0 +1,31 @@
+name: Jarvis Spoken Shopping
+on:
+  pull_request:
+    paths:
+      - 'jarvis-shopping-intent.js'
+      - 'personal.js'
+      - 'private-hub.js'
+      - 'index.html'
+      - 'supabase/functions/jarvis-private/**'
+      - 'scripts/test-jarvis-shopping-voice.js'
+      - '.github/workflows/jarvis-shopping-voice.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'jarvis-shopping-intent.js'
+      - 'personal.js'
+      - 'private-hub.js'
+      - 'supabase/functions/jarvis-private/**'
+      - 'scripts/test-jarvis-shopping-voice.js'
+jobs:
+  spoken-shopping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check jarvis-shopping-intent.js
+      - run: node --check personal.js
+      - run: node --check private-hub.js
+      - run: node scripts/test-jarvis-shopping-voice.js

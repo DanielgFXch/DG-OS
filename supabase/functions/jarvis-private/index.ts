@@ -5,6 +5,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 const ALLOWED_ORIGIN = "https://danielgfxch.github.io";
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
 const openaiKey = Deno.env.get("OPENAI_API_KEY") || "";
+const cartesiaKey = Deno.env.get("CARTESIA_API_KEY") || "";
 let serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 if (!serviceKey) {
   try { serviceKey = JSON.parse(Deno.env.get("SUPABASE_SECRET_KEYS") || "{}").default || ""; } catch {}
@@ -94,7 +95,10 @@ Deno.serve(async (req: Request) => {
       return json({ items: (data || []).map(format) }, 200, origin);
     }
     if (req.method === "POST" && action === "transcribe") {
-      if (!openaiKey) return json({ error: "ai_not_configured" }, 503, origin);
+      // Existing Cartesia secret (used by Premium Voice) is also suitable for
+      // German STT via the documented ink-whisper model. OpenAI is optional.
+      // No provider secret, audio bytes or transcript is persisted.
+      if (!cartesiaKey && !openaiKey) return json({ error: "stt_not_configured" }, 503, origin);
       if (!cooldown(owner + ":audio", 8000)) return json({ error: "slow_down" }, 429, origin);
       if (Number(req.headers.get("content-length") || 0) > 3_000_000) return json({ error: "audio_too_large" }, 413, origin);
       const form = await req.formData();
@@ -102,19 +106,51 @@ Deno.serve(async (req: Request) => {
       if (!(file instanceof File) || file.size < 100 || file.size > 2_000_000 ||
         !["audio/webm", "audio/mp4", "audio/wav", "audio/ogg", "audio/mpeg", "video/mp4"].some(t => file.type.startsWith(t)))
         return json({ error: "invalid_audio" }, 400, origin);
-      const upload = new FormData();
-      upload.append("file", file, file.type.includes("mp4") ? "jarvis.m4a" : file.type.includes("ogg") ? "jarvis.ogg" : "jarvis.webm");
-      upload.append("model", "gpt-4o-mini-transcribe");
-      const response = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-        method: "POST", headers: { authorization: "Bearer " + openaiKey }, body: upload,
-        signal: AbortSignal.timeout(23000)
-      });
-      if (!response.ok) {
-        console.warn("private_hub_transcription_failed", response.status);
-        return json({ error: "transcription_unavailable" }, 502, origin);
+      const extension = file.type.includes("mp4") ? "m4a" : file.type.includes("ogg") ? "ogg" :
+        file.type.includes("wav") ? "wav" : file.type.includes("mpeg") ? "mp3" : "webm";
+      const providers: Array<"cartesia" | "openai"> = [];
+      if (cartesiaKey) providers.push("cartesia");
+      if (openaiKey) providers.push("openai");
+      for (const provider of providers) {
+        const upload = new FormData();
+        upload.append("file", file, "jarvis." + extension);
+        let endpoint: string;
+        let headers: Record<string,string>;
+        if (provider === "cartesia") {
+          // https://docs.cartesia.ai/api-reference/stt/transcribe
+          // Ink 2 does not currently support German; ink-whisper does.
+          upload.append("model", "ink-whisper");
+          upload.append("language", "de");
+          endpoint = "https://api.cartesia.ai/stt";
+          headers = { Authorization: "Bearer " + cartesiaKey, "Cartesia-Version": "2026-08-14" };
+        } else {
+          upload.append("model", "gpt-4o-mini-transcribe");
+          endpoint = "https://api.openai.com/v1/audio/transcriptions";
+          headers = { Authorization: "Bearer " + openaiKey };
+        }
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST", headers, body: upload,
+            signal: AbortSignal.timeout(23000)
+          });
+          if (!response.ok) {
+            // Do not send provider secrets or raw error response to the browser.
+            console.warn("jarvis_stt_provider_failed", provider, response.status);
+            continue;
+          }
+          const result = await response.json();
+          const transcript = clean(result?.text, 600);
+          if (!transcript) {
+            console.warn("jarvis_stt_empty_transcript", provider);
+            continue;
+          }
+          return json({ transcript, provider }, 200, origin);
+        } catch (error) {
+          console.warn("jarvis_stt_request_failed", provider,
+            error instanceof Error ? error.name : "unknown");
+        }
       }
-      const result = await response.json();
-      return json({ transcript: clean(result.text, 600) }, 200, origin);
+      return json({ error: "transcription_unavailable" }, 502, origin);
     }
     if (req.method !== "POST") return json({ error: "not_found" }, 404, origin);
     if (Number(req.headers.get("content-length") || 0) > 3_000_000) return json({ error: "request_too_large" }, 413, origin);

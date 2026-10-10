@@ -126,7 +126,9 @@
       return;
     }
     if(tab==='photo'){
-      photoEntry.querySelector('#jarvisPhotoPick')?.click();
+      // Direct input activation is more reliable on iOS Safari when the
+      // original, initialized photo entry is visually collapsed.
+      document.getElementById('jarvisPhotoInput')?.click();
     }
   }
   Object.entries(cardButtons).forEach(([key,btn])=>btn.addEventListener('click',()=>openSection(key)));

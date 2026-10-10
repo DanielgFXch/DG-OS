@@ -15,5 +15,12 @@ assert.equal(routing.allowedRelativePath('/voice-studio.html'),'voice-studio.htm
 assert.equal(routing.allowedRelativePath('/voice-studio.js'),'voice-studio.js');
 assert.ok(!/sk-[A-Za-z0-9]{12}|sb_secret_[A-Za-z0-9]{12}/i.test(html));
 assert.ok(!/fetch\(.+cartesia|fetch\(.+elevenlabs|fetch\(.+api\.openai\.com/.test(js),'No paid voice requests from browser');
-assert.ok(js.includes("provider!=='browser'"),'Paid previews must remain disabled');
+assert.ok(js.includes("const supported=Boolean(synth&&window.SpeechSynthesisUtterance)"),'Local playback requires supported browser');
+assert.ok(js.includes("$('preview').disabled=!supported"),'Device preview must be available even if Realtime is selected');
+assert.ok(js.includes("synth.speak(speech)"),'Preview must invoke local speech synthesis');
+assert.ok(js.includes("speech.onstart"),'Playback status must wait for actual speech start');
+assert.ok(js.includes("speech.onerror"),'Playback errors must be visible');
+assert.ok(js.includes("provider==='openai'"),'Realtime unavailability must be explained');
+assert.ok(html.includes('Gerätestimme anhören'),'User must see that preview is local, not premium');
+assert.ok(html.includes('voice-studio.js?v=5'),'Cache must refresh updated audition');
 console.log('Voice Studio static and security checks passed.');

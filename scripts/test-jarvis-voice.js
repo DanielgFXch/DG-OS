@@ -11,7 +11,7 @@ for(const name of ['jarvis-voice.js','voice-studio.js','cartesia-favorites.js'])
 }
 const html=file('index.html');
 const studio=file('voice-studio.html');
-assert.match(html,/jarvis-voice\.js\?v=2/);
+assert.match(html,/jarvis-voice\.js\?v=4/);
 assert.match(html,/jarvis-voice\.css\?v=2/);
 assert.match(studio,/cartesia-favorites\.js\?v=4/);
 assert.match(studio,/voice-studio\.js\?v=4/);
@@ -23,7 +23,7 @@ for(const client of [browser,favorites]) {
   assert.match(client,/Authorization:'Bearer '/);
   assert.doesNotMatch(client,/CARTESIA_API_KEY|SUPABASE_SERVICE_ROLE_KEY|voicePassword|grant_type=password/);
 }
-assert.match(browser,/Antworten vorlesen/);
+assert.match(browser,/automatisch vorlesen/);
 assert.match(favorites,/Stimmen laden/);
 const edge=file('supabase/functions/jarvis-cartesia/index.ts');
 for(const guard of ['dgos_device_sessions','dgos_telegram_config','token_hash','expires_at',

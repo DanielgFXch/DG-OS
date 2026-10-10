@@ -11,12 +11,14 @@ for(const name of ['jarvis-voice.js','voice-studio.js','cartesia-favorites.js'])
 }
 const html=file('index.html');
 const studio=file('voice-studio.html');
-assert.match(html,/jarvis-voice\.js\?v=4/);
-assert.match(html,/jarvis-voice\.css\?v=4/);
-assert.match(studio,/cartesia-favorites\.js\?v=4/);
-assert.match(studio,/voice-studio\.js\?v=6/);
+assert.match(html,/jarvis-voice\.js\?v=5/);
+assert.match(html,/jarvis-voice\.css\?v=2/);
+assert.match(studio,/cartesia-favorites\.js\?v=5/);
+assert.match(studio,/voice-studio\.js\?v=7/);
 assert.ok(html.includes('jarvis-native-voice.js?v=1'));
 assert.ok(studio.includes('jarvis-native-voice.js?v=1'));
+assert.ok(html.includes('jarvis-sound-check.js?v=1'));
+assert.ok(studio.includes('jarvis-sound-check.js?v=1'));
 const browser=file('jarvis-voice.js');
 const favorites=file('cartesia-favorites.js');
 for(const client of [browser,favorites]) {
@@ -27,6 +29,7 @@ for(const client of [browser,favorites]) {
 }
 assert.match(browser,/Antworten vorlesen/);
 assert.ok(browser.includes('window.DGOSLocalVoice'),'Native voice must use shared iOS-safe engine');
+assert.ok(browser.includes('jvSoundCheck'),'Jarvis must offer speaker diagnostic');
 assert.match(favorites,/Stimmen laden/);
 const edge=file('supabase/functions/jarvis-cartesia/index.ts');
 for(const guard of ['dgos_device_sessions','dgos_telegram_config','token_hash','expires_at',

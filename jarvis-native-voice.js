@@ -75,7 +75,7 @@
       // Must stay in the user gesture. Do not move speak() to setTimeout/await.
       synth.speak(u);
       if(synth.paused) synth.resume();
-      if(active===u){
+      if(active===u&&!started){
         onState({state:'starting',message:'Starte die iPhone-Gerätestimme …'});
         timeout=setTimeout(()=>{
           if(active===u&&!started){

@@ -256,3 +256,19 @@ body[data-dgos-route]:not([data-dgos-route="home"]) #dgHomeOverview{display:none
 
 
 /* v0.73: oversized scenic illustration removed; retain functional premium hero */
+
+/* Private Life is a dedicated screen and never overlays Trading/Jarvis routes. */
+body[data-dgos-route] #personalPrivate{display:none!important}
+body[data-dgos-route="private"] #personalPrivate{display:block!important;animation:dgosScreenIn .24s ease both}
+body[data-dgos-route="private"] #personalHome,
+body[data-dgos-route="private"] #personalAttention,
+body[data-dgos-route="private"] #personalJarvis,
+body[data-dgos-route="private"] #personalTasks,
+body[data-dgos-route="private"] .personal-columns,
+body[data-dgos-route="private"] #personalEmailWorkspace,
+body[data-dgos-route="private"] #socialWorkspace,
+body[data-dgos-route="private"] #tradingWorkspace,
+body[data-dgos-route="private"] #dashboardHome{display:none!important}
+/* Seven equally sized navigation destinations incl. Privat, with readable iPhone labels. */
+.bottom-nav{grid-template-columns:repeat(7,minmax(0,1fr))!important}
+@media(max-width:480px){.bottom-nav button{font-size:clamp(8px,2.2vw,9px)!important;letter-spacing:-.035em!important}}

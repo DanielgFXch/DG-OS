@@ -133,30 +133,83 @@ async function diagnostic(stage: string, httpStatus?: number, errorCode?: string
     error_description:safe(errorDescription)||null
   });
 }
+// WHOOP invalidates the previous refresh token immediately after exchange.
+// Supabase Edge Functions may run in parallel isolates; therefore a local
+// Promise alone is not safe. This short lease is claimed atomically in Postgres
+// before an external refresh request and always released.
 async function getAccessToken(clientSecret: string) {
-  let row=await loadToken();
-  if(!row) throw new Error("not_connected");
-  const now=Date.now();
-  if(row.access_token_cipher && row.access_token_iv && row.access_token_expires_at && new Date(row.access_token_expires_at).getTime()>now+60000){
-    return decrypt(clientSecret,row.access_token_cipher,row.access_token_iv);
+  const started=Date.now();
+  for(let attempt=0;attempt<20;attempt++){
+    const row=await loadToken();
+    if(!row) throw new Error("not_connected");
+    const now=Date.now();
+    if(row.access_token_cipher && row.access_token_iv && row.access_token_expires_at &&
+       new Date(row.access_token_expires_at).getTime()>now+60000){
+      return decrypt(clientSecret,row.access_token_cipher,row.access_token_iv);
+    }
+    const leaseId=randomToken();
+    const {data:locked,error:lockError}=await db.from("dgos_whoop_tokens")
+      .update({refresh_lock_id:leaseId,refresh_lock_until:new Date(now+26000).toISOString()})
+      .eq("id","primary")
+      .or("refresh_lock_until.is.null,refresh_lock_until.lt."+new Date(now).toISOString())
+      .select("id")
+      .maybeSingle();
+    if(lockError)throw new Error("whoop_refresh_lock_error");
+    if(!locked){
+      if(Date.now()-started>24000)throw new Error("whoop_refresh_busy");
+      await new Promise(resolve=>setTimeout(resolve,550));
+      continue;
+    }
+    try{
+      // Reload under the lease. Another worker could have rotated tokens just
+      // before this worker acquired the lock.
+      const current=await loadToken();
+      if(!current)throw new Error("not_connected");
+      if(current.access_token_cipher && current.access_token_iv && current.access_token_expires_at &&
+         new Date(current.access_token_expires_at).getTime()>Date.now()+60000){
+        return await decrypt(clientSecret,current.access_token_cipher,current.access_token_iv);
+      }
+      const refresh=await decrypt(clientSecret,current.refresh_token_cipher,current.refresh_token_iv);
+      const response=await fetch(WHOOP_TOKEN,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","Accept":"application/json"},
+        body:JSON.stringify({grant_type:"refresh_token",refresh_token:refresh,client_id:CLIENT_ID,
+          client_secret:clientSecret,scope:"offline"}),
+        signal:AbortSignal.timeout(20000)
+      });
+      if(!response.ok){
+        console.warn("whoop_refresh_failed_status",response.status);
+        if(response.status===400||response.status===401)
+          throw new Error("whoop_reauthorize_required");
+        throw new Error("whoop_refresh_unavailable");
+      }
+      const token=await response.json();
+      if(!token.access_token||!token.refresh_token)throw new Error("whoop_refresh_invalid_response");
+      const [accessEnc,refreshEnc]=await Promise.all([
+        encrypt(clientSecret,token.access_token),encrypt(clientSecret,token.refresh_token)
+      ]);
+      const {data:saved,error:saveError}=await db.from("dgos_whoop_tokens")
+        .update({
+          refresh_token_cipher:refreshEnc.cipher,refresh_token_iv:refreshEnc.iv,
+          access_token_cipher:accessEnc.cipher,access_token_iv:accessEnc.iv,
+          access_token_expires_at:new Date(Date.now()+Math.max(60,Number(token.expires_in||3600)-60)*1000).toISOString(),
+          scope:String(token.scope||current.scope||""),
+          updated_at:new Date().toISOString(),
+          refresh_lock_id:null,refresh_lock_until:null
+        })
+        .eq("id","primary").eq("refresh_lock_id",leaseId)
+        .select("id").maybeSingle();
+      if(saveError||!saved)throw new Error("whoop_refresh_persistence_failed");
+      return token.access_token;
+    }finally{
+      // No-op when success already released the lease. If a network call
+      // fails, release it promptly without exposing any credentials.
+      await db.from("dgos_whoop_tokens")
+        .update({refresh_lock_id:null,refresh_lock_until:null})
+        .eq("id","primary").eq("refresh_lock_id",leaseId);
+    }
   }
-  const refresh=await decrypt(clientSecret,row.refresh_token_cipher,row.refresh_token_iv);
-  const response=await fetch(WHOOP_TOKEN,{
-    method:"POST",
-    headers:{"Content-Type":"application/json","Accept":"application/json"},
-    body:JSON.stringify({grant_type:"refresh_token",refresh_token:refresh,client_id:CLIENT_ID,client_secret:clientSecret,scope:"offline"})
-  });
-  if(!response.ok) throw new Error("refresh_failed_"+response.status);
-  const token=await response.json();
-  if(!token.access_token||!token.refresh_token) throw new Error("refresh_missing_token");
-  const [accessEnc,refreshEnc]=await Promise.all([encrypt(clientSecret,token.access_token),encrypt(clientSecret,token.refresh_token)]);
-  await saveToken({
-    refresh_token_cipher:refreshEnc.cipher,refresh_token_iv:refreshEnc.iv,
-    access_token_cipher:accessEnc.cipher,access_token_iv:accessEnc.iv,
-    access_token_expires_at:new Date(Date.now()+Math.max(60,Number(token.expires_in||3600)-60)*1000).toISOString(),
-    scope:String(token.scope||row.scope||"")
-  });
-  return token.access_token;
+  throw new Error("whoop_refresh_busy");
 }
 async function whoopFetch(path: string, access: string) {
   const r=await fetch(WHOOP_API+path,{headers:{Authorization:"Bearer "+access,Accept:"application/json"}});
@@ -320,7 +373,14 @@ Deno.serve(async (req: Request) => {
 
     if(action==="summary"){
       if(!(await validSession(req)) && !(await internalAuthorized(req))) return json({error:"session_required"},401);
-      const access=await getAccessToken(clientSecret);
+      let access: string;
+      try {
+        access=await getAccessToken(clientSecret);
+      }catch(e) {
+        if(e instanceof Error && e.message==="whoop_reauthorize_required")
+          return json({error:"whoop_reauthorize_required"},409);
+        return json({error:"whoop_temporarily_unavailable"},503);
+      }
       const [recoveries,sleeps,cycles,workouts,profile,body]=await Promise.all([
         whoopFetch("/recovery?limit=5",access),
         whoopFetch("/activity/sleep?limit=10",access),

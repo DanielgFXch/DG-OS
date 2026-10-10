@@ -10,7 +10,7 @@
   const storageKey='dgos.voiceStudio.preferences.v1', voiceKey='dgos.cartesia.voiceId';
   const enabledKey='dgos.jarvis.speech.enabled';
   const deviceSession=()=>{
-    try{return localStorage.getItem('dgos.deviceSession')||localStorage.getItem('dgos.whoopSession')||'';}catch{return '';}
+    try{return localStorage.getItem('dgos.deviceSession')||'';}catch{return '';}
   };
   const store=(key,value)=>{try{localStorage.setItem(key,value);}catch{}};
   const read=(key)=>{try{return localStorage.getItem(key)||'';}catch{return '';}};
@@ -75,7 +75,7 @@
     $('jvReload').hidden=!premium;
     if(premium){
       options(voices,voiceId);
-      if(!deviceSession())setMessage('Premium benötigt deine einmalige Telegram-Gerätekopplung in DG OS → Aufgaben → Telegram verbinden.','KOPPLUNG');
+      if(!deviceSession())setMessage('Einmalig hier unten mit Telegram koppeln. Danach kannst du Premium-Stimmen laden.','KOPPLUNG');
       else if(!voices.length)setMessage('Tippe auf «Stimmen laden» und wähle eine Cartesia-Stimme.','VERBINDEN');
       else setMessage('Premium bereit. Wähle eine Stimme oder teste sie.','CARTESIA');
     } else {
@@ -85,13 +85,13 @@
   }
   async function api(method,body,signal){
     const session=deviceSession();
-    if(!session)throw Error('Telegram-Gerätekopplung fehlt. Öffne DG OS → Aufgaben → Telegram verbinden.');
+    if(!session)throw Error('Verbinde dieses iPhone direkt unten über «Mit Telegram verbinden».');
     const res=await fetch(endpoint,{method,signal,cache:'no-store',headers:{
       Authorization:'Bearer '+session,...(body?{'Content-Type':'application/json'}:{})
     },...(body?{body:JSON.stringify(body)}:{})});
     if(!res.ok){
       const error=await res.json().catch(()=>({}));
-      if(res.status===401)throw Error('Gerätesitzung fehlt oder ist abgelaufen. Telegram in DG OS erneut verbinden.');
+      if(res.status===401){window.dispatchEvent(new Event('dgos-device-session-invalid'));throw Error('Dieses iPhone ist noch nicht mit Jarvis verbunden. Verwende unten «Mit Telegram verbinden».');}
       if(error.error==='voice_not_configured')throw Error('Cartesia ist auf dem DG-OS-Server noch nicht konfiguriert.');
       if(error.error==='slow_down')throw Error('Bitte kurz warten und erneut testen.');
       throw Error('Premium-Stimme nicht verfügbar ('+(error.upstream_status||res.status)+').');

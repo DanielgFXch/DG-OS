@@ -11,7 +11,7 @@ for(const name of ['jarvis-voice.js','voice-studio.js','cartesia-favorites.js'])
 }
 const html=file('index.html');
 const studio=file('voice-studio.html');
-assert.match(html,/jarvis-voice\.js\?v=7/);
+assert.match(html,/jarvis-voice\.js\?v=8/);
 assert.match(html,/jarvis-voice\.css\?v=2/);
 assert.match(studio,/cartesia-favorites\.js\?v=5/);
 assert.match(studio,/voice-studio\.js\?v=7/);
@@ -57,6 +57,24 @@ assert.ok(browser.includes("panel.querySelector('.jarvis-cinematic-hero')"),'Voi
 assert.ok(cinematic.includes('.jarvis-cinematic-orb>.dg-orb-sphere'),'Avoid legacy HUD style overriding shared Home orb');
 assert.ok(cinematic.includes('@media(max-width:700px)'),'Hero must support narrow iPhones');
 assert.ok(html.indexOf('jarvis-cinematic-hero') < html.indexOf('jarvis-life-stats'),'Hero must precede Jarvis functionality');
+
+// OpenAI speech must be real, private, device-authorized and selectable.
+const openaiEdge=file('supabase/functions/jarvis-openai-voice/index.ts');
+for(const guard of ['dgos_device_sessions','dgos_telegram_config','expires_at','device_pairing_required',
+  'origin_not_allowed','OPENAI_API_KEY','api.openai.com/v1/audio/speech','gpt-4o-mini-tts','voice_not_configured',
+  'voice_provider_rate_limit','voice_invalid_api_key']) {
+  assert.ok(openaiEdge.includes(guard),'OpenAI voice security: '+guard);
+}
+assert.ok(openaiEdge.includes('text.length > 300'),'Limit paid voice output');
+assert.ok(openaiEdge.includes('response_format: "mp3"'),'Return playable MP3 on iPhone');
+assert.ok(openaiEdge.includes('"content-type": "audio/mpeg"'),'Return browser-compatible mime');
+assert.ok(!openaiEdge.includes('"access-control-allow-origin": "*"'),'Never open wildcard CORS');
+assert.ok(browser.includes('openai-tts'),'OpenAI premium voice needs an actual selectable option');
+assert.ok(browser.includes('jarvis-openai-voice'),'Client must call server-only OpenAI proxy');
+assert.ok(browser.includes("const cartesiaVoiceKey="),'Cartesia preferences retained');
+assert.ok(browser.includes('jvAudioPlayer'),'Safari users need manual audio playback control');
+assert.doesNotMatch(browser,/OPENAI_API_KEY|SUPABASE_SERVICE_ROLE_KEY|sk-[A-Za-z0-9]{10}/,
+  'Never include provider secrets in public GitHub Pages code');
 
 const edge=file('supabase/functions/jarvis-cartesia/index.ts');
 for(const guard of ['dgos_device_sessions','dgos_telegram_config','token_hash','expires_at',

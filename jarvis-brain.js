@@ -235,6 +235,7 @@
       // Existing voice engine observes this text and may speak if the owner
       // switched "Antworten vorlesen" on. No provider key reaches the browser.
       const reply=$('personalJarvisReply');if(reply)reply.textContent=answer;
+      window.dispatchEvent(new CustomEvent('dgos-jarvis-final-response',{detail:{text:answer}}));
       status('Jarvis hat aus deinem bestätigten Gedächtnis und deinen DG-OS-Daten geantwortet.');
     }catch(e){$('jbAskAnswer').textContent=errorMessage(e);status(errorMessage(e),true);}
     finally{btn.disabled=false;}

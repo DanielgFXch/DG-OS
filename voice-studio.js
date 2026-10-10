@@ -10,12 +10,12 @@ function notify(message){$('notice').textContent=message;}
 function refresh(){
 document.querySelectorAll('[data-provider]').forEach(button=>{button.dataset.active=String(button.dataset.provider===provider);button.setAttribute('aria-pressed',String(button.dataset.provider===provider));});
 const browser=provider==='browser';
-$('providerStatus').textContent=browser?'Lokal verfügbar':provider==='openai'?'Realtime: vorbereitet':provider==='cartesia'?'Unten Cartesia verbinden':'Nicht verbunden';
+$('providerStatus').textContent=browser?'Lokal verfügbar':provider==='openai'?'Realtime: vorbereitet':provider==='cartesia'?'Gerätekopplung prüfen':'Nicht verbunden';
 $('voiceSelect').disabled=!browser||!synth;
 $('preview').disabled=!browser||!synth;
 if(!browser)notify(provider==='openai'
 ?'OpenAI Realtime erfordert einen serverseitigen kurzlebigen Session-Token und eine bestätigte private Anmeldung. Noch nicht aktiviert.'
-:provider==='cartesia'?'Bitte unten bei Meine Jarvis-Stimmen anmelden und deine Stimme auswählen.':'ElevenLabs ist noch nicht verbunden.');
+:provider==='cartesia'?'Cartesia nutzt deine Telegram-Gerätekopplung. Wähle unten eine Premium-Stimme und teste sie.':'ElevenLabs ist noch nicht verbunden.');
 else notify(synth?'Lokale Stimme ist bereit. Du kannst sie jetzt testen.':'Sprachausgabe wird von diesem Browser nicht unterstützt.');
 }
 function populate(){
@@ -54,7 +54,7 @@ synth.speak(utterance);notify('Browser-Stimme wird abgespielt.');
 $('stop').addEventListener('click',()=>{stop();notify('Wiedergabe gestoppt.');});
 $('save').addEventListener('click',()=>{
 localStorage.setItem(storageKey,JSON.stringify({provider,voice:$('voiceSelect').value,language:$('language').value,pace:Number($('pace').value)}));
-notify('Gespeichert. '+(provider==='browser'?'Lokale Vorschau aktiviert.':'Anbieter vorgemerkt; noch keine kostenpflichtige Verbindung aktiv.'));
+notify('Gespeichert. '+(provider==='browser'?'Lokale Vorschau aktiviert.':'Anbieter gespeichert. Premium-Wiedergabe wird nur bei Verwendung gestartet.'));
 });
 if(synth)synth.addEventListener?.('voiceschanged',populate);
 document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});

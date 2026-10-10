@@ -2120,6 +2120,16 @@
       return true;
     }
 
+    // WHOOP sleep analysis stays private behind the existing session.
+    // Answer natural day/week questions using the historic data already
+    // loaded from Supabase. Do not invent data for missing nights.
+    if(window.DGOSWhoopSleep?.isSleepQuestion(original)){
+      const response=window.DGOSWhoopSleepUI?.answerQuestion(original)
+        || 'Gomes, die WHOOP-Schlafanalyse wird gerade geladen. Bitte Gesundheit öffnen.';
+      showReply(response);
+      return true;
+    }
+
     if (/^(aufgabe|todo)\s+/.test(q)) {
       const task = original.replace(/^(aufgabe|todo)\s+/i,'').trim();
       return runLifeAction('task', task);

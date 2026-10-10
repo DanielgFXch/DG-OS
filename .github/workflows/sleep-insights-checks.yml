@@ -30,3 +30,8 @@ jobs:
         run: node --check sleep-insights.js
       - name: Validate sleep calculations
         run: npm run test:sleep
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Type-check WHOOP Edge Function
+        run: deno check supabase/functions/whoop/index.ts

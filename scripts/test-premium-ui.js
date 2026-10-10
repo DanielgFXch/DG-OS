@@ -105,7 +105,7 @@ const search=dialog.children[0].children[1],list=dialog.children[2];
 trigger.click();
 assert.equal(dialog.open,true,'Header trigger opens quick access');
 assert.equal(list.children.length,11,'All genuine destinations should be available');
-search.value='schlaf';search.fire('input');
+search.value='schlafanalyse';search.fire('input');
 assert.equal(list.children.length,1,'Search filters by German label');
 dialog.fire('keydown',{key:'Enter',preventDefault(){},isComposing:false});
 assert.equal(dialog.open,false);

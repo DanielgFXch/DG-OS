@@ -149,7 +149,7 @@
     const status=pairingBadge.textContent.trim().toUpperCase();
     const connected=status==='VERBUNDEN';
     if(connectionLabel)connectionLabel.textContent=connected?'VERBUNDEN':
-      status==='WARTET'?'KOPPLUNG':'PRÜFEN';
+      (status==='WARTET'||status==='KOPPLUNG')?'KOPPLUNG':'PRÜFEN';
     if(connectionBadge){
       connectionBadge.dataset.connected=String(connected);
       connectionBadge.setAttribute('aria-label',connected?'Jarvis-Gerät ist verbunden':'Jarvis-Geräteverbindung noch nicht bestätigt');

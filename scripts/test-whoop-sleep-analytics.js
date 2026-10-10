@@ -29,6 +29,8 @@ assert.equal(a.week.length,3,'Missing 2026-10-04 must not be invented');
 assert.ok(a.summary.includes('gestern'));
 assert.ok(a.summary.includes('letzte Woche'));
 assert.ok(a.summary.includes('Schlafbedarf'));
+assert.ok(a.summary.includes('9 Prozentpunkte'),'Yesterday: 81% vs 72% = +9 p.p.');
+assert.ok(a.summary.includes('+27 Prozentpunkte'),'Last week: 81% vs 54% = +27 p.p.');
 assert.equal(api.compute(sample,'2026-10-07').current,null,'Missing day not replaced with nearest');
 assert.equal(api.compute([],null).empty,true);
 const fixture='Beginn des Schlafs,Beginn des Aufwachens,Zeitzone des Zyklus,Schlafdauer (Min.),Dauer des Tiefschlafs (Min.),Dauer des REM-Schlafs (Min.),Schlafbedarf (Min.),Schlafleistung %,Schlafeffizienz %,Nickerchen\n'+

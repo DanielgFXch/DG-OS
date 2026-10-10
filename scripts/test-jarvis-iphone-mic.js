@@ -14,7 +14,7 @@ assert.equal(mic.chooseMime(x=>x==='audio/webm'),'audio/webm');
 assert.equal(mic.chooseMime(()=>false),'');
 const html=read('index.html'),personal=read('personal.js'),voice=read('jarvis-voice.js');
 assert.match(html,/jarvis-microphone\.js\?v=2/);
-assert.match(html,/personal\.js\?v=0\.59\.9/);
+assert.match(html,/personal\.js\?v=0\.59\.10/);
 assert.match(html,/jarvis-voice\.js\?v=10/);
 assert.match(html,/jarvis-brain\.js\?v=3/);
 assert.ok(html.indexOf('jarvis-microphone.js?v=2')<html.indexOf('personal.js?v=0.59.10'));

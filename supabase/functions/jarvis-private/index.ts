@@ -122,6 +122,36 @@ Deno.serve(async (req: Request) => {
     try { const data = await req.json(); body = data && typeof data === "object" && !Array.isArray(data) ? data : {}; }
     catch { return json({ error: "invalid_json" }, 400, origin); }
 
+    // One spoken shopping request is ONE authenticated batch. Existing open
+    // products are reused; no automatic action on a failed/misheard command.
+    if (action === "add-shopping") {
+      const input = body.items;
+      if (!Array.isArray(input) || input.length < 1 || input.length > 12 ||
+          !input.every(v => typeof v === "string" && v.trim().length > 0 && v.trim().length <= 65))
+        return json({ error: "invalid_shopping_items" }, 400, origin);
+      const unique = [...new Map(input.map(v => {
+        const item = String(v).trim().replace(/\s+/g, " ");
+        return [item.toLocaleLowerCase("de"), item];
+      })).values()];
+      if (unique.some(v => /[<>{}\x00-\x1F]/.test(v))) return json({ error: "invalid_shopping_items" }, 400, origin);
+      const { data: existing, error: listError } = await db.from("dgos_private_items")
+        .select("title").eq("kind", "shopping").eq("status", "open").limit(3000);
+      if (listError) throw listError;
+      const open = new Set((existing || []).map(v => String(v.title || "").trim().toLocaleLowerCase("de")));
+      const pending = unique.filter(v => !open.has(v.toLocaleLowerCase("de")));
+      const skipped = unique.filter(v => open.has(v.toLocaleLowerCase("de")));
+      if (!pending.length) return json({ added: [], skipped, count: 0 }, 200, origin);
+      const { data: inserted, error: insertError } = await db.from("dgos_private_items").insert(
+        pending.map(title => ({
+          kind: "shopping", title, source: "voice", source_ref: "jarvis:spoken-shopping", status: "open"
+        }))
+      ).select("id,title,kind,status");
+      if (insertError) throw insertError;
+      return json({
+        added: (inserted || []).map(v => v.title), skipped, count: inserted?.length || 0
+      }, 201, origin);
+    }
+
     if (action === "add") {
       const kind = clean(body.kind, 20);
       const title = clean(body.title, 240);

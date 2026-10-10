@@ -75,6 +75,10 @@
     }
     current=summary.date;
     const today=summary.current;
+    const comparisonLabels=el('dgwVsYesterday').closest('.dgw-comparison')?.querySelector('span');
+    const previousLabels=el('dgwVsLastWeek').closest('.dgw-comparison')?.querySelector('span');
+    if(comparisonLabels)comparisonLabels.textContent=period==='day'?'Gestern':period==='week'?'Diese Woche':'Letzte 30 Tage';
+    if(previousLabels)previousLabels.textContent=period==='day'?'Vor einer Woche':period==='week'?'Vorwoche':'Vorherige 30 Tage';
     const displayPeriod=period==='day'?1:period==='week'?7:30;
     const windowDays=Array.from({length:displayPeriod},(_,i)=>dateBack(current,i-displayPeriod+1));
     const windowRows=windowDays.map(d=>summary.rows.find(r=>r.sleep_date===d)).filter(Boolean);
@@ -114,12 +118,14 @@
       el('dgwVsLastWeek').dataset.direction=delta===null?'neutral':delta>0?'positive':delta<0?'negative':'neutral';
       text('dgwAverage7',fmt(summary.average7));text('dgwAverage7Note','Ø letzte 7 Tage');
     }
-    const series=Array.from({length:14},(_,i)=>{
-      const day=dateBack(current,i-13);
+    const chartDays=period==='month'?30:14;
+    const series=Array.from({length:chartDays},(_,i)=>{
+      const day=dateBack(current,i-chartDays+1);
       return {sleep_date:day,record:summary.rows.find(r=>r.sleep_date===day)||null};
     });
     text('dgwTrendTitle','Schlafdauer · Tagesverlauf');
-    text('dgwTrendDescription','Letzte 14 Kalendertage');
+    text('dgwTrendDescription','Letzte '+chartDays+' Kalendertage');
+    el('dgwSleepBars').dataset.range=period;
     chart(series,current);
     const latest=summary.latest;
     const currentAllowed=current<latest;

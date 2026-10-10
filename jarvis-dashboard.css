@@ -1,0 +1,319 @@
+/* DG OS Jarvis · command-center UX v1
+ * Scoped to #personalJarvis and only activates after existing JS widgets
+ * have been preserved and reparented by jarvis-dashboard.js.
+ * No changes to Home, Social, Private, Trading or other navigation views.
+ */
+#personalJarvis.jarvis-dashboard-ready{
+  --jd-ink:#e9f9fc;--jd-soft:#99b9c8;--jd-line:rgba(141,226,231,.17);
+  --jd-teal:#8dece3;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero{
+  grid-template-columns:minmax(0,1fr) minmax(0,210px)!important;
+  gap:18px!important;min-height:252px!important;
+  padding:24px clamp(22px,3vw,34px)!important;
+  margin:0 0 14px!important;
+  border-radius:19px!important;
+  background:radial-gradient(ellipse at 70% 48%,rgba(43,163,195,.15),transparent 57%),linear-gradient(155deg,#112d45 0%,#081b2d 54%,#061526 100%)!important;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .personal-jarvis-head>div:first-child{
+  grid-column:1!important;grid-row:1!important;align-self:center!important;
+  padding:0!important;padding-right:0!important;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero #personalJarvisTitle{
+  margin:10px 0 10px!important;
+  font-size:clamp(26px,3vw,36px)!important;
+  font-weight:760!important;letter-spacing:-.045em!important;
+  max-width:380px;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .personal-jarvis-head p{
+  max-width:330px;font-size:12px!important;line-height:1.6!important;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .jarvis-system-badge{
+  position:absolute!important;top:17px!important;right:18px!important;
+  align-self:start!important;z-index:4;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .jarvis-system-badge[data-connected="false"]{
+  border-color:rgba(199,185,142,.19)!important;
+  color:#d1c1a2!important;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .jarvis-system-badge[data-connected="false"] i{
+  background:#baaf92!important;box-shadow:none!important;animation:none!important;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .jarvis-orb-stage{
+  grid-column:2!important;grid-row:1!important;
+  min-height:0!important;height:auto!important;
+  padding:0!important;gap:0!important;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .jarvis-cinematic-orb{
+  width:174px!important;height:174px!important;
+  max-width:100%!important;
+  filter:drop-shadow(0 0 18px rgba(19,184,232,.23));
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .jarvis-cinematic-label{
+  margin-top:8px!important;font-size:10px!important;letter-spacing:.24em!important;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .jarvis-cinematic-label small{
+  font-size:12px!important;margin-top:5px!important;letter-spacing:0!important;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero #personalJarvisReply{
+  max-width:320px!important;min-height:20px;
+  margin:8px auto 0!important;
+  font-size:12px!important;line-height:1.55!important;
+  color:#bddde4!important;
+}
+/* Clearly prioritized actions, rather than six consecutive full-size panels. */
+#personalJarvis .jarvis-dash-quick{
+  position:relative;z-index:3;
+  margin:0 0 12px;padding:19px;
+  border:1px solid var(--jd-line,rgba(141,226,231,.17));
+  border-radius:18px;
+  background:linear-gradient(145deg,rgba(14,44,60,.89),rgba(4,19,32,.91));
+  box-shadow:0 14px 34px rgba(0,0,0,.11),inset 0 1px rgba(209,255,251,.045);
+}
+#personalJarvis .jarvis-dash-quick-head{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  margin:0 0 17px;
+}
+#personalJarvis .jarvis-dash-intro{min-width:0}
+#personalJarvis .jarvis-dash-eyebrow{
+  font-size:9px;font-weight:760;letter-spacing:.15em;color:#81dedc;
+}
+#personalJarvis .jarvis-dash-intro h3{
+  font-size:21px;letter-spacing:-.035em;color:#e5f9fc;
+  margin:6px 0 3px;font-weight:740;
+}
+#personalJarvis .jarvis-dash-intro p{
+  margin:0;color:#99b5c5;font-size:11px;line-height:1.5;
+}
+#personalJarvis .jarvis-dash-voice-controls{
+  display:flex;gap:7px;align-items:center;flex:none;
+}
+#personalJarvis .jarvis-dash-voice-toggle,
+#personalJarvis .jarvis-dash-settings-link{
+  appearance:none;display:inline-flex;align-items:center;justify-content:center;
+  min-height:42px;padding:9px 12px!important;
+  border:1px solid rgba(138,229,231,.26)!important;border-radius:10px!important;
+  background:rgba(19,62,78,.35)!important;color:#c9eaf0!important;
+  font:650 11px/1.3 system-ui,-apple-system,sans-serif!important;
+  cursor:pointer;white-space:nowrap;
+}
+#personalJarvis .jarvis-dash-voice-toggle[data-enabled="true"]{
+  border-color:rgba(126,242,206,.51)!important;
+  background:rgba(31,144,120,.20)!important;color:#b8fceb!important;
+}
+#personalJarvis .jarvis-dash-speaker-icon{
+  font-size:13px;font-weight:800;margin-right:6px;color:#8feee0;
+}
+#personalJarvis .jarvis-dash-cards{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;
+}
+#personalJarvis .jarvis-dash-card{
+  appearance:none;display:flex;align-items:center;gap:11px;
+  min-width:0;min-height:77px;width:100%;text-align:left;
+  padding:13px!important;
+  border:1px solid rgba(126,214,224,.17)!important;
+  border-radius:12px!important;
+  background:rgba(4,25,39,.70)!important;
+  box-shadow:inset 0 1px rgba(211,255,250,.035);
+  color:#ebf9fc!important;
+  cursor:pointer;
+}
+#personalJarvis .jarvis-dash-card:active{background:rgba(23,76,88,.62)!important}
+#personalJarvis .jarvis-dash-card-icon{
+  flex:none;display:grid;place-items:center;
+  width:34px;height:34px;
+  border-radius:10px;border:1px solid rgba(135,232,225,.18);
+  background:rgba(43,146,154,.14);
+  color:#9cf2e7;font-size:19px;line-height:1;
+}
+#personalJarvis .jarvis-dash-card-copy{min-width:0;flex:1}
+#personalJarvis .jarvis-dash-card strong{
+  display:block;font-weight:680;font-size:12px;color:#e5f8fc;
+  white-space:normal;line-height:1.35;
+}
+#personalJarvis .jarvis-dash-card small{
+  display:block;font-size:10px;color:#8facba;line-height:1.4;margin-top:4px;
+}
+#personalJarvis .jarvis-dash-card-arrow{font-size:20px;color:#80bcc9}
+#personalJarvis .jarvis-dash-mic-hint{
+  margin:13px 0 0;color:#8eafbd;
+  font-size:11px;line-height:1.55;
+  padding-left:2px;
+}
+#personalJarvis.jarvis-dashboard-ready>.jarvis-life-command{
+  margin:0 0 13px!important;
+  padding:8px 8px 8px 15px!important;
+  border-radius:13px!important;
+  background:rgba(4,25,39,.86)!important;
+}
+#personalJarvis.jarvis-dashboard-ready>.jarvis-life-command input{
+  font-size:13px!important;min-height:43px;
+}
+#personalJarvis.jarvis-dashboard-ready>.jarvis-life-command input::placeholder{
+  color:#8aa8b7!important;
+}
+#personalJarvis.jarvis-dashboard-ready>.jarvis-life-command button{
+  min-width:43px!important;min-height:43px!important;
+}
+#personalJarvis.jarvis-dashboard-ready>.jarvis-life-stats{
+  margin:1px auto 14px!important;max-width:none!important;gap:8px;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-life-stats>div{
+  border-radius:12px!important;padding:12px!important;
+  background:rgba(10,34,49,.67)!important;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-life-stats span{
+  font-size:9px!important;letter-spacing:.05em!important;color:#9dbac9!important;
+}
+#personalJarvis.jarvis-dashboard-ready .jarvis-life-stats strong{
+  font-size:21px!important;font-weight:730!important;color:#e4fcfa!important;
+}
+#personalJarvis.jarvis-dashboard-ready>.jarvis-photo-entry{display:none!important}
+#personalJarvis.jarvis-dashboard-ready>.jarvis-photo-panel{
+  margin:0 0 12px!important;
+}
+#personalJarvis.jarvis-dashboard-ready>.jb-intelligence{
+  margin:0 0 13px!important;
+  border-radius:17px!important;
+}
+#personalJarvis.jarvis-dashboard-ready .jb-intelligence-top h3{
+  font-size:clamp(20px,2.2vw,25px)!important;
+}
+#personalJarvis .jarvis-dash-advanced,
+#personalJarvis .jarvis-dash-more{
+  position:relative;z-index:2;
+  border:1px solid rgba(130,214,228,.17);
+  border-radius:14px;
+  background:linear-gradient(130deg,rgba(13,38,55,.73),rgba(3,19,30,.80));
+  margin:0 0 12px;
+  overflow:hidden;
+}
+#personalJarvis .jarvis-dash-advanced>summary,
+#personalJarvis .jarvis-dash-more>summary{
+  display:flex;flex-wrap:wrap;gap:5px 12px;align-items:center;justify-content:space-between;
+  list-style:none;min-height:56px;padding:15px 17px;
+  color:#d6f4f9;font-size:13px;font-weight:690;
+  cursor:pointer;
+}
+#personalJarvis .jarvis-dash-advanced>summary::-webkit-details-marker,
+#personalJarvis .jarvis-dash-more>summary::-webkit-details-marker{display:none}
+#personalJarvis .jarvis-dash-advanced>summary:after,
+#personalJarvis .jarvis-dash-more>summary:after{
+  content:'⌄';font-size:18px;color:#99d5d5;
+}
+#personalJarvis .jarvis-dash-more>summary span,
+#personalJarvis .jarvis-dash-advanced>summary small{
+  display:block;color:#90adbc;font-size:10px;font-weight:450;flex:1 0 auto;
+}
+#personalJarvis .jarvis-dash-advanced[open]>summary:after,
+#personalJarvis .jarvis-dash-more[open]>summary:after{transform:rotate(180deg)}
+#personalJarvis .jarvis-dash-advanced>.jarvis-voice-console{
+  margin:0 auto 12px!important;
+  width:calc(100% - 26px)!important;
+  max-width:760px!important;
+}
+#personalJarvis .jarvis-dash-advanced>.jarvis-device-pair{
+  margin:0 auto 16px!important;
+  width:calc(100% - 26px)!important;
+  max-width:760px!important;
+}
+#personalJarvis .jarvis-dash-more>.jarvis-command-deck{
+  padding:0 14px 14px;margin:0!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+#personalJarvis .jarvis-dash-more .jarvis-command-deck button{min-height:66px!important}
+#personalJarvis .jarvis-dash-more .jarvis-command-deck strong{
+  font-size:12px!important;
+}
+#personalJarvis .jarvis-dash-more .jarvis-command-deck small{
+  font-size:10px!important;
+}
+#personalJarvis .jarvis-dash-quick button:focus-visible,
+#personalJarvis .jarvis-dash-advanced>summary:focus-visible,
+#personalJarvis .jarvis-dash-more>summary:focus-visible{
+  outline:2px solid #8bf0e7!important;outline-offset:3px!important;
+}
+#personalJarvis .jarvis-dash-advanced,#personalJarvis .jarvis-dash-more,
+#personalJarvis .jb-intelligence{scroll-margin-top:22px}
+@media (max-width:980px){
+  #personalJarvis .jarvis-dash-quick-head{align-items:flex-start;flex-direction:column;gap:12px}
+  #personalJarvis .jarvis-dash-voice-controls{width:100%}
+  #personalJarvis .jarvis-dash-cards{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  #personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr)!important;
+    min-height:0!important;
+    gap:0!important;
+    padding:24px 17px 17px!important;
+    margin:0 0 11px!important;
+    border-radius:16px!important;
+  }
+  #personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .personal-jarvis-head>div:first-child{
+    grid-column:1!important;grid-row:1!important;
+    padding-right:96px!important;
+  }
+  #personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero #personalJarvisTitle{
+    font-size:clamp(25px,6.6vw,34px)!important;
+    margin:7px 0 6px!important;
+    max-width:330px;
+  }
+  #personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .personal-jarvis-head p{
+    font-size:11px!important;max-width:300px;
+  }
+  #personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .personal-kicker{font-size:8px!important;letter-spacing:.10em!important}
+  #personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .jarvis-system-badge{
+    top:19px!important;right:14px!important;
+    max-width:104px;
+    font-size:8px!important;letter-spacing:.04em!important;
+  }
+  #personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .jarvis-orb-stage{
+    grid-column:1!important;grid-row:2!important;
+    margin:8px auto 0!important;
+    padding:0!important;min-height:0!important;
+  }
+  #personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .jarvis-cinematic-orb{
+    width:clamp(150px,42vw,184px)!important;
+    height:clamp(150px,42vw,184px)!important;
+  }
+  #personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .jarvis-cinematic-label{
+    margin-top:6px!important;font-size:10px!important;
+  }
+  #personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero .jarvis-cinematic-label small{margin-top:4px!important}
+  #personalJarvis.jarvis-dashboard-ready .jarvis-cinematic-hero #personalJarvisReply{
+    max-width:325px!important;font-size:12px!important;margin:7px auto 0!important;
+  }
+  #personalJarvis .jarvis-dash-quick{padding:14px;margin-bottom:10px;border-radius:15px}
+  #personalJarvis .jarvis-dash-intro h3{font-size:19px}
+  #personalJarvis .jarvis-dash-voice-toggle,
+  #personalJarvis .jarvis-dash-settings-link{
+    flex:1;min-width:0;white-space:normal;text-align:center;
+    font-size:11px!important;padding:8px!important;
+  }
+  #personalJarvis .jarvis-dash-cards{gap:7px}
+  #personalJarvis .jarvis-dash-card{
+    min-height:70px;gap:8px;padding:10px!important;border-radius:11px!important;
+  }
+  #personalJarvis .jarvis-dash-card-icon{width:30px;height:30px;font-size:17px}
+  #personalJarvis .jarvis-dash-card strong{font-size:11px}
+  #personalJarvis .jarvis-dash-card small{font-size:9px}
+  #personalJarvis .jarvis-dash-card-arrow{display:none}
+  #personalJarvis .jarvis-dash-mic-hint{font-size:10px;margin-top:10px}
+  #personalJarvis.jarvis-dashboard-ready>.jarvis-life-stats{gap:6px}
+  #personalJarvis.jarvis-dashboard-ready .jarvis-life-stats>div{padding:10px 6px!important;text-align:center}
+  #personalJarvis.jarvis-dashboard-ready .jarvis-life-stats span{font-size:8px!important;letter-spacing:0!important}
+  #personalJarvis.jarvis-dashboard-ready .jarvis-life-stats strong{font-size:20px!important}
+  #personalJarvis .jarvis-dash-more>.jarvis-command-deck{grid-template-columns:1fr 1fr;gap:7px;padding:0 10px 10px}
+}
+@media(max-width:385px){
+  #personalJarvis .jarvis-dash-settings-link{font-size:10px!important}
+  #personalJarvis .jarvis-dash-card{gap:6px}
+  #personalJarvis .jarvis-dash-card-icon{width:27px;height:29px;font-size:15px}
+  #personalJarvis .jarvis-dash-card-copy strong{font-size:10px}
+  #personalJarvis .jarvis-dash-card-copy small{font-size:8.5px}
+}
+@media(prefers-reduced-motion:reduce){
+  #personalJarvis .jarvis-dash-quick *,#personalJarvis .jarvis-dash-advanced *,
+  #personalJarvis .jarvis-dash-more *{transition:none!important;animation:none!important}
+}

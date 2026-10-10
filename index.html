@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="./jarvis-brain.css?v=1" />
   <link rel="stylesheet" href="./jarvis-life-photo.css?v=1" />
   <link rel="stylesheet" href="./jarvis-device-pairing.css?v=1" />
+  <link rel="stylesheet" href="./jarvis-dashboard.css?v=1" />
   <title>DG OS · Dein Tag</title>
 </head>
 <body>
@@ -157,7 +158,7 @@
             <h2 id="personalJarvisTitle">Was kann ich für dich tun?</h2>
             <p>Ich ordne deinen Tag, Aufgaben, Termine, Rechnungen und Ideen.</p>
           </div>
-          <div class="jarvis-system-badge" aria-label="Jarvis System bereit"><i aria-hidden="true"></i><span>ONLINE</span></div>
+          <div class="jarvis-system-badge" aria-label="Jarvis-Geräteverbindung wird geprüft"><i aria-hidden="true"></i><span>PRÜFEN</span></div>
         </div>
         <div class="jarvis-orb-stage">
           <button id="personalJarvisOrbBtn" class="jarvis-orb dg-hero-orb-button jarvis-cinematic-orb" type="button" data-state="idle" aria-label="Mit Jarvis sprechen" aria-pressed="false">
@@ -188,7 +189,7 @@
 
       <form id="jarvisLifeCommandForm" class="jarvis-life-command" autocomplete="off">
         <span aria-hidden="true">⌘</span>
-        <input id="jarvisLifeCommandInput" type="text" maxlength="320" placeholder="Sag z. B. «Brauche Toast, Tomaten, Käse»" aria-label="Jarvis Befehl" />
+        <input id="jarvisLifeCommandInput" type="text" maxlength="320" placeholder="Schreiben oder sprechen: «Ich brauche Milch»" aria-label="Jarvis Befehl" />
         <button type="submit" aria-label="Befehl ausführen">→</button>
       </form>
 
@@ -1229,7 +1230,8 @@
   <script src="./jarvis-native-voice.js?v=2"></script>
   <script src="./jarvis-voice.js?v=10"></script>
   <script src="./jarvis-brain.js?v=3"></script>
-  <script src="./jarvis-device-pairing.js?v=1"></script>\n  <script src="./social.js?v=0.61.1"></script>
+  <script src="./jarvis-device-pairing.js?v=1"></script>
+  <script src="./jarvis-dashboard.js?v=1"></script>\n  <script src="./social.js?v=0.61.1"></script>
   <script src="./navigation.js?v=0.60.1"></script>
   <script src="./private-hub.js?v=2"></script>
   <script src="./trading-command.js?v=0.57.0"></script>

@@ -164,5 +164,12 @@
       average7:wa,averagePrevious7:pa,performance7:wPerf,performancePrevious7:pPerf,
       improvement,weekDays,previousDays,summary};
   }
-  return {dayAdd,parseCSV,parseWhoopCSV,normalized,avg,compute,duration,integer,number};
+  function isSleepQuestion(raw){
+    if(typeof raw!=='string')return false;
+    const text=raw.toLocaleLowerCase('de');
+    const subject=/(?:geschlafen|schlafanalyse|schlafqualität|schlafdauer|tiefschlaf|rem.schlaf|mein schlaf|wie war mein schlaf)/u.test(text);
+    const asked=/(?:wie|war|habe|vergleich|heute|gestern|woche|monat|schlafanalyse|schlafqualität)/u.test(text);
+    return subject&&asked&&!/(?:erinner|weck|wecker|termin|aufgabe|muss|bitte um)/u.test(text);
+  }
+  return {dayAdd,parseCSV,parseWhoopCSV,normalized,avg,compute,duration,integer,number,isSleepQuestion};
 });

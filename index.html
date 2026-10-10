@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="./mobile.css?v=0.46.3" />
   <link rel="stylesheet" href="./jarvis-visuals.css?v=0.56.0" />
   <link rel="stylesheet" href="./trading-command.css?v=0.57.0" />
+  <link rel="stylesheet" href="./trading-intelligence.css?v=1" />
   <link rel="stylesheet" href="./ambient-glass.css?v=0.58.1" />
   <link rel="stylesheet" href="./jarvis-os-v2.css?v=0.59.0" />
   <link rel="stylesheet" href="./jarvis-voice.css?v=2" />
@@ -714,6 +715,54 @@
           </section>
         </div>
 
+        <section id="dgSessionIntel" class="dg-session-intel" aria-labelledby="dgIntelHeading">
+          <div class="dg-intel-top">
+            <div>
+              <span class="dg-intel-kicker">DG TRADING BRAIN · CONTEXT INTELLIGENCE</span>
+              <h3 id="dgIntelHeading">Asia · London · Macro / Medium</h3>
+              <p>Market Facts, Liquiditäts-Abholung und H1-Reaktion. Keine automatische Entry-Empfehlung.</p>
+            </div>
+            <div id="dgIntelStatus" class="dg-intel-status" data-state="wait">DATEN PRÜFEN</div>
+          </div>
+          <div class="dg-intel-bias">
+            <div><small>MACRO · Monthly / Weekly</small><strong id="dgIntelMacro">—</strong><p id="dgIntelMacroReason">Warte auf echte HTF-Daten.</p></div>
+            <div><small>MEDIUM · Daily / 4H</small><strong id="dgIntelMedium">—</strong><p id="dgIntelMediumReason">Kein eigener Bias erfunden.</p></div>
+            <div><small>INTRADAY · H1 Struktur</small><strong id="dgIntelH1">—</strong><p id="dgIntelH1Reason">Interne und externe Struktur.</p></div>
+          </div>
+          <div class="dg-intel-session-grid">
+            <article>
+              <div class="dg-intel-cardhead"><span>01 / ASIA RANGE</span><strong id="dgIntelAsiaDate">—</strong></div>
+              <div class="dg-intel-price-pair"><div><small>ASIA HIGH</small><strong id="dgIntelAsiaHigh">—</strong></div><div><small>ASIA LOW</small><strong id="dgIntelAsiaLow">—</strong></div></div>
+              <p id="dgIntelAsiaContext">Für die komplette Asia-Range werden acht abgeschlossene H1-Kerzen benötigt.</p>
+            </article>
+            <article>
+              <div class="dg-intel-cardhead"><span>02 / LONDON vs. ASIA</span><strong id="dgIntelLondonMeta">—</strong></div>
+              <div class="dg-intel-sweep-row"><span>Asia High</span><strong id="dgIntelHighSweep">—</strong></div>
+              <div class="dg-intel-sweep-row"><span>Asia Low</span><strong id="dgIntelLowSweep">—</strong></div>
+              <p id="dgIntelLondonContext">Keine Sweep-Schlussfolgerung ohne belegte H1-Daten.</p>
+            </article>
+            <article>
+              <div class="dg-intel-cardhead"><span>03 / NEW YORK CONTEXT</span><strong id="dgIntelNYMeta">—</strong></div>
+              <p id="dgIntelNYContext">Nach London wird ausgewertet, welche Asia-Liquidität tatsächlich genommen wurde.</p>
+              <small id="dgIntelNYRange">NY High/Low: —</small>
+            </article>
+          </div>
+          <div class="dg-intel-lower">
+            <div class="dg-intel-observation">
+              <div><span class="dg-intel-kicker">SEQUENCE / EVIDENCE</span><strong>Was ist nachweisbar passiert?</strong></div>
+              <ul id="dgIntelEvidence"><li>Warte auf echte abgeschlossene H1-Daten.</li></ul>
+            </div>
+            <div class="dg-intel-observation dg-intel-inducement">
+              <div><span class="dg-intel-kicker">INDUCEMENT / MACRO · MEDIUM</span><strong id="dgIntelInducement">AWAITING DG RULE</strong></div>
+              <p id="dgIntelInducementReason">Kleine interne Liquidity ist nicht automatisch Inducement. Kontext und bestätigte DG-Definition notwendig.</p>
+            </div>
+          </div>
+          <div class="dg-intel-footer">
+            <span id="dgIntelProvenance">Datenherkunft: nicht verbunden</span>
+            <button type="button" id="dgIntelRefresh" aria-label="Session Intelligence aktualisieren">↻ Aktualisieren</button>
+          </div>
+        </section>
+
         <section class="trading-scenario-card">
           <div class="trading-scenario-head">
             <span>JARVIS · SESSION READ</span>
@@ -1140,6 +1189,8 @@
   <script src="./navigation.js?v=0.60.1"></script>
   <script src="./private-hub.js?v=1"></script>
   <script src="./trading-command.js?v=0.57.0"></script>
+  <script src="./trading-intelligence.js?v=1"></script>
+  <script src="./trading-intelligence-ui.js?v=1"></script>
   <script src="./weather.js?v=0.46.2"></script>
 <script>
   (() => {

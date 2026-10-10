@@ -34,6 +34,7 @@ const finnhub = require('./lib/finnhubClient.js');
 const store = require('./lib/marketStateStore.js');
 const tbStore = require('./lib/tradingBrainStore.js');
 const { TIMEFRAME_DEFS } = require('./lib/timeframes.js');
+const DGSessionIntel = require('../trading-intelligence.js');
 
 const DIFF_DEBOUNCE_MS = 5000;
 
@@ -435,7 +436,13 @@ class MarketState {
       this._recomputeTradingBrain();
       this._scheduleDiskFlush(); // so activeSetup/events from this on-demand compute still reach disk
     }
-    return Object.assign({}, this.tradingBrain, { activeSetup: this.activeSetup || null });
+    return Object.assign({}, this.tradingBrain, {
+      activeSetup: this.activeSetup || null,
+      // Facts-only context; never affects the legacy DG Entry/Decision Engine.
+      sessionIntelligence: DGSessionIntel.computeSessionIntelligence({
+        candlesByTimeframe: this.candlesByTimeframe, brain: this.tradingBrain, now: new Date()
+      })
+    });
   }
 }
 

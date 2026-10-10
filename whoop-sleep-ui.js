@@ -253,5 +253,33 @@
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&Date.now()-lastFetch>180000)void refresh();});
   syncTabs();
   void refresh();
-  window.DGOSWhoopSleepUI={refresh};
+  function answerQuestion(question){
+    const text=String(question||'').toLocaleLowerCase('de');
+    const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Zurich',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+    if(!rows.length)return 'Gomes, ich habe noch keine WHOOP-Schlafhistorie geladen. Bitte unter Gesundheit die Verbindung prüfen.';
+    const currentDay=rows.at(-1)?.sleep_date;
+    if(/\b(?:letzte woche|vergangene woche|7 tage|wochenvergleich)\b/u.test(text)){
+      const result=api.compute(rows,currentDay);
+      const average=result.average7;
+      const previous=result.averagePrevious7;
+      if(average===null)return 'Gomes, für die letzten sieben Tage fehlen mir vollständige Schlafaufzeichnungen.';
+      return 'Gomes, in den letzten sieben Kalendertagen hast du durchschnittlich '+
+        fmt(average)+' geschlafen. '+(previous!==null&&result.week.length>=3&&result.previous.length>=3
+          ?'Die sieben Tage davor waren es '+fmt(previous)+'. Der Unterschied beträgt '+
+            (average>=previous?'+':'−')+fmt(Math.abs(Math.round(average-previous)))+'. '
+          :'Für einen zuverlässigen Vorwochenvergleich fehlen mir noch Aufzeichnungen. ')+
+        'Deine durchschnittliche WHOOP-Schlafleistung liegt bei '+(result.performance7===null?'nicht genügend erfassten Werten':Math.round(result.performance7)+' Prozent')+'.';
+    }
+    const target=/\bgestern\b/u.test(text)?api.dayAdd(today,-1):today;
+    const data=rows.find(r=>r.sleep_date===target);
+    if(!data){
+      if(target===today&&currentDay===api.dayAdd(today,-1))return 'Gomes, die heutige Nacht ist bei WHOOP noch nicht erfasst. Die letzte Aufzeichnung stammt von gestern.';
+      return 'Gomes, für '+dateLabel(target)+' habe ich keine Hauptschlaf-Aufzeichnung. Fehlende Daten zähle ich nicht als null Stunden.';
+    }
+    const summary=api.compute(rows,target);
+    return 'Gomes, am '+dateLabel(target)+' hast du '+fmt(data.duration_min)+' geschlafen. '+
+      'Deine WHOOP-Schlafleistung lag bei '+(data.performance===null?'nicht erfassten Werten':data.performance+' Prozent')+'. '+
+      summary.summary;
+  }
+  window.DGOSWhoopSleepUI={refresh,answerQuestion};
 })();

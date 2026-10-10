@@ -34,10 +34,10 @@ const voiceClient=fs.readFileSync(path.join(root,'jarvis-voice.js'),'utf8');
 assert.doesNotThrow(()=>new Function(pairing));
 assert.doesNotThrow(()=>new Function(voiceClient));
 assert.doesNotThrow(()=>new Function(client));
-assert.match(index,/jarvis-device-pairing\\.js\\?v=1/);
-assert.match(index,/jarvis-device-pairing\\.css\\?v=1/);
-assert.match(html,/jarvis-device-pairing\\.js\\?v=1/);
-assert.match(html,/jarvis-device-pairing\\.css\\?v=1/);
+assert.ok(index.includes('jarvis-device-pairing.js?v=1'));
+assert.ok(index.includes('jarvis-device-pairing.css?v=1'));
+assert.ok(html.includes('jarvis-device-pairing.js?v=1'));
+assert.ok(html.includes('jarvis-device-pairing.css?v=1'));
 assert.ok(pairingStyle.includes('.jarvis-device-pair'));
 for(const route of ['pair-start','pair-claim','status']){
   assert.ok(pairing.includes("'"+route+"'"),route+' route');

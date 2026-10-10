@@ -43,6 +43,7 @@
       <button id="jvRead" type="button">Antwort vorlesen</button>
       <button id="jvStop" type="button">Stopp</button>
     </div>
+    <audio id="jvAudioPlayer" controls preload="none" hidden aria-label="Erzeugte Jarvis Premium-Stimme abspielen"></audio>
     <p class="jv-voice-notice" id="jvNotice" role="status" aria-live="polite"></p>
     <a class="jv-studio-link" href="./voice-studio.html">Premium Voice Studio ↗</a>
   `;
@@ -64,7 +65,7 @@
     if(abort){abort.abort();abort=null;}
     if(window.DGOSLocalVoice)window.DGOSLocalVoice.stop();
     else if(synth && (synth.speaking || synth.pending || synth.paused))synth.cancel();
-    if(currentAudio){currentAudio.pause();currentAudio.removeAttribute('src');currentAudio.load();currentAudio=null;}
+    if(currentAudio){currentAudio.pause();currentAudio.removeAttribute('src');currentAudio.load();currentAudio.hidden=true;currentAudio=null;}
     if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl='';}
     lastPrepared='';
   }
@@ -169,13 +170,13 @@
       if(thisRequest!==sequence)return;
       if(!blob.type.includes('audio')||!blob.size)throw Error('Keine Audiodaten empfangen.');
       objectUrl=URL.createObjectURL(blob);
-      currentAudio=new Audio(objectUrl);lastPrepared=text;
+      currentAudio=$('jvAudioPlayer');currentAudio.src=objectUrl;currentAudio.hidden=false;lastPrepared=text;
       currentAudio.onended=()=>setMessage('Wiedergabe beendet.','BEREIT');
       try{
         await currentAudio.play();
         setMessage(text.length>300?'Jarvis spricht · die Antwort wurde auf 300 Zeichen gekürzt.':'Jarvis spricht mit '+(provider==='openai-tts'?'OpenAI':'Cartesia')+'.','SPRICHT');
       }catch{
-        setMessage('Audio bereit. Tippe auf «Antwort vorlesen», damit dein iPhone die Wiedergabe startet.','STARTEN');
+        setMessage('Audio ist bereit. Tippe auf ▶ im Audioplayer direkt über dieser Meldung.','STARTEN');
       }
     }catch(error){
       if(thisRequest!==sequence||error.name==='AbortError')return;

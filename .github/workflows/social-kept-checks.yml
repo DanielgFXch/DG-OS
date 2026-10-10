@@ -1,0 +1,27 @@
+name: DG OS Social Kept Accounts
+on:
+  pull_request:
+    paths:
+      - 'social.js'
+      - 'social.css'
+      - 'index.html'
+      - 'supabase/functions/social/**'
+      - 'scripts/test-social-kept.js'
+      - '.github/workflows/social-kept-checks.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'social.js'
+      - 'social.css'
+      - 'supabase/functions/social/**'
+      - 'scripts/test-social-kept.js'
+jobs:
+  saved-accounts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check social.js
+      - run: node scripts/test-social-kept.js

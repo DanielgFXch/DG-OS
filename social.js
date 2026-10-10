@@ -28,6 +28,11 @@
 
   let state = loadState();
   const cloud = { business: null, private: null };
+  // Kept profiles are intentional decisions, separate from protected/whitelisted accounts.
+  // Existing choices from the user's secure DG-OS Social backend are restored here.
+  const cloudKept = { business: null, private: null };
+  const keptFetchVersion = { business: 0, private: 0 };
+  let keptSearch = '';
 
   function loadState() {
     try {
@@ -239,6 +244,7 @@
     persist();
     render();
     loadCloudDashboard(state.active);
+    loadKeptAccounts(state.active);
     const workspace = $('socialWorkspace');
     workspace.classList.remove('hidden');
     document.body.classList.add('social-workspace-open');
@@ -323,6 +329,133 @@
     renderQueue();
     renderExplorer();
     renderCleanupStats();
+    renderKeptAccounts();
+  }
+
+  function keptUsernames(key = state.active) {
+    const acc = state.accounts[key];
+    const usernames = new Set(
+      Object.entries(acc.decisions || {})
+        .filter(([username, decision]) => cleanUsername(username) && decision === 'keep')
+        .map(([username]) => cleanUsername(username))
+    );
+    for (const item of cloudKept[key] || []) {
+      const username = cleanUsername(item.username);
+      // A newer local decision takes precedence until a cloud refresh completes.
+      if (username && (!Object.hasOwn(acc.decisions, username) || acc.decisions[username] === 'keep')) usernames.add(username);
+    }
+    return [...usernames].sort((a,b) => a.localeCompare(b));
+  }
+
+  function renderKeptAccounts() {
+    const host = $('socialKeptList');
+    if (!host) return;
+    const usernames = keptUsernames();
+    const visible = usernames.filter(name => !keptSearch || name.includes(keptSearch));
+    $('socialKeptCount').textContent = usernames.length + ' behalten';
+    host.replaceChildren();
+    if (!visible.length) {
+      const empty = document.createElement('p');
+      empty.className = 'social-kept-empty';
+      empty.textContent = keptSearch
+        ? 'Keine gespeicherten Accounts für diese Suche.'
+        : 'Noch keine Accounts behalten. Drücke bei einem Cleanup-Kandidaten auf «Behalten».';
+      host.append(empty);
+      return;
+    }
+    const fragment = document.createDocumentFragment();
+    for (const username of visible) {
+      const row = document.createElement('div');
+      row.className = 'social-kept-item';
+      const avatar = document.createElement('span');
+      avatar.className = 'social-kept-avatar';
+      avatar.setAttribute('aria-hidden', 'true');
+      avatar.textContent = '@';
+      const info = document.createElement('div');
+      info.className = 'social-kept-identity';
+      const title = document.createElement('strong');
+      title.textContent = '@' + username;
+      const subtitle = document.createElement('small');
+      subtitle.textContent = 'Bewusst behalten · ' + ACCOUNT_LABELS[state.active];
+      info.append(title, subtitle);
+      const actions = document.createElement('div');
+      actions.className = 'social-kept-actions';
+      for (const [action, label] of [['open', 'Profil öffnen ↗'], ['undo', 'Rückgängig']]) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.dataset.socialKeptAction = action;
+        button.dataset.username = username;
+        button.textContent = label;
+        button.setAttribute('aria-label', label + ': @' + username);
+        if (action === 'undo') button.className = 'social-kept-undo';
+        actions.append(button);
+      }
+      row.append(avatar, info, actions);
+      fragment.append(row);
+    }
+    host.append(fragment);
+  }
+
+  async function loadKeptAccounts(key = state.active) {
+    const version = ++keptFetchVersion[key];
+    const status = $('socialKeptStatus');
+    if (!session()) {
+      cloudKept[key] = null;
+      if (key === state.active) {
+        renderKeptAccounts();
+        status.textContent = 'Auf diesem Gerät gespeichert · für Cloud-Sync mit Telegram verbinden.';
+      }
+      return;
+    }
+    if (key === state.active) status.textContent = 'Gespeicherte Entscheidungen werden geladen …';
+    try {
+      const response = await api('kept?accountKey=' + encodeURIComponent(key));
+      if (keptFetchVersion[key] !== version) return;
+      cloudKept[key] = Array.isArray(response.items) ? response.items.filter(x => x && cleanUsername(x.username)) : [];
+      // Rehydrate past choices: older local data can be missing a keep decision
+      // when the user imported a later Instagram snapshot on this device.
+      let changed = false;
+      for (const item of cloudKept[key]) {
+        const username = cleanUsername(item.username);
+        if (username && !Object.hasOwn(state.accounts[key].decisions, username)) {
+          state.accounts[key].decisions[username] = 'keep';
+          changed = true;
+        }
+      }
+      if (changed) persist();
+      if (key === state.active) {
+        render();
+        status.textContent = 'Gespeicherte Entscheidungen mit DG OS synchronisiert.';
+      }
+    } catch (_) {
+      if (keptFetchVersion[key] !== version) return;
+      if (key === state.active) {
+        renderKeptAccounts();
+        status.textContent = 'Cloud gerade nicht erreichbar · lokale Entscheidungen bleiben erhalten.';
+      }
+    }
+  }
+
+  async function undoKeptAccount(username) {
+    const key = state.active;
+    const acc = state.accounts[key];
+    if (acc.decisions[username] !== 'keep' && !(cloudKept[key] || []).some(x => x.username === username)) return;
+    // The explicit undo must reach the cloud first or the next refresh could
+    // incorrectly restore an older "keep" decision.
+    if (session()) {
+      const saved = await syncDecision(username, { decision: null });
+      if (!saved) {
+        notice('Konnte @' + username + ' nicht ändern. Bitte Verbindung prüfen und erneut versuchen.', 'error');
+        return;
+      }
+    }
+    ++keptFetchVersion[key];
+    delete acc.decisions[username];
+    delete acc.removedAt[username];
+    if (cloudKept[key]) cloudKept[key] = cloudKept[key].filter(x => x.username !== username);
+    persist();
+    render();
+    notice('@' + username + ' ist nicht mehr auf der Behalten-Liste.', 'success');
   }
 
   function renderWhitelist() {
@@ -383,6 +516,8 @@
           delete account().removedAt[username];
           persist();
           render();
+          if (cloudKept[state.active]) cloudKept[state.active] = cloudKept[state.active].filter(item => item.username !== username);
+          renderKeptAccounts();
           syncDecision(username, { decision: null });
           notice('@' + username + ' ist wieder offen.', 'success');
         } else setDecision(username, action);
@@ -590,6 +725,11 @@
     if (decision !== 'removed') delete acc.removedAt[clean];
     persist();
     render();
+    if (cloudKept[state.active]) {
+      cloudKept[state.active] = cloudKept[state.active].filter(item => item.username !== clean);
+      if (decision === 'keep') cloudKept[state.active].push({ username: clean });
+    }
+    renderKeptAccounts();
     syncDecision(clean, { decision });
     const labels = { keep: 'behalten', removed: 'als entfernt markiert', later: 'auf später verschoben' };
     notice(`@${clean} wurde ${labels[decision]}.`, 'success');
@@ -702,7 +842,9 @@
     acc.sourceFiles = parsed.filter(v => v.kind).map(v => v.file);
 
     const followingSet = new Set(acc.following);
-    acc.decisions = Object.fromEntries(Object.entries(acc.decisions).filter(([username]) => followingSet.has(username)));
+    // A new snapshot must not erase a deliberate "Behalten" decision,
+    // including profiles that are not present in the current following export.
+    acc.decisions = Object.fromEntries(Object.entries(acc.decisions).filter(([username, decision]) => followingSet.has(username) || decision === 'keep'));
 
     if (!persist()) return;
     render();
@@ -762,6 +904,7 @@
         persist();
         render();
         loadCloudDashboard(state.active);
+        loadKeptAccounts(state.active);
         notice('');
       });
     });
@@ -793,6 +936,22 @@
     $('socialDecisionRemoved').addEventListener('click', event => setDecision(event.currentTarget.dataset.username, 'removed'));
     $('socialDecisionLater').addEventListener('click', event => setDecision(event.currentTarget.dataset.username, 'later'));
     $('socialResetData').addEventListener('click', resetAccountData);
+    $('socialKeptSearch').addEventListener('input', event => {
+      keptSearch = String(event.target.value || '').trim().toLowerCase().replace(/^@+/, '');
+      renderKeptAccounts();
+    });
+    $('socialKeptRefresh').addEventListener('click', () => loadKeptAccounts(state.active));
+    $('socialKeptList').addEventListener('click', event => {
+      const actionButton = event.target.closest('button[data-social-kept-action]');
+      if (!actionButton) return;
+      const username = cleanUsername(actionButton.dataset.username);
+      if (!username) return;
+      if (actionButton.dataset.socialKeptAction === 'open') {
+        window.open('https://www.instagram.com/' + encodeURIComponent(username) + '/', '_blank', 'noopener,noreferrer');
+      } else if (actionButton.dataset.socialKeptAction === 'undo') {
+        undoKeptAccount(username);
+      }
+    });
     $('socialStartCleanup').addEventListener('click', () => {
       renderQueue();
       $('socialCleanupSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -809,8 +968,12 @@
   render();
   loadCloudDashboard('business');
   loadCloudDashboard('private');
+  loadKeptAccounts('business');
+  loadKeptAccounts('private');
   window.addEventListener('dgos-device-session', () => {
     loadCloudDashboard('business');
     loadCloudDashboard('private');
+    loadKeptAccounts('business');
+    loadKeptAccounts('private');
   });
 })();

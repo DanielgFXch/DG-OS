@@ -1779,6 +1779,8 @@
     setOrbState('speaking');
     setStatus('Erledigt');
     setReply(text);
+    // Speak only completed answers, never an interim listening/transcription state.
+    window.dispatchEvent(new CustomEvent('dgos-jarvis-final-response',{detail:{text}}));
     clearTimeout(panel._jarvisSpeakingTimer);
     panel._jarvisSpeakingTimer = setTimeout(() => {
       panel.classList.remove('is-speaking');
@@ -1894,6 +1896,7 @@
     setOrbState('idle');
     setStatus('Nicht gespeichert');
     setReply(text);
+    window.dispatchEvent(new CustomEvent('dgos-jarvis-final-response',{detail:{text}}));
   }
   async function addSpokenShopping(items) {
     if (shoppingInFlight) return true;
@@ -2047,70 +2050,48 @@
     if (commandInput) commandInput.value = '';
   });
 
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  let recognition = null;
-  let listening = false;
-
-  if (SpeechRecognition) {
-    recognition = new SpeechRecognition();
-    recognition.lang = 'de-CH';
-    recognition.interimResults = false;
-    recognition.continuous = false;
-    recognition.maxAlternatives = 1;
-
-    recognition.addEventListener('start', () => {
-      listening = true;
-      panel.classList.add('is-listening');
-      setOrbState('listening');
-      orb.setAttribute('aria-pressed','true');
-      setStatus('Ich höre zu …');
-      setReply('Sag einfach, was du brauchst.');
-    });
-    recognition.addEventListener('result', event => {
-      const transcript = event.results?.[0]?.[0]?.transcript || '';
-      if (transcript) {
-        setOrbState('thinking');
-        setStatus('Ich ordne das …');
-        setReply('«' + transcript + '»');
-        setTimeout(() => interpretCommand(transcript), 220);
+  // iPhone Safari: MediaRecorder + secured DG OS transcription takes priority.
+  // SpeechRecognition remains a fallback on compatible desktop browsers.
+  const microphone = window.DGOSJarvisMicrophone?.create({
+    lang:'de-DE',
+    onState: (state, message) => {
+      const listening=state==='listening';
+      panel.classList.toggle('is-listening',listening);
+      orb.setAttribute('aria-pressed',String(listening));
+      setOrbState(listening?'listening':state==='processing'?'thinking':'idle');
+      if(message)setStatus(state==='listening'?'Ich höre zu …':
+        state==='processing'?'Spracherkennung läuft …':
+        state==='starting'?'Mikrofon wird gestartet …':
+        state==='error'?'Mikrofon-Fehler':state==='result'?'Sprache erkannt':'Bereit');
+      if(state==='listening'||state==='starting'||state==='processing'){
+        if(message)setReply(message);
       }
-    });
-    recognition.addEventListener('end', () => {
-      listening = false;
+      window.dispatchEvent(new CustomEvent('dgos-jarvis-microphone-state',{detail:{state}}));
+    },
+    onTranscript: text => {
+      setOrbState('thinking');
+      setStatus('Ich verarbeite deine Worte …');
+      setReply('Erkannt: «'+text+'»');
+      setTimeout(()=>interpretCommand(text),150);
+    },
+    onError: message => {
       panel.classList.remove('is-listening');
       orb.setAttribute('aria-pressed','false');
-      if (orb.dataset.state === 'listening') setOrbState('idle');
-      if (status && status.textContent === 'Ich höre zu …') setStatus('Bereit');
-    });
-    recognition.addEventListener('error', event => {
-      listening = false;
-      panel.classList.remove('is-listening');
       setOrbState('idle');
-      orb.setAttribute('aria-pressed','false');
-      if (event.error === 'not-allowed') {
-        setStatus('Mikrofon nicht erlaubt');
-        setReply('Du kannst Jarvis auch direkt unten eintippen.');
-      } else {
-        setStatus('Sprache gerade nicht verfügbar');
-        setReply('Nutze kurz die Texteingabe.');
-      }
-    });
-  }
-
-  orb.addEventListener('click', () => {
-    if (!recognition) {
-      setStatus('Textmodus');
-      setReply('Spracherkennung ist hier nicht verfügbar. Schreib mir deinen Befehl.');
-      commandInput?.focus();
-      return;
+      setStatus('Mikrofon-Fehler');
+      setReply(message);
+      // Text entry remains available without losing the utterance.
     }
-    if (listening) {
-      try { recognition.stop(); } catch (_) {}
-      return;
-    }
-    try { recognition.start(); }
-    catch (_) { commandInput?.focus(); }
   });
+  orb.addEventListener('click',()=>{
+    if(!microphone){
+      setStatus('Textmodus');
+      setReply('Bitte DG OS in Safari öffnen. Du kannst den Befehl auch unten eintippen.');
+      commandInput?.focus();return;
+    }
+    microphone.start();
+  });
+  window.addEventListener('pagehide',()=>microphone?.destroy());
 
   const statMap = [
     ['attentionTaskStat','jarvisLifeTasks'],

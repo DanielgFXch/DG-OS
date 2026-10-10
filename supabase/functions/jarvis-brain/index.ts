@@ -124,8 +124,9 @@ Deno.serve(async(req:Request)=>{
       // Prefer matching memories but retain a small, stable set of essentials.
       const words=question.toLocaleLowerCase("de").split(/[^\p{L}\p{N}]+/u).filter(v=>v.length>=4);
       const chosen=fullMem.map((m,i)=>({m,i,score:words.reduce((n,w)=>n+((String(m.title)+" "+String(m.content)).toLocaleLowerCase("de").includes(w)?1:0),0)}))
-        .sort((a,b)=>b.score-a.score||a.i-b.i).slice(0,25).map(x=>x.m);
-      const safeContext=JSON.stringify({date:queryDate,memories:chosen,day:{tasks:day.tasks.slice(0,35),appointments:day.appointments.slice(0,35),bills:day.bills.slice(0,25),shopping:day.shopping.slice(0,30),pendingInbox:day.pendingInbox}});
+        .sort((a,b)=>b.score-a.score||a.i-b.i).slice(0,18)
+        .map(x=>({category:x.m.category,title:clean(x.m.title,120),content:clean(x.m.content,850)}));
+      const safeContext=JSON.stringify({date:queryDate,memories:chosen,day:{tasks:day.tasks.slice(0,25),appointments:day.appointments.slice(0,25),bills:day.bills.slice(0,15),shopping:day.shopping.slice(0,20),pendingInbox:day.pendingInbox}});
       const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),17000);
       try{
         const response=await fetch("https://api.openai.com/v1/responses",{method:"POST",signal:controller.signal,

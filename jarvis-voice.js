@@ -211,7 +211,7 @@
   });
   window.addEventListener('dgos-jarvis-final-response',event=>{
     const text=String(event.detail?.text||'').trim();
-    if(!text||text===lastText)return;
+    if(!text)return; // Identical requests should still receive a spoken answer.
     lastText=text;
     if($('jvEnabled').checked)void speak(text);
   });

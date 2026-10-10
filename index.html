@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#02060b" />
+  <meta name="theme-color" content="#080d18" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="DG OS" />
@@ -30,6 +30,7 @@
   <link rel="stylesheet" href="./jarvis-device-pairing.css?v=1" />
   <link rel="stylesheet" href="./jarvis-dashboard.css?v=1" />
   <link rel="stylesheet" href="./jarvis-weather.css?v=1" />
+  <link rel="stylesheet" href="./premium-ui.css?v=1.0.0" />
   <title>DG OS · Dein Tag</title>
 </head>
 <body>
@@ -499,11 +500,11 @@
             <div class="personal-health-actions"><span id="whoopStatus" class="personal-status">WHOOP · wird geprüft</span><button id="whoopConnect" type="button">WHOOP verbinden</button></div>
           </div>
           <div class="personal-health-values">
-            <div><span>Schlafdauer</span><strong id="whoopSleep">—</strong><small id="whoopSleepPerformance">—</small></div>
+            <div><span>Schlafleistung</span><strong id="whoopSleep">—</strong><small id="whoopSleepPerformance">—</small></div>
             <div><span>Erholung</span><strong id="whoopRecovery">—</strong><small id="whoopHrv">HRV —</small></div>
             <div><span>Belastung</span><strong id="whoopStrain">—</strong><small id="whoopCalories">—</small></div>
           </div>
-          <p id="whoopHealthMeta">Verbinde WHOOP einmal sicher mit DG OS. Danach werden deine Werte automatisch geladen.</p>
+          <p id="whoopHealthMeta" role="status" aria-live="polite">Verbinde WHOOP einmal sicher mit DG OS. Danach werden deine Werte automatisch geladen.</p>
           <section id="whoopSleepAnalysis" class="dgw-sleep-panel" aria-labelledby="dgwSleepTitle">
             <div class="dgw-sleep-header">
               <div><span class="dgw-eyebrow">WHOOP · SCHLAFANALYSE</span>
@@ -1307,9 +1308,9 @@
   <script src="./jarvis-life-photo.js?v=1"></script>
   <script src="./jarvis-microphone.js?v=2"></script>
   <script src="./jarvis-replies.js?v=1"></script>
-  <script src="./personal.js?v=0.59.9"></script>
+  <script src="./personal.js?v=0.59.10"></script>
   <script src="./whoop-sleep-analytics.js?v=1"></script>
-  <script src="./whoop-sleep-ui.js?v=1"></script>
+  <script src="./whoop-sleep-ui.js?v=2"></script>
   <script src="./jarvis-sound-check.js?v=1"></script>
   <script src="./jarvis-native-voice.js?v=2"></script>
   <script src="./jarvis-voice.js?v=10"></script>
@@ -1341,5 +1342,6 @@
     mirror();setInterval(mirror,5000);
   })();
   </script>
+  <script src="./premium-ui.js?v=1.0.0"></script>
 </body>
 </html>

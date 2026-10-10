@@ -66,7 +66,7 @@
       if(!cards[i])return;
       cards[i].style.setProperty('--whoop-pct',(value===null?0:Math.max(0,Math.min(100,value)))+'%');
     });
-    text('whoopSleepPerformance',perf!==null?'Schlafleistung '+Math.round(perf)+' %':'Schlafleistung —');
+    // The overview caption is owned by personal.js: keep the real sleep duration there.
   }
   function render(){
     const summary=api.compute(rows,current);
@@ -161,6 +161,12 @@
       if(!current||current===oldLatest)current=incoming.at(-1)?.sleep_date||'';
       render();
       status(rows.length?'Historie sicher geladen. Vergleiche sind aktuell.':'Noch keine historischen Nächte. Nutze deinen Export unten.');
+      // When the upstream WHOOP OAuth expires, the locally authorized archive
+      // remains usable. Notify the overview with real, dated values only.
+      const latest=rows.at(-1);
+      if(latest&&typeof CustomEvent==='function')window.dispatchEvent(new CustomEvent('dgos-whoop-history-loaded',{
+        detail:{latestDate:latest.sleep_date,latest:{performance:latest.performance??null,durationMin:latest.duration_min??null}}
+      }));
       lastFetch=Date.now();
     }catch(e){status(e.message||'Schlafanalyse konnte nicht geladen werden.');}
     finally{busy=false;el('dgwSleepRefresh').disabled=false;}

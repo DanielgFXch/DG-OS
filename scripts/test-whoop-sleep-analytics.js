@@ -62,10 +62,11 @@ for(const id of ['whoopSleepAnalysis','dgwSleepTitle','dgwSleepDuration','dgwSle
 }
 assert.ok(html.includes('whoop-sleep.css?v=1'));
 assert.ok(html.includes('whoop-sleep-analytics.js?v=1'));
-assert.ok(html.includes('whoop-sleep-ui.js?v=1'));
-assert.ok(html.includes('personal.js?v=0.59.9'));
-assert.ok(html.indexOf('personal.js?v=0.59.9')<html.indexOf('whoop-sleep-ui.js?v=1'));
-assert.ok(html.indexOf('whoop-sleep-analytics.js?v=1')<html.indexOf('whoop-sleep-ui.js?v=1'));
+assert.ok(html.includes('whoop-sleep-ui.js?v=2'));
+assert.ok(read('whoop-sleep-ui.js').includes('dgos-whoop-history-loaded'),'Historical sleep is available in the overview without live WHOOP authorization');
+assert.ok(html.includes('personal.js?v=0.59.10'));
+assert.ok(html.indexOf('personal.js?v=0.59.10')<html.indexOf('whoop-sleep-ui.js?v=2'));
+assert.ok(html.indexOf('whoop-sleep-analytics.js?v=1')<html.indexOf('whoop-sleep-ui.js?v=2'));
 assert.ok(ui.includes("dgos-whoop-updated"));
 assert.ok(ui.includes('window.DGOSWhoopSleepUI={refresh,answerQuestion}'));
 assert.ok(read('personal.js').includes('DGOSWhoopSleepUI?.answerQuestion(original)'));
@@ -89,7 +90,7 @@ assert.ok(server.includes('.upsert(record,{onConflict:"sleep_date"})'));
 assert.ok(server.includes('if(origin!==ALLOWED_ORIGIN)'));
 assert.ok(read('supabase/migrations/20261010233000_whoop_sleep_history.sql').includes('ROW LEVEL SECURITY'));
 assert.ok(read('supabase/migrations/20261010233000_whoop_sleep_history.sql').includes('REVOKE ALL'));
-assert.ok(read('sw.js').includes('dgos-personal-shell-43'));
+assert.ok(read('sw.js').includes('dgos-personal-shell-45'));
 assert.ok(read('sw.js').includes('whoop-sleep-analytics.js?v=1'));
 assert.ok(css.includes('@media(max-width:600px)'));
 assert.ok(css.includes('conic-gradient'));

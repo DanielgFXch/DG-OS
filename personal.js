@@ -723,12 +723,32 @@
   // restored from the existing Telegram-linked device without fresh OAuth.
   let checkFlight=null;
   let lastWhoopHealth='unknown';
+  let lastHistory=null;
+  function historicalSleepFallback(){
+    // Never present archived data as live WHOOP measurements.
+    if(lastWhoopHealth==='ok'||!lastHistory)return;
+    const recent=lastHistory.latest;
+    if(!recent)return;
+    const p=Number(recent.performance);
+    const d=Number(recent.durationMin);
+    if(recent.performance!==null&&Number.isFinite(p))set('whoopSleep',Math.round(p)+' %');
+    const duration=recent.durationMin!==null&&Number.isFinite(d)?Math.floor(d/60)+' Std. '+String(Math.round(d%60)).padStart(2,'0')+' Min.':'Dauer nicht erfasst';
+    set('whoopSleepPerformance','Gespeichert '+lastHistory.latestDate.split('-').reverse().join('.')+' · '+duration);
+  }
+  window.addEventListener('dgos-whoop-history-loaded',event=>{
+    const detail=event?.detail;
+    if(!detail||typeof detail.latestDate!=='string'||!detail.latest)return;
+    lastHistory=detail;
+    historicalSleepFallback();
+  });
   function connectedButUnavailable(message){
     lastWhoopHealth='unavailable';
-    set('whoopStatus','WHOOP · verbunden');
+    set('whoopStatus','WHOOP · Synchronisierung pausiert');
+    $('personalHealth')?.setAttribute('data-whoop-sync','unavailable');
     set('whoopHealthMeta',message||'WHOOP ist verbunden. Aktuelle Daten sind gerade nicht abrufbar. Versuch es später erneut.');
     connect.textContent='Erneut laden';
     connect.disabled=false;
+    historicalSleepFallback();
   }
 
 
@@ -765,6 +785,7 @@
   function set(id,text){const el=$(id);if(el)el.textContent=text;}
   function showDisconnected(text){
     set('whoopStatus','WHOOP · nicht verbunden');
+    $('personalHealth')?.setAttribute('data-whoop-sync','disconnected');
     set('whoopHealthMeta',text||'Verbinde WHOOP einmal sicher mit DG OS. Danach werden deine Werte automatisch geladen.');
     $('whoopDetails')?.classList.add('hidden');
   }
@@ -772,6 +793,7 @@
   function render(data){
     const recovery=data&&data.recovery, sleep=data&&data.sleep, cycle=data&&data.cycle;
     set('whoopStatus','WHOOP · verbunden');
+    $('personalHealth')?.setAttribute('data-whoop-sync','live');
     // WHOOP-like overview: the ring displays actual Sleep Performance (not
     // hours); duration stays immediately underneath and in sleep analysis.
     set('whoopSleep',sleep&&sleep.performance!=null&&Number.isFinite(Number(sleep.performance))?Math.round(Number(sleep.performance))+' %':'—');
@@ -850,11 +872,13 @@
       if(!response.ok){
         const error=await response.json().catch(()=>({}));
         const message=error.error==='whoop_reauthorize_required'
-          ?'WHOOP hat die Berechtigung zurückgezogen oder der Zugangsschlüssel ist ungültig. Bitte WHOOP einmal neu autorisieren.'
+          ?'Die WHOOP-Liveverbindung benötigt eine neue Freigabe. Deine bisherige Schlafhistorie bleibt gespeichert. Bitte WHOOP einmal erneut autorisieren.'
           :'WHOOP bleibt verbunden. Die Daten konnten gerade nicht synchronisiert werden. Tippe auf «Erneut laden».';
         connectedButUnavailable(message);
         if(error.error==='whoop_reauthorize_required') {
           lastWhoopHealth='reauthorize';
+          set('whoopStatus','WHOOP · Freigabe erforderlich');
+          $('personalHealth')?.setAttribute('data-whoop-sync','reauthorize');
           connect.textContent='WHOOP erneut autorisieren';
         }
         return 'unavailable';

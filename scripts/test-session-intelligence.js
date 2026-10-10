@@ -33,7 +33,9 @@ assert.equal(baseline.disclaimer.includes('Trading-Signal'),true);
 assert.equal(ready(original.filter(c=>!c.datetime.includes(' 04:'))).status,'DATA_NOT_READY',
   'Asia range is not valid until all eight H1 bars are closed');
 const highTaken=candles();
-highTaken[8]={...highTaken[8],high:102,close:101.4};
+// Keep all subsequent London H1 CLOSES above the Asia High; otherwise a
+// later return inside would correctly be observed as RETURN_INSIDE.
+for(let i=8;i<16;i++)highTaken[i]={...highTaken[i],high:102,low:99.2,open:101.4,close:101.4};
 const noReturn=ready(highTaken);
 assert.equal(noReturn.london.asiaHigh.state,'TAKEN_NO_RETURN');
 assert.equal(noReturn.london.asiaHigh.returnedAt,null);
@@ -47,7 +49,7 @@ assert.equal(ret.london.asiaHigh.at,'2026-10-09T08:00:00.000Z');
 assert.equal(ret.london.asiaHigh.returnedAt,'2026-10-09T08:00:00.000Z');
 assert.equal(ret.london.asiaLow.state,'OPEN');
 const lowTaken=candles();
-lowTaken[9]={...lowTaken[9],low:98.5,close:98.8};
+for(let i=9;i<16;i++)lowTaken[i]={...lowTaken[i],high:100.8,low:98.5,open:98.8,close:98.8};
 assert.equal(ready(lowTaken).london.asiaLow.state,'TAKEN_NO_RETURN');
 const dual=candles();
 dual[8]={...dual[8],high:102,low:98.5,close:100};

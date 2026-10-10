@@ -2,9 +2,9 @@
    "Nächste Woche" means next week's Monday (Europe/Zurich), explicitly
    disclosed to owner. Ambiguous references are clarified, not guessed. */
 (function(root,factory){
-  const module=factory();
-  if(typeof module==='object'&&module.exports)module.exports=module;
-  else root.DGOSLifeIntent=module;
+  const api=factory();
+  if(typeof module==='object'&&module.exports)module.exports=api;
+  else root.DGOSLifeIntent=api;
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
   const weekdays=['sonntag','montag','dienstag','mittwoch','donnerstag','freitag','samstag'];

@@ -241,6 +241,7 @@
   });
   window.addEventListener('dgos-device-session',()=>{loadMemories();loadPlan();});
   window.addEventListener('dgos-private-updated',()=>{if(selectedTab==='plan')loadPlan();});
+  window.addEventListener('dgos-jarvis-tasks-updated',()=>{if(selectedTab==='plan')loadPlan();});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.body.dataset.dgosRoute==='jarvis')loadPlan();});
   // Do not load personal content until a paired session exists.
   if(readToken()){loadMemories();loadPlan();}

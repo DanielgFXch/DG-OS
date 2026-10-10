@@ -25,6 +25,7 @@
   <link rel="stylesheet" href="./jarvis-voice-contrast.css?v=1" />
   <link rel="stylesheet" href="./jarvis-cinematic.css?v=1" />
   <link rel="stylesheet" href="./jarvis-brain.css?v=1" />
+  <link rel="stylesheet" href="./jarvis-life-photo.css?v=1" />
   <link rel="stylesheet" href="./jarvis-device-pairing.css?v=1" />
   <title>DG OS · Dein Tag</title>
 </head>
@@ -190,6 +191,44 @@
         <input id="jarvisLifeCommandInput" type="text" maxlength="320" placeholder="Sag z. B. «Brauche Toast, Tomaten, Käse»" aria-label="Jarvis Befehl" />
         <button type="submit" aria-label="Befehl ausführen">→</button>
       </form>
+
+      <section class="jarvis-photo-entry" aria-label="Jarvis Bildaufgaben">
+        <button id="jarvisPhotoPick" type="button">📸 Foto aufnehmen oder auswählen</button>
+        <p>Fotografiere ein Produkt, deinen Kühlschrank oder eine Rechnung. Jarvis zeigt zuerst einen bearbeitbaren Entwurf.</p>
+        <input id="jarvisPhotoInput" type="file" accept="image/*" capture="environment" hidden />
+      </section>
+      <section id="jarvisPhotoPanel" class="jarvis-photo-panel" aria-labelledby="jarvisPhotoHeading" hidden>
+        <div class="jarvis-photo-head">
+          <div><span class="personal-kicker">JARVIS · FOTO-ASSISTENT</span><h3 id="jarvisPhotoHeading">Foto prüfen</h3></div>
+          <button type="button" id="jarvisPhotoCancel" aria-label="Fotoentwurf verwerfen">×</button>
+        </div>
+        <img id="jarvisPhotoPreview" class="jarvis-photo-preview" alt="Vorschau deines Fotos" hidden />
+        <p id="jarvisPhotoSummary" class="jarvis-photo-summary">Wähle ein Foto. Jarvis bereitet einen Vorschlag vor.</p>
+        <label class="jarvis-photo-field">Was möchtest du speichern?
+          <select id="jarvisPhotoKind">
+            <option value="shopping">Einkaufsliste</option>
+            <option value="task">Aufgabe / Rechnung bezahlen (nur Erinnerung)</option>
+          </select>
+        </label>
+        <div id="jarvisPhotoShoppingWrap" class="jarvis-photo-form" hidden>
+          <div class="jarvis-photo-label">Erkannte Produkte auswählen</div>
+          <div id="jarvisPhotoItems" class="jarvis-photo-chips"></div>
+          <label class="jarvis-photo-field">Weitere Produkte (optional, durch Komma trennen)
+            <input id="jarvisPhotoMore" maxlength="350" placeholder="z. B. Milch, Toast" />
+          </label>
+        </div>
+        <div id="jarvisPhotoTaskWrap" class="jarvis-photo-form" hidden>
+          <label class="jarvis-photo-field">Aufgabe (bitte selbst prüfen)
+            <input id="jarvisPhotoTitle" maxlength="160" placeholder="z. B. Rechnung prüfen und bezahlen" />
+          </label>
+          <label class="jarvis-photo-field"><span id="jarvisPhotoDateLabel">Datum (von dir bestätigen)</span>
+            <input id="jarvisPhotoDate" type="date" />
+          </label>
+        </div>
+        <p id="jarvisPhotoNotice" class="jarvis-photo-notice" role="status" aria-live="polite"></p>
+        <button id="jarvisPhotoSave" class="jarvis-photo-save" type="button">Entwurf speichern</button>
+        <p class="jarvis-photo-disclaimer">Fotos werden zur einmaligen Erkennung an den KI-Dienst gesendet, aber nicht als Foto gespeichert. Keine Zahlung wird ausgelöst. Bitte Vorschläge prüfen.</p>
+      </section>
 
       <section class="jb-intelligence" id="jarvisIntelligence" aria-labelledby="jbIntelligenceHeading">
         <div class="jb-intelligence-top">
@@ -1180,12 +1219,14 @@
   </form></dialog>
   <script src="./marketBrain.js"></script>
   <script src="./app.js?v=0.59.2"></script>
-  <script src="./jarvis-shopping-intent.js?v=1"></script>
-  <script src="./personal.js?v=0.59.2"></script>
+  <script src="./jarvis-shopping-intent.js?v=2"></script>
+  <script src="./jarvis-life-intent.js?v=1"></script>
+  <script src="./jarvis-life-photo.js?v=1"></script>
+  <script src="./personal.js?v=0.59.3"></script>
   <script src="./jarvis-sound-check.js?v=1"></script>
   <script src="./jarvis-native-voice.js?v=2"></script>
   <script src="./jarvis-voice.js?v=8"></script>
-  <script src="./jarvis-brain.js?v=1"></script>
+  <script src="./jarvis-brain.js?v=2"></script>
   <script src="./jarvis-device-pairing.js?v=1"></script>\n  <script src="./social.js?v=0.61.1"></script>
   <script src="./navigation.js?v=0.60.1"></script>
   <script src="./private-hub.js?v=2"></script>

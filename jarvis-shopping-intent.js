@@ -82,26 +82,41 @@
   }
   function parse(raw){
     if(typeof raw!=='string'||!raw.trim()||raw.length>350)return null;
-    let text=raw.trim().replace(/^(?:(?:hey|hallo|okay|ok)\s+)?jarvis\b[\s,:-]*/i,'').trim()
-      .replace(/^bitte\s+/i,'').trim();
+    let text=raw.trim()
+      .replace(/^(?:(?:hey|hallo|hi|okay|ok)[\s,:-]+)*(?:(?:jarvis)[\s,:-]*)?/i,'')
+      .replace(/^(?:(?:hey|hallo|hi)\s+)+/i,'')
+      .replace(/^(?:(?:bitte|ähm|also)\s+)+/i,'')
+      .replace(/^(?:kannst du|könntest du|kannst du mir|mach mir)\s+(?:bitte\s+)?/i,'')
+      .trim();
     if(!text||question.test(norm(text))||forbidden.test(text))return null;
-    const hasList=/\beinkaufs?liste\b|\beinkaufen\b/i.test(text);
-    // "Zeig mir meine Einkaufsliste" must open the list, not change it.
-    if(/^(?:zeig|zeige|öffne|oeffne|öffnen|zeige mir|was steht)\b/i.test(text))return null;
+    // Dated "I must buy" is a scheduled task, never silently an immediate cart addition.
+    if(/\b(?:muss|müsste|muess|müssen|erinner(?:e|n)?|erinnere\s+mich)\b|\b(?:morgen|übermorgen|nächste\s+woche|naechste\s+woche|kommende\s+woche)\b/i.test(text))
+      return null;
+    if(/^(?:zeig|zeige|öffne|oeffne|öffnen|was steht|lies|zeige mir|was ist)\b/i.test(text))return null;
+    const hasList=/\beinkaufs?liste\b|\bshoppingliste\b|\bauf\s+die\s+liste\b/i.test(text);
     let content='',explicit=false;
-    const initial=text.match(capture);
-    if(initial){
-      content=initial[1].trim();
-      explicit=hasList;
+    const prefix=text.match(/^(?:(?:füg|fueg|schreib|setz|pack|trag|notier)\w*\s+)?(?:mir\s+)?(?:bitte\s+)?(?:in|auf|für|zu)\s+(?:die|der|meine|meiner)\s+(?:einkaufs?liste|shoppingliste|liste)\s*[:,-]?\s+(.+)$/i);
+    const direct=text.match(/^(?:die\s+)?(?:einkaufs?liste|shoppingliste)\s*[:,-]\s*(.+)$/i);
+    if(prefix||direct){
+      content=(prefix||direct)[1].trim();explicit=true;
     }else{
-      const listStart=text.match(/^(?:(?:setz|schreib|notier|füg|fueg|pack)\w*\s+)?(?:auf\s+)?(?:die\s+)?einkaufs?liste\s*[:,-]\s*(.+)$/i);
-      if(!listStart)return null;
-      content=listStart[1].trim(); explicit=true;
+      const initial=text.match(capture);
+      if(initial){
+        content=initial[1].trim();explicit=hasList;
+      }else if(hasList){
+        content=text.replace(/^(?:bitte\s+)?(?:(?:füg|fueg|schreib|setz|pack|trag|notier)\w*\s+)?/i,'').trim();
+        explicit=true;
+      }else return null;
     }
+    content=content
+      .replace(/^(?:mir\s+)?(?:bitte\s+)?(?:auf|in|zu)\s+(?:die|meine)\s+(?:einkaufs?liste|liste)\s*[:,-]?\s*/i,'')
+      .replace(/\s+(?:in|auf|zur|zu)\s+(?:die|der|meine|meiner)?\s*(?:einkaufs?liste|shoppingliste|liste)(?:\s+(?:setzen|schreiben|eintragen|packen|hinzufügen|hinzufuegen))?\.?$/i,'')
+      .replace(/\s+(?:für|fuer)\s+(?:den|die)\s+einkauf\s*$/i,'')
+      .trim();
     if(/^(?:mich|uns)\b/i.test(content))return null;
+    if(/\b(?:bezahlen|überweisen|rechnungen|rechnung|termin|erledigen)\b/i.test(content))return null;
     const items=splitItems(content,explicit);
     if(items)return {intent:'shopping_add',items};
-    // Explicit list intent -> request clarification instead of adding junk.
     if(explicit)return {intent:'shopping_clarify',items:[]};
     return null;
   }

@@ -88,7 +88,7 @@ assert.match(html,/jarvis-life-photo\.js\?v=1/);
 assert.match(html,/personal\.js\?v=0\.59\.9/);
 assert.match(html,/jarvis-brain\.js\?v=3/);
 assert.match(html,/jarvis-life-photo\.css\?v=1/);
-assert.ok(html.indexOf('jarvis-life-intent.js?v=1')<html.indexOf('personal.js?v=0.59.9'));
+assert.ok(html.indexOf('jarvis-life-intent.js?v=1')<html.indexOf('personal.js?v=0.59.10'));
 assert.doesNotThrow(()=>new Function(client));
 assert.doesNotThrow(()=>new Function(photo));
 assert.doesNotThrow(()=>new Function(read('jarvis-life-intent.js')));

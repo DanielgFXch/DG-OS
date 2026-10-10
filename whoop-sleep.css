@@ -1,0 +1,123 @@
+/* DG OS private WHOOP health — original interpretation of ring-based wellbeing UI,
+   not a pixel-for-pixel reproduction of the WHOOP app. */
+#personalHealth.personal-health-panel{
+  background:radial-gradient(ellipse at 7% 3%,rgba(38,152,160,.14),transparent 40%),linear-gradient(150deg,#092033,#081629 62%,#060f20);
+}
+#personalHealth .personal-health-values{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px!important;align-items:stretch;
+}
+#personalHealth .personal-health-values>div{
+  min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:6px!important;padding:14px 6px 13px!important;border-radius:15px!important;
+  background:linear-gradient(152deg,rgba(17,42,59,.68),rgba(7,20,36,.87))!important;
+  border:1px solid rgba(178,217,238,.11)!important;
+}
+#personalHealth .personal-health-values>div>span{
+  color:#b4c5d4!important;font-size:11px!important;text-align:center;
+  font-weight:680;letter-spacing:.025em;
+}
+#personalHealth .personal-health-values>div>strong{
+  display:grid;place-items:center;position:relative;
+  isolation:isolate;width:min(100%,108px)!important;aspect-ratio:1/1;
+  margin:3px auto 0;border-radius:50%;
+  font-size:clamp(17px,3.3vw,23px)!important;color:#eefbff!important;font-weight:750!important;
+  background:conic-gradient(var(--whoop-arc,#84b9dc) var(--whoop-pct,0%),rgba(112,142,160,.22) 0);
+}
+#personalHealth .personal-health-values>div>strong:before{
+  content:'';position:absolute;z-index:-1;inset:7px;border-radius:50%;
+  background:#0a1a2a;
+}
+#personalHealth .personal-health-values>div:nth-child(2)>strong{--whoop-arc:#29ea7d}
+#personalHealth .personal-health-values>div:nth-child(3)>strong{--whoop-arc:#22acf1}
+#personalHealth .personal-health-values>div>small{
+  font-size:10px!important;line-height:1.5!important;text-align:center;color:#91acb9!important;
+}
+#personalHealth .dgw-sleep-panel{
+  margin:21px 0 17px;padding:20px;border:1px solid rgba(152,207,218,.17);border-radius:20px;
+  background:linear-gradient(170deg,rgba(10,32,47,.95),rgba(4,16,28,.94));color:#ecf6fc;
+}
+#personalHealth .dgw-sleep-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+#personalHealth .dgw-eyebrow{font-size:10px;letter-spacing:.15em;font-weight:740;color:#82dedb}
+#personalHealth .dgw-sleep-header h3{font-size:clamp(21px,4vw,28px);margin:7px 0 5px;font-weight:760;letter-spacing:-.04em;color:#eef9ff}
+#personalHealth .dgw-sleep-header p{font-size:11px;margin:0;color:#9fbacb;line-height:1.5}
+#personalHealth .dgw-icon-button{flex:none;border-radius:11px;border:1px solid rgba(167,211,228,.2);background:rgba(10,44,61,.7);color:#bbf1ed;min-height:42px;min-width:43px;font-size:20px;cursor:pointer}
+#personalHealth .dgw-sleep-tabs{margin:20px 0 12px;display:flex;align-items:center;gap:5px;border:1px solid rgba(139,178,199,.15);background:rgba(5,20,34,.82);border-radius:13px;padding:5px}
+#personalHealth .dgw-sleep-tabs button{flex:1;border:0;border-radius:10px;min-height:42px;background:transparent;color:#a3bdcd;font:670 12px system-ui,-apple-system,sans-serif;cursor:pointer}
+#personalHealth .dgw-sleep-tabs button[aria-pressed="true"]{background:rgba(106,195,215,.2);color:#e3fffb;box-shadow:inset 0 0 0 1px rgba(144,221,225,.16)}
+#personalHealth .dgw-day-navigation{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#personalHealth .dgw-day-navigation strong{font-size:13px;font-weight:700;color:#e2f3fc;text-align:center}
+#personalHealth .dgw-day-navigation button{width:43px;height:43px;flex:none;border:1px solid rgba(133,207,222,.13);border-radius:12px;background:rgba(11,44,60,.45);color:#bcece8;font-size:26px;cursor:pointer}
+#personalHealth .dgw-day-navigation button:disabled{opacity:.28;cursor:not-allowed}
+#personalHealth .dgw-sleep-hero{display:grid;grid-template-columns:160px minmax(0,1fr);align-items:center;gap:24px;padding:17px 4px 20px}
+#personalHealth .dgw-sleep-ring{
+  --pct:0%;width:156px;aspect-ratio:1;display:grid;place-items:center;border-radius:50%;
+  background:conic-gradient(#82b5dd var(--pct),rgba(89,123,150,.18) 0);position:relative;
+}
+#personalHealth .dgw-sleep-ring:before{content:'';position:absolute;inset:12px;border-radius:50%;background:#091c2d}
+#personalHealth .dgw-sleep-ring>div{position:relative;z-index:1;text-align:center}
+#personalHealth .dgw-sleep-ring strong{display:block;font-size:33px;letter-spacing:-.045em;font-weight:780;color:#eaf9ff}
+#personalHealth .dgw-sleep-ring span{font-size:10px;color:#98b7cb}
+#personalHealth .dgw-sleep-main-metrics>span{display:block;color:#8ddbdc;font-size:10px;font-weight:710;letter-spacing:.07em}
+#personalHealth .dgw-sleep-main-metrics>strong{display:block;margin:5px 0;font-size:clamp(23px,5vw,31px);letter-spacing:-.04em}
+#personalHealth .dgw-sleep-main-metrics>small{font-size:11px;color:#a1bfca}
+#personalHealth .dgw-sleep-main-metrics>p{margin:11px 0 0;font-size:12px;line-height:1.65;color:#c5dbe5}
+#personalHealth .dgw-comparison-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+#personalHealth .dgw-comparison{border:1px solid rgba(140,191,208,.13);border-radius:13px;padding:12px;background:rgba(5,25,39,.6);min-width:0}
+#personalHealth .dgw-comparison span{display:block;color:#91b9c9;font-size:11px}
+#personalHealth .dgw-comparison strong{display:block;font-size:19px;margin:8px 0 5px;white-space:normal;font-weight:740;color:#ecfaff}
+#personalHealth .dgw-comparison strong[data-direction="positive"]{color:#6ceca2}
+#personalHealth .dgw-comparison strong[data-direction="negative"]{color:#f2b58d}
+#personalHealth .dgw-comparison small{display:block;color:#8fa7b8;font-size:10px;line-height:1.5}
+#personalHealth .dgw-sleep-trend{margin:21px 0 16px;padding:16px;border:1px solid rgba(140,192,211,.14);border-radius:15px;background:rgba(4,18,31,.56)}
+#personalHealth .dgw-sleep-trend-head{display:flex;align-items:center;justify-content:space-between;gap:10px;font-size:12px;color:#e9f5f8}
+#personalHealth .dgw-sleep-trend-head span{color:#91b0c2;font-size:10px}
+#personalHealth .dgw-sleep-bars{display:flex;justify-content:space-between;gap:5px;min-height:145px;margin-top:14px;align-items:end}
+#personalHealth .dgw-bar{border:0;background:transparent;cursor:pointer;flex:1;min-width:0;display:flex;flex-direction:column;justify-content:end;align-items:center;gap:5px;min-height:145px;padding:0 1px}
+#personalHealth .dgw-bar .dgw-bar-shape{display:block;width:100%;min-height:4px;max-width:28px;border-radius:5px 5px 2px 2px;background:linear-gradient(180deg,#a8d0ed,#457cba);opacity:.8}
+#personalHealth .dgw-bar[aria-pressed="true"] .dgw-bar-shape{background:linear-gradient(180deg,#befaf2,#42b7ae);opacity:1;box-shadow:0 0 0 1px rgba(102,239,221,.16)}
+#personalHealth .dgw-bar .dgw-bar-day{color:#92adbb;font-size:9px;white-space:nowrap}
+#personalHealth .dgw-bar[data-missing="true"] .dgw-bar-shape{opacity:.2;height:2px!important}
+#personalHealth .dgw-trend-caption{margin:9px 0 0;font-size:10px;line-height:1.5;color:#8ca5b7}
+#personalHealth .dgw-sleep-stages{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:12px}
+#personalHealth .dgw-sleep-stages>div{padding:13px 10px;background:rgba(5,24,38,.66);border:1px solid rgba(139,180,199,.11);border-radius:11px}
+#personalHealth .dgw-sleep-stages span{display:block;color:#9eb7c6;font-size:10px}
+#personalHealth .dgw-sleep-stages strong{display:block;margin-top:7px;color:#e6f7fd;font-size:16px;font-weight:730}
+#personalHealth .dgw-sleep-import{margin:22px 0 11px;padding:15px;border:1px dashed rgba(128,206,203,.34);border-radius:13px;display:flex;gap:12px;align-items:center;justify-content:space-between}
+#personalHealth .dgw-sleep-import>div{flex:1;min-width:0}
+#personalHealth .dgw-sleep-import strong{font-size:12px;color:#c4f6ee}
+#personalHealth .dgw-sleep-import p{margin:7px 0 0;font-size:11px;line-height:1.6;color:#9bb9c9}
+#personalHealth .dgw-sleep-import-button{flex:none;position:relative;display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 13px;border:1px solid rgba(129,222,210,.4);border-radius:10px;background:rgba(37,127,128,.20);color:#b8fff2;cursor:pointer;font:700 11px system-ui,-apple-system,sans-serif}
+#personalHealth #dgwWhoopImportFile{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+#personalHealth .dgw-sleep-import-button:focus-within{outline:2px solid #8ffff1;outline-offset:3px}
+#personalHealth .dgw-sleep-notice{color:#a7d3cd;font-size:11px;line-height:1.6;margin:0}
+#personalHealth .dgw-disclaimer{color:#829dad;font-size:10px;line-height:1.6;margin:14px 0 0}
+#personalHealth .dgw-sleep-panel :is(button,summary):focus-visible{outline:2px solid #85eee1;outline-offset:3px}
+@media(max-width:600px){
+ #personalHealth .dgw-sleep-panel{padding:13px;margin:16px 0}
+ #personalHealth .dgw-sleep-hero{grid-template-columns:126px minmax(0,1fr);gap:14px;padding:13px 0 17px}
+ #personalHealth .dgw-sleep-ring{width:123px}
+ #personalHealth .dgw-sleep-ring:before{inset:9px}
+ #personalHealth .dgw-sleep-ring strong{font-size:27px}
+ #personalHealth .dgw-sleep-main-metrics>strong{font-size:23px}
+ #personalHealth .dgw-comparison-grid{gap:5px}
+ #personalHealth .dgw-comparison{padding:10px 6px}
+ #personalHealth .dgw-comparison strong{font-size:15px}
+ #personalHealth .dgw-comparison span{font-size:10px}
+ #personalHealth .dgw-comparison small{font-size:9px}
+ #personalHealth .dgw-sleep-stages{grid-template-columns:repeat(2,minmax(0,1fr))}
+ #personalHealth .dgw-sleep-import{flex-direction:column;align-items:stretch}
+ #personalHealth .dgw-sleep-import-button{width:100%}
+ #personalHealth .dgw-sleep-trend{padding:12px}
+ #personalHealth .personal-health-values>div>strong{width:min(100%,92px)!important;font-size:16px!important}
+ #personalHealth .personal-health-values>div>small{font-size:9px!important}
+}
+@media(max-width:365px){
+ #personalHealth .dgw-sleep-hero{grid-template-columns:105px minmax(0,1fr);gap:8px}
+ #personalHealth .dgw-sleep-ring{width:102px}
+ #personalHealth .dgw-sleep-ring strong{font-size:22px}
+ #personalHealth .dgw-sleep-ring span{font-size:9px}
+ #personalHealth .dgw-sleep-main-metrics>p{font-size:11px}
+ #personalHealth .personal-health-values>div>strong{width:min(100%,78px)!important}
+}
+@media(prefers-reduced-motion:reduce){#personalHealth .dgw-sleep-ring,#personalHealth .personal-health-values>div>strong{transition:none!important;animation:none!important}}

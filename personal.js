@@ -1606,6 +1606,7 @@
   window.addEventListener('focus',load);
   window.addEventListener('dgos-device-session',load);
   window.addEventListener('dgos-private-updated',loadOrganizer);
+  window.addEventListener('dgos-jarvis-tasks-updated',load);
 })();
 
 
@@ -1935,10 +1936,66 @@
     return true;
   }
 
+  let scheduledTaskInFlight=false;
+  async function saveScheduledTask(command) {
+    if(scheduledTaskInFlight)return true;
+    const token=(()=>{try{return localStorage.getItem('dgos.deviceSession')||'';}catch{return'';}})();
+    if(!token){
+      shoppingFailure('Aufgabe nicht gespeichert. Bitte dein Gerät zuerst mit Jarvis über Telegram verbinden.');
+      return true;
+    }
+    scheduledTaskInFlight=true;
+    setOrbState('thinking');
+    setStatus('Aufgabe wird geplant …');
+    setReply('Ich speichere «'+command.title+'» für '+command.dateLabel+' ('+command.dueDate+') …');
+    try{
+      const response=await fetch('https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/tasks/create',{
+        method:'POST',cache:'no-store',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+        body:JSON.stringify({
+          title:command.title,dueDate:command.dueDate,priority:'normal',
+          notes:command.kind==='payment_reminder'?'Zahlung nur als Aufgabe notiert. Jarvis hat kein Geld überwiesen.':
+            command.kind==='purchase_reminder'?'Kauf für dieses Datum geplant. Nicht automatisch eingekauft.':
+            'Mit Jarvis als geplante Aufgabe erfasst.'
+        })
+      });
+      let result={};try{result=await response.json();}catch(_){}
+      if(!response.ok){
+        if(response.status===401)throw Error('Gerätesitzung abgelaufen. Bitte erneut mit Telegram verbinden.');
+        throw Error('Aufgabe konnte nicht gespeichert werden. Bitte erneut versuchen.');
+      }
+      window.dispatchEvent(new Event('dgos-jarvis-tasks-updated'));
+      const notice=command.kind==='payment_reminder'?' Ich habe keine Zahlung ausgeführt.':
+        command.kind==='purchase_reminder'?' Es wurde noch nichts eingekauft.':'';
+      showReply('Gespeichert: «'+command.title+'» am '+command.dueDate+' ('+command.dateLabel+').'+notice);
+    }catch(e){shoppingFailure(e?.message||'Aufgabe konnte nicht gespeichert werden.');}
+    finally{scheduledTaskInFlight=false;}
+    return true;
+  }
+
   function interpretCommand(raw) {
     const original = String(raw || '').trim();
     if (!original) return false;
     const q = original.toLowerCase().replace(/[?!.,;:]+/g,' ').replace(/\s+/g,' ').trim();
+
+    // If the owner just attached a photo, a phrase like "Das muss ich nächste
+    // Woche zahlen" updates the EDITABLE draft, never performs payment.
+    if(window.DGOSJarvisPhoto?.handleVoiceCommand(original))return true;
+
+    // Explicit future actions take priority over immediate shopping.
+    const planned = window.DGOSLifeIntent?.parseScheduledCommand(original);
+    if(planned?.intent==='task_create'){
+      void saveScheduledTask(planned);
+      return true;
+    }
+    if(planned?.intent==='task_clarify'){
+      setStatus('Bitte präzisieren');
+      setReply('Was genau soll ich für '+planned.dateLabel+' ('+planned.dueDate+') notieren? Sag zum Beispiel: «Ich muss nächste Woche die Stromrechnung bezahlen.» Oder fotografiere die Rechnung.');
+      return true;
+    }
+    if(/^(?:foto|fotografieren|fotografier|kamera|bild|rechnung fotografieren)\b/i.test(q)){
+      window.DGOSJarvisPhoto?.open();
+      return true;
+    }
 
     const spokenShopping = window.DGShoppingIntent?.parseShoppingCommand(original);
     if (spokenShopping?.intent === 'shopping_add') {

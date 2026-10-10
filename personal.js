@@ -1887,6 +1887,18 @@
     if (!original) return false;
     const q = original.toLowerCase().replace(/[?!.,;:]+/g,' ').replace(/\s+/g,' ').trim();
 
+    // Answer WHOOP sleep questions in the same text/voice Jarvis command flow.
+    // Read-only: never persist sensitive health statements implicitly.
+    if (window.DGJarvisSleep?.intent(original)) {
+      setStatus('Ich prüfe deine WHOOP-Daten …');
+      setReply('Einen Moment. Ich lese deine letzte Schlafanalyse.');
+      const session = localStorage.getItem('dgos.whoopSession') || '';
+      window.DGJarvisSleep.answer(original, session, (...args) => fetch(...args))
+        .then(text => showReply(text || 'Ich habe dazu noch keine WHOOP-Daten gefunden.'))
+        .catch(() => showReply('WHOOP ist momentan nicht erreichbar.'));
+      return true;
+    }
+
     if (/^(aufgabe|todo)\s+/.test(q)) {
       const task = original.replace(/^(aufgabe|todo)\s+/i,'').trim();
       return runLifeAction('task', task);

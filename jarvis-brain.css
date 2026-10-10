@@ -1,0 +1,72 @@
+/* DG OS Jarvis Brain + Daily Planner – scoped premium command center. */
+#personalJarvis .jb-intelligence{position:relative;z-index:1;margin-top:23px;padding:clamp(15px,2.1vw,24px);border:1px solid rgba(116,226,237,.22);border-radius:19px;background:linear-gradient(155deg,rgba(9,38,55,.91),rgba(4,16,30,.96));box-shadow:inset 0 1px rgba(188,247,251,.055),0 19px 46px rgba(0,0,0,.13);color:#e3f8fa}
+#personalJarvis .jb-intelligence [hidden]{display:none!important}
+#personalJarvis .jb-intelligence-top{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:18px}
+#personalJarvis .jb-intelligence-top h3{font-size:clamp(22px,2.4vw,31px);font-weight:720;letter-spacing:-.045em;margin:7px 0;color:#f0fcff}
+#personalJarvis .jb-intelligence-top p{max-width:610px;font-size:12px;color:#8fabbf;margin:0;line-height:1.6}
+#personalJarvis .jb-lock{flex:none;font-size:9px;white-space:nowrap;letter-spacing:.08em;padding:9px 11px;border:1px solid rgba(107,222,211,.27);border-radius:999px;color:#82e5d8;background:rgba(29,135,128,.09)}
+#personalJarvis .jb-switch{display:flex;gap:7px;padding:5px;background:rgba(1,12,24,.52);border:1px solid rgba(132,210,230,.14);border-radius:14px;margin-bottom:19px}
+#personalJarvis .jb-switch button{display:flex;gap:8px;align-items:center;justify-content:center;flex:1;min-height:46px;font-size:12px;font-weight:670;border-radius:10px;border:1px solid transparent;background:transparent;color:#9bb3c1}
+#personalJarvis .jb-switch button.is-active{border-color:rgba(183,255,252,.27);color:#062329;background:linear-gradient(115deg,#8aefe5,#73dce9);box-shadow:0 5px 22px rgba(71,212,223,.1)}
+#personalJarvis .jb-switch button span{font-size:10px;min-width:23px;border-radius:999px;background:rgba(50,93,105,.2);padding:3px 5px}
+#personalJarvis .jb-panel-head{display:flex;justify-content:space-between;align-items:center;gap:15px;margin-bottom:12px}
+#personalJarvis .jb-panel-head h4{font-size:20px;font-weight:690;letter-spacing:-.025em;margin:5px 0;color:#e8faff}
+#personalJarvis .jb-plan-controls{display:flex;gap:6px;flex-wrap:wrap}
+#personalJarvis .jb-plan-controls button,#personalJarvis .jb-memory-toolbar button{min-height:36px;padding:8px 11px;border-radius:9px!important;color:#a3e7e2!important;border:1px solid rgba(140,222,235,.2)!important;background:rgba(34,85,101,.17)!important;font-size:11px}
+#personalJarvis .jb-plan-controls button[aria-pressed="true"]{border-color:rgba(107,246,231,.67)!important;background:rgba(41,166,163,.17)!important;color:#c5fff4!important}
+#personalJarvis .jb-plan-date{font-size:12px;color:#90b4be;margin:0 0 13px}
+#personalJarvis .jb-highlights{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-bottom:14px}
+#personalJarvis .jb-highlight{min-width:0;display:grid;gap:5px;padding:13px;border:1px solid rgba(177,230,237,.13);border-radius:12px;background:rgba(8,30,44,.71)}
+#personalJarvis .jb-highlight span{font-size:10px;color:#8eaebd}
+#personalJarvis .jb-highlight strong{font-size:23px;font-weight:690;color:#d7fef7}
+#personalJarvis .jb-plan-columns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#personalJarvis .jb-plan-card{min-width:0;min-height:168px;padding:15px;border:1px solid rgba(176,232,242,.14);border-radius:13px;background:rgba(2,16,28,.65)}
+#personalJarvis .jb-plan-label{display:flex;align-items:center;gap:9px;margin-bottom:11px;color:#e2fbfb}
+#personalJarvis .jb-plan-label span{color:#74e1d9;font-size:15px}
+#personalJarvis .jb-plan-label strong{font-size:12px;font-weight:700}
+#personalJarvis .jb-plan-list{display:grid;align-content:start;gap:8px;max-height:370px;overflow:auto}
+#personalJarvis .jb-plan-row{display:flex;justify-content:space-between;gap:9px;padding:10px 11px;border:1px solid rgba(154,207,233,.11);border-radius:10px;background:rgba(11,37,53,.58);min-width:0}
+#personalJarvis .jb-plan-row>div{min-width:0}
+#personalJarvis .jb-plan-row strong{display:block;font-size:11px;color:#e6f7fa;word-break:break-word}
+#personalJarvis .jb-plan-row small{display:block;margin-top:5px;font-size:10px;line-height:1.4;color:#87a5b3}
+#personalJarvis .jb-plan-row .jb-plan-time{flex:none;font-family:var(--hud-font,monospace);color:#90e7df;font-size:10px}
+#personalJarvis .jb-plan-row.is-overdue{border-color:rgba(239,183,110,.24)}
+#personalJarvis .jb-empty{color:#8fa6b4;font-size:11px;line-height:1.5;padding:12px 4px;margin:0}
+#personalJarvis .jb-plan-shopping{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px;padding:12px 14px;border:1px solid rgba(128,226,205,.16);border-radius:12px;background:rgba(31,123,120,.08)}
+#personalJarvis .jb-plan-shopping strong{font-size:11px;color:#d8faf3}
+#personalJarvis .jb-plan-shopping>div{color:#adc6ce;font-size:11px;flex:1;min-width:130px;overflow-wrap:anywhere}
+#personalJarvis .jb-plan-shopping button{color:#9debe2!important;font-size:10px;padding:7px 10px;border:1px solid rgba(147,237,217,.22)!important;border-radius:8px!important;background:rgba(70,153,158,.12)!important}
+#personalJarvis .jb-footnote{margin:13px 0 0;font-size:10px;color:#7895a6;line-height:1.6}
+#personalJarvis .jb-brain-intro{font-size:12px;color:#8caebc;line-height:1.6;margin-bottom:14px}
+#personalJarvis .jb-private-label{font-size:9px;color:#98d6cb}
+#personalJarvis .jb-memory-form{display:grid;gap:12px;padding:15px;border:1px solid rgba(165,228,225,.15);border-radius:12px;background:rgba(2,20,32,.59);margin-bottom:18px}
+#personalJarvis .jb-form-grid{display:grid;grid-template-columns:minmax(125px,.45fr) minmax(0,1fr);gap:10px}
+#personalJarvis .jb-memory-form label,#personalJarvis .jb-memory-toolbar label{display:grid;gap:6px;font-size:11px;color:#bbd7e3}
+#personalJarvis .jb-memory-form :is(select,input,textarea),#personalJarvis .jb-memory-toolbar input,#personalJarvis .jb-ask-form input{min-width:0;width:100%;min-height:43px;padding:10px 12px;background:rgba(1,11,22,.65);border:1px solid rgba(167,224,237,.18);border-radius:10px;color:#edfafd;color-scheme:dark;font:inherit;font-size:12px;outline:none}
+#personalJarvis .jb-memory-form textarea{resize:vertical;min-height:90px}
+#personalJarvis .jb-memory-form :is(select,input,textarea):focus-visible,#personalJarvis .jb-memory-toolbar input:focus-visible,#personalJarvis .jb-ask-form input:focus-visible{border-color:#77e3dd;box-shadow:0 0 0 3px rgba(78,220,219,.08)}
+#personalJarvis .jb-form-actions{display:flex;gap:8px;flex-wrap:wrap}
+#personalJarvis .jb-primary,#personalJarvis #jbAskSubmit{min-height:41px;padding:10px 16px!important;background:linear-gradient(120deg,#8deee3,#6edbe7)!important;color:#05212c!important;border-radius:10px!important;font-weight:760!important;font-size:12px!important}
+#personalJarvis #jbMemoryCancel{min-height:41px;padding:8px 12px;border:1px solid rgba(140,207,221,.16)!important;border-radius:9px!important;color:#b1d6dd!important;background:rgba(42,73,86,.17)!important}
+#personalJarvis .jb-memory-toolbar{display:grid;grid-template-columns:minmax(0,1fr) 43px;align-items:end;gap:8px;margin-bottom:12px}
+#personalJarvis .jb-memory-toolbar button{min-height:43px}
+#personalJarvis .jb-memory-list{display:grid;gap:8px;max-height:520px;overflow:auto;margin-bottom:17px}
+#personalJarvis .jb-memory-row{display:flex;justify-content:space-between;gap:12px;align-items:start;padding:12px 14px;border:1px solid rgba(152,219,235,.11);border-radius:11px;background:rgba(3,21,34,.69)}
+#personalJarvis .jb-memory-copy{min-width:0;flex:1}
+#personalJarvis .jb-memory-copy span{font-size:9px;color:#82d9d5;letter-spacing:.07em}
+#personalJarvis .jb-memory-copy strong{display:block;margin:5px 0;font-size:12px;color:#e8fbfb}
+#personalJarvis .jb-memory-copy p{font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere;color:#a9c3cd;line-height:1.6;margin:0}
+#personalJarvis .jb-memory-actions{display:flex;gap:5px;flex-wrap:wrap;justify-content:flex-end}
+#personalJarvis .jb-memory-actions button{min-height:32px;border-radius:8px!important;padding:6px 9px!important;font-size:10px!important;color:#b1e6e0!important;background:rgba(43,117,123,.13)!important;border:1px solid rgba(119,224,210,.17)!important}
+#personalJarvis .jb-memory-actions button:last-child{color:#ecb0b7!important;border-color:rgba(221,139,157,.16)!important}
+#personalJarvis .jb-ask{padding:14px;border-radius:12px;border:1px solid rgba(138,212,228,.14);background:linear-gradient(150deg,rgba(12,45,63,.65),rgba(3,23,34,.8))}
+#personalJarvis .jb-ask-form{display:flex;align-items:center;gap:8px}
+#personalJarvis .jb-ask-form input{flex:1}
+#personalJarvis .jb-ask-form button{white-space:nowrap}
+#personalJarvis .jb-answer{white-space:pre-wrap;overflow-wrap:anywhere;color:#b7d8dd;font-size:12px;line-height:1.65;margin:13px 0 0}
+#personalJarvis .jb-status{font-size:11px;margin:14px 0 0;color:#81dcd8;line-height:1.5}
+#personalJarvis .jb-status[data-error="true"]{color:#f8b1bb}
+#personalJarvis .jb-intelligence button:disabled{opacity:.52;cursor:wait}
+@media(max-width:700px){#personalJarvis .jb-intelligence-top{flex-direction:column;gap:10px}#personalJarvis .jb-plan-columns{grid-template-columns:1fr}#personalJarvis .jb-panel-head{align-items:start;flex-wrap:wrap}#personalJarvis .jb-memory-row{flex-wrap:wrap}#personalJarvis .jb-memory-actions{width:100%;justify-content:flex-start}}
+@media(max-width:480px){#personalJarvis .jb-intelligence{padding:13px}#personalJarvis .jb-form-grid{grid-template-columns:1fr}#personalJarvis .jb-ask-form{flex-wrap:wrap}#personalJarvis .jb-ask-form button{width:100%}#personalJarvis .jb-highlights{gap:5px}#personalJarvis .jb-highlight{padding:9px}#personalJarvis .jb-highlight strong{font-size:19px}}
+@media(prefers-reduced-motion:reduce){#personalJarvis .jb-intelligence *{animation:none!important;transition:none!important}}

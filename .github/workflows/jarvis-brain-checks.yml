@@ -1,0 +1,30 @@
+name: DG OS Jarvis Brain and Planner Checks
+on:
+  pull_request:
+    paths:
+      - 'jarvis-brain.js'
+      - 'jarvis-brain.css'
+      - 'index.html'
+      - 'supabase/functions/jarvis-brain/**'
+      - 'supabase/migrations/20261010_jarvis_brain_owner_private.sql'
+      - 'scripts/test-jarvis-brain.js'
+      - '.github/workflows/jarvis-brain-checks.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'jarvis-brain.js'
+      - 'jarvis-brain.css'
+      - 'supabase/functions/jarvis-brain/**'
+      - 'scripts/test-jarvis-brain.js'
+jobs:
+  static-and-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Client syntax
+        run: node --check jarvis-brain.js
+      - name: Privacy and integration checks
+        run: node scripts/test-jarvis-brain.js

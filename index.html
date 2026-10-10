@@ -23,6 +23,7 @@
   <link rel="stylesheet" href="./jarvis-voice.css?v=2" />
   <link rel="stylesheet" href="./jarvis-voice-contrast.css?v=1" />
   <link rel="stylesheet" href="./jarvis-cinematic.css?v=1" />
+  <link rel="stylesheet" href="./jarvis-brain.css?v=1" />
   <link rel="stylesheet" href="./jarvis-device-pairing.css?v=1" />
   <title>DG OS · Dein Tag</title>
 </head>
@@ -188,6 +189,55 @@
         <input id="jarvisLifeCommandInput" type="text" maxlength="320" placeholder="Frag Jarvis … z. B. «Zeig mir meinen Tag»" aria-label="Jarvis Befehl" />
         <button type="submit" aria-label="Befehl ausführen">→</button>
       </form>
+
+      <section class="jb-intelligence" id="jarvisIntelligence" aria-labelledby="jbIntelligenceHeading">
+        <div class="jb-intelligence-top">
+          <div><div class="personal-kicker">JARVIS INTELLIGENCE · V1</div><h3 id="jbIntelligenceHeading">Dein Alltag. Unter Kontrolle.</h3>
+          <p>Ein Gedächtnis, das du kontrollierst. Ein Plan, der auf deinen echten Terminen basiert.</p></div>
+          <span class="jb-lock">◈ PRIVAT · NUR DU</span>
+        </div>
+        <div class="jb-switch" role="tablist" aria-label="Jarvis Intelligenz Bereiche">
+          <button type="button" role="tab" data-jb-tab="plan" aria-selected="true" class="is-active">☀ Mein Tag</button>
+          <button type="button" role="tab" data-jb-tab="brain" aria-selected="false">◈ Mein Gedächtnis <span id="jbMemoryCount">0</span></button>
+        </div>
+        <div id="jbPlanPanel" role="tabpanel" class="jb-panel">
+          <div class="jb-panel-head">
+            <div><span class="personal-kicker">DAILY PLANNER</span><h4 id="jbPlanTitle">Dein Tagesplan</h4></div>
+            <div class="jb-plan-controls"><button type="button" id="jbPlanToday">Heute</button><button type="button" id="jbPlanTomorrow">Morgen</button><button type="button" id="jbPlanReload" aria-label="Tagesplan aktualisieren">↻</button></div>
+          </div>
+          <p id="jbPlanDate" class="jb-plan-date">Europe/Zurich</p>
+          <div id="jbPlanHighlights" class="jb-highlights" aria-live="polite"></div>
+          <div class="jb-plan-columns">
+            <div class="jb-plan-card"><div class="jb-plan-label"><span>◫</span><strong>Termine &amp; Rechnungen</strong></div><div id="jbPlanFixed" class="jb-plan-list"><p class="jb-empty">Wird geladen …</p></div></div>
+            <div class="jb-plan-card"><div class="jb-plan-label"><span>✓</span><strong>Aufgaben &amp; Fokus</strong></div><div id="jbPlanTasks" class="jb-plan-list"><p class="jb-empty">Wird geladen …</p></div></div>
+          </div>
+          <div class="jb-plan-shopping"><strong>🛒 Einkaufsliste</strong><div id="jbPlanShopping">—</div><button type="button" id="jbPlanOpenPrivate">Privatbereich öffnen ↗</button></div>
+          <p class="jb-footnote">Nur gespeicherte Einträge. Lokale Kalendertermine gelten nur für dieses Gerät. Jarvis verschiebt oder versendet nichts automatisch.</p>
+        </div>
+        <div id="jbBrainPanel" role="tabpanel" class="jb-panel" hidden>
+          <div class="jb-panel-head"><div><span class="personal-kicker">JARVIS BRAIN</span><h4>Was Jarvis über dich weiss</h4></div><span class="jb-private-label">Nur bestätigte Erinnerungen</span></div>
+          <p class="jb-brain-intro">Wichtige Vorlieben, Ziele und Projekte bleiben auf deinen gekoppelten Geräten verfügbar. Du kannst sie jederzeit bearbeiten oder löschen.</p>
+          <form id="jbMemoryForm" class="jb-memory-form" autocomplete="off">
+            <div class="jb-form-grid">
+              <label>Kategorie<select id="jbMemoryCategory"><option value="profile">Über mich</option><option value="preference">Vorlieben</option><option value="goal">Ziele</option><option value="project">Projekte</option><option value="routine">Gewohnheiten</option><option value="note">Wissenswertes</option></select></label>
+              <label>Titel<input id="jbMemoryTitle" type="text" maxlength="120" placeholder="z. B. Meine Ziele" required /></label>
+            </div>
+            <label>Was soll Jarvis wissen?<textarea id="jbMemoryContent" rows="3" maxlength="2000" placeholder="z. B. Ich möchte mehr Zeit für die Familie und weniger Organisationsstress." required></textarea></label>
+            <div class="jb-form-actions"><button type="submit" id="jbMemorySubmit" class="jb-primary">Erinnerung speichern</button><button type="button" id="jbMemoryCancel" hidden>Bearbeitung abbrechen</button></div>
+          </form>
+          <div class="jb-memory-toolbar"><label for="jbMemorySearch">Gespeicherte Erinnerungen durchsuchen</label><input type="search" id="jbMemorySearch" placeholder="Ziele, Vorlieben, Projekte …" autocomplete="off" /><button type="button" id="jbMemoryReload">↻</button></div>
+          <div id="jbMemoryList" class="jb-memory-list"><p class="jb-empty">Deine Erinnerungen werden geladen …</p></div>
+          <div class="jb-ask">
+            <div class="jb-plan-label"><span>✦</span><strong>Frag dein Gedächtnis</strong></div>
+            <form id="jbAskForm" class="jb-ask-form">
+              <input id="jbAskInput" type="text" maxlength="500" placeholder="Was weisst du über meine Ziele?" aria-label="Persönliche Frage an Jarvis" required />
+              <button type="submit" id="jbAskSubmit">Jarvis fragen ↗</button>
+            </form>
+            <p id="jbAskAnswer" class="jb-answer" aria-live="polite">Jarvis verwendet dafür nur bestätigte Erinnerungen und deine gespeicherten DG-OS-Aufgaben und Termine.</p>
+          </div>
+        </div>
+        <p class="jb-status" id="jbStatus" role="status" aria-live="polite">Verbinde dieses Gerät einmalig mit Telegram, um dein privates Gedächtnis zu laden.</p>
+      </section>
 
       <details class="jarvis-integrations">
         <summary><span>Integrationen</span><small>Optional · Obsidian</small><b aria-hidden="true">⌄</b></summary>
@@ -1085,6 +1135,7 @@
   <script src="./jarvis-sound-check.js?v=1"></script>
   <script src="./jarvis-native-voice.js?v=2"></script>
   <script src="./jarvis-voice.js?v=8"></script>
+  <script src="./jarvis-brain.js?v=1"></script>
   <script src="./jarvis-device-pairing.js?v=1"></script>\n  <script src="./social.js?v=0.61.1"></script>
   <script src="./navigation.js?v=0.60.1"></script>
   <script src="./private-hub.js?v=1"></script>

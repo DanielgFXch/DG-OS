@@ -62,6 +62,7 @@ assert.ok(html.indexOf('personal.js?v=0.59.9')<html.indexOf('whoop-sleep-ui.js?v
 assert.ok(html.indexOf('whoop-sleep-analytics.js?v=1')<html.indexOf('whoop-sleep-ui.js?v=1'));
 assert.ok(ui.includes("dgos-whoop-updated"));
 assert.ok(read('personal.js').includes("new CustomEvent('dgos-whoop-updated'"));
+assert.ok(read('personal.js').includes("'Schlafdauer '+fmtHours(sleep.durationHours)"));
 assert.ok(ui.includes("dgwWhoopImportFile"));
 assert.ok(ui.includes("DecompressionStream('deflate-raw')"));
 assert.ok(ui.includes('0x02014b50'),'ZIP must use central directory because exports have data descriptors');

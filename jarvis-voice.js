@@ -23,23 +23,36 @@
   controls.className='jarvis-voice-console';
   controls.innerHTML=`
     <div class="jv-console-head">
-      <span class="jv-console-title">JARVIS <span>VOICE CONTROL</span></span>
+      <span class="jv-console-title">JARVIS <span>VOICE</span></span>
       <span id="jvVoiceBadge" class="jv-voice-badge">BEREIT</span>
     </div>
+    <p class="jv-intro">Hier wählst du, wie Jarvis klingt. Stimme auswählen, anhören und auf Wunsch Antworten automatisch vorlesen lassen.</p>
+    <div class="jv-steps" aria-label="Sprachausgabe einrichten">
+      <span id="jvStep1">1 · Verbinden</span><span id="jvStep2">2 · Stimme wählen</span><span id="jvStep3">3 · Anhören</span>
+    </div>
+    <div id="jvConnectPrompt" class="jv-connect-prompt" hidden>
+      <strong>Premium-Stimme freischalten</strong>
+      <p>Dein Telegram-Bot ist schon verbunden. Du musst nur dieses iPhone einmalig bestätigen. Danach erscheinen deine Cartesia-Stimmen hier.</p>
+      <div class="jv-connect-actions">
+        <button id="jvPairNow" type="button" class="jv-action-primary">🔗 Jetzt iPhone verbinden</button>
+        <button id="jvTryFree" type="button">Gratis-Stimme jetzt testen</button>
+      </div>
+    </div>
     <div class="jv-voice-fields">
-      <label>Voice Engine<select id="jvEngine"><option value="browser">Geräte-Stimme · kostenlos</option><option value="cartesia">Cartesia · Premium</option></select></label>
+      <label>Anbieter<select id="jvEngine"><option value="browser">Geräte-Stimme · kostenlos</option><option value="cartesia">Cartesia · Premium</option></select></label>
       <label>Stimme<select id="jvVoice" aria-label="Jarvis Stimme auswählen"></select></label>
       <label>Sprache<select id="jvLang"><option value="de-DE">Deutsch</option><option value="en-GB">English</option><option value="pt-PT">Português (Portugal)</option></select></label>
     </div>
     <div class="jv-voice-actions">
-      <label class="jv-autospeak"><input id="jvEnabled" type="checkbox"> Antworten vorlesen</label>
       <button id="jvReload" type="button">Stimmen laden</button>
-      <button id="jvPreview" type="button" class="jv-action-primary">Stimme testen</button>
-      <button id="jvRead" type="button">Antwort vorlesen</button>
-      <button id="jvStop" type="button">Stopp</button>
+      <button id="jvPreview" type="button" class="jv-action-primary">▶ Stimme anhören</button>
+      <button id="jvRead" type="button">Aktuelle Antwort vorlesen</button>
+      <button id="jvStop" type="button">■ Stopp</button>
+      <label class="jv-autospeak"><input id="jvEnabled" type="checkbox"> Neue Antworten automatisch vorlesen</label>
     </div>
     <p class="jv-voice-notice" id="jvNotice" role="status" aria-live="polite"></p>
-    <a class="jv-studio-link" href="./voice-studio.html">Premium Voice Studio ↗</a>
+    <small class="jv-voice-detail">Stimme anhören = Probetext. Antworten vorlesen = Jarvis-Text als Audio. Durchgehende Echtzeitgespräche folgen separat.</small>
+    <a class="jv-studio-link" href="./voice-studio.html">Erweiterte Stimmeneinstellungen ↗</a>
   `;
   reply.insertAdjacentElement('afterend',controls);
   const $=id=>document.getElementById(id);
@@ -72,15 +85,28 @@
   }
   function render(){
     const premium=provider==='cartesia';
+    const paired=Boolean(deviceSession());
+    const available=premium?voices.length>0:Boolean(synth);
+    $('jvEngine').value=provider;
     $('jvReload').hidden=!premium;
+    $('jvReload').disabled=premium&&!paired;
+    $('jvConnectPrompt').hidden=!(premium&&!paired);
+    $('jvPreview').disabled=!available;
+    $('jvRead').disabled=!available;
+    $('jvEnabled').disabled=!available;
+    for(const [id,state] of [
+      ['jvStep1',premium?(paired?'complete':'current'):'complete'],
+      ['jvStep2',premium?(!paired?'locked':available?'complete':'current'):'complete'],
+      ['jvStep3',available?'current':'locked']
+    ])$(''+id).dataset.step=state;
     if(premium){
       options(voices,voiceId);
-      if(!deviceSession())setMessage('Einmalig hier unten mit Telegram koppeln. Danach kannst du Premium-Stimmen laden.','KOPPLUNG');
-      else if(!voices.length)setMessage('Tippe auf «Stimmen laden» und wähle eine Cartesia-Stimme.','VERBINDEN');
-      else setMessage('Premium bereit. Wähle eine Stimme oder teste sie.','CARTESIA');
-    } else {
+      if(!paired)setMessage('Schritt 1: Tippe auf «Jetzt iPhone verbinden». Danach lassen sich die Premium-Stimmen auswählen und anhören.','KOPPLUNG');
+      else if(!voices.length)setMessage('Schritt 2: «Stimmen laden» drücken und deine Stimme auswählen.','STIMMEN LADEN');
+      else setMessage('Jetzt eine Stimme wählen und auf «Stimme anhören» drücken.','BEREIT');
+    }else{
       options(nativeVoices(),prefs.voice||'');
-      setMessage(synth?'Geräte-Stimme bereit. Kostenlos und ohne Anmeldung.':'Dieser Browser unterstützt keine lokale Sprachausgabe.','LOKAL');
+      setMessage(synth?'Du kannst die kostenlose Geräte-Stimme sofort anhören. Kein Login nötig.':'Dieser Browser unterstützt keine lokale Sprachausgabe.','KOSTENLOS');
     }
   }
   async function api(method,body,signal){
@@ -91,7 +117,7 @@
     },...(body?{body:JSON.stringify(body)}:{})});
     if(!res.ok){
       const error=await res.json().catch(()=>({}));
-      if(res.status===401){window.dispatchEvent(new Event('dgos-device-session-invalid'));throw Error('Dieses iPhone ist noch nicht mit Jarvis verbunden. Verwende unten «Mit Telegram verbinden».');}
+      if(res.status===401){try{localStorage.removeItem('dgos.deviceSession');}catch{}window.dispatchEvent(new Event('dgos-device-session-invalid'));render();throw Error('Deine Kopplung muss erneuert werden. Tippe auf «Jetzt iPhone verbinden».');}
       if(error.error==='voice_not_configured')throw Error('Cartesia ist auf dem DG-OS-Server noch nicht konfiguriert.');
       if(error.error==='slow_down')throw Error('Bitte kurz warten und erneut testen.');
       throw Error('Premium-Stimme nicht verfügbar ('+(error.upstream_status||res.status)+').');
@@ -156,6 +182,19 @@
       setMessage(error.message||'Premium-Audio konnte nicht erstellt werden.','FEHLER');
     }finally{if(thisRequest===sequence)abort=null;}
   }
+
+  $('jvPairNow').addEventListener('click',()=>{
+    const deviceCard=$('jarvisDevicePair');
+    if(!deviceCard)return setMessage('Bitte die Seite neu laden, damit die Geräteverbindung erscheint.','FEHLER');
+    deviceCard.scrollIntoView({behavior:'smooth',block:'center'});
+    const firstStep=$('jdpStart');
+    if(firstStep&&!firstStep.hidden&&!firstStep.disabled)firstStep.click();
+    setMessage('Öffne unten Telegram, bestätige die Verbindung und kehre zu Jarvis zurück.','KOPPLUNG');
+  });
+  $('jvTryFree').addEventListener('click',()=>{
+    stop();provider='browser';save();render();
+    speak('Guten Morgen. Ich bin Jarvis. Du kannst meine Stimme hier jederzeit ändern.',true);
+  });
   $('jvEngine').addEventListener('change',()=>{stop();provider=$('jvEngine').value;save();render();if(provider==='cartesia')loadVoices();});
   $('jvLang').addEventListener('change',save);
   $('jvVoice').addEventListener('change',()=>{stop();if(provider==='cartesia'){voiceId=$('jvVoice').value;store(voiceKey,voiceId);}else prefs.voice=$('jvVoice').value;save();render();});
@@ -165,7 +204,7 @@
   $('jvRead').addEventListener('click',()=>speak(lastText||reply.textContent||'',true));
   $('jvStop').addEventListener('click',()=>{stop();setMessage('Wiedergabe gestoppt.','BEREIT');});
   document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
-  window.addEventListener('dgos-device-session',()=>{if(provider==='cartesia')loadVoices();});
+  window.addEventListener('dgos-device-session',()=>{render();if(provider==='cartesia')loadVoices();});
   synth?.addEventListener?.('voiceschanged',()=>{if(provider==='browser')render();});
   lastText=reply.textContent||'';
   new MutationObserver(()=>{

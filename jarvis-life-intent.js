@@ -25,9 +25,9 @@
     const index=new Date(today+'T12:00:00Z').getUTCDay();
     const nextMonday=plusDays(today,(8-index)%7||7);
     let base=null, label='';
-    if(/\bübernächste\s+woche\b|\buebernaechste\s+woche\b/.test(text)){base=plusDays(nextMonday,7);label='Montag übernächste Woche';}
+    if(/(?:^|\s)(?:übernächste|uebernaechste)\s+woche\b/.test(text)){base=plusDays(nextMonday,7);label='Montag übernächste Woche';}
     else if(/\b(?:nächste|naechste|kommende)\s+woche\b/.test(text)){base=nextMonday;label='Montag nächste Woche';}
-    else if(/\bübermorgen\b|\buebermorgen\b/.test(text)){base=plusDays(today,2);label='Übermorgen';}
+    else if(/(?:^|\s)(?:übermorgen|uebermorgen)\b/.test(text)){base=plusDays(today,2);label='Übermorgen';}
     else if(/\bmorgen\b/.test(text)){base=plusDays(today,1);label='Morgen';}
     else if(/\bheute\b/.test(text)){base=today;label='Heute';}
     const weekday=new RegExp('\\b(?:am\\s+)?(?:nächsten?\\s+|naechsten?\\s+|diesen\\s+)?('+weekdays.join('|')+')\\b','i').exec(text);
@@ -47,7 +47,7 @@
   }
   function stripWake(raw){
     return String(raw||'').trim()
-      .replace(/^(?:(?:hey|hallo|hi|ok|okay)\s+)*(?:jarvis[\s,:-]*)?/i,'')
+      .replace(/^(?:(?:hey|hallo|hi|ok|okay)[\s,:-]+)*(?:jarvis[\s,:-]*)?/i,'')
       .replace(/^(?:(?:hey|hallo|hi|bitte|also)\s+)+/i,'').trim();
   }
   function parseScheduledCommand(raw,now=new Date()){
@@ -65,7 +65,7 @@
       .replace(/\b(?:am\s+)?(?:nächsten?|naechsten?|diesen)\s+(?:montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/gi,' ')
       .replace(/\b(?:am\s+)(?:montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/gi,' ')
       .replace(/\b(?:übernächste|uebernaechste|nächste|naechste|kommende)\s+woche\b/gi,' ')
-      .replace(/\b(?:heute|morgen|übermorgen|uebermorgen)\b/gi,' ')
+      .replace(/(?:^|\s)(?:heute|morgen|übermorgen|uebermorgen)\b/gi,' ')
       .replace(/\b(?:montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/gi,' ')
       .replace(/^\s*(?:noch|bitte|daran|dass|das|die|den|dem|mir|für|fuer)\s+/i,'')
       .replace(/\s+/g,' ').replace(/^[,:-]+|[.!?]+$/g,'').trim();

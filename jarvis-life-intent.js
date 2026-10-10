@@ -66,7 +66,8 @@
       .replace(/\b(?:am\s+)(?:montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/gi,' ')
       .replace(/\b(?:übernächste|uebernaechste|nächste|naechste|kommende)\s+woche\b/gi,' ')
       .replace(/\b(?:heute|morgen|übermorgen|uebermorgen)\b/gi,' ')
-      .replace(/^(?:noch|bitte|daran|dass|das|die|den|dem|mir|für|fuer)\s+/i,'')
+      .replace(/\b(?:montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/gi,' ')
+      .replace(/^\s*(?:noch|bitte|daran|dass|das|die|den|dem|mir|für|fuer)\s+/i,'')
       .replace(/\s+/g,' ').replace(/^[,:-]+|[.!?]+$/g,'').trim();
     // "Ich muss DAS morgen bezahlen" without image/item does not identify what.
     if(/^(?:das|dies|dieses|es|etwas|irgendetwas|eine\s+rechnung|einen\s+beleg)(?:\s+(?:bezahlen|zahlen|machen|erledigen|kaufen))?$/i.test(desc) || /^(?:zahlen|bezahlen|kaufen|machen|erledigen|bestellen|prüfen|pruefen)$/i.test(desc) || !desc || desc.length>160)

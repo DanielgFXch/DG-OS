@@ -83,7 +83,7 @@
   function parse(raw){
     if(typeof raw!=='string'||!raw.trim()||raw.length>350)return null;
     let text=raw.trim()
-      .replace(/^(?:(?:hey|hallo|hi|okay|ok)\s+)*(?:(?:jarvis)[\s,:-]*)?/i,'')
+      .replace(/^(?:(?:hey|hallo|hi|okay|ok)[\s,:-]+)*(?:(?:jarvis)[\s,:-]*)?/i,'')
       .replace(/^(?:(?:hey|hallo|hi)\s+)+/i,'')
       .replace(/^(?:(?:bitte|ähm|also)\s+)+/i,'')
       .replace(/^(?:kannst du|könntest du|kannst du mir|mach mir)\s+(?:bitte\s+)?/i,'')

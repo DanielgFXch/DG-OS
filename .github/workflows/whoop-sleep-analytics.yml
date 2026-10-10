@@ -1,0 +1,32 @@
+name: DG OS WHOOP German Sleep Analytics
+on:
+  pull_request:
+    paths:
+      - 'whoop-sleep-analytics.js'
+      - 'whoop-sleep-ui.js'
+      - 'whoop-sleep.css'
+      - 'personal.js'
+      - 'index.html'
+      - 'supabase/functions/whoop/**'
+      - 'supabase/migrations/*sleep_history*'
+      - 'scripts/test-whoop-sleep-analytics.js'
+      - '.github/workflows/whoop-sleep-analytics.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'whoop-sleep-analytics.js'
+      - 'whoop-sleep-ui.js'
+      - 'scripts/test-whoop-sleep-analytics.js'
+jobs:
+  sleep-history:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check whoop-sleep-analytics.js
+      - run: node --check whoop-sleep-ui.js
+      - run: node --check personal.js
+      - run: node scripts/test-whoop-sleep-analytics.js
+      - run: node scripts/test-whoop-persistence.js

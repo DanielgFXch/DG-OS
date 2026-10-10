@@ -1133,6 +1133,19 @@
       const context=liveContextBlock();
       if(context)content.append(context);
 
+      // The same real hourly forecast also informs the personal briefing.
+      // If it is unavailable, omit advice rather than inventing a forecast.
+      const outfit=window.DGOSWeatherAdvisor?.getAdvice('today');
+      if(outfit){
+        const weatherTip=document.createElement('div');
+        weatherTip.className='personal-summary-context';
+        const label=document.createElement('strong');
+        label.textContent='Kleidung & Wetter · '+outfit.location;
+        const text=document.createElement('p');
+        text.textContent=outfit.summary+' '+outfit.details+'.';
+        weatherTip.append(label,text);content.append(weatherTip);
+      }
+
       const hero=document.createElement('div');hero.className='personal-summary-hero';
       const total=(data.overdue?.length||0)+(data.tasksToday?.length||0)+(data.appointments?.filter(x=>x.dueDate===data.date).length||0)+(data.bills?.filter(x=>x.dueDate&&x.dueDate<=data.date).length||0);
       const strong=document.createElement('strong');
@@ -1828,7 +1841,9 @@
       case 'briefing':
         $('dailyBriefingButton')?.click();
         scrollToElement($('personalAttention'));
-        showReply('Dein Tagesbriefing ist offen. Ich habe das Wichtige für heute nach Priorität sortiert.');
+        const weatherOutfit=window.DGOSWeatherAdvisor?.getAdvice('today');
+        showReply('Dein Tagesbriefing ist offen. Ich habe das Wichtige für heute nach Priorität sortiert.'+
+          (weatherOutfit?' '+weatherOutfit.summary:''));
         return true;
       case 'task':
         if (focusTask(payload)) {
@@ -2012,6 +2027,16 @@
     if (spokenShopping?.intent === 'shopping_clarify') {
       setStatus('Bitte präzisieren');
       setReply('Welche Produkte soll ich hinzufügen? Sag zum Beispiel: «Hey Jarvis, ich brauche Toast, Tomaten und Käse.»');
+      return true;
+    }
+
+    // Clothing questions are answers based on the actual local hourly forecast,
+    // never shopping writes or fictitious live weather.
+    if(window.DGOSWeatherOutfit?.isWeatherQuestion(original)){
+      const tomorrow=/\bmorgen\b/u.test(q)&&!/\bheute\s+morgen\b/u.test(q);
+      const response=window.DGOSWeatherAdvisor?.answer(tomorrow?'tomorrow':'today')
+        || 'Gomes, ich habe noch keine aktuelle Wetterprognose. Bitte Wetter aktualisieren.';
+      showReply(response);
       return true;
     }
 

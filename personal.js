@@ -2078,7 +2078,7 @@
       panel.classList.remove('is-listening');
       orb.setAttribute('aria-pressed','false');
       setOrbState('idle');
-      setStatus('Mikrofon-Fehler');
+      setStatus('Spracherkennung prüfen');
       setReply(message);
       // Text entry remains available without losing the utterance.
     }

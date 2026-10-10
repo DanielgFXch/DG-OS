@@ -1,0 +1,27 @@
+name: Jarvis Cartesia German STT
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/jarvis-private/**'
+      - 'jarvis-microphone.js'
+      - 'personal.js'
+      - 'index.html'
+      - 'sw.js'
+      - 'scripts/test-jarvis-cartesia-stt.js'
+      - '.github/workflows/jarvis-cartesia-stt.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/jarvis-private/**'
+      - 'jarvis-microphone.js'
+      - 'scripts/test-jarvis-cartesia-stt.js'
+jobs:
+  cartesia-stt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node scripts/test-jarvis-cartesia-stt.js
+      - run: node scripts/test-jarvis-iphone-mic.js

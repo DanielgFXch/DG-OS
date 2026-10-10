@@ -90,7 +90,7 @@ assert.ok(server.includes('.upsert(record,{onConflict:"sleep_date"})'));
 assert.ok(server.includes('if(origin!==ALLOWED_ORIGIN)'));
 assert.ok(read('supabase/migrations/20261010233000_whoop_sleep_history.sql').includes('ROW LEVEL SECURITY'));
 assert.ok(read('supabase/migrations/20261010233000_whoop_sleep_history.sql').includes('REVOKE ALL'));
-assert.ok(read('sw.js').includes('dgos-personal-shell-44'));
+assert.ok(read('sw.js').includes('dgos-personal-shell-45'));
 assert.ok(read('sw.js').includes('whoop-sleep-analytics.js?v=1'));
 assert.ok(css.includes('@media(max-width:600px)'));
 assert.ok(css.includes('conic-gradient'));

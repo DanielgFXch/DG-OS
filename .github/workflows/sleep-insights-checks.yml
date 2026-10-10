@@ -1,0 +1,32 @@
+name: WHOOP Sleep Intelligence checks
+on:
+  push:
+    paths:
+      - "sleep-insights.js"
+      - "sleep-insights.css"
+      - "scripts/test-sleep-insights.js"
+      - "supabase/functions/whoop/index.ts"
+      - "index.html"
+      - "package.json"
+      - ".github/workflows/sleep-insights-checks.yml"
+  pull_request:
+    paths:
+      - "sleep-insights.js"
+      - "sleep-insights.css"
+      - "scripts/test-sleep-insights.js"
+      - "supabase/functions/whoop/index.ts"
+      - "index.html"
+      - "package.json"
+      - ".github/workflows/sleep-insights-checks.yml"
+jobs:
+  sleep-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate browser logic
+        run: node --check sleep-insights.js
+      - name: Validate sleep calculations
+        run: npm run test:sleep

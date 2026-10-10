@@ -41,7 +41,7 @@
   voiceToggle.id='jarvisDashVoiceToggle';voiceToggle.type='button';
   voiceToggle.setAttribute('role','switch');
   voiceToggle.setAttribute('aria-label','Jarvis Sprachantwort ein- oder ausschalten');
-  const statusDot=make('span','jarvis-dash-speaker-icon','◖))');
+  const statusDot=make('span','jarvis-dash-speaker-icon','🔊');
   statusDot.setAttribute('aria-hidden','true');
   const voiceLabel=make('span','jarvis-dash-voice-label');
   voiceToggle.append(statusDot,voiceLabel);
@@ -122,7 +122,10 @@
     }
     if(tab==='shopping'){
       const nav=document.querySelector('.bottom-nav button[data-target="personalPrivate"]');
-      if(nav)nav.click();else form.scrollIntoView({behavior:'smooth',block:'center'});
+      if(nav){
+        nav.click();
+        document.querySelector('[data-private-tab="shopping"]')?.click();
+      }else form.scrollIntoView({behavior:'smooth',block:'center'});
       return;
     }
     if(tab==='photo'){

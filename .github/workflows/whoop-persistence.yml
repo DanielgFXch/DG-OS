@@ -1,0 +1,28 @@
+name: DG OS WHOOP Persistent Health Connection
+on:
+  pull_request:
+    paths:
+      - 'personal.js'
+      - 'supabase/functions/whoop/**'
+      - 'supabase/migrations/*whoop*'
+      - 'index.html'
+      - 'sw.js'
+      - 'scripts/test-whoop-persistence.js'
+      - '.github/workflows/whoop-persistence.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/whoop/**'
+      - 'scripts/test-whoop-persistence.js'
+      - 'personal.js'
+jobs:
+  whoop-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check personal.js
+      - run: node scripts/test-whoop-persistence.js
+      - run: node scripts/test-jarvis-iphone-mic.js

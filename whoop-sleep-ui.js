@@ -32,7 +32,10 @@
     }
     const delta=Math.round(n(record[comparisonKey])-n(reference[comparisonKey]));
     text(id,delta===0?'±0 Min.':(delta>0?'+':'−')+fmt(Math.abs(delta)));
-    text(noteId,label+' · '+fmt(n(reference[comparisonKey])));
+    const scoreNow=n(record.performance),scorePrevious=n(reference.performance);
+    const change=scoreNow===null||scorePrevious===null?'':' · Schlafleistung '+(scoreNow>=scorePrevious?'+':'−')+
+      Math.abs(Math.round(scoreNow-scorePrevious))+' Pkt.';
+    text(noteId,label+' '+fmt(n(reference[comparisonKey]))+change);
     el(id).dataset.direction=delta>0?'positive':delta<0?'negative':'neutral';
   }
   function chart(series,selected){

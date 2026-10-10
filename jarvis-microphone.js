@@ -59,7 +59,8 @@
         if(!response.ok){
           let reason='Jarvis konnte die Aufnahme nicht verstehen. Bitte erneut versuchen.';
           if(response.status===401)reason='Gerätekopplung abgelaufen. Bitte Jarvis auf diesem iPhone neu mit Telegram verbinden.';
-          else if(data.error==='ai_not_configured')reason='Die Spracherkennung auf dem DG-OS-Server ist noch nicht konfiguriert. Bitte OpenAI-Schlüssel im bestehenden Supabase-Projekt prüfen.';
+          else if(data.error==='ai_not_configured'||data.error==='stt_not_configured')reason='Kein Spracherkennungs-Anbieter auf dem DG-OS-Server eingerichtet. Bitte Cartesia oder OpenAI in Supabase aktivieren.';
+          else if(data.error==='transcription_unavailable')reason='Cartesia konnte die Aufnahme gerade nicht verarbeiten. Bitte erneut versuchen oder Cartesia-Zugang und Guthaben prüfen.';
           else if(data.error==='slow_down')reason='Bitte acht Sekunden warten und dann erneut sprechen.';
           else if(data.error==='invalid_audio')reason='Dieses iPhone-Audioformat konnte nicht verarbeitet werden.';
           throw Error(reason);

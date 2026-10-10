@@ -79,6 +79,10 @@
   $('language').addEventListener('change',()=>{populate();});
   $('pace').addEventListener('input',()=>{$('paceOut').textContent=Number($('pace').value).toFixed(2)+'×';});
   $('preview').addEventListener('click',preview);
+  $('testTone').addEventListener('click',async()=>{
+    const result=await window.DGOSSoundCheck?.playTestTone();
+    note(result?.reason||'Audiotest nicht verfügbar.');
+  });
   $('stop').addEventListener('click',()=>{stop();note('Wiedergabe gestoppt.');});
   $('save').addEventListener('click',()=>{
     try{

@@ -1,0 +1,30 @@
+name: DG OS iPhone Jarvis Microphone
+on:
+  pull_request:
+    paths:
+      - 'jarvis-microphone.js'
+      - 'personal.js'
+      - 'jarvis-voice.js'
+      - 'jarvis-brain.js'
+      - 'index.html'
+      - 'scripts/test-jarvis-iphone-mic.js'
+      - '.github/workflows/jarvis-iphone-mic.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'jarvis-microphone.js'
+      - 'personal.js'
+      - 'jarvis-voice.js'
+      - 'jarvis-brain.js'
+jobs:
+  ios-microphone:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check jarvis-microphone.js
+      - run: node --check personal.js
+      - run: node --check jarvis-voice.js
+      - run: node scripts/test-jarvis-iphone-mic.js

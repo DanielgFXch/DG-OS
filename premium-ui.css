@@ -397,3 +397,34 @@ body[data-dgos-route="home"] #personalGreeting{
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* WHOOP: make expired live sync understandable without hiding saved sleep. */
+#personalHealth[data-whoop-sync="reauthorize"] #whoopHealthMeta {
+  background:rgba(240,193,124,.08)!important;
+  border:1px solid rgba(240,193,124,.27)!important;
+  border-radius:15px!important;padding:14px 16px!important;color:#f3d9ad!important;
+}
+#personalHealth[data-whoop-sync="reauthorize"] #whoopStatus{color:#f1c987!important}
+#personalHealth[data-whoop-sync="reauthorize"] #whoopConnect{
+  border-color:rgba(240,193,124,.38)!important;background:rgba(182,123,45,.12)!important;
+  color:#ffdda7!important;min-height:44px!important;
+}
+#personalHealth[data-whoop-sync="unavailable"] #whoopHealthMeta {
+  border:1px solid var(--ux-border)!important;
+  border-radius:15px!important;padding:13px 15px!important;
+  color:var(--ux-secondary)!important;
+}
+@media(max-width:700px){
+  #personalHealth .personal-health-values {display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important}
+  #personalHealth .personal-health-values>div {min-width:0!important}
+  #personalHealth .personal-health-values>div:first-child {
+    grid-column:1/-1;display:grid!important;grid-template-columns:minmax(0,1fr) 130px!important;
+    grid-template-rows:auto auto;align-items:center;text-align:left!important;min-height:165px!important;padding:18px!important;
+  }
+  #personalHealth .personal-health-values>div:first-child>span{grid-column:1;grid-row:1;align-self:end!important}
+  #personalHealth .personal-health-values>div:first-child>strong{grid-column:2;grid-row:1/3;justify-self:center;align-self:center}
+  #personalHealth .personal-health-values>div:first-child>small {grid-column:1;grid-row:2;align-self:start!important;overflow-wrap:anywhere;font-size:11px!important;line-height:1.5!important}
+}
+@media(max-width:365px){
+  #personalHealth .personal-health-values>div:first-child{grid-template-columns:minmax(0,1fr) 105px!important;padding:13px!important}
+}

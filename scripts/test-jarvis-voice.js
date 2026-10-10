@@ -11,10 +11,12 @@ for(const name of ['jarvis-voice.js','voice-studio.js','cartesia-favorites.js'])
 }
 const html=file('index.html');
 const studio=file('voice-studio.html');
-assert.match(html,/jarvis-voice\.js\?v=2/);
-assert.match(html,/jarvis-voice\.css\?v=2/);
+assert.match(html,/jarvis-voice\.js\?v=4/);
+assert.match(html,/jarvis-voice\.css\?v=4/);
 assert.match(studio,/cartesia-favorites\.js\?v=4/);
-assert.match(studio,/voice-studio\.js\?v=5/);
+assert.match(studio,/voice-studio\.js\?v=6/);
+assert.ok(html.includes('jarvis-native-voice.js?v=1'));
+assert.ok(studio.includes('jarvis-native-voice.js?v=1'));
 const browser=file('jarvis-voice.js');
 const favorites=file('cartesia-favorites.js');
 for(const client of [browser,favorites]) {
@@ -24,6 +26,7 @@ for(const client of [browser,favorites]) {
   assert.doesNotMatch(client,/CARTESIA_API_KEY|SUPABASE_SERVICE_ROLE_KEY|voicePassword|grant_type=password/);
 }
 assert.match(browser,/Antworten vorlesen/);
+assert.ok(browser.includes('window.DGOSLocalVoice'),'Native voice must use shared iOS-safe engine');
 assert.match(favorites,/Stimmen laden/);
 const edge=file('supabase/functions/jarvis-cartesia/index.ts');
 for(const guard of ['dgos_device_sessions','dgos_telegram_config','token_hash','expires_at',
@@ -33,4 +36,5 @@ assert.match(edge,/sonic-3\.6/);
 assert.match(edge,/voice: id/);
 assert.doesNotMatch(edge,/voice: \{ mode:/);
 assert.doesNotMatch(edge,/"X-API-Key": cartesiaKey/);
-console.log('Jarvis Voice contract checks passed (static only).');
+require('./test-jarvis-native-voice.js');
+console.log('Jarvis Voice contract checks passed.');

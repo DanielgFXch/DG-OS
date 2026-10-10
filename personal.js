@@ -815,10 +815,22 @@
         items.forEach(w=>{
           const row=document.createElement('div');row.className='personal-whoop-workout';
           const info=document.createElement('div');
-          const strong=document.createElement('strong');strong.textContent=w.name||'Workout';
+          const strong=document.createElement('strong');
+          const sport=String(w.name||'Training');
+          const sportTranslations={
+            walking:'Gehen',running:'Laufen',cycling:'Radfahren',biking:'Radfahren',
+            weightlifting:'Krafttraining','strength training':'Krafttraining',
+            'functional fitness':'Funktionelles Training',hiking:'Wandern',
+            swimming:'Schwimmen',sleep:'Schlaf',yoga:'Yoga',
+            soccer:'Fussball',football:'Fussball',pilates:'Pilates',
+            elliptical:'Crosstrainer',hiit:'Intervalltraining',
+            'indoor cycling':'Indoor-Radfahren',meditation:'Meditation',
+            stretching:'Dehnen',tennis:'Tennis'
+          };
+          strong.textContent=sportTranslations[sport.trim().toLowerCase()]||sport;
           const small=document.createElement('small');
           const when=w.start?new Intl.DateTimeFormat('de-CH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(w.start)):'';
-          small.textContent=[when,Number.isFinite(Number(w.strain))?'Strain '+Number(w.strain).toFixed(1):'',Number.isFinite(Number(w.calories))?Math.round(Number(w.calories))+' kcal':''].filter(Boolean).join(' · ');
+          small.textContent=[when,Number.isFinite(Number(w.strain))?'Belastung '+Number(w.strain).toFixed(1):'',Number.isFinite(Number(w.calories))?Math.round(Number(w.calories))+' kcal':''].filter(Boolean).join(' · ');
           info.append(strong,small);row.append(info);box.append(row);
         });
       }

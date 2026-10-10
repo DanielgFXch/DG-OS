@@ -161,6 +161,25 @@ Deno.serve(async(req:Request)=>{
       return json({items:data||[]});
     }
 
+    // Kept accounts are explicit choices, NOT the whitelist. Include historic
+    // choices even when a newer Instagram export no longer lists the profile.
+    if(req.method==="GET" && action==="kept"){
+      const accountKey=cleanAccount(url.searchParams.get("accountKey"));
+      if(!accountKey)return json({error:"invalid_account"},400);
+      const items:any[]=[];
+      for(let offset=0;offset<10000;offset+=500){
+        const {data,error}=await db.from("dgos_social_relationships")
+          .select("username,is_following,is_follower,state_changed_at")
+          .eq("account_key",accountKey).eq("decision","keep")
+          .order("username",{ascending:true})
+          .range(offset,offset+499);
+        if(error)throw error;
+        items.push(...(data||[]));
+        if(!data||data.length<500)break;
+      }
+      return json({accountKey,items});
+    }
+
     if(req.method==="POST" && action==="decision"){
       const body=await readBody(req);
       const accountKey=cleanAccount(body.accountKey);
@@ -239,7 +258,9 @@ Deno.serve(async(req:Request)=>{
           is_follower:nextFollower,
           is_following:nextFollowing,
           whitelisted:whitelistSet.has(username),
-          decision:decisions.get(username)||null,
+          // A fresh export is not permission to discard a past Keep decision.
+          // Only an explicit owner action can undo it.
+          decision:decisions.get(username)||(old?.decision==="keep"?"keep":null),
           first_seen_at:old?.first_seen_at||now,
           last_seen_at:now,
           state_changed_at:changed?now:(old?.state_changed_at||now)

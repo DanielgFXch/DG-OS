@@ -54,7 +54,8 @@
   function stop(){
     sequence++;
     if(abort){abort.abort();abort=null;}
-    synth?.cancel();
+    if(window.DGOSLocalVoice)window.DGOSLocalVoice.stop();
+    else if(synth && (synth.speaking || synth.pending || synth.paused))synth.cancel();
     if(currentAudio){currentAudio.pause();currentAudio.removeAttribute('src');currentAudio.load();currentAudio=null;}
     if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl='';}
     lastPrepared='';
@@ -68,7 +69,7 @@
   }
   function nativeVoices(){
     const list=synth?synth.getVoices().slice().sort((a,b)=>Number(b.lang.startsWith('de'))-Number(a.lang.startsWith('de'))||a.name.localeCompare(b.name)):[];
-    return list.map(x=>({id:x.voiceURI,name:x.name+' · '+x.lang}));
+    return [{id:'',name:'Systemstimme · automatisch'},...list.map(x=>({id:x.voiceURI,name:x.name+' · '+x.lang}))];
   }
   function render(){
     const premium=provider==='cartesia';
@@ -115,15 +116,17 @@
   async function speak(text,preview=false){
     if(!text||(!preview&&!$('jvEnabled').checked))return;
     if(provider==='browser'){
-      if(!synth)return setMessage('Geräte-Stimme nicht verfügbar.','FEHLER');
-      stop();
-      const utterance=new SpeechSynthesisUtterance(String(text).slice(0,1200));
-      utterance.lang=$('jvLang').value;utterance.rate=.94;utterance.pitch=.96;
-      const selected=synth.getVoices().find(v=>v.voiceURI===$('jvVoice').value);
-      if(selected){utterance.voice=selected;utterance.lang=selected.lang;}
-      utterance.onerror=()=>setMessage('Die Geräte-Stimme konnte nicht abgespielt werden.','FEHLER');
-      synth.speak(utterance);
-      setMessage('Jarvis spricht mit der Geräte-Stimme.','SPRICHT');return;
+      const player=window.DGOSLocalVoice;
+      if(!player?.isSupported())return setMessage('Die lokale Sprachausgabe ist hier nicht verfügbar. Öffne das Voice Studio in Safari.','FEHLER');
+      const voice=synth.getVoices().find(v=>v.voiceURI===$('jvVoice').value);
+      player.play({
+        text,voice,lang:$('jvLang').value,rate:.94,pitch:.96,
+        onState:({state,message})=>{
+          const badge=state==='error'?'FEHLER':state==='speaking'?'SPRICHT':state==='starting'?'STARTET':'BEREIT';
+          setMessage(message,badge);
+        }
+      });
+      return;
     }
     if(!voiceId){setMessage('Bitte erst «Stimmen laden» und eine Premium-Stimme auswählen.','VERBINDEN');return;}
     if(currentAudio&&lastPrepared===text){

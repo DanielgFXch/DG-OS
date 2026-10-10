@@ -773,7 +773,7 @@
     const recovery=data&&data.recovery, sleep=data&&data.sleep, cycle=data&&data.cycle;
     set('whoopStatus','WHOOP · verbunden');
     set('whoopSleep',sleep?fmtHours(sleep.durationHours):'—');
-    set('whoopSleepPerformance',sleep&&Number.isFinite(Number(sleep.performance))?'Sleep Performance '+Math.round(Number(sleep.performance))+'%':'—');
+    set('whoopSleepPerformance',sleep&&sleep.performance!=null&&Number.isFinite(Number(sleep.performance))?'Schlafleistung '+Math.round(Number(sleep.performance))+' %':'Schlafleistung —');
     set('whoopRecovery',recovery&&Number.isFinite(Number(recovery.score))?Math.round(Number(recovery.score))+'%':'—');
     set('whoopHrv',recovery&&Number.isFinite(Number(recovery.hrvMs))?'HRV '+Math.round(Number(recovery.hrvMs))+' ms':'HRV —');
     set('whoopStrain',cycle&&Number.isFinite(Number(cycle.strain))?Number(cycle.strain).toFixed(1):'—');
@@ -798,6 +798,10 @@
     $('whoopDetails')?.classList.remove('hidden');
     connect.textContent='WHOOP verbunden';
     connect.disabled=true;
+    // Let the independent private sleep dashboard repaint the three real
+    // WHOOP rings after authenticated values arrive. No copy in localStorage.
+    window.dispatchEvent(new CustomEvent('dgos-whoop-updated',{detail:data}));
+
 
     const box=$('whoopWorkouts');
     if(box){

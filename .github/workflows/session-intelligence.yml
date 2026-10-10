@@ -1,0 +1,30 @@
+name: DG OS Session Intelligence
+on:
+  pull_request:
+    paths:
+      - 'trading-intelligence.js'
+      - 'trading-intelligence-ui.js'
+      - 'trading-intelligence.css'
+      - 'server/marketState.js'
+      - 'index.html'
+      - 'scripts/test-session-intelligence.js'
+      - '.github/workflows/session-intelligence.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'trading-intelligence.js'
+      - 'trading-intelligence-ui.js'
+      - 'trading-intelligence.css'
+      - 'server/marketState.js'
+      - 'scripts/test-session-intelligence.js'
+jobs:
+  session-context:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check trading-intelligence.js
+      - run: node --check trading-intelligence-ui.js
+      - run: node scripts/test-session-intelligence.js

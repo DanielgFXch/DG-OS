@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="./styles.css?v=0.45.3" />
   <link rel="stylesheet" href="./wow.css?v=0.37.1" />
   <link rel="stylesheet" href="./personal.css?v=0.57.1" />
-  <link rel="stylesheet" href="./social.css?v=0.61.0" />
+  <link rel="stylesheet" href="./social.css?v=0.61.1" />
   <link rel="stylesheet" href="./navigation.css?v=0.73.1" />
   <link rel="stylesheet" href="./private-hub.css?v=1" />
   <link rel="stylesheet" href="./mobile.css?v=0.46.3" />
@@ -578,6 +578,21 @@
             <small class="social-help">DG OS priorisiert aktuell transparent nach „folgt nicht zurück“ und Whitelist. Das eigentliche Entfolgen führst du auf Instagram selbst aus; danach markierst du den Account hier als entfernt.</small>
           </section>
 
+          <section class="social-glass social-kept-section" id="socialKeptSection" aria-labelledby="socialKeptTitle">
+            <div class="social-glass-head">
+              <div><div class="personal-kicker">DEINE ENTSCHEIDUNGEN</div><h3 id="socialKeptTitle">Behaltene Accounts</h3></div>
+              <span id="socialKeptCount" class="social-kept-count">0 behalten</span>
+            </div>
+            <p class="social-help">Alle Profile, bei denen du bewusst auf «Behalten» geklickt hast. Für Business und Privat separat gespeichert.</p>
+            <div class="social-kept-toolbar">
+              <label for="socialKeptSearch" class="social-kept-search-label">Account suchen</label>
+              <input id="socialKeptSearch" type="search" placeholder="@username suchen …" autocomplete="off" aria-label="Behaltene Instagram-Accounts durchsuchen" />
+              <button id="socialKeptRefresh" type="button" class="secondary">↻ Aktualisieren</button>
+            </div>
+            <div id="socialKeptList" class="social-kept-list" aria-live="polite"><p class="social-kept-empty">Gespeicherte Entscheidungen werden geladen …</p></div>
+            <small id="socialKeptStatus" class="social-kept-status" role="status"></small>
+          </section>
+
           <section class="social-glass">
             <div class="social-glass-head"><h3>Cleanup Verlauf</h3><small id="socialCleanupProgress">0 entfernt · 0 behalten · 0 später</small></div>
             <p class="social-help">Deine Entscheidungen bleiben pro Business-/Privat-Account getrennt gespeichert.</p>
@@ -1070,7 +1085,7 @@
   <script src="./jarvis-sound-check.js?v=1"></script>
   <script src="./jarvis-native-voice.js?v=2"></script>
   <script src="./jarvis-voice.js?v=8"></script>
-  <script src="./jarvis-device-pairing.js?v=1"></script>\n  <script src="./social.js?v=0.61.0"></script>
+  <script src="./jarvis-device-pairing.js?v=1"></script>\n  <script src="./social.js?v=0.61.1"></script>
   <script src="./navigation.js?v=0.60.1"></script>
   <script src="./private-hub.js?v=1"></script>
   <script src="./trading-command.js?v=0.57.0"></script>

@@ -34,7 +34,7 @@ assert.ok(mobile.includes("data.error==='transcription_unavailable'"),'Tell user
 assert.ok(!mobile.includes('CARTESIA_API_KEY'),'Provider secrets never in frontend');
 assert.ok(!privateHub.includes('CARTESIA_API_KEY'),'Provider secrets never in app bundle');
 assert.ok(html.includes('jarvis-microphone.js?v=2'));
-assert.ok(html.includes('personal.js?v=0.59.5'));
+assert.ok(html.includes('personal.js?v=0.59.6'));
 assert.ok(sw.includes('dgos-personal-shell-38'));
 assert.ok(sw.includes('jarvis-microphone.js?v=2'));
 assert.doesNotThrow(()=>new Function(mobile));

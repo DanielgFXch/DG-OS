@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="./jarvis-os-v2.css?v=0.59.0" />
   <link rel="stylesheet" href="./jarvis-voice.css?v=2" />
   <link rel="stylesheet" href="./jarvis-voice-contrast.css?v=1" />
+  <link rel="stylesheet" href="./jarvis-cinematic.css?v=1" />
   <link rel="stylesheet" href="./jarvis-device-pairing.css?v=1" />
   <title>DG OS · Dein Tag</title>
 </head>
@@ -145,38 +146,28 @@
 
 
     <section id="personalJarvis" class="personal-panel personal-jarvis-panel" aria-labelledby="personalJarvisTitle">
-      <div class="personal-jarvis-head">
-        <div>
-          <div class="personal-kicker">JARVIS · PERSONAL INTELLIGENCE</div>
-          <h2 id="personalJarvisTitle">Was kann ich für dich tun?</h2>
-          <p>Ich ordne deinen Tag, Aufgaben, Termine, Rechnungen und Ideen.</p>
+      <div class="jarvis-cinematic-hero" aria-label="Jarvis Zentrale">
+        <div class="personal-jarvis-head">
+          <div>
+            <div class="personal-kicker">JARVIS · PERSONAL INTELLIGENCE</div>
+            <h2 id="personalJarvisTitle">Was kann ich für dich tun?</h2>
+            <p>Ich ordne deinen Tag, Aufgaben, Termine, Rechnungen und Ideen.</p>
+          </div>
+          <div class="jarvis-system-badge" aria-label="Jarvis System bereit"><i aria-hidden="true"></i><span>ONLINE</span></div>
         </div>
-        <div class="jarvis-system-badge" aria-label="Jarvis System bereit"><i aria-hidden="true"></i><span>ONLINE</span></div>
-      </div>
-
-      <div class="jarvis-orb-stage">
-        <button id="personalJarvisOrbBtn" class="jarvis-orb" type="button" data-state="idle" aria-label="Mit Jarvis sprechen" aria-pressed="false">
-          <span class="jarvis-orb-halo" aria-hidden="true"></span>
-          <span class="jarvis-orb-pixel-field" aria-hidden="true"></span>
-          <span class="jarvis-orb-wave-ring jarvis-orb-wave-ring-one" aria-hidden="true"></span>
-          <span class="jarvis-orb-wave-ring jarvis-orb-wave-ring-two" aria-hidden="true"></span>
-          <span class="jarvis-orb-ring jarvis-orb-ring-one" aria-hidden="true"></span>
-          <span class="jarvis-orb-ring jarvis-orb-ring-two" aria-hidden="true"></span>
-          <span class="jarvis-orb-ring jarvis-orb-ring-three" aria-hidden="true"></span>
-          <span class="jarvis-orb-core" aria-hidden="true">
-            <span class="jarvis-orb-scan"></span>
-            <span class="jarvis-orb-waveform">
-              <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <div class="jarvis-orb-stage">
+          <button id="personalJarvisOrbBtn" class="jarvis-orb dg-hero-orb-button jarvis-cinematic-orb" type="button" data-state="idle" aria-label="Mit Jarvis sprechen" aria-pressed="false">
+            <span class="dg-orb-sphere" aria-hidden="true">
+              <span class="dg-orb-inner"></span>
+              <span class="dg-orb-streak"></span>
+              <span class="dg-orb-specular"></span>
             </span>
-            <span class="jarvis-orb-wave"></span>
-          </span>
-          <span class="jarvis-orb-particles" aria-hidden="true"></span>
-        </button>
-        <div class="jarvis-orb-state"><span class="jarvis-eq" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></span><strong id="personalJarvisStatus">Bereit</strong></div>
-        <p id="personalJarvisReply" class="jarvis-reply" aria-live="polite">Sag mir, was du brauchst.</p>
+          </button>
+          <div class="dg-hero-orb-label jarvis-cinematic-label">J A R V I S <small id="personalJarvisStatus">Bereit</small></div>
+          <p id="personalJarvisReply" class="jarvis-reply" aria-live="polite">Sag mir, was du brauchst.</p>
+        </div>
       </div>
 
-      <a href="./voice-studio.html" style="display:inline-flex;align-items:center;gap:9px;margin:8px 0 18px;padding:12px 16px;border:1px solid #356678;border-radius:12px;color:#9deae9;text-decoration:none;background:rgba(10,40,52,.65)">♫ Premium Voice Studio <span aria-hidden="true">↗</span></a>
       <div class="jarvis-life-stats" aria-label="Dein aktueller Tag">
         <div><span>Aufgaben</span><strong id="jarvisLifeTasks">0</strong></div>
         <div><span>Termine</span><strong id="jarvisLifeAppointments">0</strong></div>

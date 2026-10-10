@@ -22,7 +22,7 @@
   try{prefs=JSON.parse(read(storageKey)||'{}')||{};}catch{}
   let provider=['browser','cartesia','openai-tts'].includes(prefs.provider)?prefs.provider:'browser';
   let voiceId=read(providerVoiceKey())||'';
-  let voices=[],currentAudio=null,objectUrl='',abort=null,sequence=0,lastText='',lastPrepared='';
+  let voices=[],currentAudio=null,objectUrl='',abort=null,sequence=0,lastText='',lastPrepared='',lastCompleted='',microphoneBusy=false;
   const controls=document.createElement('div');
   controls.className='jarvis-voice-console';
   controls.innerHTML=`
@@ -36,7 +36,7 @@
       <label>Sprache<select id="jvLang"><option value="de-DE">Deutsch</option><option value="en-GB">English</option><option value="pt-PT">Português (Portugal)</option></select></label>
     </div>
     <div class="jv-voice-actions">
-      <label class="jv-autospeak"><input id="jvEnabled" type="checkbox"> Antworten vorlesen</label>
+      <label class="jv-autospeak"><input id="jvEnabled" type="checkbox"> Antworten vorlesen · Jarvis spricht zurück</label>
       <button id="jvReload" type="button">Stimmen laden</button>
       <button id="jvPreview" type="button" class="jv-action-primary">Stimme testen</button>
       <button id="jvSoundCheck" type="button">🔊 Ton prüfen</button>
@@ -186,7 +186,19 @@
   $('jvEngine').addEventListener('change',()=>{stop();provider=$('jvEngine').value;voiceId=read(providerVoiceKey())||'';voices=[];save();render();if(provider!=='browser')loadVoices();});
   $('jvLang').addEventListener('change',save);
   $('jvVoice').addEventListener('change',()=>{stop();if(provider!=='browser'){voiceId=$('jvVoice').value;store(providerVoiceKey(),voiceId);}else prefs.voice=$('jvVoice').value;save();render();});
-  $('jvEnabled').addEventListener('change',()=>{store(enabledKey,$('jvEnabled').checked?'1':'0');if(!$('jvEnabled').checked)stop();});
+  $('jvEnabled').addEventListener('change',()=>{
+    const enabled=$('jvEnabled').checked;
+    store(enabledKey,enabled?'1':'0');
+    if(!enabled){
+      stop();
+      setMessage('Sprachausgabe ausgeschaltet. Jarvis antwortet weiterhin als Text.','STUMM');
+    }else{
+      setMessage('Sprachausgabe eingeschaltet. Jarvis spricht nach jedem fertigen Befehl.','BEREIT');
+      // If the owner enables speech directly after a completed result, play
+      // that answer once as feedback. Never speak while microphone is active.
+      if(lastCompleted&&!microphoneBusy)void speak(lastCompleted);
+    }
+  });
   $('jvReload').addEventListener('click',loadVoices);
   $('jvPreview').addEventListener('click',()=>speak('Hallo. Ich bin Jarvis. Hörst du mich?',true));
   $('jvRead').addEventListener('click',()=>speak(lastText||reply.textContent||'',true));
@@ -203,7 +215,8 @@
   // Only completed Jarvis responses produce speech after an explicit user command.
   window.addEventListener('dgos-jarvis-microphone-state',event=>{
     const state=event.detail?.state;
-    if(state==='starting'||state==='listening'||state==='processing'){
+    microphoneBusy=state==='starting'||state==='listening'||state==='processing';
+    if(microphoneBusy){
       stop(); // No audio feedback into the recording microphone.
       setMessage(state==='listening'?'Ich höre zu. Sprich jetzt; tippe zum Beenden.':
         state==='processing'?'Aufnahme wird in Text umgewandelt …':'Mikrofon wird geöffnet …','ZUHÖREN');
@@ -213,7 +226,13 @@
     const text=String(event.detail?.text||'').trim();
     if(!text)return; // Identical requests should still receive a spoken answer.
     lastText=text;
-    if($('jvEnabled').checked)void speak(text);
+    lastCompleted=text;
+    microphoneBusy=false;
+    if($('jvEnabled').checked){
+      void speak(text);
+    }else{
+      setMessage('Antwort als Text angezeigt. Aktiviere «Antworten vorlesen», damit Jarvis sie sagt.','STUMM');
+    }
   });
   render();
   if(provider!=='browser'&&deviceSession())loadVoices();

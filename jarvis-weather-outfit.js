@@ -59,6 +59,9 @@
     for(let i=0;i<hourly.time.length;i++){
       const epoch=hourly.time[i]*1000;
       if(localDay(epoch)!==target)continue;
+      // Tomorrow's clothing advice should consider the daytime, not a cold
+      // 03:00 hour when the user is normally sleeping.
+      if(dateType==='tomorrow' && localHour(epoch)<6)continue;
       if(dateType==='today' && epoch<startTime)continue;
       const temp=safeNumber(hourly.temperature_2m[i]);
       const apparent=safeNumber(hourly.apparent_temperature[i]);

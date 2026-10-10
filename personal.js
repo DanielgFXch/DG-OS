@@ -1927,10 +1927,13 @@
       if (added.length) {
         window.dispatchEvent(new Event('dgos-private-updated'));
       }
-      let summary = '';
-      if (added.length) summary = 'Erledigt! '+added.join(', ')+' '+(added.length===1?'ist':'sind')+' jetzt auf deiner Einkaufsliste.';
-      if (skipped.length) summary += (summary?' ':'')+'Schon vorhanden: '+skipped.join(', ')+'.';
-      showReply(summary || 'Diese Produkte stehen bereits auf deiner Einkaufsliste.');
+      // Only say "gespeichert" after the secure server confirms the writes.
+      // Build a conversational sentence rather than a generic status message.
+      const summary=window.DGOSJarvisReplies?.shopping(added,skipped)
+        || (added.length?'Okay Gomes, '+added.join(', ')+' stehen jetzt auf deiner Einkaufsliste.':
+          skipped.length?'Okay Gomes, diese Produkte stehen bereits auf deiner Einkaufsliste.':
+          'Ich konnte keine neuen Produkte bestätigen.');
+      showReply(summary);
     } catch (err) {
       shoppingFailure(err && err.message ? err.message : 'Einkauf konnte nicht gespeichert werden. Bitte erneut versuchen.');
     } finally {

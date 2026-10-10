@@ -1,0 +1,34 @@
+name: DG OS Jarvis Weather Outfit
+on:
+  pull_request:
+    paths:
+      - 'jarvis-weather-outfit.js'
+      - 'jarvis-weather-ui.js'
+      - 'jarvis-weather.css'
+      - 'weather.js'
+      - 'personal.js'
+      - 'jarvis-dashboard.js'
+      - 'index.html'
+      - 'sw.js'
+      - 'scripts/test-jarvis-weather-outfit.js'
+      - '.github/workflows/jarvis-weather-outfit.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'jarvis-weather-outfit.js'
+      - 'jarvis-weather-ui.js'
+      - 'weather.js'
+      - 'scripts/test-jarvis-weather-outfit.js'
+jobs:
+  outfit-regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: node --check jarvis-weather-outfit.js
+      - run: node --check jarvis-weather-ui.js
+      - run: node --check weather.js
+      - run: node scripts/test-jarvis-weather-outfit.js
+      - run: node scripts/test-jarvis-dashboard.js

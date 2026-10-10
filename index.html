@@ -28,6 +28,7 @@
   <link rel="stylesheet" href="./jarvis-life-photo.css?v=1" />
   <link rel="stylesheet" href="./jarvis-device-pairing.css?v=1" />
   <link rel="stylesheet" href="./jarvis-dashboard.css?v=1" />
+  <link rel="stylesheet" href="./jarvis-weather.css?v=1" />
   <title>DG OS · Dein Tag</title>
 </head>
 <body>
@@ -101,6 +102,9 @@
           <div><span>Heute geplant</span><strong id="personalCount">0</strong><small>Termine</small></div>
         </div>
         <div class="quick-info-footer"><span id="weatherFeels">Gefühlt — °C</span><span id="weatherStatus" role="status">Wetter lädt …</span></div>
+        <button type="button" id="homeOutfitOpen" class="home-outfit-hint" aria-label="Jarvis Kleidungsempfehlung öffnen">
+          <span aria-hidden="true">✦</span><span id="homeOutfitText">Jarvis prüft, welche Kleidung heute sinnvoll ist …</span><span aria-hidden="true">↗</span>
+        </button>
       </div>
     </section>
     <section id="dgHomeOverview" class="dg-home-overview" aria-label="Heute auf einen Blick">
@@ -172,6 +176,27 @@
           <p id="personalJarvisReply" class="jarvis-reply" aria-live="polite">Sag mir, was du brauchst.</p>
         </div>
       </div>
+
+      <section id="jarvisWeatherAdvisor" class="jwa" data-state="loading" aria-labelledby="jwaTitle">
+        <div class="jwa-head">
+          <div>
+            <span class="jwa-eyebrow">JARVIS · WETTER & ALLTAG</span>
+            <h3 id="jwaTitle">Was soll ich heute anziehen?</h3>
+          </div>
+          <button id="jwaReload" type="button" class="jwa-action" aria-label="Kleidungsempfehlung aktualisieren">↻ Aktualisieren</button>
+        </div>
+        <strong id="jwaHeadline">Die Stundenprognose wird geprüft …</strong>
+        <p id="jwaSummary" class="jwa-summary" aria-live="polite">Jarvis prüft gerade, wie sich das Wetter im Laufe des Tages entwickelt.</p>
+        <p id="jwaConditions" class="jwa-conditions">Oetwil am See · Gefühlt, Regen, Wind & UV</p>
+        <div id="jwaPeriods" class="jwa-periods" aria-label="Wetterverlauf am Morgen, Nachmittag und Abend"></div>
+        <div class="jwa-footer">
+          <label class="jwa-cold"><input id="jwaColdSensitive" type="checkbox"> Ich friere schnell</label>
+          <button type="button" id="jwaAsk" class="jwa-action" disabled>✦ Jarvis fragen</button>
+        </div>
+        <p id="jwaChanged" class="jwa-changed"></p>
+        <p id="jwaMeta" class="jwa-meta">Lädt … · Oetwil am See</p>
+        <p class="jwa-note">Modellprognose, keine Wettergarantie. Aktualisiert sich, solange DG OS geöffnet ist. Keine automatischen Push-Meldungen.</p>
+      </section>
 
       <div class="jarvis-life-stats" aria-label="Dein aktueller Tag">
         <div><span>Aufgaben</span><strong id="jarvisLifeTasks">0</strong></div>
@@ -1225,19 +1250,22 @@
   <script src="./jarvis-life-photo.js?v=1"></script>
   <script src="./jarvis-microphone.js?v=2"></script>
   <script src="./jarvis-replies.js?v=1"></script>
-  <script src="./personal.js?v=0.59.6"></script>
+  <script src="./personal.js?v=0.59.7"></script>
   <script src="./jarvis-sound-check.js?v=1"></script>
   <script src="./jarvis-native-voice.js?v=2"></script>
   <script src="./jarvis-voice.js?v=10"></script>
   <script src="./jarvis-brain.js?v=3"></script>
   <script src="./jarvis-device-pairing.js?v=1"></script>
-  <script src="./jarvis-dashboard.js?v=1"></script>\n  <script src="./social.js?v=0.61.1"></script>
+  <script src="./jarvis-dashboard.js?v=2"></script>
+  <script src="./social.js?v=0.61.1"></script>
   <script src="./navigation.js?v=0.60.1"></script>
   <script src="./private-hub.js?v=2"></script>
   <script src="./trading-command.js?v=0.57.0"></script>
   <script src="./trading-intelligence.js?v=1"></script>
   <script src="./trading-intelligence-ui.js?v=1"></script>
-  <script src="./weather.js?v=0.46.2"></script>
+  <script src="./jarvis-weather-outfit.js?v=1"></script>
+  <script src="./weather.js?v=0.47.0"></script>
+  <script src="./jarvis-weather-ui.js?v=1"></script>
 <script>
   (() => {
     const nav = target => document.querySelector('.bottom-nav button[data-target="'+target+'"]');

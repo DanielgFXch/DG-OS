@@ -1,0 +1,96 @@
+/* DG OS · Jarvis Wear/Weather intelligence. Keep this card quiet and useful. */
+#personalJarvis .jwa{
+  position:relative;z-index:3;display:grid;gap:12px;
+  padding:17px 19px;margin:0 0 14px;
+  border:1px solid rgba(135,217,223,.20);
+  border-radius:16px;
+  background:linear-gradient(145deg,rgba(10,43,58,.88),rgba(4,22,36,.93));
+  box-shadow:inset 0 1px rgba(223,254,251,.04);
+}
+#personalJarvis .jwa-head{
+  display:flex;justify-content:space-between;gap:12px;align-items:center;
+}
+#personalJarvis .jwa-eyebrow{
+  display:block;font-size:9px;font-weight:720;letter-spacing:.16em;color:#83e8df;
+}
+#personalJarvis .jwa-head h3{
+  margin:6px 0 0;font-size:clamp(17px,2vw,22px);
+  line-height:1.2;letter-spacing:-.025em;color:#e7fbff;font-weight:720;
+}
+#personalJarvis .jwa-action{
+  display:inline-flex;gap:6px;align-items:center;justify-content:center;
+  min-height:40px;padding:9px 12px;
+  border:1px solid rgba(122,229,224,.32)!important;
+  border-radius:10px!important;
+  background:rgba(14,68,80,.37)!important;
+  color:#c5f1ee!important;
+  font:650 11px/1.35 system-ui,-apple-system,sans-serif;
+  cursor:pointer;
+}
+#personalJarvis .jwa-action:disabled{opacity:.52;cursor:wait}
+#personalJarvis .jwa-summary{
+  margin:0;font-size:13px;line-height:1.65;color:#e0eff5;
+}
+#personalJarvis .jwa-conditions{
+  font-size:11px;color:#91c8d0;
+  margin:0;line-height:1.45;
+}
+#personalJarvis .jwa-periods{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;
+}
+#personalJarvis .jwa-period{
+  min-width:0;display:flex;flex-direction:column;gap:4px;
+  padding:12px;border:1px solid rgba(141,211,222,.14);
+  border-radius:11px;background:rgba(3,22,35,.65);
+}
+#personalJarvis .jwa-period strong{color:#daeff6;font-size:12px;font-weight:670}
+#personalJarvis .jwa-period span{color:#9de8e1;font-size:12px;font-weight:680}
+#personalJarvis .jwa-period small{font-size:10px;color:#8eafc0;line-height:1.4}
+#personalJarvis .jwa-footer{
+  display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;
+}
+#personalJarvis .jwa-cold{
+  display:inline-flex;align-items:center;gap:7px;color:#b5cedb;font-size:11px;cursor:pointer;
+}
+#personalJarvis .jwa-cold input{accent-color:#75e2d7;width:17px;height:17px}
+#personalJarvis .jwa-meta{
+  margin:0;color:#7c9ead;font-size:10px;line-height:1.4;
+}
+#personalJarvis .jwa-changed{
+  margin:0;color:#90b8c2;font-size:10px;line-height:1.45;
+}
+#personalJarvis .jwa-note{
+  margin:0;color:#789dad;font-size:10px;line-height:1.45;
+}
+#personalJarvis .jwa[data-state="unavailable"] .jwa-summary{color:#b9ced4}
+#personalJarvis .jwa :is(button,input):focus-visible{
+  outline:2px solid #86ede3!important;outline-offset:3px!important;
+}
+@media(max-width:680px){
+  #personalJarvis .jwa{padding:14px;gap:10px;border-radius:14px}
+  #personalJarvis .jwa-head{align-items:flex-start}
+  #personalJarvis .jwa-head h3{font-size:18px}
+  #personalJarvis .jwa-periods{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+  #personalJarvis .jwa-period{padding:9px 7px}
+  #personalJarvis .jwa-period strong{font-size:11px}
+  #personalJarvis .jwa-period span{font-size:11px}
+  #personalJarvis .jwa-period small{font-size:9px}
+  #personalJarvis .jwa-summary{font-size:12px}
+  #personalJarvis .jwa-cold{font-size:11px}
+}
+@media(max-width:345px){
+  #personalJarvis .jwa-periods{grid-template-columns:1fr}
+}
+
+/* Home / Heute: one actionable Jarvis line, not another dashboard. */
+.personal-quick-info .home-outfit-hint{
+  display:flex;gap:9px;align-items:center;text-align:left;
+  width:100%;min-width:0;margin-top:11px;padding:10px 12px;
+  border-radius:10px;border:1px solid rgba(124,223,224,.18);
+  background:rgba(11,55,65,.34);color:#c6f0ed;
+  cursor:pointer;font:600 11px/1.45 system-ui,-apple-system,sans-serif;
+}
+.personal-quick-info .home-outfit-hint span:nth-child(2){min-width:0;flex:1}
+.personal-quick-info .home-outfit-hint:focus-visible{
+  outline:2px solid #91f0e6;outline-offset:3px;
+}

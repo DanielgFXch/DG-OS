@@ -11,6 +11,7 @@
   const pairNode=panel?.querySelector('.jarvis-device-pair');
   const orb=document.getElementById('personalJarvisOrbBtn');
   const summary=panel?.querySelector('.jarvis-life-stats');
+  const weatherCard=document.getElementById('jarvisWeatherAdvisor');
   const form=document.getElementById('jarvisLifeCommandForm');
   const deck=panel?.querySelector('.jarvis-command-deck');
   const photoEntry=panel?.querySelector('.jarvis-photo-entry');
@@ -90,7 +91,10 @@
   // microphone input, voice selection and Telegram pairing keep working.
   hero.insertAdjacentElement('afterend',quick);
   quick.insertAdjacentElement('afterend',form);
-  form.insertAdjacentElement('afterend',photoPanel);
+  if(weatherCard){
+    form.insertAdjacentElement('afterend',weatherCard);
+    weatherCard.insertAdjacentElement('afterend',photoPanel);
+  }else form.insertAdjacentElement('afterend',photoPanel);
   photoPanel.insertAdjacentElement('afterend',summary);
   summary.insertAdjacentElement('afterend',intelligence);
   intelligence.insertAdjacentElement('afterend',more);

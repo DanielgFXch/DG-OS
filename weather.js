@@ -2,7 +2,7 @@
 (function(root){
   'use strict';
   const zone='Europe/Zurich';
-  const endpoint='https://api.open-meteo.com/v1/forecast?latitude=47.27&longitude=8.72&current=temperature_2m,apparent_temperature,is_day,weather_code&daily=sunrise,sunset&timezone=Europe%2FZurich&timeformat=unixtime&forecast_days=1';
+  const endpoint='https://api.open-meteo.com/v1/forecast?latitude=47.27&longitude=8.72&current=temperature_2m,apparent_temperature,is_day,weather_code&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m,uv_index&daily=sunrise,sunset&timezone=Europe%2FZurich&timeformat=unixtime&forecast_days=2';
   const day=ms=>new Intl.DateTimeFormat('sv-SE',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(ms));
   const clock=seconds=>new Intl.DateTimeFormat('de-CH',{timeZone:zone,hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(seconds*1000));
   function describe(code){
@@ -26,12 +26,20 @@
     const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),10000);
     try{
       const response=await fetch(endpoint,{signal:controller.signal,cache:'no-store',credentials:'omit'});if(!response.ok)throw Error('Weather request failed');
-      const values=normalize(await response.json());
+      const forecast=await response.json();
+      const values=normalize(forecast);
+      // Only valid, fresh model data may trigger recommendations. The existing
+      // weather tiles remain the authority for current display values.
+      root.DGOSWeatherForecast=forecast;
+      root.dispatchEvent(new CustomEvent('dgos-weather-updated',{detail:{forecast}}));
       for(const [key,id] of Object.entries({temperature:'weatherTemperature',feels:'weatherFeels',description:'weatherDescription',sunrise:'weatherSunrise',sunset:'weatherSunset',daylight:'weatherDaylight',status:'weatherStatus'}))$(id).textContent=values[key]; if($('headerWeather')) $('headerWeather').textContent=values.temperature;
     }catch(_){
+      root.DGOSWeatherForecast=null;
+      root.dispatchEvent(new Event('dgos-weather-unavailable'));
       $('weatherTemperature').textContent='— °C';if($('headerWeather')) $('headerWeather').textContent='— °C';$('weatherFeels').textContent='Gefühlt — °C';$('weatherDescription').textContent='Wetter nicht verfügbar';$('weatherSunrise').textContent='—:—';$('weatherSunset').textContent='—:—';$('weatherDaylight').textContent='Tageslicht —';$('weatherStatus').textContent='Abruf fehlgeschlagen. Bitte erneut versuchen.';
     }finally{clearTimeout(timeout);busy=false;$('weatherRefresh').disabled=false;}
   }
+  root.DGOSWeatherRefresh=refresh;
   $('weatherRefresh').addEventListener('click',refresh);
   root.document.addEventListener('visibilitychange',()=>{if(!root.document.hidden){tick();if(Date.now()-lastAttempt>60000)refresh();}});
   tick();refresh();setInterval(tick,1000);setInterval(()=>{if(!root.document.hidden)refresh();},600000);

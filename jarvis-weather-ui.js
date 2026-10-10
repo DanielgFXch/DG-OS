@@ -24,6 +24,7 @@
     show('jwaConditions','Wetterdaten fehlen · Keine Kleidungsprognose');
     show('jwaMeta','Oetwil am See · Daten nicht verfügbar');
     $('jwaPeriods').replaceChildren();
+    show('homeOutfitText','Kleidungstipp gerade nicht verfügbar · Wetter aktualisieren');
     $('jwaAsk').disabled=true;
   }
   function render(advice){
@@ -50,6 +51,7 @@
       card.append(label,temp,hint);list.append(card);
     }
     $('jwaAsk').disabled=false;
+    show('homeOutfitText','Jarvis: '+advice.outfit+(advice.metrics.rainPossible?' · Regenschutz mitnehmen':''));
     if(hasUpdated&&oldSignature&&oldSignature!==newSignature){
       show('jwaChanged','Die Wetterempfehlung hat sich aktualisiert.');
     }else show('jwaChanged','Automatisch aktualisiert, solange DG OS geöffnet ist.');
@@ -87,6 +89,10 @@
     host.scrollIntoView({behavior:'smooth',block:'nearest'});
     return speech;
   }
+  $('homeOutfitOpen')?.addEventListener('click',()=>{
+    document.querySelector('.bottom-nav button[data-target="personalJarvis"]')?.click();
+    host.scrollIntoView({behavior:'smooth',block:'start'});
+  });
   $('jwaAsk').addEventListener('click',()=>ask(lastAdvice?.day==='tomorrow'?'tomorrow':'today'));
   coldControl.addEventListener('change',()=>{
     coldSensitive=coldControl.checked;

@@ -3,6 +3,9 @@ on:
   push:
     paths:
       - "sleep-insights.js"
+      - "jarvis-sleep-questions.js"
+      - "personal.js"
+      - "scripts/test-jarvis-sleep-questions.js"
       - "sleep-insights.css"
       - "scripts/test-sleep-insights.js"
       - "supabase/functions/whoop/index.ts"
@@ -12,6 +15,9 @@ on:
   pull_request:
     paths:
       - "sleep-insights.js"
+      - "jarvis-sleep-questions.js"
+      - "personal.js"
+      - "scripts/test-jarvis-sleep-questions.js"
       - "sleep-insights.css"
       - "scripts/test-sleep-insights.js"
       - "supabase/functions/whoop/index.ts"
@@ -30,6 +36,11 @@ jobs:
         run: node --check sleep-insights.js
       - name: Validate sleep calculations
         run: npm run test:sleep
+      - name: Check Jarvis sleep chat
+        run: |
+          node --check jarvis-sleep-questions.js
+          node --check personal.js
+          node scripts/test-jarvis-sleep-questions.js
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x

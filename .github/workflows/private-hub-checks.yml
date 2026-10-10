@@ -1,0 +1,32 @@
+name: DG OS Private Life Hub Checks
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'navigation.js'
+      - 'navigation.css'
+      - 'private-hub.js'
+      - 'private-hub.css'
+      - 'personal.js'
+      - 'supabase/functions/jarvis-private/**'
+      - 'scripts/test-private-hub.js'
+      - '.github/workflows/private-hub-checks.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'private-hub.js'
+      - 'private-hub.css'
+      - 'supabase/functions/jarvis-private/**'
+      - 'scripts/test-private-hub.js'
+jobs:
+  static-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax check
+        run: node --check private-hub.js
+      - name: Private hub privacy and integration tests
+        run: node scripts/test-private-hub.js

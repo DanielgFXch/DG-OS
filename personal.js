@@ -772,8 +772,10 @@
   function render(data){
     const recovery=data&&data.recovery, sleep=data&&data.sleep, cycle=data&&data.cycle;
     set('whoopStatus','WHOOP · verbunden');
-    set('whoopSleep',sleep?fmtHours(sleep.durationHours):'—');
-    set('whoopSleepPerformance',sleep&&Number.isFinite(Number(sleep.performance))?'Sleep Performance '+Math.round(Number(sleep.performance))+'%':'—');
+    // WHOOP-like overview: the ring displays actual Sleep Performance (not
+    // hours); duration stays immediately underneath and in sleep analysis.
+    set('whoopSleep',sleep&&sleep.performance!=null&&Number.isFinite(Number(sleep.performance))?Math.round(Number(sleep.performance))+' %':'—');
+    set('whoopSleepPerformance',sleep?'Schlafdauer '+fmtHours(sleep.durationHours):'Schlafdauer —');
     set('whoopRecovery',recovery&&Number.isFinite(Number(recovery.score))?Math.round(Number(recovery.score))+'%':'—');
     set('whoopHrv',recovery&&Number.isFinite(Number(recovery.hrvMs))?'HRV '+Math.round(Number(recovery.hrvMs))+' ms':'HRV —');
     set('whoopStrain',cycle&&Number.isFinite(Number(cycle.strain))?Number(cycle.strain).toFixed(1):'—');
@@ -798,6 +800,10 @@
     $('whoopDetails')?.classList.remove('hidden');
     connect.textContent='WHOOP verbunden';
     connect.disabled=true;
+    // Let the independent private sleep dashboard repaint the three real
+    // WHOOP rings after authenticated values arrive. No copy in localStorage.
+    if(typeof CustomEvent==='function')window.dispatchEvent(new CustomEvent('dgos-whoop-updated',{detail:data}));
+
 
     const box=$('whoopWorkouts');
     if(box){
@@ -809,10 +815,22 @@
         items.forEach(w=>{
           const row=document.createElement('div');row.className='personal-whoop-workout';
           const info=document.createElement('div');
-          const strong=document.createElement('strong');strong.textContent=w.name||'Workout';
+          const strong=document.createElement('strong');
+          const sport=String(w.name||'Training');
+          const sportTranslations={
+            walking:'Gehen',running:'Laufen',cycling:'Radfahren',biking:'Radfahren',
+            weightlifting:'Krafttraining','strength training':'Krafttraining',
+            'functional fitness':'Funktionelles Training',hiking:'Wandern',
+            swimming:'Schwimmen',sleep:'Schlaf',yoga:'Yoga',
+            soccer:'Fussball',football:'Fussball',pilates:'Pilates',
+            elliptical:'Crosstrainer',hiit:'Intervalltraining',
+            'indoor cycling':'Indoor-Radfahren',meditation:'Meditation',
+            stretching:'Dehnen',tennis:'Tennis'
+          };
+          strong.textContent=sportTranslations[sport.trim().toLowerCase()]||sport;
           const small=document.createElement('small');
           const when=w.start?new Intl.DateTimeFormat('de-CH',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}).format(new Date(w.start)):'';
-          small.textContent=[when,Number.isFinite(Number(w.strain))?'Strain '+Number(w.strain).toFixed(1):'',Number.isFinite(Number(w.calories))?Math.round(Number(w.calories))+' kcal':''].filter(Boolean).join(' · ');
+          small.textContent=[when,Number.isFinite(Number(w.strain))?'Belastung '+Number(w.strain).toFixed(1):'',Number.isFinite(Number(w.calories))?Math.round(Number(w.calories))+' kcal':''].filter(Boolean).join(' · ');
           info.append(strong,small);row.append(info);box.append(row);
         });
       }
@@ -2098,6 +2116,16 @@
       const tomorrow=/\bmorgen\b/u.test(q)&&!/\bheute\s+morgen\b/u.test(q);
       const response=window.DGOSWeatherAdvisor?.answer(tomorrow?'tomorrow':'today')
         || 'Gomes, ich habe noch keine aktuelle Wetterprognose. Bitte Wetter aktualisieren.';
+      showReply(response);
+      return true;
+    }
+
+    // WHOOP sleep analysis stays private behind the existing session.
+    // Answer natural day/week questions using the historic data already
+    // loaded from Supabase. Do not invent data for missing nights.
+    if(window.DGOSWhoopSleep?.isSleepQuestion(original)){
+      const response=window.DGOSWhoopSleepUI?.answerQuestion(original)
+        || 'Gomes, die WHOOP-Schlafanalyse wird gerade geladen. Bitte Gesundheit öffnen.';
       showReply(response);
       return true;
     }

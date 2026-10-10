@@ -371,6 +371,83 @@ Deno.serve(async (req: Request) => {
       return json({session,expiresInDays:180});
     }
 
+    // WHOOP history is exclusively available to the already-authorized
+    // DG OS owner device. No anon PostgREST access to health data.
+    if(action==="history"){
+      if(req.method!=="GET")return json({error:"method_not_allowed"},405);
+      if(!(await validSession(req)))return json({error:"session_required"},401);
+      const {data,error}=await db.from("dgos_whoop_sleep_history")
+        .select("sleep_date,sleep_start,wake_time,duration_min,in_bed_min,deep_min,rem_min,light_min,awake_min,needed_min,performance,efficiency,consistency,respiratory_rate,source")
+        .order("sleep_date",{ascending:false}).limit(650);
+      if(error)throw new Error("whoop_history_read_failed");
+      return json({records:data||[],count:(data||[]).length});
+    }
+
+    if(action==="history-import"){
+      if(req.method!=="POST")return json({error:"method_not_allowed"},405);
+      if(origin!==ALLOWED_ORIGIN)return json({error:"origin_required"},403);
+      if(!(await validSession(req)))return json({error:"session_required"},401);
+      const length=Number(req.headers.get("content-length")||0);
+      if(length>340000)return json({error:"import_too_large"},413);
+      const body=await readJson(req);
+      if(!Array.isArray(body?.records)||!body.records.length||body.records.length>650)
+        return json({error:"invalid_history_rows"},400);
+      const intField=(value:any,max:number)=>{
+        if(value===undefined||value===null||value==="")return null;
+        if(typeof value!=="number"||!Number.isFinite(value)||value<0||value>max)return null;
+        return Math.round(value);
+      };
+      const timestamp=(value:any)=>{
+        if(value===null||value===undefined||value==="")return null;
+        if(typeof value!=="string"||value.length>45)return null;
+        const date=new Date(value);
+        return Number.isFinite(date.getTime())?date.toISOString():null;
+      };
+      const cleaned:any[]=[];
+      for(const record of body.records){
+        if(!record||typeof record!=="object"||!/^20[12][0-9]-[01][0-9]-[0-3][0-9]$/.test(record.sleep_date||""))
+          return json({error:"invalid_sleep_date"},400);
+        const duration=intField(record.duration_min,1500);
+        const day=Date.parse(record.sleep_date+"T12:00:00Z");
+        if(duration===null||duration===0||!Number.isFinite(day)||
+          day<Date.parse("2020-01-01")||day>Date.now()+86400000)
+          return json({error:"invalid_sleep_duration"},400);
+        cleaned.push({
+          sleep_date:record.sleep_date, sleep_start:timestamp(record.sleep_start),
+          wake_time:timestamp(record.wake_time),duration_min:duration,
+          in_bed_min:intField(record.in_bed_min,1800),
+          deep_min:intField(record.deep_min,1500),
+          rem_min:intField(record.rem_min,1500),
+          light_min:intField(record.light_min,1500),
+          awake_min:intField(record.awake_min,1500),
+          needed_min:intField(record.needed_min,1800),
+          performance:intField(record.performance,100),
+          efficiency:intField(record.efficiency,100),
+          consistency:intField(record.consistency,100),
+          respiratory_rate:intField(record.respiratory_rate,100),
+          source:"export",updated_at:new Date().toISOString()
+        });
+      }
+      // A repeated export import updates existing dates instead of duplicating
+      // them. Preserve already-fetched live WHOOP values on conflicts.
+      const unique=[...new Map(cleaned.map(record=>[record.sleep_date,record])).values()];
+      let saved=0;
+      for(let i=0;i<unique.length;i+=70){
+        const chunk=unique.slice(i,i+70);
+        const dates=chunk.map(row=>row.sleep_date);
+        const {data:live,error:readError}=await db.from("dgos_whoop_sleep_history")
+          .select("sleep_date").in("sleep_date",dates).eq("source","whoop_live");
+        if(readError)throw new Error("whoop_history_import_lookup_failed");
+        const keepLive=new Set((live||[]).map(row=>row.sleep_date));
+        const rows=chunk.filter(row=>!keepLive.has(row.sleep_date));
+        if(!rows.length)continue;
+        const {error}=await db.from("dgos_whoop_sleep_history").upsert(rows,{onConflict:"sleep_date"});
+        if(error)throw new Error("whoop_history_import_failed");
+        saved+=rows.length;
+      }
+      return json({ok:true,imported:saved,total:unique.length});
+    }
+
     if(action==="summary"){
       if(!(await validSession(req)) && !(await internalAuthorized(req))) return json({error:"session_required"},401);
       let access: string;
@@ -393,6 +470,30 @@ Deno.serve(async (req: Request) => {
       const sleep=(Array.isArray(sleeps.records)?sleeps.records:[]).find((x:any)=>x&&!x.nap&&x.score_state==="SCORED"&&x.score)||null;
       const cycle=scored(cycles.records);
       const ss=sleep?.score||null, stages=ss?.stage_summary||null, need=ss?.sleep_needed||null;
+      // Keep the most recent real WHOOP sleep in history, so future days
+      // automatically extend the imported export without manual action.
+      if(sleep?.end && stages){
+        const localDate=new Intl.DateTimeFormat("sv-SE",{timeZone:"Europe/Zurich",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(sleep.end));
+        const record={
+          sleep_date:localDate,sleep_start:sleep.start,wake_time:sleep.end,
+          duration_min:Math.round(sleepMs(stages)/60000),
+          in_bed_min:Math.round(Number(stages.total_in_bed_time_milli||0)/60000),
+          deep_min:Math.round(Number(stages.total_slow_wave_sleep_time_milli||0)/60000),
+          rem_min:Math.round(Number(stages.total_rem_sleep_time_milli||0)/60000),
+          light_min:Math.round(Number(stages.total_light_sleep_time_milli||0)/60000),
+          awake_min:Math.round(Number(stages.total_awake_time_milli||0)/60000),
+          needed_min:Math.round(neededMs(need)/60000),
+          performance:ss.sleep_performance_percentage??null,
+          efficiency:ss.sleep_efficiency_percentage??null,
+          consistency:ss.sleep_consistency_percentage??null,
+          respiratory_rate:ss.respiratory_rate??null,source:"whoop_live",
+          updated_at:new Date().toISOString()
+        };
+        if(record.duration_min>0&&record.duration_min<=1500){
+          const {error:historyError}=await db.from("dgos_whoop_sleep_history").upsert(record,{onConflict:"sleep_date"});
+          if(historyError)console.warn("whoop_sleep_history_sync_failed");
+        }
+      }
       return json({
         updatedAt:new Date().toISOString(),
         recovery: recovery ? {

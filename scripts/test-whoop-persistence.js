@@ -31,8 +31,8 @@ assert.ok(app.includes("return 'expired'"),'Only invalid owner session must be r
 assert.ok(app.includes("await restoreFromDeviceSession()"),'Restore via authenticated Telegram-linked device');
 assert.ok(app.includes("lastWhoopHealth==='reauthorize'"),'Only explicit revocation starts new OAuth');
 const html=read('index.html'),sw=read('sw.js');
-assert.ok(html.includes('personal.js?v=0.59.8'));
-assert.ok(sw.includes('dgos-personal-shell-42'));
+assert.ok(html.includes('personal.js?v=0.59.9'));
+assert.ok(sw.includes('dgos-personal-shell-43'));
 
 function fakeElement(id){
  const handlers={};

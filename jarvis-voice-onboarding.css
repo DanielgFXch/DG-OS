@@ -1,0 +1,15 @@
+#personalJarvis .jv-intro{color:#bfdde7;font-size:13px;line-height:1.55;margin:0 0 13px}
+#personalJarvis .jv-steps{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}
+#personalJarvis .jv-steps span{border:1px solid #386273;border-radius:10px;padding:9px;color:#a5c9d5;font-size:11px}
+#personalJarvis .jv-steps [data-step=current]{background:#76eae8;color:#05232e}
+#personalJarvis .jv-steps [data-step=complete]{color:#9bf2d5;border-color:#3f9877}
+#personalJarvis .jv-connect-prompt{padding:14px;border:1px solid #46838f;background:#112c40;border-radius:13px;margin-bottom:15px}
+#personalJarvis .jv-connect-prompt[hidden]{display:none}
+#personalJarvis .jv-connect-prompt p{font-size:12px;line-height:1.6;color:#c3dee7}
+#personalJarvis .jv-connect-actions{display:flex;flex-wrap:wrap;gap:8px}
+#personalJarvis .jv-connect-actions button{border:1px solid #51808c;border-radius:9px;padding:11px;color:#e0faff;background:#123549;min-height:43px}
+#personalJarvis .jv-connect-actions button.jv-action-primary{background:#75e9e5;color:#072932;border-color:#75e9e5;font-weight:bold}
+#personalJarvis .jv-voice-detail{display:block;font-size:11px;color:#abc8d0;line-height:1.5;margin-top:8px}
+#personalJarvis .jv-voice-actions .jv-action-primary:not(:disabled){background:#74e9e3;color:#073139}
+#personalJarvis .jv-voice-actions .jv-autospeak{flex-basis:100%;margin-top:9px}
+@media(max-width:580px){#personalJarvis .jv-steps span{font-size:10px}#personalJarvis .jv-connect-actions button{flex:1 0 100%}}

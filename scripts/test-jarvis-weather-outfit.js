@@ -81,7 +81,7 @@ for(const q of ['Ich brauche Toast und Milch', 'Füge Tomaten in meine Einkaufsl
 const html=read('index.html'),app=read('personal.js'),weather=read('weather.js'),
       ui=read('jarvis-weather-ui.js'),dashboard=read('jarvis-dashboard.js'),
       css=read('jarvis-weather.css'),sw=read('sw.js');
-for(const id of ['jarvisWeatherAdvisor','jwaTitle','jwaHeadline','jwaSummary','jwaConditions',
+for(const id of ['homeOutfitOpen','homeOutfitText','jarvisWeatherAdvisor','jwaTitle','jwaHeadline','jwaSummary','jwaConditions',
  'jwaPeriods','jwaColdSensitive','jwaAsk','jwaReload','jwaChanged','jwaMeta']){
  assert.ok(html.includes('id="'+id+'"'),'Weather card ID missing '+id);
 }
@@ -108,6 +108,8 @@ assert.ok(ui.includes("dgos-weather-updated"));
 assert.ok(ui.includes("dgos-weather-unavailable"));
 assert.ok(ui.includes("coldKey='dgos.weather.outfit.coldSensitive.v1'"));
 assert.ok(ui.includes("window.DGOSWeatherAdvisor={getAdvice,answer,ask}"));
+assert.ok(ui.includes("'homeOutfitText'"));
+assert.ok(ui.includes("'homeOutfitOpen'"));
 assert.ok(!ui.includes("Notification.requestPermission"),"No stealth notifications");
 assert.ok(!ui.includes("PushManager"),"No unsolicited background push");
 assert.ok(!ui.includes("API_KEY"));

@@ -14,7 +14,7 @@ const studio=file('voice-studio.html');
 assert.match(html,/jarvis-voice\.js\?v=2/);
 assert.match(html,/jarvis-voice\.css\?v=2/);
 assert.match(studio,/cartesia-favorites\.js\?v=4/);
-assert.match(studio,/voice-studio\.js\?v=4/);
+assert.match(studio,/voice-studio\.js\?v=5/);
 const browser=file('jarvis-voice.js');
 const favorites=file('cartesia-favorites.js');
 for(const client of [browser,favorites]) {

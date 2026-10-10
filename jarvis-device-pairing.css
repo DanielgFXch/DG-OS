@@ -1,0 +1,52 @@
+/* Shared voice-device setup on Jarvis and in Voice Studio. */
+.jarvis-device-pair{
+  margin:14px 0 19px;
+  padding:17px 18px;
+  background:linear-gradient(145deg,rgba(10,37,53,.96),rgba(9,22,36,.94));
+  color:#e5faff;
+  border:1px solid rgba(99,232,237,.35);
+  border-radius:18px;
+  box-shadow:0 18px 48px rgba(0,0,0,.2),inset 0 1px rgba(255,255,255,.045);
+  text-align:left;
+}
+#personalJarvis .jarvis-device-pair{max-width:630px;margin:13px auto 22px}
+.jarvis-device-pair .jdp-head{display:flex;justify-content:space-between;gap:14px;align-items:center}
+.jarvis-device-pair .jdp-head strong{
+  font:750 11px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  letter-spacing:.12em;color:#85ebe8;display:block
+}
+.jarvis-device-pair .jdp-head small{display:block;font-size:11px;color:#86b4c8;margin-top:3px}
+.jarvis-device-pair #jdpBadge{
+  flex:0 0 auto;border:1px solid rgba(119,230,228,.35);border-radius:999px;
+  padding:6px 10px;color:#9aeded;font-size:10px;font-weight:750;letter-spacing:.06em
+}
+.jarvis-device-pair #jdpMessage{margin:12px 0;color:#bdd9e4;font-size:13px;line-height:1.55}
+.jarvis-device-pair.jdp-connected{border-color:rgba(85,219,168,.35)}
+.jarvis-device-pair.jdp-connected #jdpBadge{color:#a7f4ce;border-color:rgba(85,219,168,.35)}
+.jarvis-device-pair button,.jarvis-device-pair #jdpTelegram{
+  display:inline-flex;justify-content:center;align-items:center;min-height:45px;
+  padding:12px 15px;border:1px solid #478598;border-radius:10px;
+  background:#123346;color:#dbf8fc;
+  font-size:13px;font-weight:650;text-decoration:none;cursor:pointer
+}
+.jarvis-device-pair button:disabled{opacity:.5;cursor:wait}
+.jarvis-device-pair #jdpStart,.jarvis-device-pair #jdpTelegram{
+  background:#78e7e1;border-color:#78e7e1;color:#032731;font-weight:800
+}
+.jarvis-device-pair #jdpPending p{
+  color:#bdd8e4;margin:13px 0 9px;line-height:1.5;font-size:13px
+}
+.jarvis-device-pair #jdpPending .jdp-fallback{font-size:12px}
+.jarvis-device-pair #jdpCommand{
+  padding:4px 7px;border:1px solid rgba(96,199,218,.3);border-radius:6px;
+  user-select:all;color:#8cf5ea;background:#081d2b;font-size:12px;white-space:nowrap
+}
+.jarvis-device-pair .jdp-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:11px}
+.jarvis-device-pair :is(button,a):focus-visible{outline:2px solid #ccffff;outline-offset:3px}
+@media(max-width:620px){
+ .jarvis-device-pair{padding:14px}
+ .jarvis-device-pair .jdp-actions button{flex:1}
+}
+
+.jarvis-device-pair [hidden]{display:none!important}
+.grid > .jarvis-device-pair{grid-column:1 / -1}

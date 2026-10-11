@@ -17,7 +17,7 @@ assert.ok(!source.includes('OPENAI_API_KEY'),'Provider keys are never exposed in
 function setup(initial={}){
  const listeners=new Map(),storage=new Map(Object.entries(initial)),calls={play:[],stop:0},nodes={};
  class FakeNode{
-   constructor(){this.value='';this.disabled=false;this.hidden=false;this.checked=false;this.textContent='';this.dataset={};this.attrs={};this.listeners={};this.options=[];}
+   constructor(){this.value='';this.disabled=false;this.hidden=false;this.checked=false;this.textContent='';this.dataset={};this.attrs={};this.listeners={};this.options=[];this.classList={add(){},remove(){}};}
    addEventListener(type,fn){(this.listeners[type]??=[]).push(fn);}
    dispatchEvent(evt){for(const fn of this.listeners[evt.type]||[])fn(evt);return true;}
    setAttribute(k,v){this.attrs[k]=String(v);}
@@ -25,10 +25,14 @@ function setup(initial={}){
    add(option){this.options.push(option);}
    insertAdjacentElement(){}
    append(child){this.children??=[];this.children.push(child);}
+   pause(){this.paused=true;}
+   play(){this.played=true;return Promise.resolve();}
+   load(){}
+   removeAttribute(k){delete this.attrs[k];}
    querySelector(){return new FakeNode();}
  }
  for(const name of ['jvEngine','jvVoice','jvLang','jvEnabled','jvReload','jvPreview',
-   'jvSoundCheck','jvRead','jvStop','jvNotice','jvVoiceBadge','jvAudioPlayer','jvQuickToggle','jvHeroToggle','jvHeroRead','jvHeroNotice'])
+   'jvSoundCheck','jvRead','jvStop','jvNotice','jvVoiceBadge','jvAudioPlayer','jvQuickToggle','jvHeroToggle','jvHeroRead','jvHeroNotice','jvHeroTone','jvHeroFile','jvUseServerVoice'])
    nodes[name]=new FakeNode();
  const panel=new FakeNode(),reply=new FakeNode();
  reply.textContent='Sag mir, was du brauchst.';
@@ -39,6 +43,7 @@ function setup(initial={}){
  };
  const window={
    speechSynthesis:{getVoices:()=>[],addEventListener(){}},
+   DGOSSoundCheck:{async playTestTone(){return {ok:true,reason:'Testton gestartet'};}},
    DGOSLocalVoice:{
      isSupported:()=>true,stop(){calls.stop++;},
      play({text,onState}){calls.play.push(text);onState({state:'speaking',message:'Jarvis spricht.'});return true;}
@@ -84,7 +89,7 @@ function setup(initial={}){
  assert.equal(app.calls.play.at(-1),'Ich bin jetzt stumm.','Re-enable plays last completed answer once');
  app.click('jvHeroRead');
  assert.equal(app.calls.play.at(-1),'Ich bin jetzt stumm.','Visible hero replay runs in a user click');
- assert.match(app.nodes.jvHeroNotice.textContent,/Jarvis spricht/);
+ assert.match(app.nodes.jvHeroNotice.textContent,/iPhone meldet Sprachstart/,'iOS onstart is not proof of audible sound');
 }
 {
  const app=setup({'dgos.jarvis.speech.enabled':'0'});
@@ -100,4 +105,11 @@ function setup(initial={}){
  assert.deepEqual(app.calls.play,['Hallo vom iPhone.'],'Unpaired premium provider cannot silence a local answer');
  assert.match(app.nodes.jvNotice.textContent,/iPhone-Stimme/);
 }
-console.log('DG OS Jarvis spoken replies: microphone completion, auto-on, mute, replay and offline premium fallback OK');
+{
+ const app=setup();
+ app.click('jvHeroTone');
+ assert.match(app.nodes.jvHeroNotice.textContent,/Testton wird abgespielt/);
+ app.click('jvHeroFile');
+ assert.match(app.nodes.jvHeroNotice.textContent,/iPhone mit DG OS gekoppelt/,'No paid audio generated when device is unpaired');
+}
+console.log('DG OS Jarvis spoken replies: completed turns, mute, iPhone diagnostics, replay, secure provider opt-in OK');

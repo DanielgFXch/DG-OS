@@ -2222,6 +2222,9 @@
     }
   });
   orb.addEventListener('click',()=>{
+    // Activate iPhone speech on the user's gesture; the later transcript
+    // callback alone has no Safari user-activation privilege.
+    try{window.DGOSLocalVoice?.unlockFromGesture?.();}catch(_){}
     if(!microphone){
       setStatus('Textmodus');
       setReply('Bitte DG OS in Safari öffnen. Du kannst den Befehl auch unten eintippen.');

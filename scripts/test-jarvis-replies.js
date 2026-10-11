@@ -18,7 +18,7 @@ assert.equal(bot.shopping(['Käse'],[],'Gomes'),'Okay Gomes, Käse steht jetzt a
 assert.equal(bot.shopping(['Milch'],[],'<script>'),'Okay Gomes, Milch steht jetzt auf deiner Einkaufsliste.');
 const html=read('index.html'),client=read('personal.js'),voice=read('jarvis-voice.js');
 assert.match(html,/jarvis-replies\.js\?v=1/);
-assert.match(html,/personal\.js\?v=0\.59\.10/);
+assert.match(html,/personal\.js\?v=0\.59\.11/);
 assert.match(html,/jarvis-voice\.js\?v=11/);
 assert.ok(html.indexOf('jarvis-replies.js?v=1')<html.indexOf('personal.js?v=0.59.11'),
   'Reply formatter must be available before Jarvis command handler');

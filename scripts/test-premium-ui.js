@@ -13,18 +13,25 @@ for(const name of ['personalHome','personalTasks','personalCalendar','personalHe
  'whoopSleepAnalysis','personalJarvis','personalJarvisOrbBtn','jarvisLifeCommandForm','jarvisLifeCommandInput','tradingWorkspace']){
  assert.ok(html.includes('id="'+name+'"'),'Do not remove original JS hooks: '+name);
 }
-for(const item of ['premium-ui.css?v=1.0.0','premium-ui.js?v=1.0.0']){
+for(const item of ['premium-ui.css?v=1.0.1','premium-ui.js?v=1.0.1']){
  assert.ok(html.includes(item),'New UI asset linked in index: '+item);
  assert.ok(sw.includes(item),'New UI asset available offline: '+item);
 }
-assert.ok(html.indexOf('jarvis-weather.css?v=1') < html.indexOf('premium-ui.css?v=1.0.0'),'Design system must be the last stylesheet');
-assert.ok(html.indexOf('navigation.js?v=0.60.1') < html.indexOf('premium-ui.js?v=1.0.0'),'Route engine must initialise before quick access');
+assert.ok(html.indexOf('jarvis-weather.css?v=1') < html.indexOf('premium-ui.css?v=1.0.1'),'Design system must be the last stylesheet');
+assert.ok(html.indexOf('navigation.js?v=0.60.1') < html.indexOf('premium-ui.js?v=1.0.1'),'Route engine must initialise before quick access');
 assert.ok(css.includes('@media(max-width:700px)'),'Mobile design must be explicit');
 assert.ok(css.includes('@media(max-width:390px)'),'Small iPhone sizes must be handled');
 assert.ok(css.includes('prefers-reduced-motion'),'Motion must respect accessibility');
 assert.ok(css.includes(':focus-visible'),'Keyboard focus must be visible');
 assert.ok(css.includes('ux-palette-item[data-active="true"]'),'Keyboard selection has CSS feedback');
-assert.ok(css.includes('.bottom-nav .ux-more-button'),'Additional navigation must be accessible on mobile');
+assert.ok(!js.includes('ux-more-button'),'Bottom dock never injects a More button');
+assert.ok(!css.includes('.ux-more-button'),'Bottom dock More styles are removed');
+assert.ok(js.includes("'ux-search-label','Mehr'"),'Header button is explicitly labelled Mehr');
+assert.ok(css.includes('.ux-search-trigger .ux-menu-icon'),'Top-right header has a readable menu icon');
+const mobileHidden=css.match(/body\.ux-premium-ready \.bottom-nav button\[data-target="personalPrivate"\],[\s\S]*?\{display:none!important\}/)?.[0]||'';
+assert.ok(mobileHidden.includes('personalSocial'),'Mobile secondary pages are still accessible through the header menu');
+assert.ok(!mobileHidden.includes('tradingWorkspace'),'Trading must not be a hidden mobile route');
+assert.ok(css.includes('button[data-target="tradingWorkspace"]{display:flex!important'),'Trading tab stays visible on mobile');
 const balance = s => (s.match(/{/g)||[]).length === (s.match(/}/g)||[]).length;
 assert.ok(balance(css),'CSS declaration blocks must be balanced');
 for(const forbidden of ['SUPABASE_SERVICE_ROLE_KEY','OPENAI_API_KEY','sk-proj-','innerHTML =','localStorage.setItem','fetch(','XMLHttpRequest']){
@@ -99,8 +106,12 @@ const sandbox={
 };
 vm.runInNewContext(js,sandbox,{filename:'premium-ui.js'});
 assert.equal(header.children.length,1,'Search trigger should be added to the header');
-const trigger=header.children[0], more=dock.children.at(-1), dialog=doc.getElementById('uxQuickPalette');
-assert.equal(more.textContent,'Mehr');
+const trigger=header.children[0], tradingTab=dock.children.at(-1), dialog=doc.getElementById('uxQuickPalette');
+assert.equal(dock.children.length,7,'No eighth More button in dock');
+assert.equal(tradingTab.dataset.target,'tradingWorkspace','Trading is rightmost dock destination');
+assert.match(trigger.attrs['aria-label'],/Mehr/,'More is available only in top-right header');
+assert.equal(trigger.children[0].textContent,'☰','Mobile shows clear menu icon');
+assert.equal(trigger.children[1].textContent,'Mehr','Header menu label is clear');
 assert.ok(dialog,'Native dialog should be appended');
 const search=dialog.children[0].children[1],list=dialog.children[2];
 trigger.click();
@@ -112,11 +123,18 @@ dialog.fire('keydown',{key:'Enter',target:search,preventDefault(){},isComposing:
 assert.equal(dialog.open,false);
 assert.equal(doc.body.dataset.dgosRoute,'health','Schlafanalyse opens Gesundheit');
 assert.equal(nodes.whoopSleepAnalysis.scrolls,1,'WHOOP real section receives focus scroll');
-more.click();
+trigger.click();
 search.value='einkauf';search.fire('input');
 dialog.fire('keydown',{key:'Enter',target:search,preventDefault(){},isComposing:false});
 assert.equal(doc.body.dataset.dgosRoute,'private','Shopping opens Privat screen');
 assert.equal(nodes.shopping.clicks,1,'Shopping activates the original existing tab');
+nav.tradingWorkspace.click();
+assert.equal(doc.body.dataset.dgosRoute,'trading','Rightmost dock opens Trading, not the palette');
+assert.equal(dialog.open,false,'Direct Trading tap never opens More');
+trigger.click();
+search.value='social';search.fire('input');
+dialog.fire('keydown',{key:'Enter',target:search,preventDefault(){},isComposing:false});
+assert.equal(doc.body.dataset.dgosRoute,'social','Social remains reachable through top-right Mehr');
 doc.fire('keydown',{metaKey:true,ctrlKey:false,key:'k',preventDefault(){}});
 assert.equal(dialog.open,true,'Cmd+K opens the palette');
 doc.fire('keydown',{metaKey:true,ctrlKey:false,key:'k',preventDefault(){}});

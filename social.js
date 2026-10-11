@@ -526,7 +526,7 @@
     const root = document.createElement('div');
     root.id = 'socialCleanupExplorer';
     root.className = 'social-cleanup-explorer';
-    root.innerHTML = `<div class="social-explorer-heading"><div><strong>Accounts verwalten</strong><small>Profil auf Instagram öffnen, dort entfolgen und hier bestätigen.</small></div><span id="socialExplorerResults"></span></div><div class="social-explorer-controls"><input id="socialExplorerSearch" type="search" placeholder="Instagram-Username suchen …" aria-label="Accounts suchen" autocomplete="off" /><select id="socialExplorerFilter" aria-label="Cleanup-Status filtern"><option value="open">Offen</option><option value="later">Später</option><option value="keep">Behalten</option><option value="removed">Als entfernt markiert</option><option value="all">Alle Kandidaten</option></select></div><div id="socialExplorerList" class="social-explorer-list"></div><small class="social-explorer-help">„Als entfernt markieren“ bestätigt nur deine Angabe in Jarvis – Instagram wird nicht automatisch geändert. Ein erneuter Instagram-Export kann den Status später abgleichen.</small>`;
+    root.innerHTML = `<div class="social-explorer-heading"><div><strong>Accounts verwalten</strong><small>Ungeprüfte Namen aus dem Export. Profil in Instagram zuerst kontrollieren.</small></div><span id="socialExplorerResults"></span></div><div class="social-explorer-controls"><input id="socialExplorerSearch" type="search" placeholder="Instagram-Username suchen …" aria-label="Accounts suchen" autocomplete="off" /><select id="socialExplorerFilter" aria-label="Cleanup-Status filtern"><option value="open">Offen</option><option value="later">Später</option><option value="keep">Behalten</option><option value="removed">Als entfernt markiert</option><option value="all">Alle Kandidaten</option></select></div><div id="socialExplorerList" class="social-explorer-list"></div><small class="social-explorer-help">Die Liste stammt nur aus Instagram-Exports. «Folge ich nicht» entfernt einen falschen Kandidaten aus der Prüfung, ohne eine Entfolgung oder ein «Behalten» zu zählen. Ein neuer Export kann Abweichungen aufklären.</small>`;
     const card = $('socialCleanupCard');
     if (card && card.parentElement) card.parentElement.insertBefore(root, card);
     else section.append(root);
@@ -542,7 +542,7 @@
         window.open('https://www.instagram.com/' + encodeURIComponent(username) + '/', '_blank', 'noopener,noreferrer');
         return;
       }
-      if (['keep', 'removed', 'later', 'undo'].includes(action)) {
+      if (['keep', 'removed', 'later', 'not_following', 'undo'].includes(action)) {
         if (action === 'undo') {
           delete account().decisions[username];
           delete account().removedAt[username];
@@ -586,7 +586,7 @@
       name.textContent = '@' + username;
       const status = document.createElement('small');
       const choice = acc.decisions[username] || 'open';
-      status.textContent = ({open:'Offen',later:'Später',keep:'Behalten',removed:'Als entfernt markiert'})[choice];
+      status.textContent = ({open:'Ungeprüfter Export',later:'Später',keep:'Behalten',removed:'Als entfernt markiert',not_following:'Laut dir nicht gefolgt'})[choice];
       info.append(name,status);
       const actions = document.createElement('div');
       actions.className = 'social-explorer-actions';
@@ -601,6 +601,7 @@
       add('open','Instagram öffnen ↗');
       if (choice === 'open' || choice === 'later') {
         add('removed','Erledigt ✓');
+        add('not_following','Folge ich nicht');
         add('keep','Behalten');
         if (choice === 'open') add('later','Später');
       } else add('undo','Rückgängig');

@@ -19,7 +19,7 @@ assert.equal(bot.shopping(['Milch'],[],'<script>'),'Okay Gomes, Milch steht jetz
 const html=read('index.html'),client=read('personal.js'),voice=read('jarvis-voice.js');
 assert.match(html,/jarvis-replies\.js\?v=1/);
 assert.match(html,/personal\.js\?v=0\.59\.12/);
-assert.match(html,/jarvis-voice\.js\?v=13/);
+assert.match(html,/jarvis-voice\.js\?v=14/);
 assert.ok(html.indexOf('jarvis-replies.js?v=1')<html.indexOf('personal.js?v=0.59.12'),
   'Reply formatter must be available before Jarvis command handler');
 assert.ok(client.includes('window.DGOSJarvisReplies?.shopping(added,skipped)'),

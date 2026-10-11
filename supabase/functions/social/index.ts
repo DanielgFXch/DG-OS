@@ -28,7 +28,7 @@ function cleanUsers(v:any){
   if(!Array.isArray(v)) return [];
   return [...new Set(v.map(cleanUsername).filter(Boolean))].slice(0,100000);
 }
-function cleanDecision(v:any){ return ["keep","removed","later"].includes(v)?v:null; }
+function cleanDecision(v:any){ return ["keep","removed","later","not_following"].includes(v)?v:null; }
 
 const supabaseUrl=Deno.env.get("SUPABASE_URL")!;
 let serviceKey=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"";
@@ -195,6 +195,23 @@ Deno.serve(async(req:Request)=>{
       return json({relationship:data});
     }
 
+    // Explicit count copied from the owner's Instagram app. NEVER claim
+    // this is a live Instagram API count or silently rewrite the old export.
+    if(req.method==="POST" && action==="following-reference"){
+      const body=await readBody(req);
+      const accountKey=cleanAccount(body.accountKey);
+      const count=Number(body.count);
+      if(!accountKey || !Number.isInteger(count) || count<0 || count>1000000)
+        return json({error:"invalid_count"},400);
+      const {data,error}=await db.from("dgos_social_accounts")
+        .update({reported_following_count:count,reported_following_at:new Date().toISOString()})
+        .eq("account_key",accountKey)
+        .select("account_key,reported_following_count,reported_following_at").maybeSingle();
+      if(error)throw error;
+      if(!data)return json({error:"account_missing"},404);
+      return json({ok:true,account:data});
+    }
+
     if(req.method==="POST" && action==="import-snapshot"){
       const body=await readBody(req);
       const accountKey=cleanAccount(body.accountKey);
@@ -260,7 +277,9 @@ Deno.serve(async(req:Request)=>{
           whitelisted:whitelistSet.has(username),
           // A fresh export is not permission to discard a past Keep decision.
           // Only an explicit owner action can undo it.
-          decision:decisions.get(username)||(old?.decision==="keep"?"keep":null),
+          decision:decisions.has(username)
+            ? decisions.get(username)
+            : (old?.decision==="keep" || old?.decision==="not_following" ? old.decision : null),
           first_seen_at:old?.first_seen_at||now,
           last_seen_at:now,
           state_changed_at:changed?now:(old?.state_changed_at||now)

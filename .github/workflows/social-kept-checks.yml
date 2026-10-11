@@ -7,6 +7,8 @@ on:
       - 'index.html'
       - 'supabase/functions/social/**'
       - 'scripts/test-social-kept.js'
+      - 'scripts/test-social-accuracy.js'
+      - 'supabase/migrations/20261011154000_social_verification_accuracy.sql'
       - '.github/workflows/social-kept-checks.yml'
   push:
     branches: [main]
@@ -15,6 +17,8 @@ on:
       - 'social.css'
       - 'supabase/functions/social/**'
       - 'scripts/test-social-kept.js'
+      - 'scripts/test-social-accuracy.js'
+      - 'supabase/migrations/20261011154000_social_verification_accuracy.sql'
 jobs:
   saved-accounts:
     runs-on: ubuntu-latest
@@ -25,3 +29,4 @@ jobs:
           node-version: '22'
       - run: node --check social.js
       - run: node scripts/test-social-kept.js
+      - run: node scripts/test-social-accuracy.js

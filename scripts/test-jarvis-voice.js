@@ -11,8 +11,8 @@ for(const name of ['jarvis-voice.js','voice-studio.js','cartesia-favorites.js'])
 }
 const html=file('index.html');
 const studio=file('voice-studio.html');
-assert.match(html,/jarvis-voice\.js\?v=12/);
-assert.match(html,/jarvis-voice\.css\?v=4/);
+assert.match(html,/jarvis-voice\.js\?v=13/);
+assert.match(html,/jarvis-voice\.css\?v=5/);
 assert.match(studio,/cartesia-favorites\.js\?v=5/);
 assert.match(studio,/voice-studio\.js\?v=7/);
 assert.ok(html.includes('jarvis-native-voice.js?v=3'));

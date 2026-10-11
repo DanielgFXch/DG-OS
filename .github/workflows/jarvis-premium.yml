@@ -12,9 +12,6 @@ on:
       - jarvis-dashboard.js
       - assets/jarvis-nightscape.svg
       - scripts/test-jarvis-premium.js
-      - jarvis-reference-ui.js
-      - jarvis-reference-ui.css
-      - scripts/test-jarvis-reference-ui.js
       - .github/workflows/jarvis-premium.yml
   push:
     branches: [main]
@@ -23,6 +20,9 @@ on:
       - jarvis-premium.js
       - assets/jarvis-nightscape.svg
       - scripts/test-jarvis-premium.js
+      - jarvis-reference-ui.js
+      - jarvis-reference-ui.css
+      - scripts/test-jarvis-reference-ui.js
 jobs:
   reference-ui-and-existing-controls:
     runs-on: ubuntu-latest

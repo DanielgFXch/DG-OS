@@ -26,7 +26,7 @@ for(const name of ['personalJarvis','personalJarvisOrbBtn','jarvisLifeCommandFor
   assert.ok(html.includes('id="'+name+'"'), 'Real source control/data still exists: '+name);
 }
 for(const code of [
-  "panel.classList.contains('jarvis-dashboard-ready')",
+  "panel?.classList.contains('jarvis-dashboard-ready')",
   "active.append(activeLeft, orb)",
   "recent.append(reply)",
   "chat.append(form)",
@@ -50,6 +50,6 @@ assert.ok(css.includes('.jref-active') && css.includes('.jref-insights') && css.
 assert.ok(css.includes('max-width:355px') && css.includes('prefers-reduced-motion'), 'Small phones and accessibility supported');
 assert.ok(css.includes(':focus-visible'), 'Visible keyboard focus');
 assert.ok((css.match(/{/g)||[]).length === (css.match(/}/g)||[]).length, 'CSS brace blocks balanced');
-assert.ok(dashboard.includes('jarvis-dashboard-ready') && voice.includes('personalJarvisOrbBtn'), 'Existing real Jarvis is still wired');
+assert.ok(dashboard.includes('jarvis-dashboard-ready') && voice.includes('jvHeroToggle'), 'Existing real Jarvis is still wired');
 assert.ok(health.includes('personalHealth'), 'Other independent WHOOP page remains untouched');
 console.log('Jarvis reference UI: CSS, JS, real data sources, navigation, speech, PWA and no mocks verified');

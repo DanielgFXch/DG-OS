@@ -5,6 +5,9 @@ on:
       - index.html
       - jarvis-premium.css
       - jarvis-premium.js
+      - jarvis-reference-ui.js
+      - jarvis-reference-ui.css
+      - scripts/test-jarvis-reference-ui.js
       - jarvis-voice.js
       - jarvis-dashboard.js
       - assets/jarvis-nightscape.svg
@@ -17,6 +20,9 @@ on:
       - jarvis-premium.js
       - assets/jarvis-nightscape.svg
       - scripts/test-jarvis-premium.js
+      - jarvis-reference-ui.js
+      - jarvis-reference-ui.css
+      - scripts/test-jarvis-reference-ui.js
 jobs:
   reference-ui-and-existing-controls:
     runs-on: ubuntu-latest
@@ -28,6 +34,8 @@ jobs:
           node-version: '22'
       - name: Validate premium visual markup and genuine actions
         run: node scripts/test-jarvis-premium.js
+      - name: Validate live reference UI with real Jarvis state
+        run: node scripts/test-jarvis-reference-ui.js
       - name: Check real calendar, shopping, tasks, and paired Jarvis
         run: node scripts/test-jarvis-dashboard.js
       - name: Preserve real microphone and speech paths

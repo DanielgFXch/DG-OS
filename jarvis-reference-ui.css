@@ -1,0 +1,457 @@
+/* DG OS — Jarvis Cinematic Reference UI · 2026-10-12
+   Screenshot-inspired blue / navy / violet glass system. Pure presentation;
+   only the real Jarvis route, with actual existing DOM/actions. */
+body[data-dgos-route="jarvis"] {
+  --jref-ink:#f3f8ff;
+  --jref-soft:#9fbbde;
+  --jref-blue:#43b6ff;
+  --jref-cyan:#72dcff;
+  --jref-line:rgba(112,181,255,.38);
+  --jref-surface:linear-gradient(150deg,rgba(10,34,79,.95) 0%,rgba(4,17,45,.96) 65%,rgba(7,22,54,.96) 100%);
+}
+body[data-dgos-route="jarvis"] .topbar .logo {
+  border:1px solid rgba(87,178,255,.75)!important;
+  box-shadow:0 0 18px rgba(29,126,255,.34),inset 0 0 18px rgba(42,104,226,.23)!important;
+}
+body[data-dgos-route="jarvis"] .dgos-route-bar:not(.hidden){
+  display:flex!important;
+  border-radius:23px!important;
+  border:1px solid rgba(110,185,255,.44)!important;
+  background:linear-gradient(110deg,rgba(8,24,57,.93),rgba(15,35,84,.81))!important;
+  box-shadow:inset 0 1px rgba(227,241,255,.11),0 0 27px rgba(42,105,227,.18)!important;
+  margin-bottom:18px!important;
+}
+body[data-dgos-route="jarvis"] #personalJarvis.jarvis-reference-ready{
+  border:0!important;
+  border-radius:0!important;
+  padding:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  overflow:visible!important;
+  color:var(--jref-ink)!important;
+}
+body[data-dgos-route="jarvis"] #personalJarvis.jarvis-reference-ready .jarvis-cinematic-hero{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:stretch!important;
+  min-height:0!important;
+  gap:13px!important;
+  padding:clamp(21px,3.8vw,43px)!important;
+  border-radius:28px!important;
+  margin:0 0 15px!important;
+  border:1px solid rgba(81,160,255,.43)!important;
+  background:
+    linear-gradient(180deg,rgba(1,8,26,.08) 0%,rgba(3,14,39,.43) 34%,rgba(2,12,34,.89) 100%),
+    url("./assets/jarvis-nightscape.svg") center 34%/cover no-repeat,
+    linear-gradient(145deg,#092551,#020a20)!important;
+  box-shadow:0 18px 46px rgba(0,4,16,.36),inset 0 1px rgba(194,235,255,.13),0 0 26px rgba(23,93,255,.09)!important;
+}
+#personalJarvis.jarvis-reference-ready .jarvis-cinematic-hero::before{
+  opacity:.53!important;
+  background:radial-gradient(ellipse at 87% 15%,rgba(41,123,255,.26),transparent 44%),
+             linear-gradient(180deg,transparent 26%,rgba(3,12,36,.78) 96%)!important;
+}
+#personalJarvis.jarvis-reference-ready .jarvis-cinematic-hero::after{
+  content:""!important;top:52%!important;height:70px!important;
+  opacity:.28!important;
+}
+#personalJarvis.jarvis-reference-ready .jarvis-cinematic-hero>.personal-jarvis-head{
+  display:block!important;
+  padding:0!important;
+  margin:0!important;
+  width:100%!important;
+}
+#personalJarvis.jarvis-reference-ready .jarvis-cinematic-hero .personal-jarvis-head>div:first-child{
+  max-width:650px!important;
+}
+#personalJarvis.jarvis-reference-ready .jarvis-cinematic-hero .personal-kicker{
+  font-size:clamp(9px,1.5vw,12px)!important;
+  letter-spacing:.24em!important;
+  color:#a9cffc!important;
+}
+#personalJarvis.jarvis-reference-ready .jarvis-cinematic-hero #personalJarvisTitle{
+  display:block!important;
+  max-width:none!important;
+  margin:12px 0 12px!important;
+  font-size:clamp(38px,5.8vw,72px)!important;
+  font-weight:800!important;
+  letter-spacing:-.055em!important;
+  line-height:1.04!important;
+  color:#fff!important;
+}
+#personalJarvis.jarvis-reference-ready #personalJarvisTitle span{
+  display:inline!important;
+  background:linear-gradient(100deg,#bedcff,#63b8ff 43%,#5bd5ff 78%,#9da9ff)!important;
+  -webkit-background-clip:text!important;background-clip:text!important;
+  -webkit-text-fill-color:transparent!important;
+  filter:drop-shadow(0 0 10px rgba(58,147,255,.22));
+}
+#personalJarvis.jarvis-reference-ready .jarvis-cinematic-hero .personal-jarvis-head p{
+  max-width:38ch!important;
+  margin:0!important;
+  color:#c3d4f0!important;
+  font-size:clamp(14px,2vw,18px)!important;
+  line-height:1.55!important;
+  font-weight:480!important;
+}
+/* The original live orb and pairing state share ONE primary hero card. */
+#personalJarvis.jarvis-reference-ready .jref-active{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(168px,34%);
+  gap:12px;
+  align-items:center;
+  min-height:245px;
+  position:relative;isolation:isolate;
+  overflow:hidden;
+  padding:18px clamp(13px,2.5vw,26px)!important;
+  margin-top:11px;
+  border-radius:25px;
+  border:1px solid rgba(119,194,255,.69)!important;
+  background:
+    radial-gradient(ellipse at 83% 55%,rgba(29,125,250,.32),transparent 42%),
+    linear-gradient(116deg,rgba(8,36,88,.96) 0%,rgba(4,21,56,.94) 50%,rgba(7,21,59,.77) 100%)!important;
+  box-shadow:0 0 0 1px rgba(30,108,255,.11),0 0 27px rgba(34,118,255,.28),
+    inset 0 1px rgba(214,243,255,.2),inset 0 -10px 40px rgba(24,45,142,.17)!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-active::before{
+  content:"";position:absolute;pointer-events:none;inset:0;
+  opacity:.54;z-index:-1;
+  background:url("./assets/jarvis-nightscape.svg") center 73%/cover no-repeat;
+}
+#personalJarvis.jarvis-reference-ready .jref-active::after{
+  content:"";pointer-events:none;position:absolute;bottom:7px;right:-3%;width:66%;height:24%;
+  background:radial-gradient(ellipse,rgba(74,159,255,.28),transparent 70%);
+}
+#personalJarvis.jarvis-reference-ready .jref-active-left{
+  display:flex;flex-direction:column;gap:18px;min-width:0;position:relative;z-index:2;
+}
+#personalJarvis.jarvis-reference-ready .jref-live{
+  display:flex;align-items:flex-start;gap:12px;min-width:0;
+}
+#personalJarvis.jarvis-reference-ready .jref-status-pip{
+  flex:none;width:13px;height:13px;margin-top:8px;border-radius:50%;
+  background:#38e8bb;box-shadow:0 0 0 7px rgba(21,187,202,.1),0 0 15px rgba(30,234,183,.75);
+}
+#personalJarvis.jarvis-reference-ready .jref-active[data-mic="error"] .jref-status-pip{background:#ffbf6f;box-shadow:0 0 16px rgba(255,184,89,.65)}
+#personalJarvis.jarvis-reference-ready .jref-active[data-mic="listening"] .jref-status-pip{background:#47dcff;animation:jref-breathe 1.2s ease-in-out infinite alternate}
+#personalJarvis.jarvis-reference-ready .jref-live-copy{min-width:0}
+#personalJarvis.jarvis-reference-ready .jref-state{
+  display:block;font-size:clamp(18px,2.6vw,28px);font-weight:770;
+  line-height:1.15;letter-spacing:-.03em;color:#fff;
+  text-shadow:0 2px 18px rgba(48,155,255,.21);
+}
+#personalJarvis.jarvis-reference-ready .jref-hint{
+  margin:8px 0 0!important;color:#b3cfef!important;
+  max-width:27ch;font-size:clamp(11px,1.6vw,14px)!important;line-height:1.5!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-real-badges{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px;
+}
+#personalJarvis.jarvis-reference-ready .jref-real-badges>span{
+  font-size:9px;letter-spacing:.18em;font-weight:700;color:#8fbbe9;
+}
+#personalJarvis.jarvis-reference-ready .jref-active .jarvis-system-badge{
+  display:inline-flex!important;align-self:auto!important;
+  position:relative!important;top:auto!important;right:auto!important;
+  min-height:42px!important;max-width:100%!important;
+  padding:5px 9px 5px 5px!important;
+  border-radius:12px!important;font-size:11px!important;
+  background:linear-gradient(105deg,rgba(13,52,115,.82),rgba(3,22,61,.95))!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-active .jarvis-system-badge>.jpr-voice-mark{
+  width:28px!important;height:28px!important;flex-basis:28px!important;padding:6px!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-active .jarvis-system-badge>span{font-size:10px!important}
+#personalJarvis.jarvis-reference-ready .jref-active .jarvis-system-badge>span::before{content:"GERÄT · "!important}
+#personalJarvis.jarvis-reference-ready .jref-active>.jarvis-orb-stage{
+  width:100%!important;min-width:0!important;
+  display:flex!important;justify-content:center!important;align-items:center!important;
+  flex-direction:column!important;
+  padding:3px 0!important;margin:0!important;
+  position:relative!important;z-index:1!important;
+  gap:0!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-active .jarvis-cinematic-orb{
+  display:grid!important;
+  width:clamp(145px,19vw,236px)!important;height:clamp(145px,19vw,236px)!important;
+  max-width:100%!important;max-height:100%!important;
+  filter:drop-shadow(0 0 27px rgba(26,145,255,.69))!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-active .jarvis-cinematic-label{
+  margin-top:9px!important;letter-spacing:.23em!important;
+  font-size:10px!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-active .jarvis-cinematic-label small{font-size:10px!important}
+#personalJarvis.jarvis-reference-ready .jref-voice-options{
+  border:1px solid rgba(99,166,248,.22);border-radius:15px;
+  background:rgba(2,15,40,.80);padding:0 13px;
+}
+#personalJarvis.jarvis-reference-ready .jref-voice-options>summary{
+  min-height:44px;display:flex;align-items:center;cursor:pointer;
+  color:#bddaff;font-size:12px;font-weight:640;list-style-position:inside;
+}
+#personalJarvis.jarvis-reference-ready .jref-voice-options .jv-hero-audio{
+  margin:0 0 12px!important;width:100%!important;display:block!important;
+  border:0!important;background:transparent!important;box-shadow:none!important;
+}
+/* Glass cards: single unified surface vocabulary. */
+#personalJarvis.jarvis-reference-ready .jref-glass{
+  position:relative;isolation:isolate;overflow:hidden;
+  width:100%;padding:clamp(16px,2.8vw,24px)!important;
+  margin:0 0 14px!important;border-radius:25px!important;
+  border:1px solid rgba(95,159,244,.38)!important;
+  background:var(--jref-surface)!important;
+  box-shadow:inset 0 1px rgba(206,237,255,.1),0 12px 35px rgba(0,6,29,.28),0 0 13px rgba(23,92,213,.06)!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-glass::before{
+  content:"";z-index:-1;pointer-events:none;position:absolute;inset:0;
+  background:radial-gradient(ellipse at 92% 1%,rgba(47,108,248,.15),transparent 47%),
+             radial-gradient(ellipse at 5% 100%,rgba(18,147,222,.07),transparent 40%);
+}
+#personalJarvis.jarvis-reference-ready .jref-heading{margin:0 0 16px!important}
+#personalJarvis.jarvis-reference-ready .jref-heading .jref-eyebrow{
+  display:block;font-weight:740;font-size:10px;letter-spacing:.22em;color:#8bbaf6;margin-bottom:7px;
+}
+#personalJarvis.jarvis-reference-ready .jref-heading h3{
+  font-size:clamp(20px,3vw,27px)!important;letter-spacing:-.035em!important;
+  font-weight:770!important;color:#f5faff!important;line-height:1.15!important;
+  margin:0 0 5px!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-heading p{
+  color:#9ebddd!important;font-size:12px!important;
+  line-height:1.5!important;margin:0!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-today{
+  background:
+    linear-gradient(135deg,rgba(11,35,79,.95),rgba(2,16,43,.92)),
+    url("./assets/jarvis-nightscape.svg") right bottom/cover no-repeat!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-insights{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;
+}
+#personalJarvis.jarvis-reference-ready .jref-insight{
+  min-width:0;min-height:146px!important;
+  display:flex!important;flex-direction:column!important;align-items:flex-start!important;
+  gap:10px!important;justify-content:flex-start!important;
+  padding:15px 13px!important;
+  border-radius:18px!important;
+  background:linear-gradient(145deg,rgba(20,51,106,.86),rgba(4,21,56,.9))!important;
+  border:1px solid rgba(91,156,251,.43)!important;
+  color:#f5faff!important;
+  box-shadow:inset 0 1px rgba(224,247,255,.09),0 0 15px rgba(21,97,243,.08)!important;
+  text-align:left!important;cursor:pointer;
+}
+#personalJarvis.jarvis-reference-ready .jref-insight-sleep{border-color:rgba(127,131,255,.48)!important}
+#personalJarvis.jarvis-reference-ready .jref-insight-tasks{border-color:rgba(52,200,216,.42)!important}
+#personalJarvis.jarvis-reference-ready .jref-insight-top{
+  width:100%;display:flex;gap:8px;align-items:center;min-width:0;
+}
+#personalJarvis.jarvis-reference-ready .jref-insight-icon{
+  display:grid;place-items:center;flex:none;width:32px;height:32px;
+  border-radius:10px;font-size:19px;color:#a7e6ff;
+  border:1px solid rgba(110,195,255,.36);
+  background:radial-gradient(circle at 34% 16%,rgba(40,140,255,.49),rgba(9,33,89,.8));
+  box-shadow:0 0 11px rgba(40,120,255,.16);
+}
+#personalJarvis.jarvis-reference-ready .jref-insight-tasks .jref-insight-icon{color:#46f0e2}
+#personalJarvis.jarvis-reference-ready .jref-insight-sleep .jref-insight-icon{color:#a4b5ff}
+#personalJarvis.jarvis-reference-ready .jref-insight-name{
+  color:#c3d8f4;font-size:clamp(10px,1.65vw,12px);line-height:1.25;
+}
+#personalJarvis.jarvis-reference-ready .jref-insight-value{
+  font-size:clamp(15px,2.5vw,24px);font-weight:760;line-height:1.14;
+  letter-spacing:-.035em;overflow-wrap:anywhere;max-width:100%;
+}
+#personalJarvis.jarvis-reference-ready .jref-insight-info{
+  color:#93b4d8!important;margin-top:auto;
+  font-size:clamp(9px,1.45vw,11px);line-height:1.42;
+  overflow-wrap:anywhere;
+}
+#personalJarvis.jarvis-reference-ready .jref-action-grid{
+  display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;
+}
+#personalJarvis.jarvis-reference-ready .jref-action{
+  display:flex!important;align-items:center!important;gap:9px!important;
+  min-width:0!important;min-height:70px!important;
+  padding:10px!important;
+  border:1px solid rgba(96,166,255,.4)!important;border-radius:17px!important;
+  background:linear-gradient(135deg,rgba(17,53,109,.88),rgba(4,23,58,.94))!important;
+  color:#eef8ff!important;
+  text-align:left!important;
+  box-shadow:inset 0 1px rgba(212,242,255,.095),0 0 13px rgba(38,112,235,.09)!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-action-icon{
+  display:grid;place-items:center;flex:none;width:36px;height:40px;
+  font-size:24px;color:#78c9ff;
+  border-radius:12px;border:1px solid rgba(95,179,255,.57);
+  background:radial-gradient(circle at 50% 20%,rgba(32,120,246,.45),rgba(5,27,85,.95));
+  box-shadow:inset 0 0 12px rgba(25,116,243,.27),0 0 11px rgba(27,139,255,.21);
+}
+#personalJarvis.jarvis-reference-ready .jref-action:nth-child(2) .jref-action-icon{color:#bf9fff;border-color:rgba(165,127,254,.6)}
+#personalJarvis.jarvis-reference-ready .jref-action:nth-child(3) .jref-action-icon{color:#67edd5;border-color:rgba(58,213,187,.6)}
+#personalJarvis.jarvis-reference-ready .jref-action-text{
+  min-width:0;flex:1;font-weight:690;font-size:clamp(11px,1.55vw,13px);
+  overflow-wrap:anywhere;
+}
+#personalJarvis.jarvis-reference-ready .jref-action-chevron{flex:none;color:#88b9f3;font-size:19px}
+#personalJarvis.jarvis-reference-ready .jref-chat{
+  background:linear-gradient(130deg,rgba(5,28,72,.97),rgba(3,13,37,.96))!important;
+  border-color:rgba(87,166,255,.51)!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-chat #jarvisLifeCommandForm{
+  position:relative!important;
+  display:flex!important;align-items:center!important;gap:10px!important;
+  width:100%!important;max-width:none!important;min-height:66px!important;
+  padding:8px!important;margin:0!important;border-radius:21px!important;
+  border:1px solid rgba(96,183,255,.75)!important;
+  background:linear-gradient(110deg,rgba(13,48,119,.88),rgba(5,30,87,.90))!important;
+  box-shadow:inset 0 1px rgba(176,218,255,.18),0 0 17px rgba(17,102,255,.25)!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-chat #jarvisLifeCommandForm>span{
+  color:#86d3ff!important;padding-left:10px!important;font-size:23px!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-chat #jarvisLifeCommandInput{
+  width:100%!important;min-width:0!important;flex:1!important;
+  height:46px!important;padding:5px!important;font-size:16px!important;
+  border:0!important;box-shadow:none!important;outline:none!important;
+  color:#f2f9ff!important;background:transparent!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-chat #jarvisLifeCommandInput::placeholder{color:#aec5e6!important}
+#personalJarvis.jarvis-reference-ready .jref-chat #jarvisLifeCommandForm button[type="submit"]{
+  display:grid!important;place-items:center!important;flex:none;
+  width:48px!important;height:48px!important;min-width:48px!important;
+  border-radius:50%!important;border:1px solid rgba(152,216,255,.76)!important;
+  background:linear-gradient(150deg,#278dff,#155af7)!important;
+  box-shadow:0 0 16px rgba(31,123,255,.55),inset 0 1px rgba(245,252,255,.3)!important;
+  font-size:26px!important;color:#fff!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-prompts{
+  display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;
+}
+#personalJarvis.jarvis-reference-ready .jref-prompt{
+  padding:9px 12px!important;min-height:41px!important;
+  border-radius:999px!important;border:1px solid rgba(99,158,232,.36)!important;
+  color:#c4daff!important;background:rgba(7,26,62,.75)!important;
+  font-size:11px!important;text-align:left!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-recent .jpr-reply-card{
+  background:linear-gradient(130deg,rgba(11,44,96,.88),rgba(4,24,60,.94))!important;
+  margin:0!important;box-shadow:inset 0 1px rgba(217,238,255,.09)!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-recent #personalJarvisReply{
+  display:block!important;margin:9px 0!important;line-height:1.5!important;
+  font-size:clamp(13px,1.7vw,16px)!important;color:#ecf8ff!important;
+  min-height:0!important;text-align:left!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-extra{
+  padding:0!important;overflow:visible!important;
+}
+#personalJarvis.jarvis-reference-ready .jref-extra>summary{
+  cursor:pointer;min-height:57px;padding:17px 20px;
+  color:#c3dcff;font-weight:680;letter-spacing:-.01em;
+}
+#personalJarvis.jarvis-reference-ready .jref-extra .jarvis-dash-quick{
+  margin:0 13px 14px!important;max-width:calc(100% - 26px);
+  background:rgba(5,23,57,.8)!important;
+}
+/* All deeper tools keep the same materials, without changing their behavior. */
+#personalJarvis.jarvis-reference-ready :is(.jwa,.jarvis-life-stats,.jb-intelligence,.jarvis-dash-more,.jarvis-dash-advanced,.jarvis-integrations,.jarvis-photo-entry){
+  border-radius:22px!important;
+  border:1px solid rgba(98,158,238,.28)!important;
+  box-shadow:inset 0 1px rgba(210,237,255,.075)!important;
+  background:linear-gradient(155deg,rgba(9,32,69,.94),rgba(4,16,42,.95))!important;
+}
+#personalJarvis.jarvis-reference-ready :is(button,summary,input):focus-visible{
+  outline:2px solid #89dfff!important;outline-offset:3px!important;
+}
+@media(hover:hover) and (pointer:fine){
+  #personalJarvis.jarvis-reference-ready :is(.jref-action,.jref-insight,.jref-prompt):hover{
+    border-color:rgba(150,215,255,.81)!important;
+    box-shadow:inset 0 1px rgba(230,246,255,.15),0 0 20px rgba(43,127,255,.19)!important;
+    transform:translateY(-1px);
+  }
+}
+@keyframes jref-breathe{to{box-shadow:0 0 0 9px rgba(27,173,255,.1),0 0 22px rgba(79,214,255,.9)}}
+@media(max-width:760px){
+  #personalJarvis.jarvis-reference-ready .jref-action-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #personalJarvis.jarvis-reference-ready .jref-action{min-height:62px!important}
+}
+@media(max-width:600px){
+  body[data-dgos-route="jarvis"] #personalJarvis.jarvis-reference-ready .jarvis-cinematic-hero{
+    padding:22px 14px 16px!important;border-radius:23px!important;
+    background-position:center 25%!important;
+  }
+  #personalJarvis.jarvis-reference-ready .jarvis-cinematic-hero #personalJarvisTitle{
+    font-size:clamp(34px,9vw,48px)!important;margin:10px 0 12px!important;
+  }
+  #personalJarvis.jarvis-reference-ready .jarvis-cinematic-hero .personal-jarvis-head p{
+    font-size:13px!important;max-width:32ch!important;
+  }
+  #personalJarvis.jarvis-reference-ready .jref-active{
+    min-height:181px!important;
+    grid-template-columns:minmax(0,1fr) minmax(116px,38%)!important;
+    gap:3px!important;padding:14px 9px 14px 12px!important;
+    border-radius:21px!important;margin-top:9px!important;
+  }
+  #personalJarvis.jarvis-reference-ready .jref-active-left{gap:14px}
+  #personalJarvis.jarvis-reference-ready .jref-live{gap:8px}
+  #personalJarvis.jarvis-reference-ready .jref-status-pip{width:9px;height:9px;margin-top:5px}
+  #personalJarvis.jarvis-reference-ready .jref-state{font-size:clamp(17px,4.8vw,22px)}
+  #personalJarvis.jarvis-reference-ready .jref-hint{font-size:11px!important;margin-top:6px!important}
+  #personalJarvis.jarvis-reference-ready .jref-real-badges>span{display:none}
+  #personalJarvis.jarvis-reference-ready .jref-active .jarvis-system-badge{
+    padding:4px 7px 4px 4px!important;min-height:37px!important;
+  }
+  #personalJarvis.jarvis-reference-ready .jref-active .jarvis-system-badge>span{font-size:9px!important}
+  #personalJarvis.jarvis-reference-ready .jref-active .jarvis-system-badge>.jpr-voice-mark{
+    width:25px!important;height:25px!important;flex-basis:25px!important;
+  }
+  #personalJarvis.jarvis-reference-ready .jref-active .jarvis-cinematic-orb{
+    width:clamp(118px,36vw,172px)!important;
+    height:clamp(118px,36vw,172px)!important;
+    max-width:100%!important;
+  }
+  #personalJarvis.jarvis-reference-ready .jref-active .jarvis-cinematic-label{
+    font-size:8px!important;margin-top:5px!important;letter-spacing:.14em!important;
+  }
+  #personalJarvis.jarvis-reference-ready .jref-active .jarvis-cinematic-label small{font-size:9px!important}
+  #personalJarvis.jarvis-reference-ready .jref-glass{
+    padding:16px 12px!important;border-radius:20px!important;margin-bottom:12px!important;
+  }
+  #personalJarvis.jarvis-reference-ready .jref-heading{margin-bottom:12px!important}
+  #personalJarvis.jarvis-reference-ready .jref-heading h3{font-size:21px!important}
+  #personalJarvis.jarvis-reference-ready .jref-insights{gap:7px}
+  #personalJarvis.jarvis-reference-ready .jref-insight{
+    min-height:137px!important;padding:11px 8px!important;gap:8px!important;
+    border-radius:14px!important;
+  }
+  #personalJarvis.jarvis-reference-ready .jref-insight-top{flex-direction:column;align-items:flex-start;gap:5px}
+  #personalJarvis.jarvis-reference-ready .jref-insight-value{font-size:clamp(14px,3.7vw,20px)}
+  #personalJarvis.jarvis-reference-ready .jref-insight-name{font-size:10px}
+  #personalJarvis.jarvis-reference-ready .jref-action-grid{gap:8px}
+  #personalJarvis.jarvis-reference-ready .jref-action-text{font-size:12px}
+  #personalJarvis.jarvis-reference-ready .jref-prompts{gap:7px}
+  #personalJarvis.jarvis-reference-ready .jref-chat #jarvisLifeCommandForm{min-height:60px!important}
+  #personalJarvis.jarvis-reference-ready .jref-chat #jarvisLifeCommandForm button[type="submit"]{
+    width:44px!important;height:44px!important;min-width:44px!important;
+  }
+}
+@media(max-width:355px){
+  #personalJarvis.jarvis-reference-ready .jref-insights{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #personalJarvis.jarvis-reference-ready .jref-insight:first-child{grid-column:1/-1;min-height:110px!important}
+  #personalJarvis.jarvis-reference-ready .jref-insight:first-child .jref-insight-top{
+    flex-direction:row;align-items:center;
+  }
+  #personalJarvis.jarvis-reference-ready .jref-active{
+    grid-template-columns:minmax(0,1fr) minmax(98px,36%)!important;
+  }
+  #personalJarvis.jarvis-reference-ready .jref-active .jarvis-cinematic-orb{
+    width:110px!important;height:110px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #personalJarvis.jarvis-reference-ready .jref-status-pip,
+  #personalJarvis.jarvis-reference-ready :is(.jref-action,.jref-insight,.jref-prompt){
+    animation:none!important;transform:none!important;transition:none!important;
+  }
+}

@@ -60,16 +60,19 @@
     strip.className='jv-hero-audio';
     strip.innerHTML=
       '<div class="jv-hero-audio-buttons">'+
-      '<button id="jvHeroToggle" type="button" aria-pressed="true">🔊 Stimme an</button>'+
-      '<button id="jvHeroRead" type="button">▶ Antwort anhören</button>'+
-      '</div>'+
-      '<div class="jv-diagnostic-actions">'+
-      '<button id="jvHeroTone" type="button">♪ Ton prüfen</button>'+
-      '<button id="jvHeroFile" type="button">🎧 Audio-Datei testen</button>'+
+      '<button id="jvHeroToggle" type="button" aria-pressed="true">Stimme an</button>'+
+      '<button id="jvHeroRead" type="button">Antwort anhören</button>'+
       '</div>'+
       '<p id="jvHeroNotice" role="status" aria-live="polite">Sprachausgabe bereit.</p>'+
-      '<button id="jvUseServerVoice" type="button" hidden>Diese Stimme für Antworten verwenden</button>'+
-      '<small class="jv-diagnostic-hint">Audio-Datei: Test über den verbundenen Sprachanbieter. Kann geringe API-Kosten verursachen.</small>';
+      '<details class="jpr-troubleshoot">'+
+        '<summary>Tonprobleme prüfen</summary>'+
+        '<div class="jv-diagnostic-actions">'+
+          '<button id="jvHeroTone" type="button">Ton prüfen</button>'+
+          '<button id="jvHeroFile" type="button">Audio-Datei testen</button>'+
+        '</div>'+
+        '<small class="jv-diagnostic-hint">Ein Audio-Dateitest kann geringe API-Kosten verursachen.</small>'+
+        '<button id="jvUseServerVoice" type="button" hidden>Diese Stimme für Antworten verwenden</button>'+
+      '</details>';
     hero.append(strip);
   }
   const $=id=>document.getElementById(id);
@@ -95,12 +98,12 @@
   function updateQuickToggle(){
     const active=$('jvEnabled').checked;
     const button=$('jvQuickToggle');
-    button.textContent=active?'🔊 Stimme an':'🔇 Stimme aus';
+    button.textContent=active?'Stimme an':'Stimme aus';
     button.setAttribute('aria-pressed',String(active));
     button.dataset.enabled=String(active);
     const heroToggle=$('jvHeroToggle');
     if(heroToggle){
-      heroToggle.textContent=active?'🔊 Stimme an':'🔇 Stimme aus';
+      heroToggle.textContent=active?'Stimme an':'Stimme aus';
       heroToggle.setAttribute('aria-pressed',String(active));
       heroToggle.dataset.enabled=String(active);
     }

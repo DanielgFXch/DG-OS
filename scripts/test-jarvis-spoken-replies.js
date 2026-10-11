@@ -72,8 +72,8 @@ function setup(initial={},remote=async()=>{throw Error('Unexpected provider requ
 {
  const app=setup();
  assert.equal(app.nodes.jvEnabled.checked,true,'New Jarvis installation automatically speaks back');
- assert.equal(app.nodes.jvQuickToggle.textContent,'🔊 Stimme an');
- assert.equal(app.nodes.jvHeroToggle.textContent,'🔊 Stimme an','Visible hero toggle is synced');
+ assert.equal(app.nodes.jvQuickToggle.textContent,'Stimme an');
+ assert.equal(app.nodes.jvHeroToggle.textContent,'Stimme an','Visible hero toggle is synced');
  app.emit('dgos-jarvis-microphone-state',{state:'listening'});
  assert.equal(app.calls.play.length,0,'Never voice-record the listening message');
  app.emit('dgos-jarvis-microphone-state',{state:'processing'});
@@ -85,7 +85,7 @@ function setup(initial={},remote=async()=>{throw Error('Unexpected provider requ
  assert.equal(app.calls.play.length,2,'Two finished voice commands produce two replies');
  app.click('jvHeroToggle');
  assert.equal(app.nodes.jvEnabled.checked,false);
- assert.equal(app.nodes.jvHeroToggle.textContent,'🔇 Stimme aus');
+ assert.equal(app.nodes.jvHeroToggle.textContent,'Stimme aus');
  assert.equal(app.storage.get('dgos.jarvis.speech.enabled'),'0');
  app.emit('dgos-jarvis-final-response',{text:'Ich bin jetzt stumm.'});
  assert.equal(app.calls.play.length,2,'Explicit mute must be respected');

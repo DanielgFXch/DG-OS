@@ -1,0 +1,36 @@
+name: DG OS Jarvis Premium Functional Redesign
+on:
+  pull_request:
+    paths:
+      - index.html
+      - jarvis-premium.css
+      - jarvis-premium.js
+      - jarvis-voice.js
+      - jarvis-dashboard.js
+      - assets/jarvis-nightscape.svg
+      - scripts/test-jarvis-premium.js
+      - .github/workflows/jarvis-premium.yml
+  push:
+    branches: [main]
+    paths:
+      - jarvis-premium.css
+      - jarvis-premium.js
+      - assets/jarvis-nightscape.svg
+      - scripts/test-jarvis-premium.js
+jobs:
+  reference-ui-and-existing-controls:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate premium visual markup and genuine actions
+        run: node scripts/test-jarvis-premium.js
+      - name: Check real calendar, shopping, tasks, and paired Jarvis
+        run: node scripts/test-jarvis-dashboard.js
+      - name: Preserve real microphone and speech paths
+        run: node scripts/test-jarvis-spoken-replies.js && node scripts/test-jarvis-iphone-mic.js
+      - name: Ensure existing Premium UI navigation works
+        run: node scripts/test-premium-ui.js

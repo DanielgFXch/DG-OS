@@ -34,9 +34,8 @@
   quick.setAttribute('aria-label','Jarvis Schnellzugriff');
   const head=make('div','jarvis-dash-quick-head');
   const titleWrap=make('div','jarvis-dash-intro');
-  titleWrap.append(heading,make('h3','','Womit soll ich dir helfen?'));
-  const caption=make('p','','Sprich mit Jarvis oder starte direkt eine Aufgabe.');
-  titleWrap.append(caption);
+  titleWrap.append(heading);
+  // Voice action remains at the orb; the tile grid stays as compact as the reference.
   const controls=make('div','jarvis-dash-voice-controls');
   const voiceToggle=make('button','jarvis-dash-voice-toggle');
   voiceToggle.id='jarvisDashVoiceToggle';voiceToggle.type='button';
@@ -52,10 +51,10 @@
   head.append(titleWrap,controls);quick.append(head);
   const cards=make('div','jarvis-dash-cards');
   const choices=[
-    {id:'plan',icon:'◫',title:'Mein Tag',sub:'Termine & Aufgaben'},
-    {id:'shopping',icon:'▤',title:'Einkaufsliste',sub:'Produkte verwalten'},
-    {id:'brain',icon:'✦',title:'Gedächtnis',sub:'Was Jarvis weiss'},
-    {id:'photo',icon:'◉',title:'Foto nutzen',sub:'Rechnung & Einkauf'}
+    {id:'plan',icon:'',title:'Mein Tag',sub:'Übersicht & Planung'},
+    {id:'calendar',icon:'',title:'Kalender',sub:'Termine & Events'},
+    {id:'shopping',icon:'',title:'Einkaufsliste',sub:'Artikel & Ideen'},
+    {id:'task',icon:'',title:'Aufgaben',sub:'To-dos & Projekte'}
   ];
   const cardButtons={};
   for(const choice of choices){
@@ -132,10 +131,14 @@
       }else form.scrollIntoView({behavior:'smooth',block:'center'});
       return;
     }
-    if(tab==='photo'){
-      // Direct input activation is more reliable on iOS Safari when the
-      // original, initialized photo entry is visually collapsed.
-      document.getElementById('jarvisPhotoInput')?.click();
+    if(tab==='calendar'){
+      document.querySelector('.bottom-nav button[data-target="personalCalendar"]')?.click();
+      return;
+    }
+    if(tab==='task'){
+      // Use the original task handler from the command deck, never make a
+      // second task implementation or save duplicate entries.
+      deck.querySelector('[data-jarvis-action="task"]')?.click();
     }
   }
   Object.entries(cardButtons).forEach(([key,btn])=>btn.addEventListener('click',()=>openSection(key)));

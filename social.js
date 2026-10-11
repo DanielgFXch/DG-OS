@@ -716,6 +716,40 @@
     $('socialDecisionNotFollowing').dataset.username = current;
   }
 
+
+  async function saveFollowingReference(){
+    const input = $('socialFollowingReference');
+    const raw = input.value.trim();
+    if (!/^\d{1,7}$/.test(raw) || !Number.isSafeInteger(Number(raw)) || Number(raw) > 1000000) {
+      notice('Bitte eine gültige Following-Zahl aus Instagram zwischen 0 und 1’000’000 eingeben.','error');
+      return;
+    }
+    const count = Number(raw);
+    const key = state.active;
+    const acc = account();
+    acc.reportedFollowingCount = count;
+    acc.reportedFollowingAt = new Date().toISOString();
+    if(!persist())return;
+    renderCloud();
+    if(!session()) {
+      notice(count+' Following manuell notiert. Nur lokal: für geräteübergreifende Speicherung DG OS verbinden.','success');
+      return;
+    }
+    $('socialFollowingReferenceSave').disabled=true;
+    try {
+      await api('following-reference',{
+        method:'POST',
+        body:JSON.stringify({accountKey:key,count})
+      });
+      await loadCloudDashboard(key);
+      notice(count+' Following laut deiner Instagram-App gespeichert. Exportdaten und Kandidaten bleiben unverändert.','success');
+    }catch{
+      notice(count+' Following lokal gespeichert, Cloud-Abgleich fehlgeschlagen. Kein Instagram-Livezugriff.','error');
+    }finally{
+      $('socialFollowingReferenceSave').disabled=false;
+    }
+  }
+
   function saveHandle() {
     const raw = $('socialHandleInput').value;
     const cleaned = cleanUsername(raw);
@@ -784,37 +818,34 @@
     }
   }
 
-  function extractFromJson(value) {
+  function extractFromJson(value, kind) {
     const found = new Set();
+    let disagreements = 0;
     const visit = node => {
       if (!node) return;
-      if (Array.isArray(node)) {
-        node.forEach(visit);
-        return;
-      }
+      if (Array.isArray(node)) { node.forEach(visit); return; }
       if (typeof node !== 'object') return;
-
       if (Array.isArray(node.string_list_data)) {
-        // Instagram's following.json stores the username in title,
-        // while followers_1.json normally stores it in string_list_data.value.
-        const titleUser = cleanUsername(node.title || '');
-        if (titleUser) found.add(titleUser);
-        for (const item of node.string_list_data) {
-          if (!item || typeof item !== 'object') continue;
-          const direct = cleanUsername(item.value || '');
-          const fromHref = extractUsernameFromUrl(item.href || '');
-          if (direct) found.add(direct);
-          if (fromHref) found.add(fromHref);
-        }
-      }
-      if (typeof node.href === 'string') {
-        const fromHref = extractUsernameFromUrl(node.href);
-        if (fromHref) found.add(fromHref);
+        // Each Instagram relationship JSON object is ONE relationship.
+        // Previous parser independently added title + value + href, which can
+        // count several handles for ONE Instagram account after renames.
+        const title = cleanUsername(node.title || '');
+        const items = node.string_list_data.filter(item => item && typeof item === 'object');
+        const valueName = items.map(item => cleanUsername(item.value || '')).find(Boolean) || '';
+        const hrefName = items.map(item => extractUsernameFromUrl(item.href || '')).find(Boolean) || '';
+        const chosen = kind === 'following'
+          ? (title || valueName || hrefName)
+          : (valueName || title || hrefName);
+        if (chosen) found.add(chosen);
+        const names = new Set([title,valueName,hrefName].filter(Boolean));
+        if (names.size > 1) disagreements++;
+        // Do not recursively collect all historical aliases or hrefs.
+        return;
       }
       for (const child of Object.values(node)) visit(child);
     };
     visit(value);
-    return [...found];
+    return { usernames: [...found], disagreements };
   }
 
   function extractFromHtml(text) {
@@ -838,16 +869,19 @@
 
     const text = await file.text();
     let usernames = [];
+    let disagreementCount = 0;
     if (lower.endsWith('.json') || file.type.includes('json')) {
       try {
-        usernames = extractFromJson(JSON.parse(text));
+        const extracted = extractFromJson(JSON.parse(text),kind);
+        usernames = extracted.usernames;
+        disagreementCount = extracted.disagreements;
       } catch (_) {
         throw new Error(`${file.name}: JSON konnte nicht gelesen werden.`);
       }
     } else if (lower.endsWith('.html') || lower.endsWith('.htm') || file.type.includes('html')) {
       usernames = extractFromHtml(text);
     }
-    return { kind, usernames: cleanUserList(usernames), file: file.name };
+    return { kind, usernames: cleanUserList(usernames), disagreements: disagreementCount, file: file.name };
   }
 
   async function importFiles(files) {
@@ -871,6 +905,7 @@
     const acc = account();
     acc.followers = cleanUserList(followerFiles.flatMap(v => v.usernames));
     acc.following = cleanUserList(followingFiles.flatMap(v => v.usernames));
+    const aliasConflicts = parsed.reduce((total,item) => total + (item.disagreements || 0),0);
     acc.importedAt = new Date().toISOString();
     acc.sourceFiles = parsed.filter(v => v.kind).map(v => v.file);
 
@@ -882,7 +917,7 @@
 
     if (!persist()) return;
     render();
-    notice(`${acc.followers.length} Followers und ${acc.following.length} Following importiert. DG OS synchronisiert den Snapshot …`);
+    notice(`${acc.followers.length} Followers und ${acc.following.length} eindeutige Following importiert.${aliasConflicts ? ' ' + aliasConflicts + ' unterschiedliche Profil-Aliase wurden nicht doppelt gezählt.' : ''} Historischer Export, kein Live-Instagram-Stand. Synchronisierung …`);
     try {
       const sync = await syncSnapshot(acc, state.active);
       if (sync.synced) {
@@ -890,7 +925,7 @@
         const suffix = changes
           ? ` · +${changes.newFollowers || 0} neue / -${changes.lostFollowers || 0} verlorene Followers`
           : ' · erster Snapshot gespeichert';
-        notice(`${acc.followers.length} Followers · ${nonFollowers(acc).length} Cleanup-Kandidaten${suffix}`, 'success');
+        notice(`${acc.followers.length} Followers · ${nonFollowers(acc).length} ungeprüfte Export-Kandidaten${suffix}. Zur Kontrolle mit Instagram abgleichen.`, 'success');
       } else {
         notice(`${acc.followers.length} Followers lokal importiert. Cloud-Sync folgt, sobald dieses DG-OS-Gerät autorisiert ist.`, 'success');
       }
@@ -944,6 +979,10 @@
     });
     $('socialCloseWorkspace').addEventListener('click', closeWorkspace);
     $('socialSaveHandle').addEventListener('click', saveHandle);
+    $('socialFollowingReferenceSave').addEventListener('click',saveFollowingReference);
+    $('socialFollowingReference').addEventListener('keydown',event=>{
+      if(event.key==='Enter'){event.preventDefault();void saveFollowingReference();}
+    });
     $('socialHandleInput').addEventListener('keydown', event => {
       if (event.key === 'Enter') {
         event.preventDefault();

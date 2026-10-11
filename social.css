@@ -155,3 +155,64 @@ body.social-workspace-open{overflow:hidden}
 .social-kept-empty{margin:0;padding:23px 13px;text-align:center;color:#90aebb;font-size:11px;border:1px dashed rgba(174,226,239,.13);border-radius:12px;line-height:1.6}
 .social-kept-status{display:block;margin-top:12px;color:#819fae;font-size:10px;line-height:1.5}
 @media(max-width:650px){.social-kept-item{flex-wrap:wrap}.social-kept-actions{flex-basis:100%;justify-content:stretch}.social-kept-actions button{flex:1}.social-kept-toolbar{align-items:stretch}.social-kept-toolbar button{align-self:end}}
+
+/* Social accuracy: imported relationships are historical, not an Instagram live feed. */
+#socialWorkspace .social-export-warning{
+  margin:13px 0 11px;
+  padding:12px 14px;
+  background:rgba(245,181,94,.075);
+  border:1px solid rgba(245,181,94,.3);
+  color:#f0d4a8;
+  border-radius:14px;
+  font-size:12px;
+  line-height:1.55;
+  overflow-wrap:anywhere;
+}
+#socialWorkspace .social-count-reference{
+  display:grid;gap:8px;
+  padding:12px 14px 14px;
+  border-radius:14px;
+  border:1px solid rgba(126,176,236,.2);
+  background:rgba(20,38,65,.48);
+}
+#socialWorkspace .social-count-reference label{
+  color:#dbeaff;
+  font-size:12px;font-weight:680;
+}
+#socialWorkspace #socialFollowingReference {
+  width:100%!important;
+  min-width:0;
+  min-height:44px;
+  font-size:16px!important;
+  font-variant-numeric:tabular-nums;
+}
+#socialWorkspace #socialFollowingReferenceSave{
+  min-height:44px;padding:10px 12px;
+}
+#socialWorkspace #socialCountReferenceHint{
+  font-size:10px;line-height:1.5;color:#99aecb;
+}
+#socialWorkspace #socialFollowingSource{
+  display:block;
+  font-size:9px;
+  line-height:1.3;
+  color:#acc0db;
+  overflow-wrap:anywhere;
+}
+#socialWorkspace #socialDecisionNotFollowing{
+  border-color:rgba(146,185,245,.28)!important;
+  color:#b5d2fb!important;
+}
+#socialWorkspace .social-cleanup-card .social-decision-grid{
+  grid-template-columns:repeat(2,minmax(0,1fr));
+}
+#socialWorkspace .social-cleanup-card .social-decision-grid button{
+  min-height:44px;
+}
+@media(max-width:560px){
+  #socialWorkspace .social-export-warning{padding:12px;font-size:11px}
+  #socialWorkspace .social-count-reference{padding:11px}
+  #socialWorkspace .social-count-reference .social-form-row{grid-template-columns:1fr}
+  #socialWorkspace .social-cleanup-card .social-decision-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #socialWorkspace .social-explorer-actions button{min-height:42px}
+}

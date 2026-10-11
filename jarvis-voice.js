@@ -23,6 +23,7 @@
   let provider=['browser','cartesia','openai-tts'].includes(prefs.provider)?prefs.provider:'browser';
   let voiceId=read(providerVoiceKey())||'';
   let voices=[],currentAudio=null,objectUrl='',abort=null,sequence=0,lastText='',lastPrepared='',lastCompleted='',microphoneBusy=false;
+  let validatedServerVoice=null,serverTestBusy=false;
   const controls=document.createElement('div');
   controls.className='jarvis-voice-console';
   controls.innerHTML=`
@@ -62,10 +63,21 @@
       '<button id="jvHeroToggle" type="button" aria-pressed="true">🔊 Stimme an</button>'+
       '<button id="jvHeroRead" type="button">▶ Antwort anhören</button>'+
       '</div>'+
-      '<p id="jvHeroNotice" role="status" aria-live="polite">Sprachausgabe bereit.</p>';
+      '<div class="jv-diagnostic-actions">'+
+      '<button id="jvHeroTone" type="button">♪ Ton prüfen</button>'+
+      '<button id="jvHeroFile" type="button">🎧 Audio-Datei testen</button>'+
+      '</div>'+
+      '<p id="jvHeroNotice" role="status" aria-live="polite">Sprachausgabe bereit.</p>'+
+      '<button id="jvUseServerVoice" type="button" hidden>Diese Stimme für Antworten verwenden</button>'+
+      '<small class="jv-diagnostic-hint">Audio-Datei: Test über den verbundenen Sprachanbieter. Kann geringe API-Kosten verursachen.</small>';
     hero.append(strip);
   }
   const $=id=>document.getElementById(id);
+  // HTML audio must stay VISIBLE even when the advanced voice settings are closed.
+  if(hero && $('jvAudioPlayer')){
+    $('jvAudioPlayer').classList.add('jv-hero-player');
+    hero.querySelector('.jv-hero-audio')?.append($('jvAudioPlayer'));
+  }
   const setMessage=(message,badge='BEREIT')=>{
     $('jvNotice').textContent=message;
     $('jvVoiceBadge').textContent=badge;
@@ -177,6 +189,105 @@
     }
     finally{$('jvReload').disabled=false;}
   }
+  // On iOS, speechSynthesis.onstart is NOT evidence of audible sound.
+  // The independent Web Audio tone can identify device output issues.
+  async function testTone(){
+    setMessage('Testton wird abgespielt. Hörst du den Ton?','TON-TEST');
+    try{
+      const result=await window.DGOSSoundCheck?.playTestTone();
+      if(result?.ok){
+        setMessage('Testton gestartet. Falls du ihn hörst, aber die Geräte-Stimme stumm bleibt, teste die Audio-Datei. Falls nicht, prüfe Stummschalter, Medienlautstärke und Audioausgabe.','TON-TEST');
+      }else setMessage(result?.reason||'Der Audiotest konnte nicht gestartet werden.','FEHLER');
+    }catch{
+      setMessage('Testton fehlgeschlagen. Prüfe die Audioausgabe deines iPhones.','FEHLER');
+    }
+  }
+  // Alternative: decoded MP3/WAV through the native <audio> element,
+  // independent of Safari Web Speech. Only one explicit user click creates
+  // a paid sample; GET checks do not generate paid audio.
+  async function testAudioFile(){
+    if(serverTestBusy)return;
+    const session=deviceSession();
+    if(!session){
+      setMessage('Für die Audio-Datei muss dein iPhone mit DG OS gekoppelt sein.','KOPPLUNG');
+      return;
+    }
+    serverTestBusy=true;
+    $('jvHeroFile').disabled=true;
+    $('jvUseServerVoice').hidden=true;
+    setMessage('Ich prüfe deine vorhandenen Sprachanbieter …','PRÜFEN');
+    const providers=[
+      {provider:'openai-tts',route:'jarvis-openai-voice',fallback:'onyx',kind:'MP3'},
+      {provider:'cartesia',route:'jarvis-cartesia',fallback:'',kind:'WAV'}
+    ];
+    try{
+      let chosen=null;
+      let configError='';
+      for(const candidate of providers){
+        const response=await fetch(base+candidate.route,{
+          method:'GET',cache:'no-store',headers:{Authorization:'Bearer '+session}
+        });
+        if(response.status===401){
+          setMessage('Dein Gerät muss erneut mit JARVIS verbunden werden.','KOPPLUNG');
+          return;
+        }
+        if(!response.ok){
+          const error=await response.json().catch(()=>({}));
+          if(error.error==='voice_not_configured')configError+=' '+(candidate.provider==='openai-tts'?'OpenAI':'Cartesia')+' fehlt.';
+          continue;
+        }
+        const data=await response.json();
+        const available=Array.isArray(data.voices)?data.voices.filter(x=>x&&typeof x.id==='string'):[];
+        const selected=available.find(x=>x.id===candidate.fallback)||available[0];
+        if(selected){
+          chosen={...candidate,voiceId:selected.id};
+          break;
+        }
+      }
+      if(!chosen){
+        setMessage('Kein serverbasierter Sprachanbieter einsatzbereit.'+configError+' Prüfe «Stimme & Verbindung».','FEHLER');
+        return;
+      }
+      // Explicit, short test sentence to limit paid provider consumption.
+      const text='Hallo Gomes. Ich bin Jarvis. Das ist ein Test meiner Audioausgabe.';
+      setMessage('Test-Audio wird vorbereitet ('+chosen.kind+') …','GENERIEREN');
+      const response=await fetch(base+chosen.route,{
+        method:'POST',cache:'no-store',
+        headers:{Authorization:'Bearer '+session,'Content-Type':'application/json'},
+        body:JSON.stringify({text,voice_id:chosen.voiceId,language:'de',pace:.95})
+      });
+      if(!response.ok){
+        const reason=await response.json().catch(()=>({}));
+        if(reason.error==='slow_down')throw Error('Bitte einige Sekunden warten und den Audio-Test nochmals starten.');
+        if(reason.error==='device_pairing_required')throw Error('Deine DG-OS-Geräteverbindung ist abgelaufen.');
+        throw Error('Audio-Datei konnte nicht erzeugt werden ('+(reason.error||response.status)+').');
+      }
+      const blob=await response.blob();
+      if(!blob.type.includes('audio')||blob.size<100)throw Error('Der Sprachanbieter hat keine gültige Audiodatei geliefert.');
+      stop(); // Stops any silent native Web Speech attempt; releases stale blobs.
+      objectUrl=URL.createObjectURL(blob);
+      currentAudio=$('jvAudioPlayer');
+      currentAudio.src=objectUrl;
+      currentAudio.hidden=false;
+      lastPrepared=text;
+      currentAudio.onended=()=>setMessage('Die Audio-Datei wurde abgespielt. Hast du die Stimme gehört?','BEREIT');
+      validatedServerVoice=chosen;
+      $('jvUseServerVoice').hidden=false;
+      setMessage('Audio-Datei bereit. Falls du nichts hörst: Tippe direkt auf ▶ im Audioplayer unten.','STARTEN');
+      try{
+        await currentAudio.play();
+        setMessage('Audio-Wiedergabe gestartet. Hörst du diese Datei?','AUDIO-TEST');
+      }catch{
+        // An explicit tap on native controls is needed on some iPhone PWAs.
+        setMessage('iOS blockiert den automatischen Start. Tippe auf ▶ im Audioplayer unter dieser Meldung.','STARTEN');
+      }
+    }catch(error){
+      setMessage(error?.message||'Audio-Datei konnte nicht getestet werden.','FEHLER');
+    }finally{
+      serverTestBusy=false;
+      $('jvHeroFile').disabled=false;
+    }
+  }
   function speakLocal(text,fallback=false){
     const player=window.DGOSLocalVoice;
     if(!player?.isSupported()){
@@ -190,7 +301,11 @@
         const badge=state==='error'||state==='timeout'?'FEHLER':
           state==='speaking'?'SPRICHT':state==='starting'||state==='restarting'?'STARTET':'BEREIT';
         const retry=state==='error'||state==='timeout'?' Tippe auf «▶ Letzte Antwort anhören», um es erneut zu versuchen.':'';
-        setMessage((fallback?'Premium nicht erreichbar · iPhone-Stimme. ':'')+(message||'')+retry,badge);
+        // A Web Speech onstart event does not guarantee sound on iOS.
+        const reported=state==='speaking'
+          ?'iPhone meldet Sprachstart, Ton ist nicht bestätigt. Falls du nichts hörst: «♪ Ton prüfen» oder «🎧 Audio-Datei testen».'
+          :((message||'')+retry);
+        setMessage((fallback?'Premium nicht erreichbar · iPhone-Stimme. ':'')+reported,badge);
       }
     });
   }
@@ -233,6 +348,22 @@
   $('jvEngine').addEventListener('change',()=>{stop();provider=$('jvEngine').value;voiceId=read(providerVoiceKey())||'';voices=[];save();render();if(provider!=='browser')loadVoices();});
   $('jvLang').addEventListener('change',save);
   $('jvVoice').addEventListener('change',()=>{stop();if(provider!=='browser'){voiceId=$('jvVoice').value;store(providerVoiceKey(),voiceId);}else prefs.voice=$('jvVoice').value;save();render();});
+  $('jvHeroTone')?.addEventListener('click',testTone);
+  $('jvHeroFile')?.addEventListener('click',()=>{void testAudioFile();});
+  $('jvUseServerVoice')?.addEventListener('click',()=>{
+    if(!validatedServerVoice)return;
+    stop();
+    provider=validatedServerVoice.provider;
+    voiceId=validatedServerVoice.voiceId;
+    store(providerVoiceKey(),voiceId);
+    voices=[{id:voiceId,name:provider==='openai-tts'?'OpenAI':'Cartesia'}];
+    $('jvEngine').value=provider;
+    save();
+    render();
+    // Premium is only activated after this explicit owner click.
+    setMessage('Server-Stimme aktiviert. Neue Antworten werden über deinen vorhandenen Anbieter erzeugt. Dies kann API-Kosten verursachen.','BEREIT');
+    $('jvUseServerVoice').hidden=true;
+  });
   $('jvHeroToggle')?.addEventListener('click',()=>{
     $('jvQuickToggle').dispatchEvent(new Event('click',{bubbles:true}));
   });

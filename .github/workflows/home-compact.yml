@@ -1,0 +1,30 @@
+name: DG OS Heute Compact Weather UI
+on:
+  pull_request:
+    paths:
+      - 'index.html'
+      - 'home-compact.css'
+      - 'sw.js'
+      - 'scripts/test-home-compact.js'
+      - '.github/workflows/home-compact.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'home-compact.css'
+      - 'scripts/test-home-compact.js'
+      - '.github/workflows/home-compact.yml'
+jobs:
+  home-and-weather:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Live-weather & compact layout contracts
+        run: node scripts/test-home-compact.js
+      - name: Existing Jarvis weather regression
+        run: node scripts/test-jarvis-weather-outfit.js
+      - name: Existing navigation & dashboard regression
+        run: node scripts/test-premium-ui.js && node scripts/test-jarvis-dashboard.js

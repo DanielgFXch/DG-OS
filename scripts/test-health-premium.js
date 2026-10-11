@@ -11,7 +11,7 @@ const html=read('index.html'),css=read('health-premium.css'),sw=read('sw.js');
 const whoop=read('personal.js'),analytics=read('whoop-sleep-ui.js'),base=read('premium-ui.css');
 assert.ok(html.includes('<link rel="stylesheet" href="./health-premium.css?v=1.0.0" />'));
 assert.ok(sw.includes('health-premium.css?v=1.0.0'),'PWA caches new CSS');
-assert.ok(sw.includes("dgos-personal-shell-52"),'Cache rotated so iPhone gets the update');
+assert.ok(sw.includes("dgos-personal-shell-53"),'Cache rotated so iPhone gets the update');
 assert.ok(html.indexOf('home-compact.css?v=1')<html.indexOf('health-premium.css?v=1.0.0'),'Health visual overrides are loaded last');
 assert.ok(css.includes('#personalHealth.personal-health-panel'),'CSS scoped to current health screen');
 for(const id of [

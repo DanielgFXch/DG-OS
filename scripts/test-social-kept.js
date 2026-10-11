@@ -14,8 +14,8 @@ for(const id of ['socialKeptSection','socialKeptTitle','socialKeptCount','social
   'socialKeptRefresh','socialKeptList','socialKeptStatus']) {
   assert.ok(html.includes('id="'+id+'"'),'Missing kept UI '+id);
 }
-assert.match(html,/social\.js\?v=0\.61\.1/,'Client cache bust');
-assert.match(html,/social\.css\?v=0\.61\.1/,'Style cache bust');
+assert.match(html,/social\.js\?v=0\.61\.2/,'Client cache bust');
+assert.match(html,/social\.css\?v=0\.61\.2/,'Style cache bust');
 assert.ok(client.includes('function keptUsernames('));
 assert.ok(client.includes('function renderKeptAccounts('));
 assert.ok(client.includes('async function loadKeptAccounts('));
@@ -24,8 +24,8 @@ assert.ok(client.includes("state.accounts[key]"),'Accounts must remain independe
 assert.ok(client.includes('accountKey'), 'Cloud lookups must be scoped to Instagram account');
 assert.ok(client.includes("actionButton.dataset.socialKeptAction === 'undo'"));
 assert.ok(client.includes('renderKeptAccounts();'),'Kept results must refresh');
-assert.ok(client.includes("filter(([username, decision]) => followingSet.has(username) || decision === 'keep')"),
-  'Reimports must not remove kept decisions');
+assert.ok(client.includes("followingSet.has(username) || decision === 'keep' || decision === 'not_following'"),
+  'Reimports preserve both intentional kept and manually disputed relationships');
 assert.ok(client.includes('cloudKept'), 'Cloud-backfilled historical decisions must render');
 assert.ok(client.includes('window.open('), 'Direct Instagram link must be available');
 assert.ok(!/OPENAI_API_KEY|SUPABASE_SERVICE_ROLE_KEY/.test(client), 'Never add secrets to public client');

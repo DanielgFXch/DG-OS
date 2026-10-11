@@ -110,3 +110,81 @@
   #personalJarvis #jvQuickToggle{font-size:11px;padding:7px 9px}
   #personalJarvis .jv-voice-badge{font-size:9px}
 }
+
+/* Visible audio retry/status in Jarvis hero: critical on iPhone Safari.
+   Provider diagnostics must NOT be hidden inside the advanced accordion. */
+#personalJarvis .jarvis-cinematic-hero .jv-hero-audio{
+  grid-column:1/-1!important;
+  grid-row:2!important;
+  width:min(100%,550px);
+  margin:16px auto 0!important;
+  padding:11px 13px!important;
+  border:1px solid rgba(133,171,232,.24)!important;
+  border-radius:17px!important;
+  background:rgba(10,22,40,.68)!important;
+  backdrop-filter:blur(9px);
+  -webkit-backdrop-filter:blur(9px);
+  position:relative;
+  z-index:3;
+}
+#personalJarvis .jv-hero-audio-buttons{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
+  gap:8px;
+}
+#personalJarvis .jv-hero-audio-buttons button{
+  display:flex;align-items:center;justify-content:center;
+  min-width:0;min-height:44px;padding:10px 8px!important;
+  font-size:12px;font-weight:750;line-height:1.25;
+  color:#eaf2ff!important;
+  border-radius:12px!important;
+  border:1px solid rgba(126,171,244,.26)!important;
+  background:rgba(43,76,125,.32)!important;
+  cursor:pointer;
+}
+#personalJarvis #jvHeroRead{
+  background:linear-gradient(145deg,rgba(70,126,218,.43),rgba(30,63,110,.62))!important;
+  border-color:rgba(142,185,255,.34)!important;
+}
+#personalJarvis #jvHeroToggle[data-enabled="false"]{
+  color:#f2d7ac!important;background:rgba(123,87,48,.26)!important;
+  border-color:rgba(229,183,117,.31)!important;
+}
+#personalJarvis .jv-hero-audio-buttons button:focus-visible{
+  outline:2px solid #98c9ff!important;outline-offset:3px!important;
+}
+#personalJarvis #jvHeroNotice{
+  display:block!important;
+  margin:9px 0 0!important;
+  padding:0 2px!important;
+  min-height:17px;
+  font-size:11px!important;
+  line-height:1.45!important;
+  letter-spacing:0!important;
+  color:#b8c9df!important;
+  overflow-wrap:anywhere;
+  text-align:center!important;
+}
+#personalJarvis #jvHeroNotice[data-state="FEHLER"]{
+  color:#f4be9d!important;
+}
+#personalJarvis #jvHeroNotice[data-state="SPRICHT"]{
+  color:#9ed9bf!important;
+}
+@media(max-width:700px){
+  #personalJarvis .jarvis-cinematic-hero .jv-hero-audio{
+    grid-column:1!important;
+    grid-row:3!important;
+    width:100%!important;
+    margin:6px 0 0!important;
+    padding:10px!important;
+    border-radius:15px!important;
+  }
+  #personalJarvis .jv-hero-audio-buttons button{
+    font-size:12px!important;min-height:44px!important;
+  }
+}
+@media(max-width:365px){
+  #personalJarvis .jv-hero-audio-buttons{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:5px}
+  #personalJarvis .jv-hero-audio-buttons button{font-size:11px!important;padding-inline:4px!important}
+}

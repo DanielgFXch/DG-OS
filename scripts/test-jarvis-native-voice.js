@@ -123,4 +123,24 @@ function setup({emitStart=true}={}){
   assert.equal(root.DGOSLocalVoice.play({text:'test',onState:e=>events.push(e)}),false);
   assert.equal(events[0].error,'unsupported');
 }
+{
+  // A real orb tap should prime Safari speechSynthesis before the async
+  // MediaRecorder -> server -> final-response sequence returns.
+  const {player,synth,calls,advance}=setup();
+  assert.equal(player.unlockFromGesture(),true);
+  assert.equal(calls.speak,1);
+  assert.equal(synth.last.text,' ');
+  assert.equal(synth.last.volume,0,'Priming never speaks secret data into the microphone');
+  advance(180);
+  assert.equal(calls.cancel,1,'The short warm-up is cancelled before listening ends');
+  assert.equal(player.play({text:'Okay Gomes, deine Aufgabe ist gespeichert.'}),true);
+  assert.equal(calls.speak,2,'Deferred response is not swallowed by warm-up');
+  assert.equal(synth.last.text,'Okay Gomes, deine Aufgabe ist gespeichert.');
+}
+{
+  const {player,calls}=setup();
+  assert.equal(player.unlockFromGesture(),true);
+  assert.equal(player.unlockFromGesture(),false,'Do not re-prime a busy speech engine');
+  assert.equal(calls.speak,1);
+}
 console.log('Jarvis native voice iOS mocked regression checks passed.');

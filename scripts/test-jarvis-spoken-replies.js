@@ -24,10 +24,11 @@ function setup(initial={}){
    replaceChildren(){this.options=[];}
    add(option){this.options.push(option);}
    insertAdjacentElement(){}
+   append(child){this.children??=[];this.children.push(child);}
    querySelector(){return new FakeNode();}
  }
  for(const name of ['jvEngine','jvVoice','jvLang','jvEnabled','jvReload','jvPreview',
-   'jvSoundCheck','jvRead','jvStop','jvNotice','jvVoiceBadge','jvAudioPlayer','jvQuickToggle'])
+   'jvSoundCheck','jvRead','jvStop','jvNotice','jvVoiceBadge','jvAudioPlayer','jvQuickToggle','jvHeroToggle','jvHeroRead','jvHeroNotice'])
    nodes[name]=new FakeNode();
  const panel=new FakeNode(),reply=new FakeNode();
  reply.textContent='Sag mir, was du brauchst.';
@@ -62,6 +63,7 @@ function setup(initial={}){
  const app=setup();
  assert.equal(app.nodes.jvEnabled.checked,true,'New Jarvis installation automatically speaks back');
  assert.equal(app.nodes.jvQuickToggle.textContent,'🔊 Stimme an');
+ assert.equal(app.nodes.jvHeroToggle.textContent,'🔊 Stimme an','Visible hero toggle is synced');
  app.emit('dgos-jarvis-microphone-state',{state:'listening'});
  assert.equal(app.calls.play.length,0,'Never voice-record the listening message');
  app.emit('dgos-jarvis-microphone-state',{state:'processing'});
@@ -71,16 +73,18 @@ function setup(initial={}){
  assert.deepEqual(app.calls.play,['Okay Gomes, Milch ist gespeichert.']);
  app.emit('dgos-jarvis-final-response',{text:'Ich habe deinen Kalender geöffnet.'});
  assert.equal(app.calls.play.length,2,'Two finished voice commands produce two replies');
- app.click('jvQuickToggle');
+ app.click('jvHeroToggle');
  assert.equal(app.nodes.jvEnabled.checked,false);
+ assert.equal(app.nodes.jvHeroToggle.textContent,'🔇 Stimme aus');
  assert.equal(app.storage.get('dgos.jarvis.speech.enabled'),'0');
  app.emit('dgos-jarvis-final-response',{text:'Ich bin jetzt stumm.'});
  assert.equal(app.calls.play.length,2,'Explicit mute must be respected');
  app.click('jvQuickToggle');
  assert.equal(app.nodes.jvEnabled.checked,true);
  assert.equal(app.calls.play.at(-1),'Ich bin jetzt stumm.','Re-enable plays last completed answer once');
- app.click('jvRead');
- assert.equal(app.calls.play.at(-1),'Ich bin jetzt stumm.','Manual repeat remains functional');
+ app.click('jvHeroRead');
+ assert.equal(app.calls.play.at(-1),'Ich bin jetzt stumm.','Visible hero replay runs in a user click');
+ assert.match(app.nodes.jvHeroNotice.textContent,/Jarvis spricht/);
 }
 {
  const app=setup({'dgos.jarvis.speech.enabled':'0'});

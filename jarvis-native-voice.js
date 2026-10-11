@@ -26,6 +26,36 @@
     // Never cancel an idle engine; that can cancel the *next* speech on Safari.
     cancelIfBusy(existed);
   }
+  // Safari may refuse speech started after asynchronous microphone
+  // transcription because the original tap is no longer an active gesture.
+  // Prime the speech engine ONLY when the owner taps the Jarvis orb.
+  // This is best-effort: it cannot override Apple autoplay restrictions.
+  let primed=false;
+  function unlockFromGesture(){
+    if(!isSupported()||active||synth.speaking||synth.pending)return false;
+    if(primed){try{if(synth.paused)synth.resume();}catch{}return true;}
+    try{
+      // Silent (volume 0) utterance makes the first Web Speech invocation
+      // happen during a real user gesture, not the later network callback.
+      const warmup=new Utterance(' ');
+      warmup.lang='de-DE';
+      warmup.volume=0;
+      warmup.rate=1;
+      const before=requestId;
+      primed=true;
+      synth.speak(warmup);
+      if(synth.paused)synth.resume();
+      // Do not cancel an actual reply that might start during the delay.
+      setTimeout(()=>{
+        if(requestId===before && !active && (synth.speaking||synth.pending))cancelIfBusy();
+      },180);
+      return true;
+    }catch{
+      primed=false;
+      return false;
+    }
+  }
+
   function diagnostic(code){
     const detail=String(code||'unbekannt');
     if(detail==='canceled'||detail==='interrupted')
@@ -123,5 +153,5 @@
     }
     return true;
   }
-  root.DGOSLocalVoice=Object.freeze({play,stop,isSupported,diagnostic});
+  root.DGOSLocalVoice=Object.freeze({play,stop,isSupported,diagnostic,unlockFromGesture});
 })(window);

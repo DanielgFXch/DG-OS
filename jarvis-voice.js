@@ -51,8 +51,30 @@
   // The Telegram pairing widget anchors to this same console afterwards.
   const voiceLocation=panel.querySelector('.jarvis-cinematic-hero')||reply;
   voiceLocation.insertAdjacentElement('afterend',controls);
+  // Immediate, accessible voice feedback in the VISIBLE hero. The complete
+  // provider settings below may be collapsed on iPhone.
+  const hero=panel.querySelector('.jarvis-cinematic-hero');
+  if(hero){
+    const strip=document.createElement('div');
+    strip.className='jv-hero-audio';
+    strip.innerHTML=
+      '<div class="jv-hero-audio-buttons">'+
+      '<button id="jvHeroToggle" type="button" aria-pressed="true">🔊 Stimme an</button>'+
+      '<button id="jvHeroRead" type="button">▶ Antwort anhören</button>'+
+      '</div>'+
+      '<p id="jvHeroNotice" role="status" aria-live="polite">Sprachausgabe bereit.</p>';
+    hero.append(strip);
+  }
   const $=id=>document.getElementById(id);
-  const setMessage=(message,badge='BEREIT')=>{$('jvNotice').textContent=message;$('jvVoiceBadge').textContent=badge;};
+  const setMessage=(message,badge='BEREIT')=>{
+    $('jvNotice').textContent=message;
+    $('jvVoiceBadge').textContent=badge;
+    const heroNotice=$('jvHeroNotice');
+    if(heroNotice){
+      heroNotice.textContent=message;
+      heroNotice.dataset.state=badge;
+    }
+  };
   $('jvRead').textContent='▶ Letzte Antwort anhören';
   $('jvEngine').value=provider;
   $('jvLang').value=['de-DE','en-GB','pt-PT'].includes(prefs.language)?prefs.language:'de-DE';
@@ -64,6 +86,12 @@
     button.textContent=active?'🔊 Stimme an':'🔇 Stimme aus';
     button.setAttribute('aria-pressed',String(active));
     button.dataset.enabled=String(active);
+    const heroToggle=$('jvHeroToggle');
+    if(heroToggle){
+      heroToggle.textContent=active?'🔊 Stimme an':'🔇 Stimme aus';
+      heroToggle.setAttribute('aria-pressed',String(active));
+      heroToggle.dataset.enabled=String(active);
+    }
   }
   updateQuickToggle();
   function save(){
@@ -205,6 +233,13 @@
   $('jvEngine').addEventListener('change',()=>{stop();provider=$('jvEngine').value;voiceId=read(providerVoiceKey())||'';voices=[];save();render();if(provider!=='browser')loadVoices();});
   $('jvLang').addEventListener('change',save);
   $('jvVoice').addEventListener('change',()=>{stop();if(provider!=='browser'){voiceId=$('jvVoice').value;store(providerVoiceKey(),voiceId);}else prefs.voice=$('jvVoice').value;save();render();});
+  $('jvHeroToggle')?.addEventListener('click',()=>{
+    $('jvQuickToggle').dispatchEvent(new Event('click',{bubbles:true}));
+  });
+  $('jvHeroRead')?.addEventListener('click',()=>{
+    // User gesture on the visible hero bypasses iOS blocked async autoplay.
+    void speak(lastText||reply.textContent||'',true);
+  });
   $('jvQuickToggle').addEventListener('click',()=>{
     $('jvEnabled').checked=!$('jvEnabled').checked;
     $('jvEnabled').dispatchEvent(new Event('change',{bubbles:true}));
@@ -252,6 +287,7 @@
     lastText=text;
     lastCompleted=text;
     microphoneBusy=false;
+    const replay=$('jvHeroRead');if(replay)replay.disabled=false;
     if($('jvEnabled').checked){
       void speak(text);
     }else{

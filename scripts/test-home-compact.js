@@ -13,7 +13,7 @@ const html=read('index.html'),css=read('home-compact.css'),sw=read('sw.js'),weat
 const premium=read('premium-ui.css'),navigation=read('navigation.css');
 assert.ok(html.includes('home-compact.css?v=1'),'Compact home CSS referenced');
 assert.ok(sw.includes('home-compact.css?v=1'),'Compact home CSS precached in PWA');
-assert.ok(sw.includes("dgos-personal-shell-48"),'New cache generation activates latest CSS');
+assert.ok(sw.includes("dgos-personal-shell-49"),'New cache generation activates latest CSS');
 assert.ok(html.indexOf('premium-ui.css?v=1.0.1')<html.indexOf('home-compact.css?v=1'),'Compact override loaded LAST');
 for(const id of [
  'personalHome','personalGreeting','personalDate','dgHeroJarvis','homeOutfitOpen',

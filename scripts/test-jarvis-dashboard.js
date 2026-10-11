@@ -16,7 +16,7 @@ assert.ok(html.includes('jarvis-dashboard.js?v=2'));
 assert.ok(html.includes('jarvis-dashboard.css?v=1'));
 assert.ok(html.indexOf('jarvis-device-pairing.js?v=1')<html.indexOf('jarvis-dashboard.js?v=2'),
   'Keep pairing/voice controls initialized before layout composition');
-assert.ok(sw.includes('dgos-personal-shell-50'));
+assert.ok(sw.includes('dgos-personal-shell-51'));
 assert.ok(sw.includes('jarvis-dashboard.css?v=1'));
 assert.ok(sw.includes('jarvis-dashboard.js?v=2'));
 assert.ok(css.includes('#personalJarvis.jarvis-dashboard-ready'));

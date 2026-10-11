@@ -116,7 +116,7 @@ assert.ok(!ui.includes("API_KEY"));
 assert.ok(!weather.includes("API_KEY"));
 assert.ok(css.includes('@media(max-width:680px)'));
 assert.ok(css.includes('#personalJarvis .jwa'));
-assert.ok(sw.includes('dgos-personal-shell-49'));
+assert.ok(sw.includes('dgos-personal-shell-50'));
 assert.ok(sw.includes('jarvis-weather-ui.js?v=1'));
 assert.ok(sw.includes('jarvis-weather-outfit.js?v=1'));
 assert.doesNotThrow(()=>new Function(ui));

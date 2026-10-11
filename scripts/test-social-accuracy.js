@@ -61,7 +61,7 @@ for(const id of ['socialFollowingReference','socialFollowingReferenceSave','soci
 }
 assert.ok(html.includes('social.js?v=0.61.2'));
 assert.ok(html.includes('social.css?v=0.61.2'));
-assert.ok(read('sw.js').includes('dgos-personal-shell-51'));
+assert.ok(read('sw.js').includes('dgos-personal-shell-52'));
 assert.ok(read('sw.js').includes('social.js?v=0.61.2'));
 assert.ok(edge.includes('reported_following_count'),'Store owner count separately from source snapshot');
 assert.ok(edge.includes('reported_following_at'),'Timestamp reported figures');

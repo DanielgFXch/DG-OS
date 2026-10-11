@@ -12,13 +12,13 @@ for(const id of ['personalJarvis','personalJarvisOrbBtn','jarvisLifeCommandForm'
   if(['jvEnabled','jdpBadge'].includes(id))continue; // inserted by existing JS
   assert.ok(html.includes('id="'+id+'"'),'Preserve original Jarvis id: '+id);
 }
-assert.ok(html.includes('jarvis-dashboard.js?v=2'));
+assert.ok(html.includes('jarvis-dashboard.js?v=3'));
 assert.ok(html.includes('jarvis-dashboard.css?v=1'));
-assert.ok(html.indexOf('jarvis-device-pairing.js?v=1')<html.indexOf('jarvis-dashboard.js?v=2'),
+assert.ok(html.indexOf('jarvis-device-pairing.js?v=1')<html.indexOf('jarvis-dashboard.js?v=3'),
   'Keep pairing/voice controls initialized before layout composition');
-assert.ok(sw.includes('dgos-personal-shell-52'));
+assert.ok(sw.includes('dgos-personal-shell-53'));
 assert.ok(sw.includes('jarvis-dashboard.css?v=1'));
-assert.ok(sw.includes('jarvis-dashboard.js?v=2'));
+assert.ok(sw.includes('jarvis-dashboard.js?v=3'));
 assert.ok(css.includes('#personalJarvis.jarvis-dashboard-ready'));
 assert.ok(css.includes('@media(max-width:700px)'));
 assert.ok(css.includes('prefers-reduced-motion'));
@@ -85,7 +85,9 @@ function build(pairStatus='VERBUNDEN'){
  voice.append(enabled);panel.append(voice);
  const pairing=new Node('div','','jarvis-device-pair'),jdpBadge=new Node('span','jdpBadge');jdpBadge.textContent=pairStatus;pairing.append(jdpBadge);panel.append(pairing);
  const stats=new Node('div','','jarvis-life-stats');panel.append(stats);
- const deck=new Node('div','','jarvis-command-deck');deck.append(new Node('button'));panel.append(deck);
+ const deck=new Node('div','','jarvis-command-deck');
+ const taskAction=new Node('button');taskAction.dataset.jarvisAction='task';
+ deck.append(taskAction);panel.append(deck);
  const form=new Node('form','jarvisLifeCommandForm');panel.append(form);
  const photoEntry=new Node('section','','jarvis-photo-entry'),photoInput=new Node('input','jarvisPhotoInput');
  photoEntry.append(photoInput);panel.append(photoEntry);
@@ -95,8 +97,9 @@ function build(pairStatus='VERBUNDEN'){
  const brainTab=new Node('button');brainTab.dataset.jbTab='brain';intelligence.append(planTab,brainTab);
  panel.append(intelligence);
  const integration=new Node('details','','jarvis-integrations');panel.append(integration);
- const nav=new Node('nav','','bottom-nav'),privNav=new Node('button');
- privNav.dataset.target='personalPrivate';nav.append(privNav);body.append(nav);
+ const nav=new Node('nav','','bottom-nav'),privNav=new Node('button'),calendarNav=new Node('button');
+ privNav.dataset.target='personalPrivate';calendarNav.dataset.target='personalCalendar';
+ nav.append(privNav,calendarNav);body.append(nav);
  const privateHub=new Node('section','personalPrivate');
  const shoppingTab=new Node('button');shoppingTab.dataset.privateTab='shopping';
  privateHub.append(shoppingTab);body.append(privateHub);
@@ -114,7 +117,7 @@ function build(pairStatus='VERBUNDEN'){
  vm.runInNewContext(js,{window,document,MutationObserver,Event,console},{timeout:1200});
  const send=(name)=>{for(const fn of listeners.get(name)||[])fn();};
  return {body,panel,hero,voice,enabled,pairing,stats,deck,form,photoEntry,photoInput,photoPanel,intelligence,
-  integration,planTab,brainTab,nav,privNav,shoppingTab,jdpBadge,document,send};
+  integration,planTab,brainTab,taskAction,nav,calendarNav,privNav,shoppingTab,jdpBadge,document,send};
 }
 const app=build();
 const q=app.document.getElementById('jarvisDashboardQuick');
@@ -138,12 +141,14 @@ assert.equal(app.enabled.listeners.get('change').length>=1,true);
 const settings=app.document.getElementById('jarvisDashSettingsLink');settings.click();
 assert.equal(advanced.open,true,'Real Voice Control and pairing accessible');
 const findCard=(id)=>q.children.flatMap(n=>n.children).find(n=>n.dataset.jarvisDashboard===id);
-const plan=findCard('plan'),brain=findCard('brain'),shopping=findCard('shopping'),photo=findCard('photo');
-assert.ok(plan&&brain&&shopping&&photo,'Four real quick actions');
+const plan=findCard('plan'),calendar=findCard('calendar'),shopping=findCard('shopping'),task=findCard('task');
+assert.ok(plan&&calendar&&shopping&&task,'Four premium reference actions remain functional');
 plan.click();assert.equal(app.planTab.clicked,1);assert.equal(app.intelligence.scrolled,1);
-brain.click();assert.equal(app.brainTab.clicked,1);
+calendar.click();assert.equal(app.calendarNav.clicked,1,'Calendar opens existing real navigation');
 shopping.click();assert.equal(app.privNav.clicked,1);assert.equal(app.shoppingTab.clicked,1);
-photo.click();assert.equal(app.photoInput.clicked,1,'iPhone photo input opens on shortcut');
+task.click();assert.equal(app.taskAction.clicked,1,'Tasks invoke original action handler');
+assert.ok(app.brainTab,'Jarvis memory remains accessible through intelligence');
+assert.ok(app.photoInput,'Image processing remains accessible through existing photo entry');
 const connectionLabel=app.hero.querySelector('.jarvis-system-badge span');
 assert.equal(connectionLabel.textContent,'VERBUNDEN','Only show verified device connection');
 assert.equal(app.hero.querySelector('.jarvis-system-badge').dataset.connected,'true');

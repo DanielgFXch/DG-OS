@@ -28,7 +28,7 @@
   controls.innerHTML=`
     <div class="jv-console-head">
       <span class="jv-console-title">JARVIS <span>VOICE CONTROL</span></span>
-      <span id="jvVoiceBadge" class="jv-voice-badge">BEREIT</span>
+      <div class="jv-head-actions"><button id="jvQuickToggle" type="button" aria-pressed="true" aria-controls="jvEnabled">🔊 Stimme an</button><span id="jvVoiceBadge" class="jv-voice-badge">BEREIT</span></div>
     </div>
     <div class="jv-voice-fields">
       <label>Voice Engine<select id="jvEngine"><option value="browser">Geräte-Stimme · kostenlos</option><option value="cartesia">Cartesia · Premium</option><option value="openai-tts">OpenAI · Premium-Stimmen</option></select></label>
@@ -58,6 +58,14 @@
   $('jvLang').value=['de-DE','en-GB','pt-PT'].includes(prefs.language)?prefs.language:'de-DE';
   // Jarvis speaks by default; only explicit owner opt-out ('0') keeps replies silent.
   $('jvEnabled').checked=read(enabledKey)!=='0';
+  function updateQuickToggle(){
+    const active=$('jvEnabled').checked;
+    const button=$('jvQuickToggle');
+    button.textContent=active?'🔊 Stimme an':'🔇 Stimme aus';
+    button.setAttribute('aria-pressed',String(active));
+    button.dataset.enabled=String(active);
+  }
+  updateQuickToggle();
   function save(){
     store(storageKey,JSON.stringify({provider,voice:provider==='browser'?$('jvVoice').value:'',
       language:$('jvLang').value,pace:Number(prefs.pace)>=0.7&&Number(prefs.pace)<=1.3?Number(prefs.pace):0.95}));
@@ -197,7 +205,12 @@
   $('jvEngine').addEventListener('change',()=>{stop();provider=$('jvEngine').value;voiceId=read(providerVoiceKey())||'';voices=[];save();render();if(provider!=='browser')loadVoices();});
   $('jvLang').addEventListener('change',save);
   $('jvVoice').addEventListener('change',()=>{stop();if(provider!=='browser'){voiceId=$('jvVoice').value;store(providerVoiceKey(),voiceId);}else prefs.voice=$('jvVoice').value;save();render();});
+  $('jvQuickToggle').addEventListener('click',()=>{
+    $('jvEnabled').checked=!$('jvEnabled').checked;
+    $('jvEnabled').dispatchEvent(new Event('change',{bubbles:true}));
+  });
   $('jvEnabled').addEventListener('change',()=>{
+    updateQuickToggle();
     const enabled=$('jvEnabled').checked;
     store(enabledKey,enabled?'1':'0');
     if(!enabled){

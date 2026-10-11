@@ -53,9 +53,11 @@
   voiceLocation.insertAdjacentElement('afterend',controls);
   const $=id=>document.getElementById(id);
   const setMessage=(message,badge='BEREIT')=>{$('jvNotice').textContent=message;$('jvVoiceBadge').textContent=badge;};
+  $('jvRead').textContent='▶ Letzte Antwort anhören';
   $('jvEngine').value=provider;
   $('jvLang').value=['de-DE','en-GB','pt-PT'].includes(prefs.language)?prefs.language:'de-DE';
-  $('jvEnabled').checked=read(enabledKey)==='1';
+  // Jarvis speaks by default; only explicit owner opt-out ('0') keeps replies silent.
+  $('jvEnabled').checked=read(enabledKey)!=='0';
   function save(){
     store(storageKey,JSON.stringify({provider,voice:provider==='browser'?$('jvVoice').value:'',
       language:$('jvLang').value,pace:Number(prefs.pace)>=0.7&&Number(prefs.pace)<=1.3?Number(prefs.pace):0.95}));
@@ -83,8 +85,10 @@
   function render(){
     const premium=provider!=='browser';
     $('jvReload').hidden=!premium;
-    $('jvPreview').disabled=premium&&!voices.length;
-    $('jvRead').disabled=premium&&!voices.length;
+    // Manual playback is available with local voice even when premium TTS is unavailable.
+    const localReady=Boolean(window.DGOSLocalVoice?.isSupported());
+    $('jvPreview').disabled=premium&&!voices.length&&!localReady;
+    $('jvRead').disabled=premium&&!voices.length&&!localReady;
     if(premium){
       options(voices,voiceId);
       if(!deviceSession())setMessage('Verbinde dein Gerät einmalig mit Telegram.','KOPPLUNG');

@@ -28,7 +28,7 @@
   controls.innerHTML=`
     <div class="jv-console-head">
       <span class="jv-console-title">JARVIS <span>VOICE CONTROL</span></span>
-      <span id="jvVoiceBadge" class="jv-voice-badge">BEREIT</span>
+      <div class="jv-head-actions"><button id="jvQuickToggle" type="button" aria-pressed="true" aria-controls="jvEnabled">🔊 Stimme an</button><span id="jvVoiceBadge" class="jv-voice-badge">BEREIT</span></div>
     </div>
     <div class="jv-voice-fields">
       <label>Voice Engine<select id="jvEngine"><option value="browser">Geräte-Stimme · kostenlos</option><option value="cartesia">Cartesia · Premium</option><option value="openai-tts">OpenAI · Premium-Stimmen</option></select></label>
@@ -53,9 +53,19 @@
   voiceLocation.insertAdjacentElement('afterend',controls);
   const $=id=>document.getElementById(id);
   const setMessage=(message,badge='BEREIT')=>{$('jvNotice').textContent=message;$('jvVoiceBadge').textContent=badge;};
+  $('jvRead').textContent='▶ Letzte Antwort anhören';
   $('jvEngine').value=provider;
   $('jvLang').value=['de-DE','en-GB','pt-PT'].includes(prefs.language)?prefs.language:'de-DE';
-  $('jvEnabled').checked=read(enabledKey)==='1';
+  // Jarvis speaks by default; only explicit owner opt-out ('0') keeps replies silent.
+  $('jvEnabled').checked=read(enabledKey)!=='0';
+  function updateQuickToggle(){
+    const active=$('jvEnabled').checked;
+    const button=$('jvQuickToggle');
+    button.textContent=active?'🔊 Stimme an':'🔇 Stimme aus';
+    button.setAttribute('aria-pressed',String(active));
+    button.dataset.enabled=String(active);
+  }
+  updateQuickToggle();
   function save(){
     store(storageKey,JSON.stringify({provider,voice:provider==='browser'?$('jvVoice').value:'',
       language:$('jvLang').value,pace:Number(prefs.pace)>=0.7&&Number(prefs.pace)<=1.3?Number(prefs.pace):0.95}));
@@ -83,8 +93,10 @@
   function render(){
     const premium=provider!=='browser';
     $('jvReload').hidden=!premium;
-    $('jvPreview').disabled=premium&&!voices.length;
-    $('jvRead').disabled=premium&&!voices.length;
+    // Manual playback is available with local voice even when premium TTS is unavailable.
+    const localReady=Boolean(window.DGOSLocalVoice?.isSupported());
+    $('jvPreview').disabled=premium&&!voices.length&&!localReady;
+    $('jvRead').disabled=premium&&!voices.length&&!localReady;
     if(premium){
       options(voices,voiceId);
       if(!deviceSession())setMessage('Verbinde dein Gerät einmalig mit Telegram.','KOPPLUNG');
@@ -137,22 +149,29 @@
     }
     finally{$('jvReload').disabled=false;}
   }
+  function speakLocal(text,fallback=false){
+    const player=window.DGOSLocalVoice;
+    if(!player?.isSupported()){
+      setMessage('Dieses Gerät kann keine lokale Stimme abspielen. Öffne DG OS in Safari oder prüfe den Premium-Anbieter.','FEHLER');
+      return false;
+    }
+    const selected=provider==='browser'?synth?.getVoices?.().find(v=>v.voiceURI===$('jvVoice').value):null;
+    return player.play({
+      text,voice:selected,lang:$('jvLang').value,rate:.94,pitch:.96,
+      onState:({state,message})=>{
+        const badge=state==='error'||state==='timeout'?'FEHLER':
+          state==='speaking'?'SPRICHT':state==='starting'||state==='restarting'?'STARTET':'BEREIT';
+        const retry=state==='error'||state==='timeout'?' Tippe auf «▶ Letzte Antwort anhören», um es erneut zu versuchen.':'';
+        setMessage((fallback?'Premium nicht erreichbar · iPhone-Stimme. ':'')+(message||'')+retry,badge);
+      }
+    });
+  }
   async function speak(text,preview=false){
     if(!text||(!preview&&!$('jvEnabled').checked))return;
-    if(provider==='browser'){
-      const player=window.DGOSLocalVoice;
-      if(!player?.isSupported())return setMessage('Die lokale Sprachausgabe ist hier nicht verfügbar. Öffne das Voice Studio in Safari.','FEHLER');
-      const voice=synth.getVoices().find(v=>v.voiceURI===$('jvVoice').value);
-      player.play({
-        text,voice,lang:$('jvLang').value,rate:.94,pitch:.96,
-        onState:({state,message})=>{
-          const badge=state==='error'||state==='timeout'?'FEHLER':state==='speaking'?'SPRICHT':state==='starting'||state==='restarting'?'STARTET':'BEREIT';
-          setMessage(message,badge);
-        }
-      });
-      return;
-    }
-    if(!voiceId){setMessage('Bitte erst «Stimmen laden» und eine Premium-Stimme auswählen.','VERBINDEN');return;}
+    if(provider==='browser'){speakLocal(text);return;}
+    // Premium unconfigured? Speak locally instead of silently ignoring
+    // the recognised microphone command or purchasing a new provider.
+    if(!voiceId){speakLocal(text,true);return;}
     if(currentAudio&&lastPrepared===text){
       try{currentAudio.currentTime=0;await currentAudio.play();setMessage('Jarvis spricht mit '+(provider==='openai-tts'?'OpenAI':'Cartesia')+'.','SPRICHT');}
       catch{setMessage('Tippe nochmals auf «Antwort vorlesen», um die Audiofreigabe zu aktivieren.','STARTEN');}
@@ -180,13 +199,18 @@
       }
     }catch(error){
       if(thisRequest!==sequence||error.name==='AbortError')return;
-      setMessage(error.message||'Premium-Audio konnte nicht erstellt werden.','FEHLER');
+      if(!speakLocal(text,true))setMessage(error.message||'Premium-Audio konnte nicht erstellt werden.','FEHLER');
     }finally{if(thisRequest===sequence)abort=null;}
   }
   $('jvEngine').addEventListener('change',()=>{stop();provider=$('jvEngine').value;voiceId=read(providerVoiceKey())||'';voices=[];save();render();if(provider!=='browser')loadVoices();});
   $('jvLang').addEventListener('change',save);
   $('jvVoice').addEventListener('change',()=>{stop();if(provider!=='browser'){voiceId=$('jvVoice').value;store(providerVoiceKey(),voiceId);}else prefs.voice=$('jvVoice').value;save();render();});
+  $('jvQuickToggle').addEventListener('click',()=>{
+    $('jvEnabled').checked=!$('jvEnabled').checked;
+    $('jvEnabled').dispatchEvent(new Event('change',{bubbles:true}));
+  });
   $('jvEnabled').addEventListener('change',()=>{
+    updateQuickToggle();
     const enabled=$('jvEnabled').checked;
     store(enabledKey,enabled?'1':'0');
     if(!enabled){

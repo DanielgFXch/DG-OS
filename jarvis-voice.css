@@ -83,3 +83,30 @@
   border-radius:10px;
 }
 #personalJarvis #jvAudioPlayer[hidden]{display:none}
+
+/* Speech-first Jarvis controls, visible without opening advanced settings. */
+#personalJarvis .jv-head-actions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}
+#personalJarvis #jvQuickToggle{
+  min-height:42px;padding:9px 12px;
+  background:rgba(66,120,203,.24)!important;
+  color:#d7e8ff!important;
+  border:1px solid rgba(128,172,246,.4)!important;
+  border-radius:13px!important;
+  font-size:12px;font-weight:750;letter-spacing:0;
+  cursor:pointer;
+}
+#personalJarvis #jvQuickToggle[data-enabled="false"]{
+  color:#f3d9ad!important;
+  background:rgba(153,114,61,.17)!important;
+  border-color:rgba(240,193,124,.34)!important;
+}
+#personalJarvis #jvQuickToggle:focus-visible{
+  outline:2px solid #94c6ff!important;outline-offset:3px!important;
+}
+#personalJarvis #jvRead{border-color:rgba(132,176,249,.4)!important;font-weight:720!important;min-height:44px}
+@media(max-width:390px){
+  #personalJarvis .jv-console-head{align-items:flex-start;gap:9px}
+  #personalJarvis .jv-head-actions{gap:5px}
+  #personalJarvis #jvQuickToggle{font-size:11px;padding:7px 9px}
+  #personalJarvis .jv-voice-badge{font-size:9px}
+}

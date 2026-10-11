@@ -188,3 +188,55 @@
   #personalJarvis .jv-hero-audio-buttons{grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:5px}
   #personalJarvis .jv-hero-audio-buttons button{font-size:11px!important;padding-inline:4px!important}
 }
+
+/* iOS diagnostic – independent tone and optional provider-rendered MP3/WAV.
+   The player must stay visible even when voice settings are collapsed. */
+#personalJarvis .jv-diagnostic-actions{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px!important;
+  margin:9px 0 2px!important;
+}
+#personalJarvis .jv-diagnostic-actions button,
+#personalJarvis #jvUseServerVoice{
+  min-width:0;min-height:42px;
+  border-radius:11px!important;
+  border:1px solid rgba(124,166,230,.22)!important;
+  background:rgba(20,43,73,.74)!important;
+  color:#d5e5ff!important;
+  font-size:11px!important;font-weight:670!important;
+  line-height:1.35!important;
+  cursor:pointer;
+}
+#personalJarvis .jv-diagnostic-actions button:disabled{opacity:.55;cursor:wait}
+#personalJarvis #jvUseServerVoice{
+  display:block!important;
+  width:100%!important;
+  min-height:44px!important;
+  margin-top:10px!important;
+  color:#fff!important;
+  background:rgba(55,102,183,.42)!important;
+  border-color:rgba(132,179,254,.32)!important;
+}
+#personalJarvis #jvUseServerVoice[hidden]{display:none!important}
+#personalJarvis .jv-diagnostic-hint{
+  display:block!important;
+  font-size:10px!important;
+  line-height:1.4!important;
+  margin:9px 2px 0!important;
+  color:#95a8c3!important;
+}
+#personalJarvis .jarvis-cinematic-hero #jvAudioPlayer.jv-hero-player{
+  display:block!important;
+  width:100%!important;
+  height:48px!important;
+  margin-top:9px!important;
+  border-radius:12px!important;
+  max-width:100%!important;
+  background:rgba(14,28,47,.85)!important;
+}
+#personalJarvis .jarvis-cinematic-hero #jvAudioPlayer.jv-hero-player[hidden]{display:none!important}
+@media(max-width:365px){
+  #personalJarvis .jv-diagnostic-actions{gap:6px!important}
+  #personalJarvis .jv-diagnostic-actions button{font-size:10px!important;padding:7px 4px!important}
+}

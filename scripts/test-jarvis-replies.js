@@ -19,7 +19,7 @@ assert.equal(bot.shopping(['Milch'],[],'<script>'),'Okay Gomes, Milch steht jetz
 const html=read('index.html'),client=read('personal.js'),voice=read('jarvis-voice.js');
 assert.match(html,/jarvis-replies\.js\?v=1/);
 assert.match(html,/personal\.js\?v=0\.59\.12/);
-assert.match(html,/jarvis-voice\.js\?v=12/);
+assert.match(html,/jarvis-voice\.js\?v=13/);
 assert.ok(html.indexOf('jarvis-replies.js?v=1')<html.indexOf('personal.js?v=0.59.12'),
   'Reply formatter must be available before Jarvis command handler');
 assert.ok(client.includes('window.DGOSJarvisReplies?.shopping(added,skipped)'),
@@ -39,7 +39,7 @@ assert.ok(voice.includes('Antworten vorlesen · Jarvis spricht zurück'),
 assert.ok(voice.includes("if($('jvEnabled').checked)"),'Respect opt-in to automatic voice');
 assert.ok(!voice.includes('new MutationObserver(()=>{\n    const text=reply.textContent'),
   'Never play intermediate microphone status');
-assert.ok(read('sw.js').includes('dgos-personal-shell-49'));
+assert.ok(read('sw.js').includes('dgos-personal-shell-50'));
 assert.ok(read('sw.js').includes('jarvis-replies.js?v=1'));
 assert.doesNotThrow(()=>new Function(read('jarvis-replies.js')));
 assert.doesNotThrow(()=>new Function(client));

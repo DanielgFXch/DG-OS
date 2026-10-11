@@ -18,7 +18,25 @@ assert.ok(edge.includes('.eq("refresh_lock_id",leaseId)'),'Only lease holder per
 assert.ok(edge.includes('if(!locked)'),'Concurrent workers wait for token rotation');
 assert.ok(edge.includes('refresh_lock_id:null,refresh_lock_until:null'),'Clear lock after success/error');
 assert.ok(edge.includes('WHOOP_TOKEN'),'Refresh must still use real WHOOP OAuth');
-assert.ok(edge.includes('if(response.status===400||response.status===401)'),'Only invalid refresh prompts renewed consent');
+assert.ok(edge.includes('"Content-Type":"application/x-www-form-urlencoded"'),'WHOOP OAuth requires form-encoded refresh');
+assert.ok(edge.includes('body:new URLSearchParams({grant_type:"refresh_token"'),'Use official WHOOP refresh payload format');
+assert.ok(!edge.includes('body:JSON.stringify({grant_type:"refresh_token"'),'Never post JSON token refresh to WHOOP');
+assert.ok(edge.includes('async function validMaintenanceRequest(req: Request)'),'Cron requests require private authorization');
+assert.ok(edge.includes('if(!(await validMaintenanceRequest(req)))'),'Cron cannot be invoked with a normal browser session');
+assert.ok(edge.includes('getAccessToken(clientSecret,31*60*1000)'),'Background refresh is proactive');
+assert.ok(edge.includes('whoop_keepalive_status_write_failed'),'Cron health can be monitored without tokens');
+const keepaliveSql=read('supabase/migrations/20261011093000_dgos_whoop_silent_refresh.sql');
+assert.ok(keepaliveSql.includes("vault.create_secret("),'Cron bearer must live in Vault');
+assert.ok(keepaliveSql.includes("extensions.gen_random_bytes(32)"),'Generate a unique random secret server-side');
+assert.ok(keepaliveSql.includes("REVOKE ALL ON FUNCTION public.dgos_whoop_keepalive_invoke() FROM PUBLIC, anon, authenticated;"));
+assert.ok(keepaliveSql.includes("REVOKE ALL ON TABLE public.dgos_whoop_keepalive FROM PUBLIC, anon, authenticated;"));
+assert.ok(keepaliveSql.includes("SELECT cron.schedule("));
+assert.ok(keepaliveSql.includes("'*/30 * * * *'"));
+assert.ok(!keepaliveSql.includes('DELETE FROM dgos_whoop_tokens'),'Never delete WHOOP credentials');
+assert.ok(!keepaliveSql.includes('DROP TABLE'),'Never destroy WHOOP history');
+assert.ok(!read('personal.js').includes('X-DGOS-Keepalive'),'Private cron key never used in frontend');
+
+assert.ok(edge.includes('error===\"invalid_grant\"'),'Only confirmed invalid_grant prompts renewed WHOOP consent');
 assert.ok(edge.includes('return json({error:"whoop_reauthorize_required"},409)'));
 assert.ok(edge.includes('return json({error:"whoop_temporarily_unavailable"},503)'));
 assert.ok(edge.includes('WHOOP_SESSION_TTL_MS = 180*24*60*60*1000'),'Existing 180-day sliding session remains');

@@ -14,8 +14,8 @@ assert.ok(source.includes("read(enabledKey)!=='0'"),'Speech defaults on unless t
 assert.ok(source.includes("if(!voiceId){speakLocal(text,true);return;}"),'Missing premium provider falls back to local speech');
 assert.ok(!source.includes('OPENAI_API_KEY'),'Provider keys are never exposed in the browser');
 
-function setup(initial={}){
- const listeners=new Map(),storage=new Map(Object.entries(initial)),calls={play:[],stop:0},nodes={};
+function setup(initial={},remote=async()=>{throw Error('Unexpected provider request')}){
+ const listeners=new Map(),storage=new Map(Object.entries(initial)),calls={play:[],stop:0,network:[]},nodes={};
  class FakeNode{
    constructor(){this.value='';this.disabled=false;this.hidden=false;this.checked=false;this.textContent='';this.dataset={};this.attrs={};this.listeners={};this.options=[];this.classList={add(){},remove(){}};}
    addEventListener(type,fn){(this.listeners[type]??=[]).push(fn);}
@@ -57,7 +57,12 @@ function setup(initial={}){
  };
  class Event{constructor(type){this.type=type;}}
  class Option{constructor(text,value){this.name=text;this.text=text;this.id=value;this.value=value;}}
- vm.runInNewContext(source,{window,document,localStorage,Event,Option,fetch:async()=>{throw Error('Never call the TTS API without device pairing');},URL,AbortController,console},{filename:'jarvis-voice.js'});
+ vm.runInNewContext(source,{window,document,localStorage,Event,Option,fetch:(url,options)=>{
+    calls.network.push({url,method:options.method,authorized:/^Bearer /i.test(options.headers?.Authorization||'')});
+    return remote(url,options);
+   },
+   URL:{createObjectURL(){return 'blob:simulated-audio';},revokeObjectURL(){}},
+   AbortController,console},{filename:'jarvis-voice.js'});
  return {
    nodes,window,calls,storage,
    emit(type,detail){window.dispatchEvent({type,detail});},
@@ -112,4 +117,25 @@ function setup(initial={}){
  app.click('jvHeroFile');
  assert.match(app.nodes.jvHeroNotice.textContent,/iPhone mit DG OS gekoppelt/,'No paid audio generated when device is unpaired');
 }
-console.log('DG OS Jarvis spoken replies: completed turns, mute, iPhone diagnostics, replay, secure provider opt-in OK');
+(async()=>{
+  const app=setup({'dgos.deviceSession':'S'.repeat(48)},async(url,options)=>{
+    if(options.method==='GET')return {ok:true,status:200,json:async()=>({voices:[{id:'onyx',name:'Onyx'}]})};
+    if(options.method==='POST')return {ok:true,status:200,blob:async()=>({size:1500,type:'audio/mpeg'})};
+    throw Error('Unexpected HTTP method');
+  });
+  assert.equal(app.calls.network.length,0,'No paid TTS provider call on loading the Jarvis screen');
+  app.click('jvHeroFile');
+  await new Promise(setImmediate);
+  assert.equal(app.calls.network.filter(x=>x.method==='POST').length,1,'Only the explicit tap requests a short paid sample');
+  assert.ok(app.calls.network.every(x=>x.authorized),'All provider requests require the paired device token');
+  assert.match(app.calls.network[0].url,/jarvis-openai-voice$/,'Audio sample uses an existing protected TTS endpoint');
+  assert.equal(app.nodes.jvAudioPlayer.hidden,false,'Native iPhone audio player is visible');
+  assert.equal(app.nodes.jvAudioPlayer.src,'blob:simulated-audio','The audio blob is attached to the media player');
+  assert.equal(app.nodes.jvAudioPlayer.played,true,'Audio starts if Safari permits it');
+  assert.equal(app.nodes.jvUseServerVoice.hidden,false,'Opt-in only offered after test generation succeeds');
+  assert.equal(app.storage.get('dgos.voiceStudio.preferences.v1'),undefined,'Sample does not silently opt into paid automatic speech');
+  app.click('jvUseServerVoice');
+  assert.equal(JSON.parse(app.storage.get('dgos.voiceStudio.preferences.v1')).provider,'openai-tts','Only explicit opt-in enables server speech for new replies');
+  assert.equal(app.storage.get('dgos.openai.voiceId'),'onyx');
+  console.log('DG OS Jarvis spoken replies: finished turns, mute, tone test, user-triggered MP3 and explicit opt-in OK');
+})().catch(error=>{console.error(error);process.exitCode=1;});

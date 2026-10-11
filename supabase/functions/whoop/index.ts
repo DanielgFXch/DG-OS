@@ -94,6 +94,29 @@ async function validSession(req: Request) {
   await db.from("dgos_whoop_sessions").update({expires_at:new Date(Date.now()+WHOOP_SESSION_TTL_MS).toISOString()}).eq("token_hash",hash);
   return true;
 }
+async function validMaintenanceRequest(req: Request) {
+  // This key lives ONLY in Supabase Vault; the database stores its SHA-256.
+  // Never allow an owner session, browser origin or public anon key to invoke it.
+  const supplied=req.headers.get("X-DGOS-Keepalive")||"";
+  if(!/^[a-f0-9]{64}$/.test(supplied))return false;
+  const {data,error}=await db.from("dgos_whoop_keepalive").select("secret_hash").eq("id","primary").maybeSingle();
+  if(error||!data||typeof data.secret_hash!=="string")return false;
+  const actual=await sha256("dgos-whoop-keepalive:"+supplied);
+  const expected=data.secret_hash;
+  // Constant-time comparison of equal-length base64url hashes.
+  if(actual.length!==expected.length)return false;
+  let mismatch=0;
+  for(let i=0;i<actual.length;i++)mismatch|=actual.charCodeAt(i)^expected.charCodeAt(i);
+  return mismatch===0;
+}
+async function keepaliveResult(status: "ok"|"reauthorize_required"|"temporarily_unavailable") {
+  const now=new Date().toISOString();
+  const values=status==="ok"
+    ? {last_attempt_at:now,last_success_at:now,last_result:status}
+    : {last_attempt_at:now,last_result:status};
+  const {error}=await db.from("dgos_whoop_keepalive").update(values).eq("id","primary");
+  if(error)console.warn("whoop_keepalive_status_write_failed");
+}
 async function validDeviceSession(req: Request) {
   const hash=await bearerHash(req); if(!hash) return false;
   const now=new Date().toISOString();
@@ -137,14 +160,14 @@ async function diagnostic(stage: string, httpStatus?: number, errorCode?: string
 // Supabase Edge Functions may run in parallel isolates; therefore a local
 // Promise alone is not safe. This short lease is claimed atomically in Postgres
 // before an external refresh request and always released.
-async function getAccessToken(clientSecret: string) {
+async function getAccessToken(clientSecret: string, refreshAheadMs=60000) {
   const started=Date.now();
   for(let attempt=0;attempt<20;attempt++){
     const row=await loadToken();
     if(!row) throw new Error("not_connected");
     const now=Date.now();
     if(row.access_token_cipher && row.access_token_iv && row.access_token_expires_at &&
-       new Date(row.access_token_expires_at).getTime()>now+60000){
+       new Date(row.access_token_expires_at).getTime()>now+refreshAheadMs){
       return decrypt(clientSecret,row.access_token_cipher,row.access_token_iv);
     }
     const leaseId=randomToken();
@@ -166,20 +189,26 @@ async function getAccessToken(clientSecret: string) {
       const current=await loadToken();
       if(!current)throw new Error("not_connected");
       if(current.access_token_cipher && current.access_token_iv && current.access_token_expires_at &&
-         new Date(current.access_token_expires_at).getTime()>Date.now()+60000){
+         new Date(current.access_token_expires_at).getTime()>Date.now()+refreshAheadMs){
         return await decrypt(clientSecret,current.access_token_cipher,current.access_token_iv);
       }
       const refresh=await decrypt(clientSecret,current.refresh_token_cipher,current.refresh_token_iv);
       const response=await fetch(WHOOP_TOKEN,{
         method:"POST",
-        headers:{"Content-Type":"application/json","Accept":"application/json"},
-        body:JSON.stringify({grant_type:"refresh_token",refresh_token:refresh,client_id:CLIENT_ID,
+        // WHOOP's OAuth refresh endpoint requires form data, NOT JSON.
+        // A JSON body caused HTTP 400 and unnecessary reauthorization prompts.
+        headers:{"Content-Type":"application/x-www-form-urlencoded","Accept":"application/json"},
+        body:new URLSearchParams({grant_type:"refresh_token",refresh_token:refresh,client_id:CLIENT_ID,
           client_secret:clientSecret,scope:"offline"}),
         signal:AbortSignal.timeout(20000)
       });
       if(!response.ok){
         console.warn("whoop_refresh_failed_status",response.status);
-        if(response.status===400||response.status===401)
+        // Only an actual invalid/consumed refresh grant requires consent.
+        // Bad request, WHOOP downtime and invalid_client must NOT prompt OAuth.
+        const detail=await response.json().catch(()=>({}));
+        const error=String(detail?.error||"").toLowerCase();
+        if((response.status===400||response.status===401)&&error==="invalid_grant")
           throw new Error("whoop_reauthorize_required");
         throw new Error("whoop_refresh_unavailable");
       }
@@ -212,7 +241,14 @@ async function getAccessToken(clientSecret: string) {
   throw new Error("whoop_refresh_busy");
 }
 async function whoopFetch(path: string, access: string) {
-  const r=await fetch(WHOOP_API+path,{headers:{Authorization:"Bearer "+access,Accept:"application/json"}});
+  const request=(token:string)=>fetch(WHOOP_API+path,{headers:{Authorization:"Bearer "+token,Accept:"application/json"}});
+  let r=await request(access);
+  if(r.status===401){
+    // A scheduled refresh can rotate a token between summary() and fetch().
+    // Retry once with the latest token saved by the lease holder.
+    const fresh=await getAccessToken(secret());
+    if(fresh!==access)r=await request(fresh);
+  }
   if(!r.ok) throw new Error("whoop_"+r.status);
   if(r.status===204) return {};
   return r.json();
@@ -239,6 +275,27 @@ Deno.serve(async (req: Request) => {
     }
 
     if(!clientSecret) return json({error:"whoop_not_configured"},503);
+
+    if(action==="maintenance"){
+      if(req.method!=="POST")return json({error:"method_not_allowed"},405);
+      if(!(await validMaintenanceRequest(req)))return json({error:"not_authorized"},401);
+      const row=await loadToken();
+      if(!row)return json({error:"not_connected"},409);
+      try{
+        // 30-minute cron keeps credentials rotated without an open iPhone app.
+        // Refresh early; uses the SAME exclusive database lease as summary().
+        await getAccessToken(clientSecret,31*60*1000);
+        await keepaliveResult("ok");
+        return json({ok:true});
+      }catch(e){
+        if(e instanceof Error&&e.message==="whoop_reauthorize_required"){
+          await keepaliveResult("reauthorize_required");
+          return json({error:"whoop_reauthorize_required"},409);
+        }
+        await keepaliveResult("temporarily_unavailable");
+        return json({error:"whoop_temporarily_unavailable"},503);
+      }
+    }
 
     if(action==="device-auth-start"){
       if(req.method!=="POST") return json({error:"method_not_allowed"},405);

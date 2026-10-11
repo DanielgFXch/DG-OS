@@ -27,7 +27,7 @@ for(const name of ['personalJarvis','personalJarvisTitle','personalJarvisOrbBtn'
 }
 assert.ok(html.includes('class="jpr-reply-card"'));
 assert.ok(html.includes('class="jpr-waveform"'));
-assert.ok(html.includes('class="jarvis-system-badge"')===false,'Connection badge remains an actual button with aria label');
+assert.ok(!html.includes('<div class="jarvis-system-badge"'),'Connection badge is a real button, not a decorative status');
 assert.ok(html.includes('type="button" class="jarvis-system-badge"'));
 assert.ok(js.includes('jarvisDashAdvanced'),'Connection badge opens existing settings');
 assert.ok(dashboard.includes("data-jarvis-action=\"task\""),'Task shortcut invokes real existing handler');
@@ -37,7 +37,7 @@ for(const n of ['plan','calendar','shopping','task'])
 for(const id of ['jvHeroToggle','jvHeroRead','jvHeroFile','jvHeroTone','jvUseServerVoice'])
  assert.ok(voice.includes(id),'Preserve actual audio controls: '+id);
 assert.ok(voice.includes('class="jpr-troubleshoot"'),'Audio troubleshooting stays accessible but collapsed');
-assert.ok(voice.includes("jvQuickToggle'),'Visible toggle still controls genuine TTS checkbox');
+assert.ok(voice.includes('jvQuickToggle'),'Visible toggle still controls genuine TTS checkbox');
 assert.ok(css.includes('background-image')&&css.includes('data:image/svg+xml'),'Feature icons are vector assets, not emoji');
 assert.ok(css.includes('assets/jarvis-nightscape.svg'),'Original decorative mountain backdrop');
 assert.ok(bg.includes('<svg')&&!bg.includes('<script'),'Safe original, static visual asset');

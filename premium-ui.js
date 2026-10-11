@@ -53,35 +53,21 @@
       }
     }}
   ];
-  document.body.classList.add('ux-premium-ready');
   const normalize = value => String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('de-CH');
 
   // A real, keyboard-accessible shortcut in the existing header.
   const openButton = make('button','ux-search-trigger');
   openButton.type = 'button';
-  openButton.setAttribute('aria-label','Schnellzugriff öffnen (Befehlstaste K)');
+  openButton.setAttribute('aria-label','Mehr und Suche öffnen (Befehlstaste K)');
   openButton.setAttribute('aria-haspopup','dialog');
-  const searchIcon = make('span','', '⌕');searchIcon.setAttribute('aria-hidden','true');
-  const searchText = make('span','ux-search-label','Schnellzugriff');
+  const searchIcon = make('span','ux-menu-icon', '☰');searchIcon.setAttribute('aria-hidden','true');
+  const searchText = make('span','ux-search-label','Mehr');
   const keyHint = make('kbd','', '⌘ K');
   openButton.append(searchIcon,searchText,keyHint);
   header.prepend(openButton);
 
-  // On mobile: keep four primary destinations visible, other real routes live in Mehr.
-  const more = make('button','ux-more-button','Mehr');
-  more.type = 'button';
-  more.setAttribute('aria-label','Weitere Bereiche öffnen');
-  more.setAttribute('aria-haspopup','dialog');
-  dock.append(more);
-  const syncMore = () => {
-    const route = document.body.dataset.dgosRoute;
-    const extra = ['private','social','trading'].includes(route);
-    more.classList.toggle('active',extra);
-    if (extra) more.setAttribute('aria-current','page');
-    else more.removeAttribute('aria-current');
-  };
-  new MutationObserver(syncMore).observe(document.body,{attributes:true,attributeFilter:['data-dgos-route']});
-  syncMore();
+  // The top-right header button is the ONLY More entry point.
+  // The bottom dock keeps the existing real Trading route as its fifth tab.
 
   const dialog = make('dialog','ux-palette');
   dialog.id = 'uxQuickPalette';
@@ -150,7 +136,6 @@
     dialog.showModal();search.focus({ preventScroll:true });
   }
   openButton.addEventListener('click',openPalette);
-  more.addEventListener('click',openPalette);
   close.addEventListener('click',()=>dialog.close());
   search.addEventListener('input',render);
   dialog.addEventListener('close',()=> {
@@ -178,4 +163,7 @@
       else openPalette();
     }
   });
+  // Progressive enhancement: hide the two mobile secondary tabs only once
+  // the header dialog and all controls have been mounted successfully.
+  document.body.classList.add('ux-premium-ready');
 })();

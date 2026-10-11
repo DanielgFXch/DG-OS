@@ -2000,8 +2000,7 @@
         showReply('Trading ist separat geöffnet. Deine persönlichen Jarvis-Befehle bleiben davon getrennt.');
         return true;
     }
-    setStatus('Bereit');
-    setReply('Diesen Befehl kann ich noch nicht sicher ausführen.');
+    showReply('Diesen Befehl kann ich noch nicht sicher ausführen.');
     return false;
   }
 
@@ -2113,8 +2112,7 @@
       return true;
     }
     if(planned?.intent==='task_clarify'){
-      setStatus('Bitte präzisieren');
-      setReply('Was genau soll ich für '+planned.dateLabel+' ('+planned.dueDate+') notieren? Sag zum Beispiel: «Ich muss nächste Woche die Stromrechnung bezahlen.» Oder fotografiere die Rechnung.');
+      showReply('Was genau soll ich für '+planned.dateLabel+' ('+planned.dueDate+') notieren? Sag zum Beispiel: «Ich muss nächste Woche die Stromrechnung bezahlen.» Oder fotografiere die Rechnung.');
       return true;
     }
     const photoCommand=window.DGOSLifeIntent?.stripWake(original)||q;
@@ -2129,8 +2127,7 @@
       return true;
     }
     if (spokenShopping?.intent === 'shopping_clarify') {
-      setStatus('Bitte präzisieren');
-      setReply('Welche Produkte soll ich hinzufügen? Sag zum Beispiel: «Hey Jarvis, ich brauche Toast, Tomaten und Käse.»');
+      showReply('Welche Produkte soll ich hinzufügen? Sag zum Beispiel: «Hey Jarvis, ich brauche Toast, Tomaten und Käse.»');
       return true;
     }
 
@@ -2170,8 +2167,7 @@
     if (/trading|gold|xau|markt/.test(q)) return runLifeAction('trading');
     if (/sortier|organisier|ordnung|zentrale|übersicht/.test(q)) return runLifeAction('organize');
 
-    setStatus('Noch nicht gelernt');
-    setReply('Versuch z. B. «Was ist heute wichtig?», «Aufgabe Steuerrechnung prüfen», «Kalender», «Rechnungen» oder «Social».');
+    showReply('Das kann ich noch nicht ausführen. Versuch zum Beispiel «Was ist heute wichtig?», «Aufgabe Steuerrechnung prüfen», «Kalender», «Rechnungen» oder «Social».');
     return false;
   }
 

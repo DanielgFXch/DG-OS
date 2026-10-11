@@ -10,7 +10,7 @@ const routing=require('../lib/staticApp.js');
 for(const provider of ['cartesia','elevenlabs','openai','browser'])assert.ok(html.includes('data-provider="'+provider+'"'));
 assert.ok(html.includes('id="voiceSelect"'));
 assert.ok(html.includes('id="preview"'));
-assert.ok(main.includes('jarvis-voice.js?v=11'),'Jarvis voice controls must be loaded');
+assert.ok(main.includes('jarvis-voice.js?v=12'),'Jarvis voice controls must be loaded');
 assert.ok(fs.readFileSync(path.join(root,'jarvis-voice.js'),'utf8').includes('href="./voice-studio.html"'),'Voice Studio link must be available in injected controls');
 assert.equal(routing.allowedRelativePath('/voice-studio.html'),'voice-studio.html');
 assert.equal(routing.allowedRelativePath('/voice-studio.js'),'voice-studio.js');
@@ -20,7 +20,7 @@ assert.ok(js.includes("const supported=Boolean(player?.isSupported())"),'Local p
 assert.ok(js.includes("$('preview').disabled=!supported"),'Device preview must be available even if Realtime is selected');
 assert.ok(js.includes("player.play("),'Preview must use the shared iOS-safe local speech engine');
 assert.ok(js.includes("onState:"),'Preview must display native speech states');
-assert.ok(html.includes('jarvis-native-voice.js?v=2'),'Load shared audio player before studio script');
+assert.ok(html.includes('jarvis-native-voice.js?v=3'),'Load shared audio player before studio script');
 require('../../scripts/test-jarvis-native-voice.js');
 assert.ok(html.includes('jarvis-sound-check.js?v=1'));
 assert.ok(js.includes("$('testTone').addEventListener"));

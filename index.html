@@ -705,9 +705,18 @@
             <div class="social-glass-head"><h3>Übersicht</h3><small id="socialImportedAt">Noch kein Import</small></div>
             <div class="social-metrics">
               <div class="social-metric"><span>Followers</span><strong id="socialMetricFollowers">0</strong></div>
-              <div class="social-metric"><span>Following</span><strong id="socialMetricFollowing">0</strong></div>
-              <div class="social-metric is-accent"><span>Folgen nicht zurück</span><strong id="socialMetricNonFollowers">0</strong></div>
+              <div class="social-metric"><span>Following · Referenz</span><strong id="socialMetricFollowing">—</strong><small id="socialFollowingSource">Export, kein Live-Stand</small></div>
+              <div class="social-metric is-accent"><span>Mögliche Nicht-Rückfolger</span><strong id="socialMetricNonFollowers">0</strong></div>
               <div class="social-metric"><span>Whitelist</span><strong id="socialMetricWhitelist">0</strong></div>
+            </div>
+            <div class="social-export-warning" id="socialExportWarning" role="status" aria-live="polite">Importdaten sind nicht live. Vor einem Cleanup in Instagram prüfen.</div>
+            <div class="social-count-reference">
+              <label for="socialFollowingReference">Aktuelle Following-Zahl laut deiner Instagram-App</label>
+              <div class="social-form-row">
+                <input type="number" min="0" max="1000000" inputmode="numeric" id="socialFollowingReference" placeholder="Zahl aus Instagram" aria-describedby="socialCountReferenceHint" />
+                <button id="socialFollowingReferenceSave" type="button">Referenz speichern</button>
+              </div>
+              <small id="socialCountReferenceHint">Nur deine eigene Eingabe. Keine Instagram-Liveverbindung. Deine Exportlisten werden dadurch nicht verändert.</small>
             </div>
           </section>
 
@@ -717,7 +726,7 @@
               <div class="social-growth-card"><span>24 Stunden</span><strong id="socialMetricToday">—</strong></div>
               <div class="social-growth-card"><span>7 Tage</span><strong id="socialMetric7d">—</strong></div>
               <div class="social-growth-card"><span>30 Tage</span><strong id="socialMetric30d">—</strong></div>
-              <div class="social-growth-card"><span>Cleanup offen</span><strong id="socialMetricCloudCleanup">—</strong></div>
+              <div class="social-growth-card"><span>Export-Kandidaten</span><strong id="socialMetricCloudCleanup">—</strong></div>
             </div>
             <div id="socialHistoryChart" class="social-history-chart" aria-label="Follower-Verlauf">
               <span class="social-chart-empty">Nach mindestens zwei Snapshots zeigt DG OS hier deinen Follower-Verlauf.</span>
@@ -740,17 +749,18 @@
             <div id="socialCleanupCard" class="social-cleanup-card hidden">
               <span class="social-cleanup-badge">Cleanup-Kandidat</span>
               <h3 id="socialCleanupUsername">@username</h3>
-              <p id="socialCleanupReason">Folgt dir nicht zurück · nicht auf Whitelist</p>
+              <p id="socialCleanupReason">Möglicher Nicht-Rückfolger laut Export · auf Instagram prüfen</p>
               <div id="socialCleanupPosition" class="social-position"></div>
               <button id="socialOpenInstagram" class="social-cleanup-open" type="button">Instagram-Profil öffnen ↗</button>
               <div class="social-decision-grid">
                 <button id="socialDecisionKeep" class="secondary" type="button">Behalten</button>
                 <button id="socialDecisionRemoved" class="social-removed" type="button">Entfernt ✓</button>
+                <button id="socialDecisionNotFollowing" class="secondary" type="button">Folge ich nicht</button>
                 <button id="socialDecisionLater" class="secondary social-later" type="button">Später</button>
               </div>
             </div>
             <div id="socialCleanupEmpty" class="social-cleanup-empty">Importiere zuerst deine Instagram Followers- und Following-Dateien.</div>
-            <small class="social-help">DG OS priorisiert aktuell transparent nach „folgt nicht zurück“ und Whitelist. Das eigentliche Entfolgen führst du auf Instagram selbst aus; danach markierst du den Account hier als entfernt.</small>
+            <small class="social-help">Liste basiert nur auf importierten Instagram-Dateien. Manche Profile sind bereits nicht mehr gefolgt oder als gelöscht markiert. Bitte jeden Account auf Instagram prüfen. «Folge ich nicht» blendet einen falschen Treffer aus, ohne eine Entfolgung zu zählen.</small>
           </section>
 
           <section class="social-glass social-kept-section" id="socialKeptSection" aria-labelledby="socialKeptTitle">
@@ -772,7 +782,7 @@
             <div class="social-glass-head"><h3>Cleanup Verlauf</h3><small id="socialCleanupProgress">0 entfernt · 0 behalten · 0 später</small></div>
             <p class="social-help">Deine Entscheidungen bleiben pro Business-/Privat-Account getrennt gespeichert.</p>
             <div class="social-footer-actions">
-              <span class="social-help">V2 · private Snapshots + Wachstum · Meta Direct Sync folgt separat</span>
+              <span class="social-help">Import-Snapshots statt Live-Followerdaten · keine automatische Instagram-Abfrage</span>
               <button id="socialResetData" class="secondary social-danger" type="button">Importdaten löschen</button>
             </div>
           </section>
@@ -1318,7 +1328,7 @@
   <script src="./jarvis-brain.js?v=3"></script>
   <script src="./jarvis-device-pairing.js?v=1"></script>
   <script src="./jarvis-dashboard.js?v=2"></script>
-  <script src="./social.js?v=0.61.1"></script>
+  <script src="./social.js?v=0.61.2"></script>
   <script src="./navigation.js?v=0.60.1"></script>
   <script src="./private-hub.js?v=2"></script>
   <script src="./trading-command.js?v=0.57.0"></script>

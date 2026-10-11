@@ -141,22 +141,29 @@
     }
     finally{$('jvReload').disabled=false;}
   }
+  function speakLocal(text,fallback=false){
+    const player=window.DGOSLocalVoice;
+    if(!player?.isSupported()){
+      setMessage('Dieses Gerät kann keine lokale Stimme abspielen. Öffne DG OS in Safari oder prüfe den Premium-Anbieter.','FEHLER');
+      return false;
+    }
+    const selected=provider==='browser'?synth?.getVoices?.().find(v=>v.voiceURI===$('jvVoice').value):null;
+    return player.play({
+      text,voice:selected,lang:$('jvLang').value,rate:.94,pitch:.96,
+      onState:({state,message})=>{
+        const badge=state==='error'||state==='timeout'?'FEHLER':
+          state==='speaking'?'SPRICHT':state==='starting'||state==='restarting'?'STARTET':'BEREIT';
+        const retry=state==='error'||state==='timeout'?' Tippe auf «▶ Letzte Antwort anhören», um es erneut zu versuchen.':'';
+        setMessage((fallback?'Premium nicht erreichbar · iPhone-Stimme. ':'')+(message||'')+retry,badge);
+      }
+    });
+  }
   async function speak(text,preview=false){
     if(!text||(!preview&&!$('jvEnabled').checked))return;
-    if(provider==='browser'){
-      const player=window.DGOSLocalVoice;
-      if(!player?.isSupported())return setMessage('Die lokale Sprachausgabe ist hier nicht verfügbar. Öffne das Voice Studio in Safari.','FEHLER');
-      const voice=synth.getVoices().find(v=>v.voiceURI===$('jvVoice').value);
-      player.play({
-        text,voice,lang:$('jvLang').value,rate:.94,pitch:.96,
-        onState:({state,message})=>{
-          const badge=state==='error'||state==='timeout'?'FEHLER':state==='speaking'?'SPRICHT':state==='starting'||state==='restarting'?'STARTET':'BEREIT';
-          setMessage(message,badge);
-        }
-      });
-      return;
-    }
-    if(!voiceId){setMessage('Bitte erst «Stimmen laden» und eine Premium-Stimme auswählen.','VERBINDEN');return;}
+    if(provider==='browser'){speakLocal(text);return;}
+    // Premium unconfigured? Speak locally instead of silently ignoring
+    // the recognised microphone command or purchasing a new provider.
+    if(!voiceId){speakLocal(text,true);return;}
     if(currentAudio&&lastPrepared===text){
       try{currentAudio.currentTime=0;await currentAudio.play();setMessage('Jarvis spricht mit '+(provider==='openai-tts'?'OpenAI':'Cartesia')+'.','SPRICHT');}
       catch{setMessage('Tippe nochmals auf «Antwort vorlesen», um die Audiofreigabe zu aktivieren.','STARTEN');}
@@ -184,7 +191,7 @@
       }
     }catch(error){
       if(thisRequest!==sequence||error.name==='AbortError')return;
-      setMessage(error.message||'Premium-Audio konnte nicht erstellt werden.','FEHLER');
+      if(!speakLocal(text,true))setMessage(error.message||'Premium-Audio konnte nicht erstellt werden.','FEHLER');
     }finally{if(thisRequest===sequence)abort=null;}
   }
   $('jvEngine').addEventListener('change',()=>{stop();provider=$('jvEngine').value;voiceId=read(providerVoiceKey())||'';voices=[];save();render();if(provider!=='browser')loadVoices();});

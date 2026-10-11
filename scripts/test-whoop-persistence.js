@@ -50,7 +50,7 @@ assert.ok(app.includes("await restoreFromDeviceSession()"),'Restore via authenti
 assert.ok(app.includes("lastWhoopHealth==='reauthorize'"),'Only explicit revocation starts new OAuth');
 const html=read('index.html'),sw=read('sw.js');
 assert.ok(html.includes('personal.js?v=0.59.12'));
-assert.ok(sw.includes('dgos-personal-shell-52'));
+assert.ok(sw.includes('dgos-personal-shell-53'));
 
 function fakeElement(id){
  const handlers={};

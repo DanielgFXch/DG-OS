@@ -39,7 +39,7 @@ assert.ok(voice.includes('Antworten vorlesen · Jarvis spricht zurück'),
 assert.ok(voice.includes("if($('jvEnabled').checked)"),'Respect opt-in to automatic voice');
 assert.ok(!voice.includes('new MutationObserver(()=>{\n    const text=reply.textContent'),
   'Never play intermediate microphone status');
-assert.ok(read('sw.js').includes('dgos-personal-shell-51'));
+assert.ok(read('sw.js').includes('dgos-personal-shell-52'));
 assert.ok(read('sw.js').includes('jarvis-replies.js?v=1'));
 assert.doesNotThrow(()=>new Function(read('jarvis-replies.js')));
 assert.doesNotThrow(()=>new Function(client));

@@ -32,6 +32,7 @@
   <link rel="stylesheet" href="./jarvis-weather.css?v=1" />
   <link rel="stylesheet" href="./premium-ui.css?v=1.0.1" />
   <link rel="stylesheet" href="./home-compact.css?v=1" />
+  <link rel="stylesheet" href="./health-premium.css?v=1.0.0" />
   <title>DG OS · Dein Tag</title>
 </head>
 <body>
@@ -497,19 +498,28 @@
       <aside class="personal-side">
         <section id="personalHealth" class="personal-panel personal-health-panel">
           <div class="personal-health-head">
-            <div><div class="personal-kicker">GESUNDHEIT</div><h2>Deine Energie.</h2></div>
-            <div class="personal-health-actions"><span id="whoopStatus" class="personal-status">WHOOP · wird geprüft</span><button id="whoopConnect" type="button">WHOOP verbinden</button></div>
+            <div class="dgh-headline">
+              <div class="personal-kicker">GESUNDHEIT</div>
+              <h2>Deine <em>Energie.</em></h2>
+              <p class="dgh-tagline">Verstehe deinen Körper.<br>Mehr Energie für das, was zählt.</p>
+            </div>
+            <div class="personal-health-actions">
+              <span class="dgh-whoop-icon" aria-hidden="true">W</span>
+              <span id="whoopStatus" class="personal-status">WHOOP · wird geprüft</span>
+              <button id="whoopConnect" type="button">WHOOP verbinden</button>
+            </div>
           </div>
-          <div class="personal-health-values">
-            <div><span>Schlafleistung</span><strong id="whoopSleep">—</strong><small id="whoopSleepPerformance">—</small></div>
-            <div><span>Erholung</span><strong id="whoopRecovery">—</strong><small id="whoopHrv">HRV —</small></div>
-            <div><span>Belastung</span><strong id="whoopStrain">—</strong><small id="whoopCalories">—</small></div>
+          <div class="personal-health-values" role="group" aria-label="Aktuelle WHOOP-Gesundheitswerte">
+            <div class="dgh-sleep-card"><span>Schlafleistung</span><strong id="whoopSleep">—</strong><small id="whoopSleepPerformance">—</small></div>
+            <div class="dgh-recovery-card"><span>Erholung</span><strong id="whoopRecovery">—</strong><small id="whoopHrv">HRV —</small></div>
+            <div class="dgh-strain-card"><span>Belastung</span><strong id="whoopStrain">—</strong><small id="whoopCalories">—</small></div>
           </div>
           <p id="whoopHealthMeta" role="status" aria-live="polite">Verbinde WHOOP einmal sicher mit DG OS. Danach werden deine Werte automatisch geladen.</p>
           <section id="whoopSleepAnalysis" class="dgw-sleep-panel" aria-labelledby="dgwSleepTitle">
             <div class="dgw-sleep-header">
               <div><span class="dgw-eyebrow">WHOOP · SCHLAFANALYSE</span>
                 <h3 id="dgwSleepTitle">Wie hast du geschlafen?</h3>
+                <p class="dgh-sleep-subtitle">Entdecke deine Schlafmuster und Trends.</p>
                 <p id="dgwSleepSource">Deine Daten werden sicher geladen …</p>
               </div>
               <button type="button" id="dgwSleepRefresh" class="dgw-icon-button" aria-label="Schlafanalyse neu laden">↻</button>

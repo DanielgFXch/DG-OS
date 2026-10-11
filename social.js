@@ -9,6 +9,7 @@
   const LEGACY_SESSION_KEY = 'dgos.whoopSession';
   const ACCOUNT_LABELS = { business: 'Business', private: 'Privat' };
   const USERNAME_RE = /^[A-Za-z0-9._]{1,30}$/;
+  const isDeletedPlaceholder = username => /^__deleted__/i.test(String(username || ''));
 
   const blankAccount = () => ({
     handle: '',
@@ -18,7 +19,9 @@
     decisions: {},
     removedAt: {},
     importedAt: null,
-    sourceFiles: []
+    sourceFiles: [],
+    reportedFollowingCount: null,
+    reportedFollowingAt: null
   });
 
   const initialState = () => ({
@@ -50,7 +53,9 @@
           decisions: src.decisions && typeof src.decisions === 'object' ? src.decisions : {},
           removedAt: src.removedAt && typeof src.removedAt === 'object' ? src.removedAt : {},
           importedAt: typeof src.importedAt === 'string' ? src.importedAt : null,
-          sourceFiles: Array.isArray(src.sourceFiles) ? src.sourceFiles.filter(v => typeof v === 'string').slice(0, 30) : []
+          sourceFiles: Array.isArray(src.sourceFiles) ? src.sourceFiles.filter(v => typeof v === 'string').slice(0, 30) : [],
+          reportedFollowingCount: Number.isInteger(src.reportedFollowingCount) && src.reportedFollowingCount >= 0 && src.reportedFollowingCount <= 1000000 ? src.reportedFollowingCount : null,
+          reportedFollowingAt: typeof src.reportedFollowingAt === 'string' ? src.reportedFollowingAt : null
         };
       }
       return next;
@@ -125,11 +130,34 @@
   function renderCloud() {
     const data = cloud[state.active];
     const metrics = data && data.metrics ? data.metrics : null;
+    const acc = account();
+    const reported = data?.account && Number.isInteger(data.account.reported_following_count)
+      ? data.account.reported_following_count : acc.reportedFollowingCount;
+    const reportedAt = data?.account?.reported_following_at || acc.reportedFollowingAt;
+    const hasReported = Number.isInteger(reported) && reported >= 0;
+    // Import snapshots and an owner-read Instagram UI count are distinct sources.
+    // Never show an exported following count as Instagram Live.
+    $('socialMetricFollowing').textContent = hasReported ? String(reported) : (acc.importedAt ? String(acc.following.length) : '—');
+    $('socialFollowingSource').textContent = hasReported ? 'Instagram · manuell ' + formatDate(reportedAt) : 'Export · kein Live-Stand';
+    if (document.activeElement !== $('socialFollowingReference')) {
+      $('socialFollowingReference').value = hasReported ? String(reported) : '';
+    }
+    const snapshotFollowing = Number(metrics?.following ?? acc.following.length);
+    const snapshotAvailable = Boolean(metrics || acc.importedAt);
+    const gap = hasReported && snapshotAvailable ? snapshotFollowing - reported : 0;
+    const snapshotStamp = metrics?.capturedAt || acc.importedAt;
+    $('socialExportWarning').textContent = hasReported && gap !== 0
+      ? '⚠️ Instagram (manuell): ' + reported + ' gefolgt · letzter Export: ' + snapshotFollowing
+        + ' · Differenz: ' + Math.abs(gap) + '. Export vom ' + formatDate(snapshotStamp)
+        + '. Diese Namen sind NICHT live überprüft. Bitte einen neuen Original-Export importieren und vor jedem Entfolgen das Profil prüfen.'
+      : 'Stand: ' + (hasReported ? 'Instagram manuell ' + formatDate(reportedAt) + ' · ' : '')
+        + (snapshotAvailable ? 'Export vom ' + formatDate(snapshotStamp) : 'noch kein Export')
+        + '. Listen und Cleanup sind nicht live mit Instagram synchronisiert.';
     const status = $('socialCloudStatus');
     if (status) {
       if (!session()) status.textContent = 'Nur lokal · DG OS Gerät nicht verbunden';
       else if (!metrics) status.textContent = 'Noch keine Cloud-Historie';
-      else status.textContent = 'DG OS Cloud · ' + formatDate(metrics.capturedAt);
+      else status.textContent = 'Export-Snapshot · ' + formatDate(metrics.capturedAt);
     }
 
     const mapping = [
@@ -258,7 +286,10 @@
 
   function nonFollowers(acc = account()) {
     const followerSet = new Set(acc.followers);
-    return acc.following.filter(username => !followerSet.has(username));
+    // Deleted Instagram placeholder handles are not actionable profiles.
+    // Explicitly disputed candidates are not counted as actual unfollows.
+    return acc.following.filter(username => !followerSet.has(username) &&
+      !isDeletedPlaceholder(username) && acc.decisions[username] !== 'not_following');
   }
 
   function queue(acc = account()) {
@@ -298,7 +329,7 @@
     if (handle) handle.textContent = acc.handle ? `@${acc.handle}` : `${ACCOUNT_LABELS[key]}-Account einrichten`;
     if (status) {
       const count = nonFollowers(acc).length;
-      status.textContent = acc.following.length ? `${count} Cleanup-Kandidaten · ${acc.following.length} gefolgt` : 'Noch keine Instagram-Daten importiert';
+      status.textContent = acc.following.length ? `${count} ungeprüfte Kandidaten aus Export · ${acc.following.length} Export-Following` : 'Noch keine Instagram-Daten importiert';
     }
   }
 
@@ -317,7 +348,8 @@
     $('socialHandleInput').value = acc.handle;
     $('socialImportedAt').textContent = formatDate(acc.importedAt);
     $('socialMetricFollowers').textContent = String(acc.followers.length);
-    $('socialMetricFollowing').textContent = String(acc.following.length);
+    // renderCloud() displays the owner-reported figure if available.
+    $('socialMetricFollowing').textContent = acc.importedAt ? String(acc.following.length) : '—';
     $('socialMetricNonFollowers').textContent = String(nonFollowers(acc).length);
     $('socialMetricWhitelist').textContent = String(acc.whitelist.length);
     renderCloud();
@@ -675,12 +707,13 @@
     empty.classList.add('hidden');
     card.classList.remove('hidden');
     $('socialCleanupUsername').textContent = `@${current}`;
-    $('socialCleanupReason').textContent = 'Folgt dir nicht zurück · nicht auf Whitelist';
+    $('socialCleanupReason').textContent = 'Möglicher Kandidat laut Export · auf Instagram prüfen';
     $('socialCleanupPosition').textContent = `1 von ${all.length} offenen Kandidaten`;
     $('socialOpenInstagram').dataset.username = current;
     $('socialDecisionKeep').dataset.username = current;
     $('socialDecisionRemoved').dataset.username = current;
     $('socialDecisionLater').dataset.username = current;
+    $('socialDecisionNotFollowing').dataset.username = current;
   }
 
   function saveHandle() {
@@ -731,7 +764,7 @@
     }
     renderKeptAccounts();
     syncDecision(clean, { decision });
-    const labels = { keep: 'behalten', removed: 'als entfernt markiert', later: 'auf später verschoben' };
+    const labels = { keep: 'behalten', removed: 'als entfernt markiert', later: 'auf später verschoben', not_following: 'als nicht gefolgt ausgeblendet' };
     notice(`@${clean} wurde ${labels[decision]}.`, 'success');
     if (decision === 'removed' && previous !== 'removed' && dailyRemovedCount(acc, localDay(new Date())) >= 20) {
       notice('⚠️ Tagesziel von 20 als entfernt markierten Accounts erreicht. Bitte pausiere deine Instagram-Aktivität. Das ist keine offiziell sichere Grenze.', 'error');
@@ -844,7 +877,8 @@
     const followingSet = new Set(acc.following);
     // A new snapshot must not erase a deliberate "Behalten" decision,
     // including profiles that are not present in the current following export.
-    acc.decisions = Object.fromEntries(Object.entries(acc.decisions).filter(([username, decision]) => followingSet.has(username) || decision === 'keep'));
+    acc.decisions = Object.fromEntries(Object.entries(acc.decisions).filter(([username, decision]) =>
+      followingSet.has(username) || decision === 'keep' || decision === 'not_following'));
 
     if (!persist()) return;
     render();
@@ -935,6 +969,7 @@
     $('socialDecisionKeep').addEventListener('click', event => setDecision(event.currentTarget.dataset.username, 'keep'));
     $('socialDecisionRemoved').addEventListener('click', event => setDecision(event.currentTarget.dataset.username, 'removed'));
     $('socialDecisionLater').addEventListener('click', event => setDecision(event.currentTarget.dataset.username, 'later'));
+    $('socialDecisionNotFollowing').addEventListener('click', event => setDecision(event.currentTarget.dataset.username, 'not_following'));
     $('socialResetData').addEventListener('click', resetAccountData);
     $('socialKeptSearch').addEventListener('input', event => {
       keptSearch = String(event.target.value || '').trim().toLowerCase().replace(/^@+/, '');

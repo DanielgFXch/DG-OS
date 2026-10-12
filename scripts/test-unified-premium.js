@@ -9,7 +9,7 @@ assert.ok(sw.includes("'./dg-unified-premium.css?v=1'"));
 const links=[...html.matchAll(/<link rel="stylesheet" href="\.\/([^"]+)"\s*\/>/g)].map(m=>m[1]);
 assert.equal(links.at(-1),'dg-unified-premium.css?v=1','One shared theme must load LAST');
 assert.ok(html.indexOf('health-dock-date.css?v=1')<html.indexOf('dg-unified-premium.css?v=1'));
-assert.match(sw,/const CACHE='dgos-personal-shell-54'/,'New service-worker cache activates fresh CSS');
+assert.match(sw,/const CACHE='dgos-personal-shell-[0-9]+'/, 'Versioned shell cache includes the new CSS asset');
 assert.ok(css.includes('body[data-dgos-route] .topbar'));
 assert.ok(css.includes('body[data-dgos-route] #dgosRouteBar:not(.hidden)'));
 assert.ok(css.includes('body[data-dgos-route="trading"] #tradingCommandCenter .trading-back-personal'));

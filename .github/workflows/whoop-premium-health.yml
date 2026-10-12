@@ -5,6 +5,8 @@ on:
       - 'index.html'
       - 'health-premium.css'
       - 'health-cinematic-v2.css'
+      - 'health-compact-whoop.css'
+      - 'scripts/test-health-compact-whoop.js'
       - 'health-cinematic-v2.js'
       - 'assets/health-nightscape-v2.svg'
       - 'scripts/test-health-cinematic-v2.js'
@@ -16,6 +18,8 @@ on:
     paths:
       - 'health-premium.css'
       - 'health-cinematic-v2.css'
+      - 'health-compact-whoop.css'
+      - 'scripts/test-health-compact-whoop.js'
       - 'health-cinematic-v2.js'
       - 'assets/health-nightscape-v2.svg'
       - 'scripts/test-health-cinematic-v2.js'
@@ -34,6 +38,8 @@ jobs:
         run: node scripts/test-health-premium.js
       - name: Cinematic health reference and truthful sync chip
         run: node scripts/test-health-cinematic-v2.js
+      - name: Compact connected badge and iPhone first-screen checks
+        run: node scripts/test-health-compact-whoop.js
       - name: Existing WHOOP sleep analytics regression
         run: node scripts/test-whoop-sleep-analytics.js
       - name: WHOOP authentication/session regression

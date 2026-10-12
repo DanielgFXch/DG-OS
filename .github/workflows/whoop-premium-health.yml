@@ -7,6 +7,9 @@ on:
       - 'health-cinematic-v2.css'
       - 'health-compact-whoop.css'
       - 'scripts/test-health-compact-whoop.js'
+      - 'health-dock-date.css'
+      - 'health-dock-date.js'
+      - 'scripts/test-health-dock-date.js'
       - 'health-cinematic-v2.js'
       - 'assets/health-nightscape-v2.svg'
       - 'scripts/test-health-cinematic-v2.js'
@@ -20,6 +23,9 @@ on:
       - 'health-cinematic-v2.css'
       - 'health-compact-whoop.css'
       - 'scripts/test-health-compact-whoop.js'
+      - 'health-dock-date.css'
+      - 'health-dock-date.js'
+      - 'scripts/test-health-dock-date.js'
       - 'health-cinematic-v2.js'
       - 'assets/health-nightscape-v2.svg'
       - 'scripts/test-health-cinematic-v2.js'
@@ -40,6 +46,8 @@ jobs:
         run: node scripts/test-health-cinematic-v2.js
       - name: Compact connected badge and iPhone first-screen checks
         run: node scripts/test-health-compact-whoop.js
+      - name: iPhone fixed bottom dock and real WHOOP sleep date
+        run: node scripts/test-health-dock-date.js
       - name: Existing WHOOP sleep analytics regression
         run: node scripts/test-whoop-sleep-analytics.js
       - name: WHOOP authentication/session regression

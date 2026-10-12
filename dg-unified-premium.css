@@ -204,6 +204,32 @@ body[data-dgos-route="trading"] :is(#tradingCommandCenter,.trading-focus-card,
 body[data-dgos-route="trading"] #tradingCommandCenter{
   background:var(--dg-unified-grad)!important;
 }
+
+/* Remove the second in-card Back control: the common page Back bar is
+   present on Trading too, so navigation behaves as on Kalender/Jarvis. */
+body[data-dgos-route="trading"] #tradingCommandCenter .trading-back-personal{
+  display:none!important;
+}
+body[data-dgos-route="trading"] #tradingCommandCenter .trading-command-top{
+  justify-content:flex-end!important;
+}
+body[data-dgos-route="trading"] :is(.trading-glance-grid article,.trading-focus-card,
+  #tradingWorkspace .dg-intel-bias>div,#tradingWorkspace .dg-intel-session-grid>article,
+  #tradingWorkspace .dg-intel-price-pair>div,
+  #tradingWorkspace .dg-intel-observation){
+  border:1px solid rgba(98,160,238,.38)!important;
+  background:linear-gradient(146deg,rgba(14,42,91,.88),rgba(3,18,48,.97))!important;
+  box-shadow:inset 0 1px rgba(215,241,255,.09)!important;
+}
+body[data-dgos-route="trading"] :is(.trading-session-kicker,.trading-focus-card .personal-kicker,
+  #tradingWorkspace .dg-intel-kicker,#tradingWorkspace .dg-intel-bias small){
+  color:#8dcaff!important;
+}
+body[data-dgos-route="trading"] #tradingWorkspace .dg-intel-footer button{
+  background:linear-gradient(135deg,rgba(15,57,120,.86),rgba(4,25,64,.95))!important;
+  border:1px solid rgba(105,174,250,.45)!important;
+  color:#bce6ff!important;
+}
 body[data-dgos-route="trading"] #tradingCommandCenter .trading-back-personal{
   border-color:rgba(96,164,246,.43)!important;
   background:linear-gradient(130deg,rgba(15,51,105,.87),rgba(5,24,58,.94))!important;

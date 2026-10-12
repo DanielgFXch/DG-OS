@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - 'premium-ui.css'
+      - 'dg-unified-premium.css'
+      - 'scripts/test-unified-premium.js'
       - 'premium-ui.js'
       - 'index.html'
       - 'sw.js'
@@ -14,6 +16,8 @@ on:
       - main
     paths:
       - 'premium-ui.css'
+      - 'dg-unified-premium.css'
+      - 'scripts/test-unified-premium.js'
       - 'premium-ui.js'
       - 'scripts/test-premium-ui.js'
       - '.github/workflows/premium-ui.yml'
@@ -30,6 +34,8 @@ jobs:
         run: node --check premium-ui.js && node --check scripts/test-premium-ui.js
       - name: Premium design, routing, keyboard and mobile menu
         run: node scripts/test-premium-ui.js
+      - name: Unified premium palette and 5-tab navigation on every route
+        run: node scripts/test-unified-premium.js
       - name: Existing Jarvis dashboard regression
         run: node scripts/test-jarvis-dashboard.js
       - name: Existing WHOOP analytics regression

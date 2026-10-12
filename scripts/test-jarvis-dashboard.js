@@ -16,7 +16,7 @@ assert.ok(html.includes('jarvis-dashboard.js?v=3'));
 assert.ok(html.includes('jarvis-dashboard.css?v=1'));
 assert.ok(html.indexOf('jarvis-device-pairing.js?v=1')<html.indexOf('jarvis-dashboard.js?v=3'),
   'Keep pairing/voice controls initialized before layout composition');
-assert.match(sw,/const CACHE='dgos-personal-shell-\\d+'/, 'Versioned PWA shell must be present');
+assert.match(sw,/const CACHE='dgos-personal-shell-[0-9]+'/, 'Versioned PWA shell must be present');
 assert.ok(sw.includes('jarvis-dashboard.css?v=1'));
 assert.ok(sw.includes('jarvis-dashboard.js?v=3'));
 assert.ok(css.includes('#personalJarvis.jarvis-dashboard-ready'));

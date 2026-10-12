@@ -1,0 +1,141 @@
+/* DG OS · WHOOP compact health header · 2026-10-12
+ *
+ * On a CONFIRMED live WHOOP session only: turn the existing genuine status
+ * into a compact top-right pill, so the real sleep/recovery/strain cards move
+ * up into the first iPhone viewport. No fake state, cloned controls, or JS.
+ * All other WHOOP states keep their full connect/re-authorise UI.
+ */
+body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] > .personal-health-head{
+  position:relative!important;
+  min-height:0!important;
+  gap:0!important;
+  margin-bottom:11px!important;
+  padding:0!important;
+}
+body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] .dgh-headline{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+}
+body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] .personal-health-actions{
+  position:absolute!important;
+  inset:0 0 auto auto!important;
+  z-index:5!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  grid-template-columns:none!important;
+  grid-template-rows:none!important;
+  gap:4px!important;
+  min-height:34px!important;
+  width:max-content!important;
+  max-width:51%!important;
+  margin:0!important;
+  padding:3px 4px 3px 10px!important;
+  border-radius:999px!important;
+  border:1px solid rgba(98,179,255,.62)!important;
+  background:linear-gradient(108deg,rgba(7,35,78,.97),rgba(2,18,51,.98))!important;
+  box-shadow:inset 0 1px rgba(209,240,255,.14),
+             0 0 12px rgba(16,109,255,.18)!important;
+}
+body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] .dgh-whoop-icon{
+  display:none!important;
+}
+body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] #whoopStatus{
+  display:inline-flex!important;
+  min-width:0!important;
+  align-items:center!important;
+  flex-wrap:nowrap!important;
+  white-space:nowrap!important;
+  gap:5px!important;
+  font-size:clamp(9px,1.8vw,11px)!important;
+  line-height:1.25!important;
+  letter-spacing:-.02em!important;
+  font-weight:720!important;
+  color:#eff9ff!important;
+}
+body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] #whoopStatus::before{
+  width:7px!important;height:7px!important;
+  flex:0 0 7px!important;
+  background:#26ecc0!important;
+  box-shadow:0 0 10px rgba(43,236,178,.8)!important;
+}
+body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] .dgh-sync-subline,
+body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] .dgh-sync-subline[data-visible="true"]{
+  display:none!important;
+}
+/* The details button still triggers the exact same WHOOP details panel.
+   A visual-only chevron, not a new or misleading connection operation. */
+body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] .dgh-details-trigger{
+  grid-column:auto!important;grid-row:auto!important;
+  position:relative!important;
+  display:flex!important;flex:0 0 30px!important;
+  align-items:center!important;justify-content:center!important;
+  width:30px!important;min-width:30px!important;
+  height:30px!important;min-height:30px!important;
+  padding:0!important;
+  border-radius:999px!important;
+  font-size:20px!important;line-height:1!important;
+  background:rgba(20,69,142,.36)!important;
+  color:#b6ddff!important;
+  box-shadow:none!important;
+}
+body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] .dgh-details-trigger:focus-visible{
+  outline:2px solid #83d3ff!important;
+  outline-offset:3px!important;
+}
+/* Reclaim the space formerly occupied by the big WHOOP connection card
+   without squeezing any actual metric values or hiding any information. */
+@media(max-width:700px){
+  body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] > .personal-health-head{
+    min-height:0!important;
+    gap:0!important;
+    margin-bottom:10px!important;
+  }
+  body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] .personal-health-actions{
+    top:0!important;right:0!important;
+    max-width:53%!important;
+    min-height:33px!important;
+    padding:2px 3px 2px 8px!important;
+    border-radius:999px!important;
+  }
+  body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] .dgh-headline .personal-kicker{
+    max-width:46%!important;
+    font-size:10px!important;
+    letter-spacing:.20em!important;
+  }
+  body[data-dgos-route="health"] #personalHealth .personal-health-values>div:first-child{
+    min-height:176px!important;
+    padding:13px 12px!important;
+    gap:5px 8px!important;
+  }
+  body[data-dgos-route="health"] #personalHealth .personal-health-values>div:first-child>strong{
+    width:clamp(119px,36vw,156px)!important;
+    height:clamp(119px,36vw,156px)!important;
+  }
+  body[data-dgos-route="health"] #personalHealth .personal-health-values>div:nth-child(n+2){
+    min-height:188px!important;
+    padding:12px 9px 10px!important;
+    gap:6px!important;
+  }
+  body[data-dgos-route="health"] #personalHealth .personal-health-values>div:nth-child(n+2)>strong{
+    width:clamp(99px,27vw,119px)!important;
+    height:clamp(99px,27vw,119px)!important;
+  }
+  body[data-dgos-route="health"] #personalHealth #whoopHealthMeta{
+    margin-top:11px!important;
+    margin-bottom:11px!important;
+  }
+}
+@media(max-width:375px){
+  body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] .personal-health-actions{
+    max-width:55%!important;
+  }
+  body[data-dgos-route="health"] #personalHealth[data-whoop-sync="live"] #whoopStatus{
+    font-size:9px!important;gap:4px!important;
+  }
+  body[data-dgos-route="health"] #personalHealth .personal-health-values>div:first-child>strong{
+    width:115px!important;height:115px!important;
+  }
+}

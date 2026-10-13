@@ -827,6 +827,31 @@
           <div id="tradingCommandDataState" class="trading-command-data-state"><i aria-hidden="true"></i><span>DATEN WERDEN GEPRÜFT</span></div>
         </div>
 
+        <section id="dgLondonRadar" class="dg-london-radar" aria-labelledby="dgLondonRadarTitle" aria-live="polite">
+          <div class="dg-london-radar-top">
+            <div>
+              <span class="dg-london-kicker">DG LIQUIDITY RADAR · XAUUSD</span>
+              <h3 id="dgLondonRadarTitle">London High / Low</h3>
+              <p>Welche London-Liquidität wurde genommen? Was ist auf H1 nachweisbar?</p>
+            </div>
+            <strong id="dgLondonRadarState" class="dg-london-state" data-state="wait">DATEN PRÜFEN</strong>
+          </div>
+          <div class="dg-london-levels">
+            <article class="dg-london-level">
+              <span>LONDON HIGH · BUY-SIDE</span>
+              <strong id="dgLondonRadarHigh">—</strong>
+              <div id="dgLondonRadarHighState" class="dg-london-level-state" data-state="wait">Noch keine belegte Auswertung</div>
+            </article>
+            <article class="dg-london-level">
+              <span>LONDON LOW · SELL-SIDE</span>
+              <strong id="dgLondonRadarLow">—</strong>
+              <div id="dgLondonRadarLowState" class="dg-london-level-state" data-state="wait">Noch keine belegte Auswertung</div>
+            </article>
+          </div>
+          <p id="dgLondonRadarContext" class="dg-london-context">Warte auf abgeschlossene H1-Kerzen. Keine erfundenen Sweeps und keine automatischen Entries.</p>
+          <small id="dgLondonRadarSource" class="dg-london-source">Quelle: abgeschlossene UTC-H1-Kerzen · Schweiz-Zeit in Events</small>
+        </section>
+
         <div class="trading-session-hero">
           <div class="trading-session-copy">
             <span id="tradingActiveSession" class="trading-session-kicker">SESSION —</span>

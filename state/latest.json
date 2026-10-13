@@ -1,8 +1,8 @@
 {
-  "updatedAt": "2026-10-13T08:30:02.610Z",
+  "updatedAt": "2026-10-13T16:23:06.522Z",
   "dgOsVersion": "0.59.0",
   "liveData": {
-    "price": 4191.19338,
+    "price": 4157.21795,
     "dailyOpen": 4169.33516,
     "dailyHigh": 4200.44525,
     "dailyLow": 4150.51827,
@@ -23,14 +23,14 @@
       "date": "2026-10-13"
     },
     "london": {
-      "high": 4191.89479,
-      "low": 4185.32625,
+      "high": 4194.08775,
+      "low": 4157.31271,
       "date": "2026-10-13"
     },
     "ny": {
-      "high": 4176.62505,
-      "low": 4158.69583,
-      "date": "2026-10-12"
+      "high": 4189.35903,
+      "low": 4155.58511,
+      "date": "2026-10-13"
     }
   },
   "premiumDiscount": {
@@ -39,12 +39,12 @@
       "low": 4150.51827,
       "range": 49.926980000000185,
       "equilibrium": 4175.48176,
-      "price": 4191.19338,
-      "distanceToEq": 15.711620000000039,
-      "distanceToEqPercent": 31.469197616198656,
-      "zone": "premium",
-      "isPremium": true,
-      "isDiscount": false,
+      "price": 4157.21795,
+      "distanceToEq": -18.263809999999467,
+      "distanceToEqPercent": -36.58104295513047,
+      "zone": "discount",
+      "isPremium": false,
+      "isDiscount": true,
       "isEquilibrium": false
     },
     "weekly": {
@@ -52,12 +52,12 @@
       "low": 4150.51827,
       "range": 65.68883000000005,
       "equilibrium": 4183.362685,
-      "price": 4191.19338,
-      "distanceToEq": 7.8306949999996505,
-      "distanceToEqPercent": 11.920892791056934,
-      "zone": "premium",
-      "isPremium": true,
-      "isDiscount": false,
+      "price": 4157.21795,
+      "distanceToEq": -26.144734999999855,
+      "distanceToEqPercent": -39.80088395546067,
+      "zone": "discount",
+      "isPremium": false,
+      "isDiscount": true,
       "isEquilibrium": false
     },
     "monthly": {
@@ -65,9 +65,9 @@
       "low": 4061.73421,
       "range": 163.91548000000012,
       "equilibrium": 4143.69195,
-      "price": 4191.19338,
-      "distanceToEq": 47.501429999999345,
-      "distanceToEqPercent": 28.979221486585228,
+      "price": 4157.21795,
+      "distanceToEq": 13.52599999999984,
+      "distanceToEqPercent": 8.251813678610361,
       "zone": "premium",
       "isPremium": true,
       "isDiscount": false,
@@ -77,8 +77,8 @@
   "htfBias": {
     "bias": "mixed",
     "confidence": 67,
-    "trendStrength": 24,
-    "reason": "Daily > Open · Weekly < Open · Monthly > Open",
+    "trendStrength": 28,
+    "reason": "Daily < Open · Weekly < Open · Monthly > Open",
     "lastBOS": null,
     "currentStructure": null
   },
@@ -90,7 +90,7 @@
       "timeframe": "Daily",
       "period": "2026-10-13",
       "price": 4200.44525,
-      "status": "approaching"
+      "status": "active"
     },
     {
       "id": "dailyLow",
@@ -99,7 +99,7 @@
       "timeframe": "Daily",
       "period": "2026-10-13",
       "price": 4150.51827,
-      "status": "active"
+      "status": "approaching"
     },
     {
       "id": "weeklyHigh",
@@ -117,7 +117,7 @@
       "timeframe": "Weekly",
       "period": "2026-10-12",
       "price": 4150.51827,
-      "status": "active"
+      "status": "approaching"
     },
     {
       "id": "monthlyHigh",
@@ -144,7 +144,7 @@
       "timeframe": "Asia Session",
       "period": "2026-10-13",
       "price": 4200.44525,
-      "status": "approaching"
+      "status": "active"
     },
     {
       "id": "asiaLow",
@@ -153,7 +153,7 @@
       "timeframe": "Asia Session",
       "period": "2026-10-13",
       "price": 4150.51827,
-      "status": "active"
+      "status": "approaching"
     },
     {
       "id": "londonHigh",
@@ -161,8 +161,8 @@
       "type": "high",
       "timeframe": "London Session",
       "period": "2026-10-13",
-      "price": 4191.89479,
-      "status": "touched"
+      "price": 4194.08775,
+      "status": "active"
     },
     {
       "id": "londonLow",
@@ -170,26 +170,26 @@
       "type": "low",
       "timeframe": "London Session",
       "period": "2026-10-13",
-      "price": 4185.32625,
-      "status": "approaching"
+      "price": 4157.31271,
+      "status": "sweeped"
     },
     {
       "id": "nyHigh",
       "label": "New York High",
       "type": "high",
       "timeframe": "New York Session",
-      "period": "2026-10-12",
-      "price": 4176.62505,
-      "status": "sweeped"
+      "period": "2026-10-13",
+      "price": 4189.35903,
+      "status": "active"
     },
     {
       "id": "nyLow",
       "label": "New York Low",
       "type": "low",
       "timeframe": "New York Session",
-      "period": "2026-10-12",
-      "price": 4158.69583,
-      "status": "active"
+      "period": "2026-10-13",
+      "price": 4155.58511,
+      "status": "touched"
     }
   ],
   "pois": [
@@ -234,7 +234,9 @@
       },
       "structureReference": null,
       "mitigationDetail": null,
-      "relatedLiquidity": [],
+      "relatedLiquidity": [
+        "londonHigh"
+      ],
       "relatedSession": "ny",
       "relatedHTFBias": "mixed",
       "premiumDiscountZone": "premium",
@@ -242,7 +244,7 @@
         "at": "2026-10-12T06:00:00.000Z",
         "reason": "Preis hat die Zone getestet und mit Kerze 2026-10-12 06:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 4.71
+      "distanceToPrice": 38.69
     },
     {
       "id": "orderBlock-H1-2026-10-12 01:00:00-4201.1511-4216.2071",
@@ -297,7 +299,7 @@
         "at": "2026-10-12T05:00:00.000Z",
         "reason": "Preis hat die Zone getestet und mit Kerze 2026-10-12 05:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 17.49
+      "distanceToPrice": 51.46
     },
     {
       "id": "orderBlock-H1-2026-10-12 23:00:00-4166.8403-4175.0527",
@@ -340,14 +342,15 @@
       },
       "structureReference": null,
       "mitigationDetail": null,
-      "relatedLiquidity": [
-        "nyHigh"
-      ],
+      "relatedLiquidity": [],
       "relatedSession": null,
       "relatedHTFBias": "mixed",
       "premiumDiscountZone": "discount",
-      "reaction": null,
-      "distanceToPrice": 20.25
+      "reaction": {
+        "at": "2026-10-13T16:00:00.000Z",
+        "reason": "Preis hat die Zone getestet und mit Kerze 2026-10-13 16:00:00 UTC wieder außerhalb geschlossen"
+      },
+      "distanceToPrice": 13.73
     },
     {
       "id": "orderBlock-H1-2026-10-13 00:00:00-4154.4396-4171.3946",
@@ -391,6 +394,7 @@
       "structureReference": null,
       "mitigationDetail": null,
       "relatedLiquidity": [
+        "londonLow",
         "nyLow"
       ],
       "relatedSession": "asia",
@@ -400,7 +404,7 @@
         "at": "2026-10-13T03:00:00.000Z",
         "reason": "Preis hat die Zone getestet und mit Kerze 2026-10-13 03:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 28.28
+      "distanceToPrice": 5.7
     },
     {
       "id": "fvg-H1-2026-10-12 00:00:00-4200.0898-4201.1511",
@@ -440,7 +444,7 @@
       "relatedHTFBias": "mixed",
       "premiumDiscountZone": "premium",
       "reaction": null,
-      "distanceToPrice": 9.43
+      "distanceToPrice": 43.4
     },
     {
       "id": "fvg-H1-2026-10-12 03:00:00-4203.6875-4204.2062",
@@ -477,7 +481,7 @@
       "relatedHTFBias": "mixed",
       "premiumDiscountZone": "premium",
       "reaction": null,
-      "distanceToPrice": 12.75
+      "distanceToPrice": 46.73
     },
     {
       "id": "fvg-H1-2026-10-12 04:00:00-4195.9933-4201.6807",
@@ -511,7 +515,8 @@
       "mitigationDetail": null,
       "relatedLiquidity": [
         "dailyHigh",
-        "asiaHigh"
+        "asiaHigh",
+        "londonHigh"
       ],
       "relatedSession": "asia",
       "relatedHTFBias": "mixed",
@@ -520,7 +525,7 @@
         "at": "2026-10-13T06:00:00.000Z",
         "reason": "Preis hat die Zone getestet und mit Kerze 2026-10-13 06:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 7.64
+      "distanceToPrice": 41.62
     },
     {
       "id": "fvg-H1-2026-10-12 05:00:00-4192.1709-4193.7752",
@@ -559,10 +564,10 @@
       "relatedHTFBias": "mixed",
       "premiumDiscountZone": "premium",
       "reaction": {
-        "at": "2026-10-13T08:00:00.000Z",
-        "reason": "Preis hat die Zone getestet und mit Kerze 2026-10-13 08:00:00 UTC wieder außerhalb geschlossen"
+        "at": "2026-10-13T09:00:00.000Z",
+        "reason": "Preis hat die Zone getestet und mit Kerze 2026-10-13 09:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 1.78
+      "distanceToPrice": 35.76
     },
     {
       "id": "fvg-H1-2026-10-12 08:00:00-4178.5058-4179.6633",
@@ -594,9 +599,7 @@
       "displacement": null,
       "structureReference": null,
       "mitigationDetail": null,
-      "relatedLiquidity": [
-        "nyHigh"
-      ],
+      "relatedLiquidity": [],
       "relatedSession": "london",
       "relatedHTFBias": "mixed",
       "premiumDiscountZone": "premium",
@@ -604,7 +607,7 @@
         "at": "2026-10-12T11:00:00.000Z",
         "reason": "Preis hat die Zone getestet und mit Kerze 2026-10-12 11:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 12.11
+      "distanceToPrice": 21.87
     },
     {
       "id": "fvg-H1-2026-10-12 20:00:00-4169.5244-4171.5335",
@@ -644,7 +647,7 @@
         "at": "2026-10-13T03:00:00.000Z",
         "reason": "Preis hat die Zone getestet und mit Kerze 2026-10-13 03:00:00 UTC wieder außerhalb geschlossen"
       },
-      "distanceToPrice": 20.66
+      "distanceToPrice": 13.31
     },
     {
       "id": "fvg-H1-2026-10-13 02:00:00-4169.6201-4175.8884",
@@ -654,7 +657,7 @@
       "priceLow": 4169.62015,
       "timeframe": "H1",
       "createdAt": "2026-10-13T02:00:00.000Z",
-      "status": "fresh",
+      "status": "mitigated",
       "strength": null,
       "confidence": 63,
       "reason": "Bullische Preislücke: Low der Kerze 2026-10-13 03:00:00 UTC liegt über dem High der Kerze 2026-10-13 01:00:00 UTC",
@@ -676,14 +679,12 @@
       "displacement": null,
       "structureReference": null,
       "mitigationDetail": null,
-      "relatedLiquidity": [
-        "nyHigh"
-      ],
+      "relatedLiquidity": [],
       "relatedSession": "asia",
       "relatedHTFBias": "mixed",
       "premiumDiscountZone": "discount",
       "reaction": null,
-      "distanceToPrice": 18.44
+      "distanceToPrice": 15.54
     },
     {
       "id": "fvg-H1-2026-10-13 03:00:00-4181.6509-4186.9867",
@@ -715,14 +716,12 @@
       "displacement": null,
       "structureReference": null,
       "mitigationDetail": null,
-      "relatedLiquidity": [
-        "londonLow"
-      ],
+      "relatedLiquidity": [],
       "relatedSession": "asia",
       "relatedHTFBias": "mixed",
       "premiumDiscountZone": "premium",
       "reaction": null,
-      "distanceToPrice": 6.87
+      "distanceToPrice": 27.1
     },
     {
       "id": "fvg-H1-2026-10-13 04:00:00-4188.4998-4189.8856",
@@ -755,51 +754,102 @@
       "structureReference": null,
       "mitigationDetail": null,
       "relatedLiquidity": [
-        "londonHigh"
+        "nyHigh"
       ],
       "relatedSession": "asia",
       "relatedHTFBias": "mixed",
       "premiumDiscountZone": "premium",
       "reaction": null,
-      "distanceToPrice": 2
+      "distanceToPrice": 31.97
+    },
+    {
+      "id": "fvg-H1-2026-10-13 13:00:00-4173.4504-4178.1924",
+      "type": "fvg",
+      "direction": "bearish",
+      "priceHigh": 4178.19238,
+      "priceLow": 4173.45039,
+      "timeframe": "H1",
+      "createdAt": "2026-10-13T13:00:00.000Z",
+      "status": "fresh",
+      "strength": null,
+      "confidence": 39,
+      "reason": "Bearische Preislücke: High der Kerze 2026-10-13 14:00:00 UTC liegt unter dem Low der Kerze 2026-10-13 12:00:00 UTC",
+      "sourceCandle": {
+        "datetime": "2026-10-13 13:00:00",
+        "open": 4179.01555,
+        "high": 4189.35903,
+        "low": 4169.4463,
+        "close": 4170.45345
+      },
+      "formedThroughCandle": {
+        "datetime": "2026-10-13 14:00:00",
+        "open": 4170.33598,
+        "high": 4173.45039,
+        "low": 4163.37066,
+        "close": 4168.34674
+      },
+      "impulseSize": null,
+      "displacement": null,
+      "structureReference": null,
+      "mitigationDetail": null,
+      "relatedLiquidity": [],
+      "relatedSession": "london",
+      "relatedHTFBias": "mixed",
+      "premiumDiscountZone": "equilibrium",
+      "reaction": null,
+      "distanceToPrice": 18.6
+    },
+    {
+      "id": "fvg-H1-2026-10-13 15:00:00-4161.7867-4163.3707",
+      "type": "fvg",
+      "direction": "bearish",
+      "priceHigh": 4163.37066,
+      "priceLow": 4161.78666,
+      "timeframe": "H1",
+      "createdAt": "2026-10-13T15:00:00.000Z",
+      "status": "fresh",
+      "strength": null,
+      "confidence": 14,
+      "reason": "Bearische Preislücke: High der Kerze 2026-10-13 16:00:00 UTC liegt unter dem Low der Kerze 2026-10-13 14:00:00 UTC",
+      "sourceCandle": {
+        "datetime": "2026-10-13 15:00:00",
+        "open": 4169.47218,
+        "high": 4169.47218,
+        "low": 4157.31271,
+        "close": 4159.18205
+      },
+      "formedThroughCandle": {
+        "datetime": "2026-10-13 16:00:00",
+        "open": 4159.05661,
+        "high": 4161.78666,
+        "low": 4155.58511,
+        "close": 4157.21795
+      },
+      "impulseSize": null,
+      "displacement": null,
+      "structureReference": null,
+      "mitigationDetail": null,
+      "relatedLiquidity": [],
+      "relatedSession": "london",
+      "relatedHTFBias": "mixed",
+      "premiumDiscountZone": "discount",
+      "reaction": null,
+      "distanceToPrice": 5.36
     }
   ],
   "structure": [
     {
-      "id": "swingHigh-internal-2026-10-10 11:00:00--4196.0075",
+      "id": "swingHigh-internal-2026-10-11 07:00:00--4195.9988",
       "type": "swingHigh",
       "label": null,
-      "price": 4196.00749,
-      "createdAt": "2026-10-10T11:00:00.000Z",
+      "price": 4195.9988,
+      "createdAt": "2026-10-11T07:00:00.000Z",
       "timeframe": "H1",
       "direction": null,
       "structureType": "internal",
       "status": "active",
-      "confidence": 2,
-      "reason": "Erster erkannter Swing High bei 4196.00749 (2026-10-10 11:00:00 UTC, interne Struktur) — noch kein Vergleichspunkt",
-      "sourceCandle": {
-        "datetime": "2026-10-10 11:00:00",
-        "open": 4195.81193,
-        "high": 4196.00749,
-        "low": 4195.74537,
-        "close": 4195.90579
-      },
-      "brokenLevel": null,
-      "relatedSession": "london",
-      "relatedHTFBias": "mixed"
-    },
-    {
-      "id": "swingHigh-internal-2026-10-11 07:00:00-LH-4195.9988",
-      "type": "swingHigh",
-      "label": "LH",
-      "price": 4195.9988,
-      "createdAt": "2026-10-11T07:00:00.000Z",
-      "timeframe": "H1",
-      "direction": "bearish",
-      "structureType": "internal",
-      "status": "active",
       "confidence": 0,
-      "reason": "Lower High: Swing High bei 4195.9988 (2026-10-11 07:00:00 UTC, interne Struktur)",
+      "reason": "Erster erkannter Swing High bei 4195.9988 (2026-10-11 07:00:00 UTC, interne Struktur) — noch kein Vergleichspunkt",
       "sourceCandle": {
         "datetime": "2026-10-11 07:00:00",
         "open": 4195.81006,
@@ -1028,7 +1078,7 @@
       "direction": "bearish",
       "structureType": "internal",
       "status": "active",
-      "confidence": 9,
+      "confidence": 4,
       "reason": "Lower High: Swing High bei 4194.50519 (2026-10-13 07:00:00 UTC, interne Struktur)",
       "sourceCandle": {
         "datetime": "2026-10-13 07:00:00",
@@ -1042,40 +1092,40 @@
       "relatedHTFBias": "mixed"
     },
     {
-      "id": "swingLow-internal-2026-10-10 10:00:00--4195.7313",
-      "type": "swingLow",
-      "label": null,
-      "price": 4195.7313,
-      "createdAt": "2026-10-10T10:00:00.000Z",
+      "id": "swingHigh-internal-2026-10-13 12:00:00-LH-4191.2905",
+      "type": "swingHigh",
+      "label": "LH",
+      "price": 4191.2905,
+      "createdAt": "2026-10-13T12:00:00.000Z",
       "timeframe": "H1",
-      "direction": null,
+      "direction": "bearish",
       "structureType": "internal",
       "status": "active",
-      "confidence": 0,
-      "reason": "Erster erkannter Swing Low bei 4195.7313 (2026-10-10 10:00:00 UTC, interne Struktur) — noch kein Vergleichspunkt",
+      "confidence": 18,
+      "reason": "Lower High: Swing High bei 4191.2905 (2026-10-13 12:00:00 UTC, interne Struktur)",
       "sourceCandle": {
-        "datetime": "2026-10-10 10:00:00",
-        "open": 4195.79598,
-        "high": 4196.00311,
-        "low": 4195.7313,
-        "close": 4195.89919
+        "datetime": "2026-10-13 12:00:00",
+        "open": 4186.16336,
+        "high": 4191.2905,
+        "low": 4178.19238,
+        "close": 4179.10566
       },
       "brokenLevel": null,
       "relatedSession": "london",
       "relatedHTFBias": "mixed"
     },
     {
-      "id": "swingLow-internal-2026-10-10 21:00:00-HL-4195.7454",
+      "id": "swingLow-internal-2026-10-10 21:00:00--4195.7454",
       "type": "swingLow",
-      "label": "HL",
+      "label": null,
       "price": 4195.74537,
       "createdAt": "2026-10-10T21:00:00.000Z",
       "timeframe": "H1",
-      "direction": "bullish",
+      "direction": null,
       "structureType": "internal",
       "status": "active",
       "confidence": 0,
-      "reason": "Higher Low: Swing Low bei 4195.74537 (2026-10-10 21:00:00 UTC, interne Struktur)",
+      "reason": "Erster erkannter Swing Low bei 4195.74537 (2026-10-10 21:00:00 UTC, interne Struktur) — noch kein Vergleichspunkt",
       "sourceCandle": {
         "datetime": "2026-10-10 21:00:00",
         "open": 4195.8083,
@@ -1318,6 +1368,29 @@
       "relatedHTFBias": "mixed"
     },
     {
+      "id": "swingLow-internal-2026-10-13 10:00:00-LL-4180.0028",
+      "type": "swingLow",
+      "label": "LL",
+      "price": 4180.00284,
+      "createdAt": "2026-10-13T10:00:00.000Z",
+      "timeframe": "H1",
+      "direction": "bearish",
+      "structureType": "internal",
+      "status": "broken",
+      "confidence": 5,
+      "reason": "Lower Low: Swing Low bei 4180.00284 (2026-10-13 10:00:00 UTC, interne Struktur)",
+      "sourceCandle": {
+        "datetime": "2026-10-13 10:00:00",
+        "open": 4186.21835,
+        "high": 4188.13084,
+        "low": 4180.00284,
+        "close": 4181.725
+      },
+      "brokenLevel": null,
+      "relatedSession": "london",
+      "relatedHTFBias": "mixed"
+    },
+    {
       "id": "BOS-internal-2026-10-11 21:00:00--4194.2234",
       "type": "BOS",
       "label": null,
@@ -1480,6 +1553,33 @@
       "relatedHTFBias": "mixed"
     },
     {
+      "id": "CHOCH-internal-2026-10-13 12:00:00--4179.1057",
+      "type": "CHOCH",
+      "label": null,
+      "price": 4179.10566,
+      "createdAt": "2026-10-13T12:00:00.000Z",
+      "timeframe": "H1",
+      "direction": "bearish",
+      "structureType": "internal",
+      "status": "confirmed",
+      "confidence": 8,
+      "reason": "Change of Character (bearish): Close 4179.10566 bei 2026-10-13 12:00:00 UTC unter vorherigem Swing Low 4180.00284 (interne Struktur)",
+      "sourceCandle": {
+        "datetime": "2026-10-13 12:00:00",
+        "open": 4186.16336,
+        "high": 4191.2905,
+        "low": 4178.19238,
+        "close": 4179.10566
+      },
+      "brokenLevel": {
+        "type": "swingLow",
+        "price": 4180.00284,
+        "createdAt": "2026-10-13T10:00:00.000Z"
+      },
+      "relatedSession": "london",
+      "relatedHTFBias": "mixed"
+    },
+    {
       "id": "swingHigh-external-2026-10-12 01:00:00--4216.2071",
       "type": "swingHigh",
       "label": null,
@@ -1569,6 +1669,29 @@
       },
       "brokenLevel": null,
       "relatedSession": "asia",
+      "relatedHTFBias": "mixed"
+    },
+    {
+      "id": "swingHigh-external-2026-10-13 12:00:00-LH-4191.2905",
+      "type": "swingHigh",
+      "label": "LH",
+      "price": 4191.2905,
+      "createdAt": "2026-10-13T12:00:00.000Z",
+      "timeframe": "H1",
+      "direction": "bearish",
+      "structureType": "external",
+      "status": "active",
+      "confidence": 20,
+      "reason": "Lower High: Swing High bei 4191.2905 (2026-10-13 12:00:00 UTC, externe Struktur)",
+      "sourceCandle": {
+        "datetime": "2026-10-13 12:00:00",
+        "open": 4186.16336,
+        "high": 4191.2905,
+        "low": 4178.19238,
+        "close": 4179.10566
+      },
+      "brokenLevel": null,
+      "relatedSession": "london",
       "relatedHTFBias": "mixed"
     },
     {
@@ -1723,7 +1846,7 @@
     }
   ],
   "dgConfidence": {
-    "confidence": 67,
+    "confidence": 65,
     "contributions": [
       {
         "id": "session",
@@ -1756,9 +1879,9 @@
       {
         "id": "fvg",
         "label": "Fair Value Gap",
-        "score": 36,
+        "score": 20,
         "status": "positive",
-        "reason": "2/9 Fair Value Gap-Zonen noch frisch, Ø 36% Confidence."
+        "reason": "3/11 Fair Value Gap-Zonen noch frisch, Ø 20% Confidence."
       },
       {
         "id": "orderBlock",
@@ -1793,9 +1916,9 @@
       {
         "id": "fvg",
         "label": "Fair Value Gap",
-        "score": 36,
+        "score": 20,
         "status": "positive",
-        "reason": "2/9 Fair Value Gap-Zonen noch frisch, Ø 36% Confidence."
+        "reason": "3/11 Fair Value Gap-Zonen noch frisch, Ø 20% Confidence."
       }
     ],
     "negativeFactors": [
@@ -1817,10 +1940,10 @@
     "missingFactors": []
   },
   "decision": {
-    "id": "decision-1791880202597",
-    "timestamp": "2026-10-13T08:30:02.597Z",
+    "id": "decision-1791908586521",
+    "timestamp": "2026-10-13T16:23:06.521Z",
     "state": "WAIT",
-    "confidence": 67,
+    "confidence": 65,
     "reason": "DG-Regeln teilweise definiert, aber die Regelanwendung ist noch nicht implementiert (nächste Ausbaustufe der Decision Engine).",
     "supportingModules": [
       "htfBias",
@@ -1831,7 +1954,15 @@
       "dgConfidence"
     ],
     "missingModules": [],
-    "conflictingModules": [],
+    "conflictingModules": [
+      {
+        "modules": [
+          "structure",
+          "pois"
+        ],
+        "reason": "Structure Engine (bullish) vs. POI Engine (bearish)"
+      }
+    ],
     "metConditions": [],
     "unmetConditions": [],
     "rulesStatus": {
@@ -1864,7 +1995,7 @@
         "label": "Structure Engine",
         "available": true,
         "direction": "bullish",
-        "summary": "Externe Struktur: BULLISH · Interne Struktur: BULLISH."
+        "summary": "Externe Struktur: BULLISH · Interne Struktur: BEARISH."
       },
       "liquidity": {
         "label": "Liquidity Engine",
@@ -1875,20 +2006,20 @@
       "pois": {
         "label": "POI Engine",
         "available": true,
-        "direction": null,
-        "summary": "2/13 POIs frisch (1 bullish, 1 bearish)."
+        "direction": "bearish",
+        "summary": "3/15 POIs frisch (0 bullish, 3 bearish)."
       },
       "premiumDiscount": {
         "label": "Premium/Discount",
         "available": true,
         "direction": null,
-        "summary": "daily: premium · weekly: premium · monthly: premium"
+        "summary": "daily: discount · weekly: discount · monthly: premium"
       },
       "dgConfidence": {
         "label": "DG Confidence Engine",
         "available": true,
         "direction": null,
-        "summary": "67% Confidence · 4 positiv, 2 negativ, 0 fehlend."
+        "summary": "65% Confidence · 4 positiv, 2 negativ, 0 fehlend."
       }
     }
   },
@@ -1901,7 +2032,7 @@
         "timeframe": "Asia Session",
         "period": "2026-10-13",
         "price": 4200.44525,
-        "status": "approaching"
+        "status": "active"
       },
       {
         "id": "asiaLow",
@@ -1910,7 +2041,7 @@
         "timeframe": "Asia Session",
         "period": "2026-10-13",
         "price": 4150.51827,
-        "status": "active"
+        "status": "approaching"
       },
       {
         "id": "londonHigh",
@@ -1918,8 +2049,8 @@
         "type": "high",
         "timeframe": "London Session",
         "period": "2026-10-13",
-        "price": 4191.89479,
-        "status": "touched"
+        "price": 4194.08775,
+        "status": "active"
       },
       {
         "id": "londonLow",
@@ -1927,26 +2058,26 @@
         "type": "low",
         "timeframe": "London Session",
         "period": "2026-10-13",
-        "price": 4185.32625,
-        "status": "approaching"
+        "price": 4157.31271,
+        "status": "sweeped"
       },
       {
         "id": "nyHigh",
         "label": "New York High",
         "type": "high",
         "timeframe": "New York Session",
-        "period": "2026-10-12",
-        "price": 4176.62505,
-        "status": "sweeped"
+        "period": "2026-10-13",
+        "price": 4189.35903,
+        "status": "active"
       },
       {
         "id": "nyLow",
         "label": "New York Low",
         "type": "low",
         "timeframe": "New York Session",
-        "period": "2026-10-12",
-        "price": 4158.69583,
-        "status": "active"
+        "period": "2026-10-13",
+        "price": 4155.58511,
+        "status": "touched"
       },
       {
         "id": "dailyHigh",
@@ -1955,7 +2086,7 @@
         "timeframe": "Daily",
         "period": "2026-10-13",
         "price": 4200.44525,
-        "status": "approaching"
+        "status": "active"
       },
       {
         "id": "dailyLow",
@@ -1964,7 +2095,7 @@
         "timeframe": "Daily",
         "period": "2026-10-13",
         "price": 4150.51827,
-        "status": "active"
+        "status": "approaching"
       },
       {
         "id": "weeklyHigh",
@@ -1982,19 +2113,24 @@
         "timeframe": "Weekly",
         "period": "2026-10-12",
         "price": 4150.51827,
-        "status": "active"
+        "status": "approaching"
       }
     ],
     "structureBias": {
-      "internal": "bullish",
+      "internal": "bearish",
       "external": "bullish"
     },
     "openZones": [],
     "events": [
       {
         "kind": "reaction",
-        "at": "2026-10-13T08:00:00.000Z",
-        "text": "Fair Value Gap bearish (H1, 4192.17–4193.78) — Preis hat die Zone getestet und mit Kerze 2026-10-13 08:00:00 UTC wieder außerhalb geschlossen"
+        "at": "2026-10-13T16:00:00.000Z",
+        "text": "Order Block bearish (H1, 4166.84–4175.05) — Preis hat die Zone getestet und mit Kerze 2026-10-13 16:00:00 UTC wieder außerhalb geschlossen"
+      },
+      {
+        "kind": "reaction",
+        "at": "2026-10-13T09:00:00.000Z",
+        "text": "Fair Value Gap bearish (H1, 4192.17–4193.78) — Preis hat die Zone getestet und mit Kerze 2026-10-13 09:00:00 UTC wieder außerhalb geschlossen"
       },
       {
         "kind": "reaction",
@@ -2029,7 +2165,7 @@
       {
         "kind": "sweep",
         "at": null,
-        "text": "New York High (New York Session) ist gesweept — aktueller Preis 4176.63"
+        "text": "London Low (London Session) ist gesweept — aktueller Preis 4157.31"
       }
     ]
   },
@@ -2047,8 +2183,10 @@
     "displacement-2026-10-13 00:00:00",
     "displacement-2026-10-13 01:00:00",
     "displacement-2026-10-13 02:00:00",
+    "displacement-2026-10-13 13:00:00",
     "engulfing-2026-10-12 11:00:00",
     "engulfing-2026-10-12 13:00:00",
-    "engulfing-2026-10-12 17:00:00"
+    "engulfing-2026-10-12 17:00:00",
+    "engulfing-2026-10-13 11:00:00"
   ]
 }

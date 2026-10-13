@@ -63,8 +63,63 @@
     li.textContent=value;
     host.append(li);
   }
+  const radarStateLabel={
+    OPEN:'OFFEN · NICHT GENOMMEN',
+    TAKEN_NO_RETURN:'GENOMMEN · KEINE H1-RÜCKKEHR',
+    RETURN_INSIDE:'GENOMMEN · H1-RÜCKKEHR'
+  };
+  function renderLondonRadar(data){
+    const radar=data.londonLiquidity;
+    const historical=data.status==='HISTORICAL';
+    const textLevel=(id,level)=>set(id,number(level));
+    const renderTake=(id,ev,pending)=>{
+      const node=$(id);
+      if(!node)return;
+      set(id,pending || radarStateLabel[ev?.state] || 'NOCH NICHT BEWERTBAR');
+      node.dataset.state=pending?'pending':ev?.state==='RETURN_INSIDE'?'returned':
+        ev?.state==='TAKEN_NO_RETURN'?'taken':'open';
+    };
+    if(!radar){
+      textLevel('dgLondonRadarHigh',null);
+      textLevel('dgLondonRadarLow',null);
+      renderTake('dgLondonRadarHighState',null,'KEINE BELEGTEN H1-DATEN');
+      renderTake('dgLondonRadarLowState',null,'KEINE BELEGTEN H1-DATEN');
+      set('dgLondonRadarState','DATEN FEHLEN');
+      $('dgLondonRadarState').dataset.state='wait';
+      set('dgLondonRadarContext',data.reason||'Ohne echte H1-Kerzen lässt sich London-Liquidität nicht bewerten.');
+      set('dgLondonRadarSource','XAUUSD · Quelle: '+(data.source||'nicht verbunden'));
+      return;
+    }
+    textLevel('dgLondonRadarHigh',radar.high);
+    textLevel('dgLondonRadarLow',radar.low);
+    const isFixed=radar.status==='FIXED';
+    const statusLabel=historical?'HISTORISCH':isFixed?'LONDON FIXIERT':
+      radar.status==='FORMING'?'LONDON LÄUFT':'WARTET AUF LONDON';
+    set('dgLondonRadarState',statusLabel);
+    $('dgLondonRadarState').dataset.state=historical?'historical':isFixed?'fixed':'forming';
+    renderTake('dgLondonRadarHighState',radar.highSweep,
+      !isFixed?(radar.status==='FORMING'?'VORLÄUFIG · KEIN BESTÄTIGTER SWEEP':'LONDON NOCH NICHT BEOBACHTET'):null);
+    renderTake('dgLondonRadarLowState',radar.lowSweep,
+      !isFixed?(radar.status==='FORMING'?'VORLÄUFIG · KEIN BESTÄTIGTER SWEEP':'LONDON NOCH NICHT BEOBACHTET'):null);
+    const evidence=[];
+    if(isFixed){
+      for(const [side,event] of [['High',radar.highSweep],['Low',radar.lowSweep]]){
+        if(event?.at){
+          evidence.push('London '+side+' '+(event.state==='RETURN_INSIDE'?'mit H1-Rückkehr':'genommen')+
+            ' · '+time(event.at)+(event.returnedAt?' · zurück '+time(event.returnedAt):''));
+        }
+      }
+    }
+    if(radar.sequence==='UNKNOWN_SAME_H1_CANDLE')evidence.push('High und Low in derselben H1-Kerze: Reihenfolge unklar.');
+    set('dgLondonRadarContext',evidence.length?evidence.join(' · '):radar.note);
+    set('dgLondonRadarSource','XAUUSD · '+radar.sessionDate+' UTC · London '+radar.observedLondonCandles+
+      '/8 H1 · NY nach London '+radar.observedNYCandlesAfterClose+
+      ' H1 · '+(historical?'HISTORISCH · ':'')+(data.source||'TwelveData H1')+
+      ' · kein Entry-Signal');
+  }
   function render(){
     const data=sourceData();
+    renderLondonRadar(data);
     const badge=$('dgIntelStatus');
     const status=data.status==='OBSERVED'?'H1 BEOBACHTET':data.status==='HISTORICAL'?'HISTORISCHE DATEN':'DATEN FEHLEN';
     badge.textContent=status;

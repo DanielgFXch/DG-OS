@@ -33,3 +33,24 @@ Konkrete Kriterien für *Micro/Medium/Macro Inducement* inklusive Timeframes, in
 
 ## Test
 `node scripts/test-session-intelligence.js` testet vollständige/unvollständige Asia-Ranges, Level Taken vs. H1 Return Inside, beide Seiten in derselben H1, unvollständige H1-Candles, stale data, Macro-/Medium-Konflikt und Integration. Historische, fest kodierte OHLC-Werte werden ausschliesslich als **Test-Fixtures** genutzt und gelangen nie als echte Marktdaten in die App.
+
+
+## London High / Low · New-York-Radar (2026-10-13)
+
+Die Trading-Startansicht zeigt London High/Low mit belegtem Datenstand. Das ist die vorhandene Session Intelligence, keine neue Decision Engine.
+
+- Bestehende Fenster bleiben: Asia 00–08 UTC, London 08–16 UTC, New York 13–21 UTC. Ereignisse werden in Europe/Zurich lokalisiert. Schweizer Sommer-/Winterzeit beachten.
+- London High/Low sind erst nach allen acht geschlossenen H1-Kerzen (08–15 UTC) fix. Vorher ist die Range nur VORLÄUFIG; dann wird KEIN NY-Sweep bestätigt.
+- NY überschneidet London ab 13 UTC. Ein behaupteter Sweep der endgültigen London High/Low vor London-Schluss um 16 UTC würde zukünftige Information benutzen. Daher werden nur NY-H1-Kerzen ab 16 UTC gegen die vollendete London-Range verglichen.
+- OFFEN: abgeschlossene NY-H1-Kerzen nach 16 UTC überschreiten das fixierte Level nicht.
+- GENOMMEN · KEINE H1-RÜCKKEHR: H1-High/Low überschreitet das Level, aber kein nachfolgender H1-Schlusskurs kehrt auf die andere Seite zurück.
+- GENOMMEN · H1-RÜCKKEHR: High genommen und H1 schliesst unter London High, oder Low genommen und H1 schliesst über London Low. Das ist eine faktische H1-Rückkehr, NICHT automatisch DG-Confirmation oder Buy/Sell.
+- Nimmt dieselbe H1-Candle beide Seiten, bleibt die Reihenfolge UNKNOWN_SAME_H1_CANDLE. Ohne ausreichende Daten steht DATEN FEHLEN oder HISTORISCH; nie fake Live-Sweep.
+
+**Datenquelle:** Bestehende abgeschlossene H1-OHLC-Daten von TwelveData über den Always-On Market Server bzw. einen echten Snapshot. Der Server-Endpunkt GET /api/brain/XAUUSD berechnet dieselbe read-only Evidence. GitHub Pages stellt selbst keine Live-Daten bereit.
+
+**Limit:** H1-close-basierte Bestätigung, nicht Tick-/M1-/M5-Echtzeit. POST /api/tradingview/webhook in server/api.js gibt momentan HTTP 501 zurück. TradingView-Webhooks und ein 24/7-Receiver sind noch NICHT produktiv verbunden. Die tatsächliche automatische Überwachung unmittelbar nach einem Sweep braucht diese Datenanbindung und eine bestätigte Definition für provisorische London-Level.
+
+Tests: node scripts/test-london-liquidity-radar.js — inkl. London/NY-Überlappung, zu frühem NY-Event, unvollständigen H1-Bars, H1-Rückkehr, beiderseitigem H1-Take und historischen Werten.
+
+Unverändert: DG Strategie in rules/strategy.md, WHOOP, Jarvis, Auth, Trading-Entscheidungen und Orderausführung.

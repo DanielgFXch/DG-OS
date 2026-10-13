@@ -67,6 +67,40 @@
         ...(observations.length?['Mindestens eine abgeschlossene H1-Kerze hat oberhalb/unterhalb gestochen und innerhalb geschlossen.']:[])
       ]};
   }
+  // The London range becomes FINAL only after every 08:00-15:00 UTC
+  // H1 candle has closed. New York overlaps London 13:00-16:00 UTC,
+  // so a 'sweep of final London High/Low' cannot be inferred during
+  // that overlap without future information / repainting.
+  // Observe 16:00-21:00 UTC NY H1 closes against the fixed London range.
+  function eventForNYAfterLondon(bars,level,side) {
+    let crossedAt=null,returnedAt=null,extreme=null;
+    for(const c of bars){
+      const crossed=side==='high'?c.high>level:c.low<level;
+      if(crossed){
+        if(crossedAt===null)crossedAt=c.at;
+        extreme=extreme===null?(side==='high'?c.high:c.low):
+          (side==='high'?Math.max(extreme,c.high):Math.min(extreme,c.low));
+      }
+      if(crossedAt!==null && returnedAt===null &&
+          (side==='high'?c.close<level:c.close>level))returnedAt=c.at;
+    }
+    if(crossedAt===null)return {
+      state:'OPEN',at:null,returnedAt:null,extreme:null,
+      notes:['Die fixierte London '+(side==='high'?'High':'Low')+' Liquidity wurde in den abgeschlossenen NY-H1-Kerzen nach London-Ende nicht überschritten.']
+    };
+    return {
+      state:returnedAt!==null?'RETURN_INSIDE':'TAKEN_NO_RETURN',
+      at:iso(crossedAt),returnedAt:returnedAt===null?null:iso(returnedAt),
+      extreme,
+      notes:[
+        'London '+(side==='high'?'High (Buyside)':'Low (Sellside)')+
+          ' nach 16:00 UTC durch eine abgeschlossene NY-H1-Kerze genommen.',
+        returnedAt===null?'Kein bestätigter H1-Schlusskurs wieder innerhalb der fixen London-Range.':
+          'Abgeschlossene H1-Kerze kehrt zurück innerhalb der fixen London-Range.',
+        'Beobachtung ≠ Entry, keine intrabar-Reihenfolge ohne kleinere Zeiteinheit.'
+      ]
+    };
+  }
   function biasState(value){return ['BULLISH','BEARISH','NEUTRAL_MIXED','AWAITING_DG_RULE'].includes(value)?value:'UNAVAILABLE';}
   function computeSessionIntelligence(options={}) {
     const nowValue=options.now instanceof Date?options.now:new Date(options.now||Date.now());
@@ -82,7 +116,7 @@
     const medium=biasState(htf.trading?.state);
     const data={
       status:'DATA_NOT_READY',symbol:'XAUUSD',source,asOf:Number.isFinite(ms)?iso(ms):null,
-      model:'OBSERVATIONS_ONLY',sessionDate:null,asiasession:null,london:null,newYork:null,
+      model:'OBSERVATIONS_ONLY',sessionDate:null,asiasession:null,london:null,londonLiquidity:null,newYork:null,
       bias:{macro:{timeframes:'Monthly / Weekly',state:macro,reasoning:Array.isArray(htf.macro?.reasoning)?htf.macro.reasoning.slice(0,5):[]},
         medium:{timeframes:'Daily / 4H',state:medium,reasoning:Array.isArray(htf.trading?.reasoning)?htf.trading.reasoning.slice(0,5):[]},
         intraday:{timeframes:'H1',state:'STRUCTURE_ONLY',internal:typeof h1Structure.internalBias==='string'?h1Structure.internalBias:'unknown',external:typeof h1Structure.externalBias==='string'?h1Structure.externalBias:'unknown'}},
@@ -109,6 +143,28 @@
       note:simultaneous?'Beide Seiten innerhalb derselben H1-Kerze überschritten: Reihenfolge intrabar nicht bestimmbar.':
         !londonBars.length?'Noch keine abgeschlossenen London-H1-Kerzen für diese Asia-Session.':
         !completeHours(londonBars,8,16)?'London läuft noch oder H1-Historie ist unvollständig. Nur bisher geschlossene Kerzen zählen.':'London-Session anhand abgeschlossener H1-Kerzen ausgewertet.'
+    };
+    const londonComplete=completeHours(londonBars,WINDOW.london[0],WINDOW.london[1]);
+    // Only closed H1 bars are ever used. Values during London are PROVISIONAL,
+    // never confirmed session highs/lows and never evaluated for NY sweeps.
+    const nyAfterLondon=nyBars.filter(c=>c.hour>=WINDOW.london[1]);
+    const fixedHigh=londonComplete?eventForNYAfterLondon(nyAfterLondon,lRange.high,'high'):null;
+    const fixedLow=londonComplete?eventForNYAfterLondon(nyAfterLondon,lRange.low,'low'):null;
+    const sameH1=fixedHigh?.at && fixedLow?.at && fixedHigh.at===fixedLow.at;
+    data.londonLiquidity={
+      sessionDate:date,source:'Abgeschlossene UTC-H1-Kerzen (TwelveData)',
+      status:londonComplete?'FIXED':londonBars.length?'FORMING':'WAITING',
+      high:lRange?.high??null,low:lRange?.low??null,
+      observedLondonCandles:londonBars.length,rangeFinal:londonComplete,
+      nyObservationStartUTC:'16:00',
+      observedNYCandlesAfterClose:nyAfterLondon.length,
+      highSweep:fixedHigh,lowSweep:fixedLow,
+      sequence:sameH1?'UNKNOWN_SAME_H1_CANDLE':
+        fixedHigh?.at && fixedLow?.at?(fixedHigh.at<fixedLow.at?'HIGH_THEN_LOW':'LOW_THEN_HIGH'):
+          'SINGLE_OR_NONE',
+      note:londonComplete?
+        'London High/Low sind fixiert. Nur abgeschlossene New-York-H1-Kerzen nach 16:00 UTC werden als mögliche Abholung und H1-Rückkehr ausgewertet.':
+        'London High/Low sind noch vorläufig. Ein NY-Sweep der endgültigen London-Range ist vor Ende der London-Session nicht bestätigbar.'
     };
     data.newYork={
       date,observedCandles:nyBars.length,complete:completeHours(nyBars,13,21),

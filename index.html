@@ -38,6 +38,7 @@
   <link rel="stylesheet" href="./health-cinematic-v2.css?v=2" />
   <link rel="stylesheet" href="./health-compact-whoop.css?v=1" />
   <link rel="stylesheet" href="./health-dock-date.css?v=1" />
+  <link rel="stylesheet" href="./trading-london-radar.css?v=1" />
   <link rel="stylesheet" href="./dg-unified-premium.css?v=1" />
   <title>DG OS · Dein Tag</title>
 </head>
@@ -827,6 +828,31 @@
           <div id="tradingCommandDataState" class="trading-command-data-state"><i aria-hidden="true"></i><span>DATEN WERDEN GEPRÜFT</span></div>
         </div>
 
+        <section id="dgLondonRadar" class="dg-london-radar" aria-labelledby="dgLondonRadarTitle" aria-live="polite">
+          <div class="dg-london-radar-top">
+            <div>
+              <span class="dg-london-kicker">DG LIQUIDITY RADAR · XAUUSD</span>
+              <h3 id="dgLondonRadarTitle">London High / Low</h3>
+              <p>Welche London-Liquidität wurde genommen? Was ist auf H1 nachweisbar?</p>
+            </div>
+            <strong id="dgLondonRadarState" class="dg-london-state" data-state="wait">DATEN PRÜFEN</strong>
+          </div>
+          <div class="dg-london-levels">
+            <article class="dg-london-level">
+              <span>LONDON HIGH · BUY-SIDE</span>
+              <strong id="dgLondonRadarHigh">—</strong>
+              <div id="dgLondonRadarHighState" class="dg-london-level-state" data-state="wait">Noch keine belegte Auswertung</div>
+            </article>
+            <article class="dg-london-level">
+              <span>LONDON LOW · SELL-SIDE</span>
+              <strong id="dgLondonRadarLow">—</strong>
+              <div id="dgLondonRadarLowState" class="dg-london-level-state" data-state="wait">Noch keine belegte Auswertung</div>
+            </article>
+          </div>
+          <p id="dgLondonRadarContext" class="dg-london-context">Warte auf abgeschlossene H1-Kerzen. Keine erfundenen Sweeps und keine automatischen Entries.</p>
+          <small id="dgLondonRadarSource" class="dg-london-source">Quelle: abgeschlossene UTC-H1-Kerzen · Schweiz-Zeit in Events</small>
+        </section>
+
         <div class="trading-session-hero">
           <div class="trading-session-copy">
             <span id="tradingActiveSession" class="trading-session-kicker">SESSION —</span>
@@ -1363,8 +1389,8 @@
   <script src="./navigation.js?v=0.60.1"></script>
   <script src="./private-hub.js?v=2"></script>
   <script src="./trading-command.js?v=0.57.0"></script>
-  <script src="./trading-intelligence.js?v=1"></script>
-  <script src="./trading-intelligence-ui.js?v=1"></script>
+  <script src="./trading-intelligence.js?v=2"></script>
+  <script src="./trading-intelligence-ui.js?v=2"></script>
   <script src="./jarvis-weather-outfit.js?v=1"></script>
   <script src="./weather.js?v=0.47.0"></script>
   <script src="./jarvis-weather-ui.js?v=1"></script>

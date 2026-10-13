@@ -77,8 +77,8 @@ for(const id of ['dgSessionIntel','dgIntelHeading','dgIntelMacro','dgIntelMedium
   'dgIntelInducement','dgIntelStatus','dgIntelProvenance','dgIntelRefresh']){
     assert.ok(html.includes('id="'+id+'"'),'Missing trading intel UI '+id);
 }
-assert.match(html,/trading-intelligence\.js\?v=1/);
-assert.match(html,/trading-intelligence-ui\.js\?v=1/);
+assert.match(html,/trading-intelligence\.js\?v=2/);
+assert.match(html,/trading-intelligence-ui\.js\?v=2/);
 assert.match(html,/trading-intelligence\.css\?v=1/);
 assert.doesNotThrow(()=>new Function(read('trading-intelligence-ui.js')));
 assert.ok(read('trading-intelligence.css').includes('@media(max-width:670px)'));

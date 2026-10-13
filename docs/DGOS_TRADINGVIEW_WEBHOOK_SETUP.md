@@ -35,13 +35,12 @@ Die DG-OS-Seite auf GitHub Pages ist statisch und kann selbst keine TradingView-
   "timeframe": "{{interval}}",
   "eventType": "LONDON_HIGH_SWEPT",
   "price": "{{close}}",
-  "level": 0,
   "timestamp": "{{time}}",
   "detector": "DG Smart Money Liquidity"
 }
 ```
 
-**Wichtig zur Beispielvorlage:** Den optionalen Platzhalter `"level": 0` **komplett entfernen**, solange dein Indikator den echten London-High-Wert nicht als Alert-Variable bereitstellt. 0 wäre keine valide Preisinformation. `eventType` muss genau zur gewählten Alarmbedingung passen. `{{time}}` ist die Kerzen-Öffnungszeit, nicht die tatsächliche Zustellzeit. Wir erfassen zusätzlich die Empfangszeit im Backend.
+**Wichtig zur Beispielvorlage:** `level` ist bewusst weggelassen, bis der Indikator den tatsächlich berechneten Session-Level als Alert-Variable liefern kann. Niemals ein fiktives Level verwenden. `eventType` muss genau zur gewählten Alarmbedingung passen. `{{time}}` ist die Kerzen-Öffnungszeit, nicht die tatsächliche Zustellzeit. Wir erfassen zusätzlich die Empfangszeit im Backend.
 
 Der Empfänger akzeptiert als **Transport**, nicht als bestätigte DG-Bewertung, diese Ereignisse:
 `ASIA_HIGH_TOUCHED`, `ASIA_LOW_TOUCHED`, `ASIA_HIGH_SWEPT`, `ASIA_LOW_SWEPT`, `LONDON_HIGH_TOUCHED`, `LONDON_LOW_TOUCHED`, `LONDON_HIGH_SWEPT`, `LONDON_LOW_SWEPT`, `NY_HIGH_TOUCHED`, `NY_LOW_TOUCHED`, `NY_HIGH_SWEPT`, `NY_LOW_SWEPT`.

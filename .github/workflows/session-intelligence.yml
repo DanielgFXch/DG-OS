@@ -4,6 +4,8 @@ on:
     paths:
       - 'trading-intelligence.js'
       - 'trading-intelligence-ui.js'
+      - 'trading-london-radar.css'
+      - 'scripts/test-london-liquidity-radar.js'
       - 'trading-intelligence.css'
       - 'server/marketState.js'
       - 'index.html'
@@ -14,6 +16,8 @@ on:
     paths:
       - 'trading-intelligence.js'
       - 'trading-intelligence-ui.js'
+      - 'trading-london-radar.css'
+      - 'scripts/test-london-liquidity-radar.js'
       - 'trading-intelligence.css'
       - 'server/marketState.js'
       - 'scripts/test-session-intelligence.js'
@@ -28,3 +32,4 @@ jobs:
       - run: node --check trading-intelligence.js
       - run: node --check trading-intelligence-ui.js
       - run: node scripts/test-session-intelligence.js
+      - run: node scripts/test-london-liquidity-radar.js

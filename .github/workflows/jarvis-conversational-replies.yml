@@ -4,6 +4,10 @@ on:
     paths:
       - 'jarvis-replies.js'
       - 'jarvis-voice.js'
+      - 'jarvis-voice-audio.js'
+      - 'jarvis-voice-audibility.css'
+      - 'jarvis-native-voice.js'
+      - 'scripts/test-jarvis-audible-replies.js'
       - 'personal.js'
       - 'index.html'
       - 'sw.js'
@@ -15,6 +19,10 @@ on:
     paths:
       - 'jarvis-replies.js'
       - 'jarvis-voice.js'
+      - 'jarvis-voice-audio.js'
+      - 'jarvis-voice-audibility.css'
+      - 'jarvis-native-voice.js'
+      - 'scripts/test-jarvis-audible-replies.js'
       - 'personal.js'
       - 'scripts/test-jarvis-replies.js'
 jobs:
@@ -30,3 +38,5 @@ jobs:
       - run: node --check personal.js
       - run: node scripts/test-jarvis-replies.js
       - run: node scripts/test-jarvis-spoken-replies.js
+      - run: node --check jarvis-voice-audio.js
+      - run: node scripts/test-jarvis-audible-replies.js

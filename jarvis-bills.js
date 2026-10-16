@@ -99,6 +99,7 @@
     $('jbBillCurrency').value=info.currency==='EUR'?'EUR':'CHF';
     $('jbBillDue').value=/^\d{4}-\d{2}-\d{2}$/.test(info.dueDate||'')?info.dueDate:'';
     $('jbBillSource').textContent=source==='voice'?'GESPROCHEN':source==='photo'?'AUS FOTO':'MANUELL';
+    draft.dataset.source=source==='voice'?'voice':source==='photo'?'image':'ui';
     notice('Entwurf bereit. Prüfe die Angaben und tippe erst dann auf «Als offene Rechnung speichern».');
     draft.scrollIntoView({behavior:'smooth',block:'center'});
     $('jbBillTitle').focus({preventScroll:true});
@@ -121,7 +122,7 @@
     if(!token())return notice('Bitte Jarvis zuerst mit Telegram koppeln.',true);
     busy=true;$('jbBillSave').disabled=true;
     try{
-      const result=await request('add',{title,amount,date,currency});
+      const result=await request('add',{title,amount,date,currency,source:$('jbBillDraft').dataset.source||'ui'});
       bills.unshift(result.bill);
       $('jbBillDraft').hidden=true;$('jbBillDraft').reset();
       render();notice('Gespeichert als OFFEN: '+title+'. Es wurde nichts bezahlt.');

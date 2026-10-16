@@ -15,6 +15,11 @@ assert.match(sql,/event_key text primary key/);
 assert.match(fn,/INDICATOR_REPORTED/);
 assert.doesNotMatch(fn,/placeOrder|BUY_READY|console\.log\(body\)/);
 for(const x of ['Europe/Zurich','VANTAGE:XAUUSD','0000-0600','0800-1200','1400-2200','request.security','alert.freq_all'])assert.ok(pine.includes(x),x);
+assert.match(pine,/showLevels = input\.bool\(false/,'No automatic chart clutter');
+assert.doesNotMatch(pine,/plot\(/,'No historical staircase plots');
+assert.match(pine,/line\.new\(/,'Optional levels use short right-edge lines');
+assert.match(pine,/timeframe\.change\("60"\)/,'HTF boundary tested unconditionally');
+
 const secret='J'.repeat(48),saved=new Map();
 let configured=false,dbReady=true,handler=null,requestCount=0;
 const ctx={

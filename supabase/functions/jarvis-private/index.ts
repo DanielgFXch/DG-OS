@@ -14,7 +14,7 @@ const db = supabaseUrl && serviceKey ? createClient(supabaseUrl, serviceKey, {
   auth: { persistSession: false, autoRefreshToken: false }
 }) : null;
 const rate = new Map<string, number>();
-const allowedKinds = ["shopping", "appointment", "note", "idea"] as const;
+const allowedKinds = ["shopping", "appointment", "bill", "note", "idea"] as const;
 function cors(origin: string, extra: Record<string, string> = {}) {
   return {
     "cache-control": "no-store",
@@ -59,6 +59,8 @@ function format(row: Record<string, unknown>) {
     id: row.id, kind: row.kind === "note" && row.source_ref === "private-hub:idea" ? "idea" : row.kind,
     title: row.title, details: row.details || "", date: row.due_date || "",
     time: row.due_time ? String(row.due_time).slice(0, 5) : "",
+    amount: row.kind === "bill" ? row.amount ?? null : null,
+    currency: row.kind === "bill" ? row.currency || "CHF" : "",
     status: row.status, createdAt: row.created_at, source: row.source
   };
 }
@@ -88,8 +90,8 @@ Deno.serve(async (req: Request) => {
   try {
     if (req.method === "GET" && action === "list") {
       const { data, error } = await db.from("dgos_private_items")
-        .select("id,kind,title,details,due_date,due_time,status,created_at,source,source_ref")
-        .in("kind", ["shopping", "appointment", "note"])
+        .select("id,kind,title,details,due_date,due_time,amount,currency,status,created_at,source,source_ref")
+        .in("kind", ["shopping", "appointment", "bill", "note"])
         .order("created_at", { ascending: false }).limit(250);
       if (error) throw error;
       return json({ items: (data || []).map(format) }, 200, origin);
@@ -206,7 +208,7 @@ Deno.serve(async (req: Request) => {
         source: ["voice", "image"].includes(source) ? source : "ui",
         source_ref: kind === "idea" ? "private-hub:idea" : null,
         status: "open"
-      }).select("id,kind,title,details,due_date,due_time,status,created_at,source,source_ref").single();
+      }).select("id,kind,title,details,due_date,due_time,amount,currency,status,created_at,source,source_ref").single();
       if (error) throw error;
       return json({ item: format(data) }, 201, origin);
     }
@@ -215,15 +217,15 @@ Deno.serve(async (req: Request) => {
       if (!validId(id)) return json({ error: "invalid_id" }, 400, origin);
       if (action === "delete") {
         const { error } = await db.from("dgos_private_items").delete().eq("id", id)
-          .in("kind", ["shopping", "appointment", "note"]);
+          .in("kind", ["shopping", "appointment", "bill", "note"]);
         if (error) throw error;
         return json({ ok: true }, 200, origin);
       }
       const done = body.done === true;
       const { data, error } = await db.from("dgos_private_items")
         .update({ status: done ? "done" : "open", completed_at: done ? new Date().toISOString() : null, updated_at: new Date().toISOString() })
-        .eq("id", id).in("kind", ["shopping", "appointment", "note"])
-        .select("id,kind,title,details,due_date,due_time,status,created_at,source,source_ref").maybeSingle();
+        .eq("id", id).in("kind", ["shopping", "appointment", "bill", "note"])
+        .select("id,kind,title,details,due_date,due_time,amount,currency,status,created_at,source,source_ref").maybeSingle();
       if (error) throw error;
       if (!data) return json({ error: "not_found" }, 404, origin);
       return json({ item: format(data) }, 200, origin);

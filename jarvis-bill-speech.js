@@ -45,7 +45,8 @@
     if(!/\b(?:rechnung|rechnungen|mahnung|mahnungen)\b/i.test(s))return null;
     if(/\b(?:keine|keinen|kein|nicht|stornieren|lösche|loesche|löschen|loeschen)\s+(?:offene\s+)?(?:rechnung|rechnungen|mahnung|mahnungen)\b/i.test(s))return null;
     if(/^(?:was|welche|wieviele|wie\s+viele|zeig|zeige|öffne|oeffne|liste|habe ich offene|sind noch)\b/i.test(s)&&
-       /\b(?:rechnung|rechnungen|mahnung|mahnungen)\b/i.test(s))return {intent:'bill_list'};
+       /\b(?:rechnungen|mahnungen|offene\s+rechnung|offene\s+mahnung|zahlen|bezahlen)\b/i.test(s)&&
+       !/^(?:was ist|was bedeutet|wie funktioniert)\b/i.test(s))return {intent:'bill_list'};
     if(/\?$/.test(s)&&!/\b(?:eintragen|speichern|notieren|erfassen)\b/i.test(s))return null;
     // Only an affirmative statement or explicit request to log an invoice.
     if(!/\b(?:ich\s+(?:habe|hab|bekam|bekommen|muss)|wir\s+(?:haben|müssen)|(?:bitte\s+)?(?:speichere|notiere|erfasse|trag\s+ein|trage\s+ein)|meine|eine|die)\b/i.test(s))return null;

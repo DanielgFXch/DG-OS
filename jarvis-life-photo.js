@@ -115,7 +115,16 @@
       if(photoUrl)URL.revokeObjectURL(photoUrl);
       photoUrl=URL.createObjectURL(file);$('jarvisPhotoPreview').src=photoUrl;$('jarvisPhotoPreview').hidden=false;
       const result=await authorizedRequest(endpoint,{image});
-      showDraft(result.draft||{kind:'unknown',title:'',summary:'',items:[]});
+      const draft=result.draft||{kind:'unknown',title:'',summary:'',items:[]};
+      // Invoice photos and spoken invoices share ONE approved bill form.
+      // No invoice is saved simply because a photo was analysed.
+      if(draft.kind==='invoice'&&window.DGOSJarvisBills?.showDraft){
+        clear();
+        window.DGOSJarvisBills.showDraft({
+          title:draft.title||'Rechnung prüfen',amount:'',dueDate:'',currency:'CHF'
+        },'photo');
+        say('Ich habe eine mögliche Rechnung erkannt. Prüfe Name, Betrag und Fälligkeit im Rechnungsentwurf. Nichts wurde bezahlt.','Rechnung prüfen');
+      }else showDraft(draft);
     }catch(e){caption(e?.message||'Foto konnte nicht gelesen werden.',true);say('Foto konnte nicht ausgewertet werden. Bitte Foto oder Eingabe erneut versuchen.','Fehler');}
     finally{setBusy(false);input.value='';}
   });

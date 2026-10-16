@@ -21,9 +21,11 @@ const json = (body: unknown, status: number, origin: string) =>
   new Response(JSON.stringify(body), { status, headers: cors(origin) });
 const clean = (v: unknown, max: number) =>
   typeof v === "string" ? v.trim().slice(0, max) : "";
-const validDate = (v: string) =>
-  /^\d{4}-\d{2}-\d{2}$/.test(v) &&
-  new Date(v + "T12:00:00Z").toISOString().slice(0,10) === v;
+const validDate = (v: string) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+  const parsed = new Date(v + "T12:00:00Z");
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0,10) === v;
+};
 const idFormat = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 function base64url(bytes: Uint8Array) {
   let out = "";
@@ -83,6 +85,7 @@ Deno.serve(async (req: Request) => {
       const title=clean(input.title,120);
       const date=clean(input.date,10);
       const currency=clean(input.currency,4).toUpperCase() || "CHF";
+      const source=["voice","image","ui"].includes(input.source) ? input.source : "ui";
       const amountRaw=input.amount === null || input.amount === undefined ||
         input.amount === "" ? "" : String(input.amount).trim();
       if (title.length<2 || /[<>\x00-\x1F]/.test(title) ||
@@ -94,7 +97,7 @@ Deno.serve(async (req: Request) => {
         return json({error:"invalid_bill"},422,origin);
       const {data,error}=await db.from("dgos_private_items").insert({
         kind:"bill",title,amount,currency,due_date:date || null,
-        status:"open",source:"voice",source_ref:"jarvis:confirmed-bill"
+        status:"open",source,source_ref:"jarvis:confirmed-bill"
       }).select("id,title,amount,currency,due_date,status,created_at").single();
       if (error) throw error;
       return json({bill:shape(data)},201,origin);

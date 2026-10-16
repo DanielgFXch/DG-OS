@@ -15,10 +15,10 @@ assert.equal(parse.dateFromText('29.02.2028'),'2028-02-29');
 const html=read('index.html'),client=read('personal.js'),photo=read('jarvis-life-photo.js');
 const ui=read('jarvis-bills.js'),style=read('jarvis-bills.css'),sw=read('sw.js');
 const edge=read('supabase/functions/jarvis-bills/index.ts');
-for(const v of ['jarvis-bill-speech.js?v=1','jarvis-bills.js?v=1','jarvis-bills.css?v=1','jarvis-life-photo.js?v=2','personal.js?v=0.59.13']){
+for(const v of ['jarvis-bill-speech.js?v=1','jarvis-bills.js?v=1','jarvis-bills.css?v=1','jarvis-life-photo.js?v=1','personal.js?v=0.59.12']){
  assert.ok(html.includes(v),'index '+v);assert.ok(sw.includes(v),'PWA '+v);
 }
-assert.ok(html.indexOf('jarvis-bill-speech.js?v=1')<html.indexOf('personal.js?v=0.59.13'));
+assert.ok(html.indexOf('jarvis-bill-speech.js?v=1')<html.indexOf('personal.js?v=0.59.12'));
 for(const id of ['jarvisBills','jbBillDraft','jbBillTitle','jbBillAmount','jbBillCurrency','jbBillDue','jbBillSave','jbBillCancel','jbBillList']){
  assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,'Unique field '+id);
 }

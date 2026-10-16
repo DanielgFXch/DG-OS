@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="./jarvis-cinematic.css?v=1" />
   <link rel="stylesheet" href="./jarvis-brain.css?v=1" />
   <link rel="stylesheet" href="./jarvis-life-photo.css?v=1" />
+  <link rel="stylesheet" href="./jarvis-bills.css?v=1" />
   <link rel="stylesheet" href="./jarvis-device-pairing.css?v=1" />
   <link rel="stylesheet" href="./jarvis-dashboard.css?v=1" />
   <link rel="stylesheet" href="./jarvis-weather.css?v=1" />
@@ -280,6 +281,42 @@
         <p id="jarvisPhotoNotice" class="jarvis-photo-notice" role="status" aria-live="polite"></p>
         <button id="jarvisPhotoSave" class="jarvis-photo-save" type="button">Entwurf speichern</button>
         <p class="jarvis-photo-disclaimer">Fotos werden zur einmaligen Erkennung an den KI-Dienst gesendet, aber nicht als Foto gespeichert. Keine Zahlung wird ausgelöst. Bitte Vorschläge prüfen.</p>
+      </section>
+
+      <section id="jarvisBills" class="jb-bills" aria-labelledby="jbBillsHeading">
+        <div class="jb-bills-head">
+          <div><span class="personal-kicker">JARVIS · PRIVATE FINANZEN</span>
+            <h3 id="jbBillsHeading">Meine Rechnungen <span id="jbBillsOpenCount" class="jb-bills-count">— offen</span></h3>
+            <p>Per Sprache oder Foto erfassen. Jarvis speichert erst nach deiner Bestätigung.</p>
+          </div>
+          <button type="button" id="jbBillNew" class="jb-bills-add">+ Rechnung</button>
+        </div>
+        <form id="jbBillDraft" class="jb-bills-draft" hidden autocomplete="off">
+          <div class="jb-bills-draft-title">Rechnungsentwurf prüfen <span id="jbBillSource">MANUELL</span></div>
+          <label>Rechnung / Anbieter
+            <input type="text" id="jbBillTitle" maxlength="120" minlength="2" required placeholder="z. B. Sunrise Internet" autocomplete="off" />
+          </label>
+          <div class="jb-bills-fields">
+            <label>Betrag (optional)
+              <input type="text" id="jbBillAmount" maxlength="12" inputmode="decimal" placeholder="z. B. 79.90" autocomplete="off" />
+            </label>
+            <label>Währung
+              <select id="jbBillCurrency"><option value="CHF">CHF</option><option value="EUR">EUR</option></select>
+            </label>
+          </div>
+          <label>Fällig am (optional, kein geratenes Datum)
+            <input id="jbBillDue" type="date" />
+          </label>
+          <div class="jb-bills-actions">
+            <button type="submit" id="jbBillSave">Als offene Rechnung speichern</button>
+            <button type="button" id="jbBillCancel">Abbrechen</button>
+          </div>
+          <p>Keine automatische Zahlung. Als bezahlt markieren kannst du erst nach dem Speichern.</p>
+        </form>
+        <div id="jbBillList" class="jb-bills-list" aria-live="polite">
+          <p class="jb-bills-empty">Deine Rechnungen werden sicher geladen …</p>
+        </div>
+        <p id="jbBillsStatus" class="jb-bills-status" role="status" aria-live="polite"></p>
       </section>
 
       <section class="jb-intelligence" id="jarvisIntelligence" aria-labelledby="jbIntelligenceHeading">
@@ -1373,7 +1410,9 @@
   <script src="./app.js?v=0.59.2"></script>
   <script src="./jarvis-shopping-intent.js?v=2"></script>
   <script src="./jarvis-life-intent.js?v=1"></script>
+  <script src="./jarvis-bill-speech.js?v=1"></script>
   <script src="./jarvis-life-photo.js?v=1"></script>
+  <script src="./jarvis-bills.js?v=1"></script>
   <script src="./jarvis-microphone.js?v=2"></script>
   <script src="./jarvis-replies.js?v=1"></script>
   <script src="./personal.js?v=0.59.12"></script>

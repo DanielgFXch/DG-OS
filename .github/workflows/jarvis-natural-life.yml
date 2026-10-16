@@ -5,6 +5,11 @@ on:
       - 'jarvis-shopping-intent.js'
       - 'jarvis-life-intent.js'
       - 'jarvis-life-photo.js'
+      - 'jarvis-bill-speech.js'
+      - 'jarvis-bills.js'
+      - 'jarvis-bills.css'
+      - 'supabase/functions/jarvis-bills/**'
+      - 'scripts/test-jarvis-bills.js'
       - 'jarvis-life-photo.css'
       - 'personal.js'
       - 'jarvis-brain.js'
@@ -19,6 +24,11 @@ on:
       - 'jarvis-shopping-intent.js'
       - 'jarvis-life-intent.js'
       - 'jarvis-life-photo.js'
+      - 'jarvis-bill-speech.js'
+      - 'jarvis-bills.js'
+      - 'jarvis-bills.css'
+      - 'supabase/functions/jarvis-bills/**'
+      - 'scripts/test-jarvis-bills.js'
       - 'personal.js'
       - 'supabase/functions/jarvis-private/**'
 jobs:
@@ -33,5 +43,8 @@ jobs:
       - run: node --check jarvis-life-intent.js
       - run: node --check jarvis-life-photo.js
       - run: node --check personal.js
+      - run: node --check jarvis-bill-speech.js
+      - run: node --check jarvis-bills.js
+      - run: node scripts/test-jarvis-bills.js
       - run: node scripts/test-jarvis-natural-life.js
       - run: node scripts/test-jarvis-shopping-voice.js

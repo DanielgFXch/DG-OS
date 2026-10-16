@@ -2105,6 +2105,24 @@
     // Woche zahlen" updates the EDITABLE draft, never performs payment.
     if(window.DGOSJarvisPhoto?.handleVoiceCommand(original))return true;
 
+    // Natural spoken invoice: ALWAYS opens a reviewable draft. No auto-save,
+    // no payment and no invented invoice amount or due date.
+    const spokenInvoice=window.DGOSInvoiceSpeech?.parse(original);
+    if(spokenInvoice?.intent==='bill_draft'){
+      window.DGOSJarvisBills?.showDraft({
+        title:spokenInvoice.title,amount:spokenInvoice.amount,
+        currency:spokenInvoice.currency,dueDate:spokenInvoice.dueDate
+      },'voice');
+      showReply('Ich habe die Rechnung als Entwurf vorbereitet. Prüfe Anbieter, Betrag und Fälligkeit und tippe anschliessend auf Speichern. Es wird keine Zahlung ausgeführt.');
+      return true;
+    }
+    if(spokenInvoice?.intent==='bill_list'){
+      window.DGOSJarvisBills?.openList();
+      showReply('Hier ist deine aktuelle private Rechnungsübersicht. Offene und als bezahlt markierte Rechnungen sind getrennt gekennzeichnet.');
+      return true;
+    }
+
+
     // Explicit future actions take priority over immediate shopping.
     const planned = window.DGOSLifeIntent?.parseScheduledCommand(original);
     if(planned?.intent==='task_create'){

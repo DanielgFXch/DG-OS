@@ -10,15 +10,23 @@
 - **London:** `08:00–12:00` GMT+2 (blau)
 - **New York:** `14:00–22:00` GMT+2 (grün)
 
-Als UTC-Uhrzeiten (**fester** UTC+2) sind das:
+**Die Werte oben sind die beobachteten Einstellungen des ALTEN Sessionz-Indikators**, nicht die künftig gewünschte Zeitzonendefinition des Jarvis.
 
-| Session | Lokale Anzeige in Sessionz | UTC |
-|---|---|---|
-| Asia | 00:00–06:00 | 22:00 des Vorabends bis 04:00 |
-| London | 08:00–12:00 | 06:00–10:00 |
-| New York | 14:00–22:00 | 12:00–20:00 |
+## Von Daniel bestätigte Jarvis-Zeitzonendefinition (16.10.2026)
 
-Grenzen start-inklusive, ende-exklusive; Session-Day für Asia basiert auf dem **GMT+2-Kalendertag** (auch bei vorherigem UTC-Datum). Pro Session neue High-/Low-Accumulatoren. Keine Auswertung von Kerzen außerhalb der betreffenden Fenster.
+**Automatisch Sommer- und Winterzeit über IANA `Europe/Zurich`, kein manuelles GMT-Offset-Umschalten.** Die sichtbaren Session-Zeitfenster sind vorerst Schweizer *Ortszeit*:
+
+| Session | Europe/Zurich-Ortszeit | Im Sommer (CEST/UTC+2) | Im Winter (CET/UTC+1) |
+|---|---|---|---|
+| Asia | 00:00–06:00 | 22:00 (UTC-Vortag) – 04:00 UTC | 23:00 (UTC-Vortag) – 05:00 UTC |
+| London | 08:00–12:00 | 06:00–10:00 UTC | 07:00–11:00 UTC |
+| New York | 14:00–22:00 | 12:00–20:00 UTC | 13:00–21:00 UTC |
+
+**Technische Vorgabe:** Session-Grenzen direkt in der Pine Script Bridge mit `Europe/Zurich` als IANA-Zeitzone berechnen (z. B. `time(timeframe.period, session, 'Europe/Zurich')`), nicht mit einer fest eingetragenen Anzahl Stunden gegenüber UTC. Der alte Indikator mit fixem `GMT Offset (Stunden)=2` wird im Schweizer Winter **nicht** automatisch umstellen; die neue Bridge soll diese Schwäche korrigieren.
+
+Grenzen start-inklusive, ende-exklusive; Session-Day für Asia basiert auf dem **Schweizer Kalendertag** (auch bei vorherigem UTC-Datum). Pro Session neue High-/Low-Accumulatoren. Keine Auswertung von Kerzen außerhalb der betreffenden Fenster. In den Umstellungswochen DST-Grenzen und Session-Tageswechsel gegen historische Chartdaten prüfen.
+
+**Nuance New York:** Zürich und New York stellen nicht am gleichen Datum die Uhren um. Ein fixes Schweizer Zeitfenster 14:00–22:00 entspricht in den Übergangswochen nicht durchgehend denselben Wall-Street-Lokalstunden. V1 übernimmt genau Daniels freigegebene *Schweizer* Zeitfenster. Falls er später marktortsgebundene Session-Opens statt fixer Schweizer Zeiten möchte, muss das separat und ausdrücklich spezifiziert werden.
 
 ### WICHTIG: Kein stilles Zusammenlegen mit bestehender UTC-Engine
 
@@ -28,13 +36,13 @@ Die Snapshot-/Telegram-HTF-Zonen aus bestehenden TwelveData-Daten sind ebenfalls
 
 ### Sommerzeit-Entscheidung
 
-GMT+2 ist beim Screenshot **statisch eingestellt**. Damit folgen die Zeitfenster nicht automatisch der Schweizer Winterzeit (Europe/Zurich UTC+1). Die Bridge soll den festen Offset zunächst **als explizite Einstellung** implementieren. Vor produktiver Aktivierung mit Daniels Charts verifizieren, ob er diesen festen GMT+2 das ganze Jahr wünscht oder den TradingView-Indikator saisonal ändert. Keine eigenmächtige DST-Korrektur.
+**Festgelegt:** Die neue Bridge verwendet automatisch `Europe/Zurich` (CEST im Sommer, CET im Winter). Kein fixes GMT+2 das ganze Jahr. Der bestehende „Sessionz“-Screenshot zeigt lediglich die aktuelle Sommer-Konfiguration des Drittindikators.
 
 ## Für den ersten echten Datenabgleich
 
 1. TradingView-Bridge auf dem echten `VANTAGE:XAUUSD`-Chart liest zeitbasierte High-/Low-Werte **innerhalb der exakt eingestellten Session-Fenster**. Tageswechsel und grenzgenaue Wick-Extrema im Replay prüfen.
 2. Vorerst lokale/geschützte Testübertragung mit Webhook. Bestehender `dgos-tradingview`-Empfänger akzeptiert nur `*_TOUCHED`/`*_SWEPT` und **keine** Session-High/Low-Snapshot-Events. Erst sichere Schema-Erweiterung, idempotente Persistenz, Auth und eigene Validierung bauen, ehe snapshots angenommen werden.
-3. Jeden Snapshot eindeutig kennzeichnen: Symbol-Provider `VANTAGE:XAUUSD`, Session, `GMT+2`, Session-Tag, Session-Start/-Ende, genaues high/low, Zustand `FORMING` oder `FINAL`, Zeitstempel und Erkennungsquelle `TRADINGVIEW_INDICATOR`.
+3. Jeden Snapshot eindeutig kennzeichnen: Symbol-Provider `VANTAGE:XAUUSD`, Session, `Europe/Zurich` plus tatsächlichen UTC-Offset, Session-Tag, Session-Start/-Ende, genaues high/low, Zustand `FORMING` oder `FINAL`, Zeitstempel und Erkennungsquelle `TRADINGVIEW_INDICATOR`.
 4. Eine laufende Session hat **vorläufige** High/Low; die Werte werden erst nach Schluss **FINAL**. Übertragene Werte sind zunächst `INDICATOR_REPORTED`, bis gegen denselben Feed verifiziert.
 5. `TOUCHED`, `TAKEN` und `SWEPT` sind verschieden; Sweep benötigt einen nach Daniels Regeln bestätigten Rücklauf bzw. Reaktion. Niemals aus einem reinen Wick-Bruch sofort BUY/SELL folgern.
 6. Keine automatischen Orders, keine erdachten Preislevel, keine Änderung an `rules/strategy.md`.

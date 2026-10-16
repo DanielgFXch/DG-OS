@@ -1,6 +1,6 @@
 # DG Jarvis Vantage Bridge V1 — Inbetriebnahme & Verifikation
 
-**Status:** Feature-Branch / Draft-PR. Tests der Eventvalidierung bestanden, aber noch KEIN echter TradingView-/Vantage-Live-Test und KEINE Freigabe von automatischen Telegram-HTF-Berichten.
+**Status (16.10.2026):** Feature-Branch / Draft-PR. Sicherheitstests bestanden. **Die dedizierte Supabase-Tabelle ist in der aktiven DG-OS-Instanz angelegt und die neue Edge Function deployed (ACTIVE, v1, verify_jwt=false)**. Es gibt **0 empfangene Snapshots**. Die Pine-Bridge ist **noch NICHT** in Daniels TradingView installiert/kompiliert, kein aktiver TV-Alarm und KEINE Freigabe von Telegram-HTF-Berichten.
 
 ## Ziel: exakt Daniels Chart, nicht TwelveData als Ersatz
 
@@ -21,8 +21,8 @@
 
 Projekt: `jzvnmhfhyvmmbontsoej`.
 
-1. DB-Migration `supabase/migrations/20261016190000_dgos_vantage_snapshots.sql` auf dem **aktiven DG OS**-Projekt anwenden.
-2. `supabase/functions/dgos-vantage-bridge/index.ts` als Edge Function `dgos-vantage-bridge` deployen, `verify_jwt=false` (TradingView kann keine Supabase-OAuth-Header senden; die Function erzwingt stattdessen ein separates 32+-Zeichen-Geheimnis).
+1. ✅ **Bereits erledigt:** DB-Migration `supabase/migrations/20261016190000_dgos_vantage_snapshots.sql` auf dem **aktiven DG OS**-Projekt angewendet. Privater Tabellenstatus verifiziert: RLS an, 0 Einträge.
+2. ✅ **Bereits erledigt:** `supabase/functions/dgos-vantage-bridge/index.ts` als Edge Function `dgos-vantage-bridge` deployed, Status ACTIVE, `verify_jwt=false` (TradingView kann keine Supabase-OAuth-Header senden; die Function erzwingt stattdessen ein separates 32+-Zeichen-Geheimnis).
 3. In den **Supabase Edge Function Secrets** `DGOS_TRADINGVIEW_WEBHOOK_SECRET` mit einem sicheren langen, zufälligen Schlüssel konfigurieren. Das Secret kann mit dem bestehenden, separaten TradingView-Receiver geteilt werden; nicht in GitHub/Chat oder Screenshots einfügen.
 4. Endpoint: `https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/dgos-vantage-bridge`.
 5. Die Tabelle `public.dgos_vantage_snapshots` ist mit RLS geschützt; kein Zugriff durch `anon` oder `authenticated`. Nur der Edge-Function-Service-Key schreibt. **Nicht** die RLS-Regeln abschalten oder den Service-Role-Key in TradingView eintragen.
@@ -59,4 +59,4 @@ Wenn Secret/Migration/Funktion fehlen, bleibt der neue Transport bewusst inaktiv
 
 `node scripts/test-vantage-bridge.js` testet Token, RLS-DDL, ungültigen Provider, veraltete/futuristische Zeitstempel, kaputte Preisranges/OHLC, FORMING/FINAL/HTF-Kerzen, 15-Minuten-Deduplizierung und Persistenzfehler.
 
-**NICHT in Produktion deployt:** neue Migration, Funktion, Bridge-Script oder Webhook-Alert. Vor Release Tests und Datenabgleich abschliessen.
+**Bereits produktiv deployed (inaktiv ohne echten TradingView-Aufruf):** neue RLS-Tabelle und separate Edge Function. **Noch nicht erledigt:** Bridge-Script im TradingView, User-geheimer Schlüssel/Alert-Setup, verifizierter Live-Datenabgleich, private Jarvis-Leseintegration und Telegram-HTF-Berichte. Der Draft-PR bleibt unmerged; vor Freigabe Pine-Compiler- und Live-Datenabgleich abschliessen.

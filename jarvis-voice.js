@@ -116,6 +116,8 @@
   function stop(){
     sequence++;
     if(abort){abort.abort();abort=null;}
+    // Stop any Web Audio MP3 being played from a previously unlocked iOS gesture.
+    window.DGOSVoiceAudio?.stopPlayback?.();
     if(window.DGOSLocalVoice)window.DGOSLocalVoice.stop();
     else if(synth && (synth.speaking || synth.pending || synth.paused))synth.cancel();
     if(currentAudio){currentAudio.pause();currentAudio.removeAttribute('src');currentAudio.load();currentAudio.hidden=true;currentAudio=null;}
@@ -319,8 +321,14 @@
     // the recognised microphone command or purchasing a new provider.
     if(!voiceId){speakLocal(text,true);return;}
     if(currentAudio&&lastPrepared===text){
-      try{currentAudio.currentTime=0;await currentAudio.play();setMessage('Jarvis spricht mit '+(provider==='openai-tts'?'OpenAI':'Cartesia')+'.','SPRICHT');}
-      catch{setMessage('Tippe nochmals auf «Antwort vorlesen», um die Audiofreigabe zu aktivieren.','STARTEN');}
+      try{
+        currentAudio.currentTime=0;
+        await currentAudio.play();
+        setMessage('Jarvis spielt die gespeicherte Antwort ab.','SPRICHT');
+      }catch{
+        currentAudio.hidden=false;
+        setMessage('iOS braucht eine Freigabe. Tippe auf ▶ im Audioplayer oder auf «Antwort anhören».','STARTEN');
+      }
       return;
     }
     stop();
@@ -337,11 +345,25 @@
       objectUrl=URL.createObjectURL(blob);
       currentAudio=$('jvAudioPlayer');currentAudio.src=objectUrl;currentAudio.hidden=false;lastPrepared=text;
       currentAudio.onended=()=>setMessage('Wiedergabe beendet.','BEREIT');
-      try{
-        await currentAudio.play();
-        setMessage(text.length>300?'Jarvis spricht · die Antwort wurde auf 300 Zeichen gekürzt.':'Jarvis spricht mit '+(provider==='openai-tts'?'OpenAI':'Cartesia')+'.','SPRICHT');
-      }catch{
-        setMessage('Audio ist bereit. Tippe auf ▶ im Audioplayer direkt über dieser Meldung.','STARTEN');
+      // iOS can refuse HTMLMediaElement.play() after asynchronous microphone
+      // transcription. The orb tap pre-unlocks a Web Audio context: try it
+      // FIRST, using the already generated blob (no second paid API call).
+      const direct = await window.DGOSVoiceAudio?.playBlob?.(blob,()=>{
+        if(thisRequest===sequence)setMessage('Sprachantwort beendet.','BEREIT');
+      });
+      if(thisRequest!==sequence)return;
+      if(direct){
+        setMessage('Jarvis gibt die Audioantwort wieder.','SPRICHT');
+      }else{
+        // Keep visible native audio controls, NEVER report a blocked play()
+        // as successful audio. A real user tap always has a fallback.
+        try{
+          await currentAudio.play();
+          if(thisRequest===sequence)setMessage('Jarvis gibt die Audioantwort wieder.','SPRICHT');
+        }catch{
+          currentAudio.hidden=false;
+          setMessage('iPhone hat den automatischen Ton blockiert. Tippe auf ▶ im Audioplayer – keine neue Antwort muss erzeugt werden.','STARTEN');
+        }
       }
     }catch(error){
       if(thisRequest!==sequence||error.name==='AbortError')return;
@@ -400,7 +422,10 @@
     setMessage(result?.reason||'Audiotest nicht verfügbar.',result?.ok?'TON-TEST':'FEHLER');
   });
   $('jvStop').addEventListener('click',()=>{stop();setMessage('Wiedergabe gestoppt.','BEREIT');});
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)stop();});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden)stop();
+  });
+  window.addEventListener('pagehide',()=>window.DGOSVoiceAudio?.destroy?.());
   window.addEventListener('dgos-device-session',()=>{if(provider!=='browser')loadVoices();});
   synth?.addEventListener?.('voiceschanged',()=>{if(provider==='browser')render();});
   lastText=reply.textContent||'';
@@ -423,6 +448,8 @@
     microphoneBusy=false;
     const replay=$('jvHeroRead');if(replay)replay.disabled=false;
     if($('jvEnabled').checked){
+      // Only a finalized Jarvis reply is spoken. The previous recording
+      // states may have cancelled speech; this is a fresh response turn.
       void speak(text);
     }else{
       setMessage('Antwort als Text angezeigt. Aktiviere «Antworten vorlesen», damit Jarvis sie sagt.','STUMM');

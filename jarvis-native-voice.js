@@ -33,7 +33,9 @@
   let primed=false;
   function unlockFromGesture(){
     if(!isSupported()||active||synth.speaking||synth.pending)return false;
-    if(primed){try{if(synth.paused)synth.resume();}catch{}return true;}
+    // Re-prime on EACH real orb tap if idle. A single warmup from a past
+    // session may no longer carry iOS playback permission into this turn.
+    if(primed && synth.paused)try{synth.resume();}catch{}
     try{
       // Silent (volume 0) utterance makes the first Web Speech invocation
       // happen during a real user gesture, not the later network callback.

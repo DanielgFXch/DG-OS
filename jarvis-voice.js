@@ -408,7 +408,6 @@
     // Browser/iOS grant audio output at the user gesture, before any TTS
     // network request starts. A previous paid audio file is reused.
     window.DGOSVoiceAudio?.unlockFromGesture?.();
-    window.DGOSLocalVoice?.unlockFromGesture?.();
     void speak(lastText||reply.textContent||'',true);
   });
   $('jvQuickToggle').addEventListener('click',()=>{
@@ -432,12 +431,10 @@
   $('jvReload').addEventListener('click',loadVoices);
   $('jvPreview').addEventListener('click',()=>{
     window.DGOSVoiceAudio?.unlockFromGesture?.();
-    window.DGOSLocalVoice?.unlockFromGesture?.();
     void speak('Hallo. Ich bin Jarvis. Hörst du mich?',true);
   });
   $('jvRead').addEventListener('click',()=>{
     window.DGOSVoiceAudio?.unlockFromGesture?.();
-    window.DGOSLocalVoice?.unlockFromGesture?.();
     void speak(lastText||reply.textContent||'',true);
   });
   $('jvSoundCheck').addEventListener('click',async()=>{

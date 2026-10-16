@@ -1,0 +1,53 @@
+/* DG OS · iPhone audible Jarvis reply states. Clear, consistent sapphire UX.
+ * The reply button is always a REAL user-activated audio fallback.
+ */
+#personalJarvis .jarvis-cinematic-hero .jv-hero-audio{
+  isolation:isolate;
+  border-color:rgba(103,179,255,.48)!important;
+  box-shadow:0 0 13px rgba(45,124,243,.12),inset 0 1px rgba(217,240,255,.08)!important;
+}
+#personalJarvis .jv-hero-audio-buttons #jvHeroRead{
+  color:#f3fbff!important;
+  -webkit-text-fill-color:#f3fbff!important;
+  background:linear-gradient(142deg,rgba(28,109,206,.89),rgba(9,52,120,.95))!important;
+  border:1px solid rgba(119,207,255,.78)!important;
+  box-shadow:0 0 18px rgba(48,143,255,.26),inset 0 1px rgba(240,251,255,.19)!important;
+  font-weight:760!important;
+  min-height:44px!important;
+}
+#personalJarvis #jvHeroRead:focus-visible{
+  outline:2px solid #b8e9ff!important;outline-offset:3px!important;
+}
+#personalJarvis #jvHeroNotice{
+  margin:8px 0 0!important;
+  color:#bcd9f6!important;
+  font-size:12px!important;
+  line-height:1.45!important;
+  overflow-wrap:anywhere;
+}
+#personalJarvis #jvHeroNotice[data-state="STARTEN"],
+#personalJarvis #jvHeroNotice[data-state="FEHLER"]{
+  padding:9px 11px!important;border-radius:12px!important;
+  background:rgba(96,52,16,.32)!important;
+  border:1px solid rgba(255,197,120,.44)!important;
+  color:#ffe5c6!important;
+}
+#personalJarvis #jvHeroNotice[data-state="SPRICHT"]{
+  color:#92edda!important;
+}
+#personalJarvis .jarvis-cinematic-hero #jvAudioPlayer.jv-hero-player:not([hidden]){
+  display:block!important;width:100%!important;min-height:43px!important;
+  margin:9px 0!important;
+  border:1px solid rgba(131,194,255,.42)!important;
+  border-radius:13px!important;
+  background:#0d294f!important;
+}
+@media(max-width:700px){
+  #personalJarvis .jv-hero-audio-buttons #jvHeroRead{
+    min-height:47px!important;
+    font-size:12px!important;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  #personalJarvis .jv-hero-audio-buttons button{transition:none!important}
+}

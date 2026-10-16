@@ -2242,6 +2242,7 @@
   orb.addEventListener('click',()=>{
     // Activate iPhone speech on the user's gesture; the later transcript
     // callback alone has no Safari user-activation privilege.
+    try{window.DGOSVoiceAudio?.unlockFromGesture?.();}catch(_){}
     try{window.DGOSLocalVoice?.unlockFromGesture?.();}catch(_){}
     if(!microphone){
       setStatus('Textmodus');

@@ -1,5 +1,5 @@
 //@version=6
-indicator("DG Jarvis Vantage Bridge V1", "DG Jarvis Bridge", overlay = true, max_labels_count = 50)
+indicator("DG Jarvis Vantage Bridge V1.1 Clean", "DG Jarvis Bridge", overlay = true, max_lines_count = 12)
 
 // Nur auf VANTAGE:XAUUSD, im 1s- bis 5m-Chart.
 // Alle Sessions entsprechen Europe/Zurich und wechseln automatisch MEZ/MESZ.
@@ -19,7 +19,7 @@ sendForming = input.bool(true, "Aktuelle Session-Level alle 15 Minuten", group =
 sendHTF = input.bool(true, "Geschlossene 1H / 4H / Daily Kerzen", group = groupBridge)
 
 groupVisual = "Darstellung"
-showLevels = input.bool(true, "Letzte Session Highs/Lows anzeigen", group = groupVisual)
+showLevels = input.bool(false, "Letzte Session-Levels kurz rechts anzeigen", group = groupVisual)
 showStatus = input.bool(true, "Bridge-Status anzeigen", group = groupVisual)
 
 bool rightSymbol = syminfo.tickerid == EXPECTED_SYMBOL
@@ -116,25 +116,49 @@ if barstate.isconfirmed and rightSymbol and rightTF
 [h4t, h4o, h4h, h4l, h4c] = request.security(syminfo.tickerid, "240", [time[1], open[1], high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
 [dt, do_, dh, dl, dc] = request.security(syminfo.tickerid, "D", [time[1], open[1], high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
 
+bool h1Closed = timeframe.change("60")
+bool h4Closed = timeframe.change("240")
+bool dClosed = timeframe.change("D")
+
 if barstate.isconfirmed and ready and sendHTF
-    if ta.change(time("60")) != 0 and not na(h1t) and not na(h1o)
+    if h1Closed and not na(h1t) and not na(h1o)
         alert(f_bar("60", h1t, h1o, h1h, h1l, h1c), alert.freq_all)
-    if ta.change(time("240")) != 0 and not na(h4t) and not na(h4o)
+    if h4Closed and not na(h4t) and not na(h4o)
         alert(f_bar("240", h4t, h4o, h4h, h4l, h4c), alert.freq_all)
-    if ta.change(time("D")) != 0 and not na(dt) and not na(do_)
+    if dClosed and not na(dt) and not na(do_)
         alert(f_bar("D", dt, do_, dh, dl, dc), alert.freq_all)
 
-// Sichtbare letzte fixierte Session-Level (auch ausserhalb der Session).
-plot(showLevels ? lastAHigh : na, "Asia High FINAL", color = color.orange, linewidth = 1, style = plot.style_stepline)
-plot(showLevels ? lastALow : na, "Asia Low FINAL", color = color.orange, linewidth = 1, style = plot.style_stepline)
-plot(showLevels ? lastLHigh : na, "London High FINAL", color = color.blue, linewidth = 1, style = plot.style_stepline)
-plot(showLevels ? lastLLow : na, "London Low FINAL", color = color.blue, linewidth = 1, style = plot.style_stepline)
-plot(showLevels ? lastNHigh : na, "NY High FINAL", color = color.teal, linewidth = 1, style = plot.style_stepline)
-plot(showLevels ? lastNLow : na, "NY Low FINAL", color = color.teal, linewidth = 1, style = plot.style_stepline)
+// CLEAN: Keine historischen Stufenlinien und keine Session-Boxen.
+// Optional nur die letzten sechs FINAL-Level als kurze gestrichelte
+// Linien am rechten Chartrand anzeigen; standardmaessig ist alles AUS.
+f_rightLevel(line previous, float price, color hue) =>
+    if not na(previous)
+        line.delete(previous)
+    line result = na
+    if showLevels and not na(price)
+        result := line.new(math.max(0, bar_index - 12), price, bar_index + 2, price,
+             xloc = xloc.bar_index, extend = extend.none,
+             color = color.new(hue, 20), width = 1, style = line.style_dashed)
+    result
+
+var line aHighLine = na
+var line aLowLine = na
+var line lHighLine = na
+var line lLowLine = na
+var line nHighLine = na
+var line nLowLine = na
+
+if barstate.islast
+    aHighLine := f_rightLevel(aHighLine, lastAHigh, color.orange)
+    aLowLine := f_rightLevel(aLowLine, lastALow, color.orange)
+    lHighLine := f_rightLevel(lHighLine, lastLHigh, color.blue)
+    lLowLine := f_rightLevel(lLowLine, lastLLow, color.blue)
+    nHighLine := f_rightLevel(nHighLine, lastNHigh, color.teal)
+    nLowLine := f_rightLevel(nLowLine, lastNLow, color.teal)
 
 var table statusTable = table.new(position.top_right, 1, 2, border_width = 1)
 if barstate.islast and showStatus
-    string statusText = not rightSymbol ? "FALSCHES SYMBOL (VANTAGE:XAUUSD)" : not rightTF ? "ZEITRAHMEN: 5m ODER KLEINER" : not sendToJarvis ? "WEBHOOK NOCH AUS" : not validKey ? "WEBHOOK-SCHLUESSEL FEHLT" : "BRIDGE BEREIT"
+    string statusText = not rightSymbol ? "FALSCHES SYMBOL (VANTAGE:XAUUSD)" : not rightTF ? "ZEITRAHMEN: 5m ODER KLEINER" : not sendToJarvis ? "WEBHOOK NOCH AUS" : not validKey ? "WEBHOOK-SCHLUESSEL FEHLT" : "BEREIT FUER ALARM-TEST"
     table.cell(statusTable, 0, 0, "DG JARVIS | VANTAGE", bgcolor = color.new(color.black, 20), text_color = color.white)
     table.cell(statusTable, 0, 1, statusText, bgcolor = color.new(ready ? color.green : color.orange, 70), text_color = color.white)
 else if barstate.islast and not showStatus

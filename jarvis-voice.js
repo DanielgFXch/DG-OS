@@ -279,12 +279,18 @@
       validatedServerVoice=chosen;
       $('jvUseServerVoice').hidden=false;
       setMessage('Audio-Datei bereit. Falls du nichts hörst: Tippe direkt auf ▶ im Audioplayer unten.','STARTEN');
-      try{
-        await currentAudio.play();
-        setMessage('Audio-Wiedergabe gestartet. Hörst du diese Datei?','AUDIO-TEST');
-      }catch{
-        // An explicit tap on native controls is needed on some iPhone PWAs.
-        setMessage('iOS blockiert den automatischen Start. Tippe auf ▶ im Audioplayer unter dieser Meldung.','STARTEN');
+      const started=await window.DGOSVoiceAudio?.playBlob?.(blob,()=>{
+        setMessage('Audio-Dateitest beendet.','BEREIT');
+      });
+      if(started){
+        setMessage('Audio-Test läuft. Hörst du die Stimme?','AUDIO-TEST');
+      }else{
+        try{
+          await currentAudio.play();
+          setMessage('Audio-Wiedergabe gestartet. Hörst du die Stimme?','AUDIO-TEST');
+        }catch{
+          setMessage('iOS blockiert den automatischen Start. Tippe auf ▶ im sichtbaren Audioplayer.','STARTEN');
+        }
       }
     }catch(error){
       setMessage(error?.message||'Audio-Datei konnte nicht getestet werden.','FEHLER');
@@ -321,6 +327,9 @@
     // the recognised microphone command or purchasing a new provider.
     if(!voiceId){speakLocal(text,true);return;}
     if(currentAudio&&lastPrepared===text){
+      // A manual replay takes over from any current Web Audio output so
+      // the user never hears two Jarvis voices speaking simultaneously.
+      window.DGOSVoiceAudio?.stopPlayback?.();
       try{
         currentAudio.currentTime=0;
         await currentAudio.play();
@@ -374,7 +383,10 @@
   $('jvLang').addEventListener('change',save);
   $('jvVoice').addEventListener('change',()=>{stop();if(provider!=='browser'){voiceId=$('jvVoice').value;store(providerVoiceKey(),voiceId);}else prefs.voice=$('jvVoice').value;save();render();});
   $('jvHeroTone')?.addEventListener('click',testTone);
-  $('jvHeroFile')?.addEventListener('click',()=>{void testAudioFile();});
+  $('jvHeroFile')?.addEventListener('click',()=>{
+    window.DGOSVoiceAudio?.unlockFromGesture?.();
+    void testAudioFile();
+  });
   $('jvUseServerVoice')?.addEventListener('click',()=>{
     if(!validatedServerVoice)return;
     stop();
@@ -393,7 +405,10 @@
     $('jvQuickToggle').dispatchEvent(new Event('click',{bubbles:true}));
   });
   $('jvHeroRead')?.addEventListener('click',()=>{
-    // User gesture on the visible hero bypasses iOS blocked async autoplay.
+    // Browser/iOS grant audio output at the user gesture, before any TTS
+    // network request starts. A previous paid audio file is reused.
+    window.DGOSVoiceAudio?.unlockFromGesture?.();
+    window.DGOSLocalVoice?.unlockFromGesture?.();
     void speak(lastText||reply.textContent||'',true);
   });
   $('jvQuickToggle').addEventListener('click',()=>{
@@ -415,8 +430,16 @@
     }
   });
   $('jvReload').addEventListener('click',loadVoices);
-  $('jvPreview').addEventListener('click',()=>speak('Hallo. Ich bin Jarvis. Hörst du mich?',true));
-  $('jvRead').addEventListener('click',()=>speak(lastText||reply.textContent||'',true));
+  $('jvPreview').addEventListener('click',()=>{
+    window.DGOSVoiceAudio?.unlockFromGesture?.();
+    window.DGOSLocalVoice?.unlockFromGesture?.();
+    void speak('Hallo. Ich bin Jarvis. Hörst du mich?',true);
+  });
+  $('jvRead').addEventListener('click',()=>{
+    window.DGOSVoiceAudio?.unlockFromGesture?.();
+    window.DGOSLocalVoice?.unlockFromGesture?.();
+    void speak(lastText||reply.textContent||'',true);
+  });
   $('jvSoundCheck').addEventListener('click',async()=>{
     const result=await window.DGOSSoundCheck?.playTestTone();
     setMessage(result?.reason||'Audiotest nicht verfügbar.',result?.ok?'TON-TEST':'FEHLER');

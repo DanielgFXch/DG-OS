@@ -11,7 +11,7 @@
 - London `08:00–12:00`
 - New York `14:00–22:00`
 
-**Quelle:** `tradingview/DG_Jarvis_Vantage_Bridge_V1.pine`.
+**Quelle:** `tradingview/DG_Jarvis_Vantage_Bridge_V1.pine` (Indikator **V1.1 Clean**). Die Bridge zeichnet **standardmaessig keine Session-Boxen und keine historischen Level-Stufenlinien**. `Letzte Session-Levels kurz rechts anzeigen` ist per Default deaktiviert. Wenn explizit aktiviert, erscheinen nur sechs kurze gestrichelte FINAL-Levels ganz rechts. Farben/Session-Boxen im Nutzer-Screenshot kommen vom separaten `Sessionz`-Indikator; dessen Darstellung verändert die Bridge nicht. `Bridge-Status anzeigen` ist nur eine kleine Infotabelle.
 - Berechnet laufende Session-Highs/Lows aus den Chartkerzen und sendet `FORMING`-Snapshots alle 15 Minuten (optional).
 - Sendet je Session einen `FINAL`-Snapshot nach dem Sessionende.
 - Verwendet `request.security(syminfo.tickerid, "60"/"240"/"D", [time[1], open[1], high[1], low[1], close[1]], lookahead=barmerge.lookahead_on)` für **abgeschlossene** 1H/4H/D-Kerzen. Weder FVGs noch Order Blocks werden in dieser ersten Bridge automatisch erfunden oder aus der LTF-Ansicht erraten.

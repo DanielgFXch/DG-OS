@@ -1,0 +1,173 @@
+//@version=6
+indicator("DG Jarvis Vantage Bridge V1.1 Clean", "DG Jarvis Bridge", overlay = true, max_lines_count = 12)
+
+// Nur auf VANTAGE:XAUUSD, im 1s- bis 5m-Chart.
+// Alle Sessions entsprechen Europe/Zurich und wechseln automatisch MEZ/MESZ.
+// Keine eigenstaendigen Entry-Signale, keine erfundenen POIs.
+const string ZONE_TZ = "Europe/Zurich"
+const string EXPECTED_SYMBOL = "VANTAGE:XAUUSD"
+
+groupSessions = "Session-Zeiten (Schweiz)"
+asiaSession   = input.session("0000-0600", "Asia", group = groupSessions)
+londonSession = input.session("0800-1200", "London", group = groupSessions)
+nySession     = input.session("1400-2200", "New York", group = groupSessions)
+
+groupBridge = "Jarvis Webhook"
+sendToJarvis = input.bool(false, "Webhook-Ereignisse aktivieren", group = groupBridge)
+webhookSecret = input.string("", "Privater Webhook-Schluessel (min. 32 Zeichen)", group = groupBridge, display = display.none)
+sendForming = input.bool(true, "Aktuelle Session-Level alle 15 Minuten", group = groupBridge)
+sendHTF = input.bool(true, "Geschlossene 1H / 4H / Daily Kerzen", group = groupBridge)
+
+groupVisual = "Darstellung"
+showLevels = input.bool(false, "Letzte Session-Levels kurz rechts anzeigen", group = groupVisual)
+showStatus = input.bool(true, "Bridge-Status anzeigen", group = groupVisual)
+
+bool rightSymbol = syminfo.tickerid == EXPECTED_SYMBOL
+bool rightTF = timeframe.isintraday and timeframe.in_seconds(timeframe.period) <= 300
+bool validKey = str.length(webhookSecret) >= 32
+bool ready = rightSymbol and rightTF and sendToJarvis and validKey
+
+// TradingView time() unterstuetzt IANA-Zeitzonen inklusive Sommer-/Winterzeit.
+bool inAsia = not na(time(timeframe.period, asiaSession, ZONE_TZ))
+bool inLondon = not na(time(timeframe.period, londonSession, ZONE_TZ))
+bool inNY = not na(time(timeframe.period, nySession, ZONE_TZ))
+
+var float aHigh = na
+var float aLow = na
+var float lHigh = na
+var float lLow = na
+var float nHigh = na
+var float nLow = na
+var float lastAHigh = na
+var float lastALow = na
+var float lastLHigh = na
+var float lastLLow = na
+var float lastNHigh = na
+var float lastNLow = na
+var int aBucket = na
+var int lBucket = na
+var int nBucket = na
+
+// JSON wird nur zur Laufzeit erzeugt. Niemals den Secret-Wert in GitHub speichern.
+f_base(string eventType, string tf) =>
+    '{"secret":"' + webhookSecret + '","eventType":"' + eventType + '","symbol":"' + syminfo.tickerid + '","timeframe":"' + tf + '","eventAtMs":' + str.tostring(timenow)
+
+f_session(string name, string phase, string day, float hi, float lo) =>
+    f_base("SESSION_LEVELS", timeframe.period) + ',"session":"' + name + '","sessionDay":"' + day + '","phase":"' + phase + '","high":' + str.tostring(hi, format.mintick) + ',"low":' + str.tostring(lo, format.mintick) + '}'
+
+f_bar(string tf, int startMs, float o, float h, float l, float c) =>
+    f_base("HTF_BAR_CLOSED", tf) + ',"candleStartMs":' + str.tostring(startMs) + ',"open":' + str.tostring(o, format.mintick) + ',"high":' + str.tostring(h, format.mintick) + ',"low":' + str.tostring(l, format.mintick) + ',"close":' + str.tostring(c, format.mintick) + '}'
+
+// Ein einziger TradingView-Alarm "Any alert() function call" fuer alle Ereignisse.
+// Mehrere HTF-Schluesse am gleichen Chartbar duerfen separat gesendet werden.
+if barstate.isconfirmed and rightSymbol and rightTF
+    int bucketNow = int(math.floor(time / 900000))
+    if inAsia
+        if not inAsia[1]
+            aHigh := high
+            aLow := low
+        else
+            aHigh := math.max(aHigh, high)
+            aLow := math.min(aLow, low)
+        if sendForming and ready and (na(aBucket) or bucketNow != aBucket)
+            alert(f_session("ASIA", "FORMING", str.format_time(time, "yyyy-MM-dd", ZONE_TZ), aHigh, aLow), alert.freq_all)
+        aBucket := bucketNow
+    else if inAsia[1] and not na(aHigh)
+        lastAHigh := aHigh
+        lastALow := aLow
+        if ready
+            alert(f_session("ASIA", "FINAL", str.format_time(time[1], "yyyy-MM-dd", ZONE_TZ), aHigh, aLow), alert.freq_all)
+
+    if inLondon
+        if not inLondon[1]
+            lHigh := high
+            lLow := low
+        else
+            lHigh := math.max(lHigh, high)
+            lLow := math.min(lLow, low)
+        if sendForming and ready and (na(lBucket) or bucketNow != lBucket)
+            alert(f_session("LONDON", "FORMING", str.format_time(time, "yyyy-MM-dd", ZONE_TZ), lHigh, lLow), alert.freq_all)
+        lBucket := bucketNow
+    else if inLondon[1] and not na(lHigh)
+        lastLHigh := lHigh
+        lastLLow := lLow
+        if ready
+            alert(f_session("LONDON", "FINAL", str.format_time(time[1], "yyyy-MM-dd", ZONE_TZ), lHigh, lLow), alert.freq_all)
+
+    if inNY
+        if not inNY[1]
+            nHigh := high
+            nLow := low
+        else
+            nHigh := math.max(nHigh, high)
+            nLow := math.min(nLow, low)
+        if sendForming and ready and (na(nBucket) or bucketNow != nBucket)
+            alert(f_session("NY", "FORMING", str.format_time(time, "yyyy-MM-dd", ZONE_TZ), nHigh, nLow), alert.freq_all)
+        nBucket := bucketNow
+    else if inNY[1] and not na(nHigh)
+        lastNHigh := nHigh
+        lastNLow := nLow
+        if ready
+            alert(f_session("NY", "FINAL", str.format_time(time[1], "yyyy-MM-dd", ZONE_TZ), nHigh, nLow), alert.freq_all)
+
+// Der Offset [1] und lookahead_on liefern die LETZTE BESTAETIGTE HTF-Kerze.
+// Auf Sekunden/5m-Charts wird sie beim ersten Chartbar der neuen HTF-Periode versendet.
+[h1t, h1o, h1h, h1l, h1c] = request.security(syminfo.tickerid, "60", [time[1], open[1], high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
+[h4t, h4o, h4h, h4l, h4c] = request.security(syminfo.tickerid, "240", [time[1], open[1], high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
+[dt, do_, dh, dl, dc] = request.security(syminfo.tickerid, "D", [time[1], open[1], high[1], low[1], close[1]], lookahead = barmerge.lookahead_on)
+
+bool h1Closed = timeframe.change("60")
+bool h4Closed = timeframe.change("240")
+bool dClosed = timeframe.change("D")
+
+if barstate.isconfirmed and ready and sendHTF
+    if h1Closed and not na(h1t) and not na(h1o)
+        alert(f_bar("60", h1t, h1o, h1h, h1l, h1c), alert.freq_all)
+    if h4Closed and not na(h4t) and not na(h4o)
+        alert(f_bar("240", h4t, h4o, h4h, h4l, h4c), alert.freq_all)
+    if dClosed and not na(dt) and not na(do_)
+        alert(f_bar("D", dt, do_, dh, dl, dc), alert.freq_all)
+
+// CLEAN: Keine historischen Stufenlinien und keine Session-Boxen.
+// Optional nur die letzten sechs FINAL-Level als kurze gestrichelte
+// Linien am rechten Chartrand anzeigen; standardmaessig ist alles AUS.
+f_rightLevel(line previous, float price, color hue) =>
+    line result = previous
+    if not showLevels or na(price)
+        if not na(result)
+            line.delete(result)
+            result := na
+    else
+        int xLeft = math.max(0, bar_index - 12)
+        int xRight = bar_index + 2
+        if na(result)
+            result := line.new(xLeft, price, xRight, price,
+                 xloc = xloc.bar_index, extend = extend.none,
+                 color = color.new(hue, 20), width = 1, style = line.style_dashed)
+        else
+            line.set_xy1(result, xLeft, price)
+            line.set_xy2(result, xRight, price)
+    result
+
+var line aHighLine = na
+var line aLowLine = na
+var line lHighLine = na
+var line lLowLine = na
+var line nHighLine = na
+var line nLowLine = na
+
+if barstate.islast
+    aHighLine := f_rightLevel(aHighLine, lastAHigh, color.orange)
+    aLowLine := f_rightLevel(aLowLine, lastALow, color.orange)
+    lHighLine := f_rightLevel(lHighLine, lastLHigh, color.blue)
+    lLowLine := f_rightLevel(lLowLine, lastLLow, color.blue)
+    nHighLine := f_rightLevel(nHighLine, lastNHigh, color.teal)
+    nLowLine := f_rightLevel(nLowLine, lastNLow, color.teal)
+
+var table statusTable = table.new(position.top_right, 1, 2, border_width = 1)
+if barstate.islast and showStatus
+    string statusText = not rightSymbol ? "FALSCHES SYMBOL (VANTAGE:XAUUSD)" : not rightTF ? "ZEITRAHMEN: 5m ODER KLEINER" : not sendToJarvis ? "WEBHOOK NOCH AUS" : not validKey ? "WEBHOOK-SCHLUESSEL FEHLT" : "BEREIT FUER ALARM-TEST"
+    table.cell(statusTable, 0, 0, "DG JARVIS | VANTAGE", bgcolor = color.new(color.black, 20), text_color = color.white)
+    table.cell(statusTable, 0, 1, statusText, bgcolor = color.new(ready ? color.green : color.orange, 70), text_color = color.white)
+else if barstate.islast and not showStatus
+    table.clear(statusTable, 0, 0, 0, 1)

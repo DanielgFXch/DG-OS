@@ -62,8 +62,8 @@ for(const id of ['dgTradingSessionClock','dgTradingSessionState','dgTradingSessi
 for(const file of ['trading-session-clock.js?v=1','trading-session-clock.css?v=1']){
  assert.ok(html.includes(file),'index '+file);assert.ok(sw.includes(file),'offline '+file);
 }
-assert.ok(html.indexOf('dg-unified-premium.css?v=1')<
- html.indexOf('trading-session-clock.css?v=1'),'Session theme safely loads last');
+assert.ok(html.indexOf('trading-session-clock.css?v=1')<
+ html.indexOf('dg-unified-premium.css?v=1'),'Unified premium theme retains last position');
 assert.ok(css.includes('body[data-dgos-route="trading"]'),'Only trading route styled');
 assert.ok(css.includes('@media(max-width:700px)'),'iPhone responsive');
 assert.ok(css.includes('tabular-nums'),'Countdown does not jump horizontally');

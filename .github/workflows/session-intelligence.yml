@@ -5,6 +5,9 @@ on:
       - 'trading-intelligence.js'
       - 'trading-intelligence-ui.js'
       - 'trading-london-radar.css'
+      - 'trading-session-clock.js'
+      - 'trading-session-clock.css'
+      - 'scripts/test-trading-session-clock.js'
       - 'scripts/test-london-liquidity-radar.js'
       - 'trading-intelligence.css'
       - 'server/marketState.js'
@@ -17,6 +20,9 @@ on:
       - 'trading-intelligence.js'
       - 'trading-intelligence-ui.js'
       - 'trading-london-radar.css'
+      - 'trading-session-clock.js'
+      - 'trading-session-clock.css'
+      - 'scripts/test-trading-session-clock.js'
       - 'scripts/test-london-liquidity-radar.js'
       - 'trading-intelligence.css'
       - 'server/marketState.js'
@@ -33,3 +39,5 @@ jobs:
       - run: node --check trading-intelligence-ui.js
       - run: node scripts/test-session-intelligence.js
       - run: node scripts/test-london-liquidity-radar.js
+      - run: node --check trading-session-clock.js
+      - run: node scripts/test-trading-session-clock.js

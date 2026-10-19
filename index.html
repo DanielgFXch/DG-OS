@@ -41,6 +41,7 @@
   <link rel="stylesheet" href="./health-dock-date.css?v=1" />
   <link rel="stylesheet" href="./trading-london-radar.css?v=1" />
   <link rel="stylesheet" href="./jarvis-voice-audibility.css?v=1" />
+  <link rel="stylesheet" href="./trading-session-clock.css?v=1" />
   <link rel="stylesheet" href="./dg-unified-premium.css?v=1" />
   <title>DG OS · Dein Tag</title>
 </head>
@@ -866,6 +867,33 @@
           <div id="tradingCommandDataState" class="trading-command-data-state"><i aria-hidden="true"></i><span>DATEN WERDEN GEPRÜFT</span></div>
         </div>
 
+        <section id="dgTradingSessionClock" class="dg-trading-session-clock" aria-label="Aktuelle Trading-Sessions und Countdown" data-state="loading">
+          <div class="dg-tsc-main">
+            <div class="dg-tsc-copy">
+              <span class="dg-tsc-eyebrow"><span class="dg-tsc-dot" aria-hidden="true"></span><span id="dgTradingSessionState">SESSION-ZEITEN WERDEN ERMITTELT</span></span>
+              <h2 id="dgTradingSessionName">SESSION-CLOCK</h2>
+              <p id="dgTradingSessionSub">Asia · London · New York · UTC-Zeitfenster</p>
+            </div>
+            <div class="dg-tsc-timer" aria-label="Nächster Session-Wechsel">
+              <span id="dgTradingSessionCounterLabel">STARTET IN</span>
+              <strong id="dgTradingSessionCountdown" aria-live="off">--:--:--</strong>
+              <small id="dgTradingSessionLocalTime">Europe/Zurich</small>
+            </div>
+          </div>
+          <div class="dg-tsc-session-row" role="group" aria-label="Session-Zeitfenster in UTC">
+            <span id="dgTradingSessionPillasia" class="dg-tsc-pill" data-active="false">
+              <strong>ASIA</strong><small>00–08 UTC</small><em data-session-status>—</em>
+            </span>
+            <span id="dgTradingSessionPilllondon" class="dg-tsc-pill" data-active="false">
+              <strong>LONDON</strong><small>08–16 UTC</small><em data-session-status>—</em>
+            </span>
+            <span id="dgTradingSessionPillny" class="dg-tsc-pill" data-active="false">
+              <strong>NEW YORK</strong><small>13–21 UTC</small><em data-session-status>—</em>
+            </span>
+          </div>
+          <small class="dg-tsc-disclaimer">Session-Zeitplan · keine Bestätigung für offene Märkte oder Live-Kursdaten</small>
+        </section>
+
         <section id="dgLondonRadar" class="dg-london-radar" aria-labelledby="dgLondonRadarTitle" aria-live="polite">
           <div class="dg-london-radar-top">
             <div>
@@ -1432,6 +1460,7 @@
   <script src="./trading-command.js?v=0.57.0"></script>
   <script src="./trading-intelligence.js?v=2"></script>
   <script src="./trading-intelligence-ui.js?v=2"></script>
+  <script src="./trading-session-clock.js?v=1"></script>
   <script src="./jarvis-weather-outfit.js?v=1"></script>
   <script src="./weather.js?v=0.47.0"></script>
   <script src="./jarvis-weather-ui.js?v=1"></script>

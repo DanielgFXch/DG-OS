@@ -50,6 +50,8 @@
     const next=windows.filter(s=>s.startMs>ms)
       .sort((a,b)=>a.startMs-b.startMs)[0]||null;
     const end=active.length?Math.min(...active.map(s=>s.endMs)):null;
+    const nextActiveStart=windows.filter(s=>s.startMs>ms)
+      .sort((a,b)=>a.startMs-b.startMs)[0]?.startMs??null;
     const boundaries=windows.filter(s=>s.startMs>ms||s.endMs>ms)
       .flatMap(s=>[s.startMs,s.endMs]).filter(x=>x>ms);
     const nextChange=Math.min(...boundaries);
@@ -62,6 +64,9 @@
       state:active.length>1?'overlap':active.length===1?'active':weekend?'weekend':'between',
       changeAt:Number.isFinite(nextChange)?stamp(nextChange):null,
       changeInSeconds:Number.isFinite(nextChange)?clampSeconds(nextChange-ms):null,
+      changeType:active.length===1&&nextActiveStart!==null&&nextActiveStart<end?
+        'OVERLAP_START':active.length>1?'OVERLAP_END':
+        active.length?'SESSION_END':'NEXT_SESSION',
       untilEnd: end===null?null:clockString(end-ms),
       untilNext:next?clockString(next.startMs-ms):null
     };
@@ -85,15 +90,18 @@
     host.dataset.state=data.state;
     text('dgTradingSessionState',label);
     text('dgTradingSessionName',name);
-    text('dgTradingSessionCounterLabel',data.active.length?
-      (data.active.length>1?'NÄCHSTER SESSION-WECHSEL':'ENDET IN'):'STARTET IN');
+    text('dgTradingSessionCounterLabel',data.changeType==='OVERLAP_START'?'OVERLAP IN':
+      data.changeType==='OVERLAP_END'?'ÜBERLAPPUNG ENDET IN':
+      data.changeType==='SESSION_END'?'ENDET IN':'STARTET IN');
     text('dgTradingSessionCountdown',data.active.length?
       clockString(new Date(data.changeAt).getTime()-new Date(data.now).getTime()):
       (data.untilNext||'—'));
     const nextName=data.active.length?
-      (data.active.length>1?
-        'London und New York sind gleichzeitig aktiv. Nächster Wechsel: '+timeInZurich(new Date(data.changeAt))+' Uhr CH.':
-        'Aktiv bis '+timeInZurich(new Date(data.changeAt))+' Uhr CH.') :
+      (data.changeType==='OVERLAP_START'?
+        'New York startet um '+timeInZurich(new Date(data.changeAt))+' Uhr CH, London bleibt aktiv.':
+        data.active.length>1?
+          'London und New York aktiv. London endet '+timeInZurich(new Date(data.changeAt))+' Uhr CH.':
+          'Session endet '+timeInZurich(new Date(data.changeAt))+' Uhr CH.') :
       data.next?
         'Nächste: '+data.next.name+' · '+timeInZurich(new Date(data.next.startAt))+' Uhr CH.':
         'Noch keine nächste Session.';

@@ -1,0 +1,152 @@
+/* DG OS · Unified Trading Session Clock · sapphire premium, real UTC clock.
+ * Loads after DG OS shell and applies only to the Trading route. */
+body[data-dgos-route="trading"] #dgTradingSessionClock{
+  position:relative;
+  z-index:3;
+  isolation:isolate;
+  overflow:hidden;
+  display:block;
+  margin:0 0 17px;
+  padding:clamp(15px,2.1vw,23px);
+  border-radius:23px;
+  border:1px solid rgba(111,191,255,.60);
+  background:
+    radial-gradient(ellipse 80% 105% at 97% 0%,rgba(25,111,248,.19),transparent 77%),
+    linear-gradient(128deg,rgba(11,46,102,.96),rgba(6,25,63,.98) 64%,rgba(3,15,41,.99));
+  box-shadow:0 0 24px rgba(48,119,255,.16),0 13px 30px rgba(1,7,25,.23),
+    inset 0 1px rgba(214,240,255,.16);
+  color:#edf7ff;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock::before{
+  content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  opacity:.3;background:
+    radial-gradient(circle,rgba(110,187,255,.36) 0 0.6px,transparent 0.9px) 0 0/24px 24px,
+    radial-gradient(ellipse 34% 110% at 90% 50%,rgba(67,130,244,.25),transparent 100%);
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-main{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-copy{
+  min-width:0;flex:1;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  color:#9ccfff;font-size:10px;font-weight:790;letter-spacing:.15em;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-dot{
+  display:inline-block;width:8px;height:8px;flex:none;border-radius:50%;
+  background:#75caff;box-shadow:0 0 14px rgba(105,195,255,.66);
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock[data-state="active"] .dg-tsc-dot,
+body[data-dgos-route="trading"] #dgTradingSessionClock[data-state="overlap"] .dg-tsc-dot{
+  background:#43e5ca;box-shadow:0 0 14px rgba(68,229,202,.64);
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock h2{
+  font-size:clamp(25px,4.1vw,37px)!important;
+  line-height:1.12!important;font-weight:810!important;
+  letter-spacing:-.045em!important;margin:8px 0 5px!important;
+  color:#f4faff!important;text-wrap:balance;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-copy p{
+  color:#a8c6e9!important;font-size:12px!important;
+  line-height:1.48!important;margin:0!important;max-width:56ch;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-timer{
+  flex:0 0 auto;display:flex;flex-direction:column;
+  align-items:flex-end;gap:4px;
+  border:1px solid rgba(108,174,255,.37);
+  background:linear-gradient(145deg,rgba(14,42,88,.70),rgba(2,13,37,.74));
+  border-radius:15px;padding:11px 14px;
+  box-shadow:inset 0 1px rgba(219,240,255,.07);
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-timer>span{
+  font-size:10px;color:#9ccfff;font-weight:800;letter-spacing:.12em;text-align:right;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-timer>strong{
+  font-size:clamp(20px,2.9vw,28px);
+  color:#fff;font-variant-numeric:tabular-nums;font-feature-settings:"tnum";
+  font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+  font-weight:780;letter-spacing:-.055em;line-height:1.15;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-timer>small{
+  color:#92b6db;font-size:10px;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-session-row{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;margin-top:16px;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-pill{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:6px;min-width:0;
+  padding:11px 12px;border-radius:13px;
+  border:1px solid rgba(92,148,220,.30);
+  background:linear-gradient(145deg,rgba(9,29,66,.66),rgba(3,17,41,.85));
+  color:#96b5d8;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-pill[data-active="true"]{
+  border-color:rgba(116,200,255,.75);
+  background:linear-gradient(135deg,rgba(28,94,182,.58),rgba(9,51,121,.63));
+  box-shadow:0 0 16px rgba(44,135,247,.18),inset 0 1px rgba(237,247,255,.14);
+  color:#f3faff;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-pill strong{
+  font-size:11px;font-weight:780;letter-spacing:.09em;color:inherit;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-pill small{
+  font-size:10px;color:#91afd3;font-variant-numeric:tabular-nums;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-pill em{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:30px;font-size:9px;font-weight:780;
+  font-style:normal;letter-spacing:.09em;
+  color:#7898bb;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-pill[data-active="true"] em{
+  color:#7ee9d3;
+}
+body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-disclaimer{
+  display:block;margin-top:11px;color:#86a6ce;
+  font-size:10px;line-height:1.45;
+}
+@media(max-width:700px){
+  body[data-dgos-route="trading"] #dgTradingSessionClock{
+    margin-bottom:12px;padding:13px 12px;border-radius:19px;
+  }
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-main{
+    gap:8px;align-items:center;
+  }
+  body[data-dgos-route="trading"] #dgTradingSessionClock h2{
+    font-size:clamp(19px,5.2vw,27px)!important;
+  }
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-eyebrow{
+    font-size:9px;letter-spacing:.08em;
+  }
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-copy p{
+    font-size:10px!important;
+  }
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-timer{
+    padding:9px 8px;border-radius:12px;min-width:111px;
+  }
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-timer>span{
+    font-size:8px;
+  }
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-timer>strong{
+    font-size:clamp(17px,4vw,22px);
+  }
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-timer>small{font-size:9px}
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-session-row{
+    gap:5px;margin-top:12px;
+  }
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-pill{
+    display:flex;flex-direction:column;align-items:flex-start;
+    gap:5px;padding:9px 7px;border-radius:11px;
+  }
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-pill strong{font-size:9px}
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-pill small{font-size:9px}
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-pill em{font-size:8px}
+}
+@media(max-width:355px){
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-main{flex-direction:column;align-items:stretch}
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-timer{align-items:flex-start}
+  body[data-dgos-route="trading"] #dgTradingSessionClock .dg-tsc-pill strong{font-size:8px}
+}

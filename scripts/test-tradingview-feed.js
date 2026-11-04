@@ -34,7 +34,7 @@ for (const asset of ['tradingview-feed.css?v=1','tradingview-feed.js?v=1']) {
 }
 assert.ok(html.indexOf('id="dgTradingViewFeed"') < html.indexOf('id="dgLondonRadar"'));
 assert.ok(html.indexOf('src="./app.js') < html.indexOf('src="./trading-command.js'));
-assert.ok(sw.includes('dgos-personal-shell-54'));
+assert.ok(sw.includes('dgos-personal-shell-53-trading1'));
 
 function fakeElement() {
  return {

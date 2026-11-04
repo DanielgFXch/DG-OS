@@ -397,6 +397,62 @@ function renderTradingBrain(brain){
   summaryEl.textContent=report.summary||'';
 }
 
+// Periodic Trading Brain evidence: a separate honest fallback from real,
+// published TwelveData candle series. It is NEVER a live decision source;
+// only an actually reachable Always-On Market Server may drive live Entry.
+let periodicBrainSnapshot=null;
+const PERIODIC_BRAIN_URL='./data/trading-brain.json';
+function renderCurrentBrainSource(){
+  if(marketServerReachable&&tradingBrainState?.report){
+    renderTradingBrain(tradingBrainState);
+    const badge=$('brainStatus');
+    if(badge)badge.dataset.source='always-on';
+    return;
+  }
+  const snapshot=periodicBrainSnapshot;
+  if(!snapshot?.brain?.report || snapshot.mode!=='PERIODIC_READ_ONLY'){
+    renderTradingBrain(null);return;
+  }
+  renderTradingBrain(snapshot.brain);
+  const badge=$('brainStatus'), summary=$('brainSummary');
+  const at=new Date(snapshot.updatedAt);
+  const ageM=Number.isFinite(at.getTime())?Math.max(0,Math.floor((Date.now()-at.getTime())/60000)):NaN;
+  const freshness=Number.isFinite(ageM)&&ageM<=60?'ZEITVERZÖGERT':'HISTORISCH';
+  const stamp=Number.isFinite(at.getTime())?new Intl.DateTimeFormat('de-CH',{
+    timeZone:'Europe/Zurich',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'
+  }).format(at):'unbekannt';
+  if(badge){
+    badge.textContent=freshness+' · KEIN LIVE';
+    badge.className='brain-status brain-status-awaiting';
+    badge.dataset.source='periodic-read-only';
+  }
+  if(summary){
+    summary.textContent='LETZTE ECHTE MARKTAUFNAHME · '+stamp+
+      ' (Schweiz) · '+(Number.isFinite(ageM)?ageM+' Minuten alt':'Alter unbekannt')+
+      '\nNicht tickgenau. Kein BUY/SELL-Entry und keine automatische Handelsfreigabe.\n\n'+
+      String(snapshot.brain.report.summary||'');
+  }
+}
+async function loadPeriodicBrainSnapshot(){
+  try{
+    const res=await fetch(PERIODIC_BRAIN_URL+'?t='+Date.now(),{cache:'no-store'});
+    if(!res.ok)throw Error('HTTP '+res.status);
+    const payload=await res.json();
+    const time=Date.parse(payload?.updatedAt||'');
+    if(payload?.mode!=='PERIODIC_READ_ONLY' || payload?.symbol!=='XAUUSD' ||
+      !Number.isFinite(time)||time>Date.now()+300000||
+      !payload?.brain?.report||payload.brain.report.status!=='DATA_NOT_READY'||
+      payload.brain?.decision?.status!=='DATA_NOT_READY')throw Error('unverified_or_actionable_snapshot');
+    periodicBrainSnapshot=payload;
+    window.DGOSTradingSnapshot=payload;
+    window.dispatchEvent(new Event('dgos-trading-snapshot'));
+  }catch(_){
+    // An unreachable/missing snapshot never turns stale data into a LIVE
+    // signal; preserve the latest previously verified actual snapshot.
+  }
+  renderCurrentBrainSource();
+}
+
 // Hero card ("AKTUELLE HANDLUNG") — historically driven entirely by the
 // Alpha Simulation buttons below (computeDecision()/render()). Now: when a
 // real Always-On Server is connected, this overwrites the hero with the
@@ -500,7 +556,7 @@ let tradingBrainState=null;      // last successful /api/brain/XAUUSD response, 
 async function pollMarketServer(){
   if(!marketServerUrl){
     marketServerReachable=false; marketServerState=null; tradingBrainState=null;
-    renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
+    renderCurrentBrainSource();renderHeroAction(tradingBrainState);
     return false;
   }
   try{
@@ -530,7 +586,7 @@ async function pollMarketServer(){
     $('marketServerStatus').textContent=`Always-On Server nicht erreichbar (${err.message}) — Dashboard nutzt Fallback (15-Min-Feed).`;
   }
   renderFreshness();
-  renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
+  renderCurrentBrainSource();renderHeroAction(tradingBrainState);
   pollAndSendEventAlerts();
   return marketServerReachable;
 }
@@ -560,7 +616,7 @@ async function connectMarketServer(url){
     marketServerReachable=false;marketServerState=null;tradingBrainState=null;
     $('marketServerStatus').textContent='Kein Always-On Server konfiguriert · nutzt den Fallback-Marktdatenfeed.';
     renderFreshness();
-    renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
+    renderCurrentBrainSource();renderHeroAction(tradingBrainState);
     return false;
   }
   $('marketServerUrl').value=marketServerUrl;
@@ -1558,7 +1614,7 @@ renderGreeting();
 renderTicker();
 renderHeaderDateTime(new Date());
 renderFreshness();
-renderTradingBrain(tradingBrainState);renderHeroAction(tradingBrainState);
+renderCurrentBrainSource();renderHeroAction(tradingBrainState);
 updateSessionStatuses();
 renderKeySessionZones();
 loadMarketData();
@@ -1569,4 +1625,6 @@ setInterval(renderFreshness,1000);
 setInterval(()=>{ if(marketServerUrl) pollMarketServer(); },3000);
 setInterval(updateSessionStatuses,30000);
 setInterval(loadMarketData,60000);
+loadPeriodicBrainSnapshot();
+setInterval(loadPeriodicBrainSnapshot,300000);
 if(tg.token){testTelegramConnection(tg.token).then(bot=>setTelegramStatus(`Verbunden · @${bot.username}`)).catch(()=>setTelegramStatus('Nicht verbunden'))}

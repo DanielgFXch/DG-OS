@@ -1,0 +1,26 @@
+name: DG Trading Market Server Deployment Readiness
+on:
+  pull_request:
+    paths:
+      - 'render.yaml'
+      - 'docs/DG_TRADING_LIVE_START.md'
+      - 'scripts/test-trading-live-readiness.js'
+      - '.github/workflows/trading-live-readiness.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'render.yaml'
+      - 'docs/DG_TRADING_LIVE_START.md'
+      - 'scripts/test-trading-live-readiness.js'
+jobs:
+  validate-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check existing server wiring and secret-safe Render template
+        run: node scripts/test-trading-live-readiness.js
+      - name: Verify existing session clock and overlap rules
+        run: node scripts/test-trading-session-clock.js

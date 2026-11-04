@@ -1,0 +1,19 @@
+# DG OS Trading Brain · deployment blueprint (preparation ONLY).
+# Does not deploy anything or incur charges until explicitly applied in Render.
+# Always-on Web Service: 7 candle series, live TwelveData WebSocket and
+# the SAME marketBrain.js already used by DG OS / GitHub Actions.
+services:
+  - type: web
+    name: dg-os-market-brain
+    runtime: node
+    region: frankfurt
+    plan: starter
+    autoDeployTrigger: commit
+    buildCommand: npm install --ignore-scripts --no-audit --no-fund
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TWELVEDATA_API_KEY
+        sync: false

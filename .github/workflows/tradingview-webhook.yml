@@ -3,6 +3,13 @@ on:
   pull_request:
     paths:
       - 'supabase/functions/dgos-tradingview/**'
+      - 'supabase/functions/dgos-tradingview-feed/**'
+      - 'tradingview-feed.js'
+      - 'tradingview-feed.css'
+      - 'trading-command.js'
+      - 'index.html'
+      - 'sw.js'
+      - 'scripts/test-tradingview-feed.js'
       - 'supabase/migrations/20261013100000_dgos_tradingview_events.sql'
       - 'scripts/test-tradingview-webhook.js'
       - '.github/workflows/tradingview-webhook.yml'
@@ -10,6 +17,13 @@ on:
     branches: [main]
     paths:
       - 'supabase/functions/dgos-tradingview/**'
+      - 'supabase/functions/dgos-tradingview-feed/**'
+      - 'tradingview-feed.js'
+      - 'tradingview-feed.css'
+      - 'trading-command.js'
+      - 'index.html'
+      - 'sw.js'
+      - 'scripts/test-tradingview-feed.js'
       - 'supabase/migrations/20261013100000_dgos_tradingview_events.sql'
       - 'scripts/test-tradingview-webhook.js'
 jobs:
@@ -21,3 +35,6 @@ jobs:
         with:
           node-version: '22'
       - run: node scripts/test-tradingview-webhook.js
+      - run: node scripts/test-tradingview-feed.js
+      - run: node --check tradingview-feed.js
+      - run: node --check trading-command.js

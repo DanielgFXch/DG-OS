@@ -302,10 +302,24 @@
     const now=new Date();
     const ctx=currentSession(now);
     const brain=brainState();
-    const decision=decisionFrom(brain);
-    const bias=biasFrom(brain);
     const report=reportFrom(brain);
     const realBrain=Boolean(serverIsReachable() && brain && report);
+    // A real, published TwelveData snapshot exists even without paid Always-On
+    // hosting. Show that evidence as historical ONLY; never use it to authorize
+    // BUY/SELL READY, entries, or orders in this top-level command center.
+    let periodic=null;
+    try {
+      const value=typeof periodicBrainSnapshot!=='undefined'?periodicBrainSnapshot:null;
+      if(!realBrain && value?.mode==='PERIODIC_READ_ONLY' &&
+         value?.symbol==='XAUUSD' && value?.brain?.report) periodic=value;
+    } catch {}
+    const ageMs=periodic?Date.now()-Date.parse(periodic.updatedAt):NaN;
+    const historical=periodic && Number.isFinite(ageMs) && ageMs>=0;
+    const periodicLabel=historical?(ageMs<=3600000?'ZEITVERZÖGERT':'HISTORISCH'):'';
+    const analysisBrain=realBrain?brain:historical?periodic.brain:null;
+    const decision=realBrain?decisionFrom(brain):null;
+    const bias=biasFrom(analysisBrain);
+    const analysisReport=reportFrom(analysisBrain);
 
     text('tradingActiveSession',
       (SESSION_LABEL[ctx.session.id]||ctx.session.name||ctx.session.id).toUpperCase()+
@@ -318,7 +332,8 @@
       dataState.classList.toggle('is-live',realBrain);
       dataState.classList.toggle('is-offline',!realBrain);
       const span=dataState.querySelector('span');
-      if(span) span.textContent=realBrain?'TRADING BRAIN LIVE':'BRAIN OFFLINE';
+      if(span) span.textContent=realBrain?'TRADING BRAIN LIVE':
+        historical?periodicLabel+' · KEIN LIVE':'BRAIN OFFLINE';
     }
 
     const status=decision&&decision.status?decision.status:'WAIT';
@@ -336,13 +351,15 @@
     }
 
     const biasText=BIAS_LABEL[bias]||bias||'—';
-    text('tradingBiasNow',biasText);
+    text('tradingBiasNow',historical?biasText+' · HIST.':realBrain?biasText:'—');
     text('tradingBiasContext',
       realBrain
         ? ((report.htfBias&&report.htfBias.trading&&report.htfBias.trading.reasoning) ||
            (report.htfBias&&report.htfBias.reasoning&&report.htfBias.reasoning[0]) ||
            'Daily / 4H Kontext aus dem DG Trading Brain.')
-        : 'Keine Richtung ohne echte Trading-Brain-Daten.'
+        : historical
+          ? 'TwelveData · echter, aber zeitverzögerter HTF-Kontext. Keine Live-Entry-Bestätigung.'
+          : 'Keine Richtung ohne echte Trading-Brain-Daten.'
     );
 
     const liquidityRead=buildLiquidityRead(ctx);
@@ -355,6 +372,16 @@
 
     let scenarioTitle='Noch kein valides Szenario';
     let scenarioText='Trading Brain ist nicht verbunden. Jarvis zeigt keine Richtung aus Simulation oder erfundenen Daten.';
+    if(historical){
+      const timestamp=new Intl.DateTimeFormat('de-CH',{
+        timeZone:'Europe/Zurich',day:'2-digit',month:'2-digit',
+        hour:'2-digit',minute:'2-digit'
+      }).format(new Date(periodic.updatedAt));
+      scenarioTitle='Trading Brain · '+periodicLabel;
+      scenarioText='Echte TwelveData-Marktdaten vom '+timestamp+
+        ' CH · keine aktuellen Tickdaten und kein freigegebener Entry. '+
+        'Für eine Live-Entscheidung fehlt der Always-On-Datenfeed.';
+    }
     if(realBrain && decision){
       const side=STATUS_DIRECTION[status] || (decision.direction==='bullish'?'BUY':decision.direction==='bearish'?'SELL':null);
       if(side==='BUY') scenarioTitle=stage==='READY'?'BUY READY · bullishes Szenario':'Bullishes Szenario im Fokus';
@@ -380,6 +407,9 @@
       summary+=liquidityRead.swept.length
         ? liquidityRead.swept.length+' relevante Session-Liquidity-Level wurden gesweept.'
         : 'Noch kein relevanter Session-Sweep.';
+    }else if(historical){
+      summary+='Letzte belegte Marktaufnahme: '+periodicLabel.toLowerCase()+
+        '. Jarvis gibt ohne Live-Bestätigung kein Buy/Sell-Signal frei.';
     }else{
       summary+='Session-Level können angezeigt werden; ohne echten Trading Brain gibt Jarvis bewusst kein Richtungsszenario aus.';
     }

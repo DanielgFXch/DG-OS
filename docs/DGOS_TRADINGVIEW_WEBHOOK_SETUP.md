@@ -10,7 +10,7 @@ Die DG-OS-Seite auf GitHub Pages ist statisch und kann selbst keine TradingView-
 2. Ein **TradingView-Alert** sendet gültiges JSON als POST via HTTPS.
 3. Die Supabase Edge Function `dgos-tradingview` prüft getrennten geheimen Schlüssel, Symbol, Timeframe, Preis, Zeit und Eventtyp.
 4. Sie speichert das Ergebnis privat und nur als **INDICATOR_REPORTED**, mit Duplikatschutz. Dieser Status ist keine von Jarvis bestätigte Markt-Tatsache, kein Entry und keine automatische Order.
-5. **Späterer Schritt:** Der private DG-OS-Reader prüft die Authentisierung des Nutzers und zeigt echte empfangene Alerts im Trading-Bereich und Jarvis. Das ist aktuell **noch nicht implementiert**.
+5. **Trading Brain Reader (neu):** `dgos-tradingview-feed` erlaubt GET ausschliesslich nach gültiger Jarvis-/Telegram-Gerätekopplung. Die Trading-Seite zeigt die letzten echten Meldungen inklusive Kerzenzeit, Empfangszeit, Level und `VON TRADINGVIEW GEMELDET`. Vor dem Deployment der neuen Function erscheint `FEED NICHT ERREICHBAR`; ohne Alerts erscheint `0 EREIGNISSE`. Eine unabhängige H1-Prüfung oder automatische Entry-Freigabe ist damit **nicht** verbunden.
 
 ## Einmalige Einrichtung (bei dir)
 
@@ -59,12 +59,15 @@ Der Empfänger akzeptiert als **Transport**, nicht als bestätigte DG-Bewertung,
 - TradingView ist ein **Event-Lieferant**, nicht der direkte Live-Stream sämtlicher Chartkerzen. Der Webhook meldet nur konfigurierte Alarmereignisse.
 - TradingView kann Zustellungen verzögern/verfehlen. Der neue Transport ist kein garantierter tickgenauer Datenfeed.
 - **DG Smart Money Liquidity** ist die Quelle der Alert-Bedingungen. Wenn sein Pine-Code bestimmte Events noch nicht sendet, muss der **vollständige** Code zuerst entsprechend erweitert werden. Keine generische Sweep-Annahme.
-- Nach erfolgreichem Empfang folgt der authentisierte DG-OS-Reader für Jarvis inklusive Zeitstempel, Herkunft und Aussage `VON TRADINGVIEW GEMELDET` bis der TwelveData-Candlefeed eine unabhängige Prüfung erlaubt.
+- Der neue private Reader zeigt nach aktiver Gerätekopplung und Function-Deployment die Meldung mit Zeitstempeln, Herkunft und `VON TRADINGVIEW GEMELDET` im Trading Brain. Er prüft **nicht** unabhängig, ob ein Sweep fachlich korrekt ist; dafür muss die TwelveData-Candlefeed-Logik später separat abgeglichen werden.
 
 ## Technische Dateien
 
 - `supabase/migrations/20261013100000_dgos_tradingview_events.sql` — private Tabelle mit Idempotenzschlüssel.
 - `supabase/functions/dgos-tradingview/index.ts` — gesicherter, fail-closed Empfänger.
+- `supabase/functions/dgos-tradingview-feed/index.ts` — privater, owner-geprüfter Reader; als eigene Function mit `verify_jwt=false` deployen, da er stattdessen das **bestehende** Jarvis-Gerätetoken selbst prüft.
+- `tradingview-feed.js` / `tradingview-feed.css` — iPhone-taugliche Trading-Ansicht (15-Sekunden-Poll bei geöffneter Trading-Seite; **kein Push**, keine Echtzeitgarantie).
+- `scripts/test-tradingview-feed.js` — Browser-/Auth-/Nicht-Signal-Tests.
 - `scripts/test-tradingview-webhook.js` — HTTP-Status/Auth/Replay/Privacy-Tests.
 - `.github/workflows/tradingview-webhook.yml` — Test vor Release.
 

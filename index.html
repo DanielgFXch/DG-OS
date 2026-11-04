@@ -42,6 +42,7 @@
   <link rel="stylesheet" href="./trading-london-radar.css?v=1" />
   <link rel="stylesheet" href="./jarvis-voice-audibility.css?v=1" />
   <link rel="stylesheet" href="./trading-session-clock.css?v=1" />
+  <link rel="stylesheet" href="./tradingview-feed.css?v=1" />
   <link rel="stylesheet" href="./dg-unified-premium.css?v=1" />
   <title>DG OS · Dein Tag</title>
 </head>
@@ -894,6 +895,24 @@
           <small class="dg-tsc-disclaimer">Session-Zeitplan · keine Bestätigung für offene Märkte oder Live-Kursdaten</small>
         </section>
 
+        <section id="dgTradingViewFeed" class="dg-tradingview-feed" aria-labelledby="dgTradingViewFeedTitle">
+          <div class="dg-tv-heading">
+            <div>
+              <small>DG TRADING BRAIN · GESCHÜTZTE EREIGNISSE</small>
+              <h3 id="dgTradingViewFeedTitle">TradingView · XAUUSD</h3>
+              <p>Was haben deine echten Indikator-Alarme gemeldet?</p>
+            </div>
+            <div class="dg-tv-actions">
+              <span id="dgTradingViewFeedStatus" class="dg-tv-status" data-state="waiting" role="status">FEED PRÜFEN</span>
+              <button type="button" id="dgTradingViewFeedRefresh" aria-label="TradingView-Ereignisse neu laden">↻ Aktualisieren</button>
+            </div>
+          </div>
+          <div id="dgTradingViewFeedList" class="dg-tv-list" aria-live="polite">
+            <p class="dg-tv-empty">Private Ereignisse werden nach Jarvis-Gerätekopplung angezeigt.</p>
+          </div>
+          <p class="dg-tv-foot">Nur der verknüpfte Jarvis-Besitzer kann Ereignisse sehen. TradingView-Meldung ≠ unabhängiger Sweep-Nachweis ≠ Buy/Sell.</p>
+        </section>
+
         <section id="dgLondonRadar" class="dg-london-radar" aria-labelledby="dgLondonRadarTitle" aria-live="polite">
           <div class="dg-london-radar-top">
             <div>
@@ -1457,10 +1476,11 @@
   <script src="./social.js?v=0.61.2"></script>
   <script src="./navigation.js?v=0.60.1"></script>
   <script src="./private-hub.js?v=2"></script>
-  <script src="./trading-command.js?v=0.57.0"></script>
+  <script src="./trading-command.js?v=0.57.1"></script>
   <script src="./trading-intelligence.js?v=2"></script>
   <script src="./trading-intelligence-ui.js?v=2"></script>
   <script src="./trading-session-clock.js?v=1"></script>
+  <script src="./tradingview-feed.js?v=1"></script>
   <script src="./jarvis-weather-outfit.js?v=1"></script>
   <script src="./weather.js?v=0.47.0"></script>
   <script src="./jarvis-weather-ui.js?v=1"></script>

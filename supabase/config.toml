@@ -1,0 +1,5 @@
+# DG OS TradingView reader verifies the existing Jarvis owner-device token itself.
+# Do not enable automatic Supabase JWT verification for this private custom bearer API.
+# Other function deployments retain their existing explicit settings.
+[functions.dgos-tradingview-feed]
+verify_jwt = false

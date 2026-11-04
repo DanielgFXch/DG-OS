@@ -1,0 +1,31 @@
+/* Private TradingView indicator reports. Sapphire styling, NOT signal colors. */
+body[data-dgos-route="trading"] .dg-tradingview-feed {
+  position:relative; margin:12px 0 14px; padding:16px;
+  border:1px solid rgba(119,213,251,.20); border-radius:22px;
+  background:linear-gradient(155deg,rgba(16,39,66,.65),rgba(5,15,29,.70));
+  box-shadow:inset 0 1px rgba(224,248,255,.08);
+}
+.dg-tv-heading {display:flex; align-items:flex-start; justify-content:space-between; gap:12px; flex-wrap:wrap}
+.dg-tv-heading small {color:rgba(129,209,238,.75);font-size:9px;letter-spacing:.13em;font-weight:700}
+.dg-tv-heading h3 {margin:5px 0 3px;color:#e8f9ff;font-size:19px;letter-spacing:-.02em}
+.dg-tv-heading p {margin:0;color:rgba(181,212,227,.76);font-size:11px;line-height:1.5}
+.dg-tv-actions {display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dg-tv-status {padding:7px 10px;border:1px solid rgba(111,198,229,.26);border-radius:999px;color:#abdbe9;font-size:9px;font-weight:700;letter-spacing:.06em}
+.dg-tv-status[data-state="reported"] {color:#c4eaff}
+.dg-tv-actions button {border:1px solid rgba(164,220,238,.28);border-radius:12px;padding:8px 11px;background:rgba(83,144,183,.12);color:#d7f4ff;font-size:11px;cursor:pointer}
+.dg-tv-actions button:focus-visible {outline:2px solid #81e4ff;outline-offset:3px}
+.dg-tv-list {display:grid;gap:8px;margin-top:12px}
+.dg-tv-empty {padding:10px 0;margin:0;color:rgba(178,207,222,.83);font-size:11px;line-height:1.6}
+.dg-tv-event {padding:11px 12px;border:1px solid rgba(127,201,238,.14);border-radius:13px;background:rgba(19,49,75,.30)}
+.dg-tv-event-top {display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.dg-tv-event-top strong {color:#e9f9ff;font-size:12px}
+.dg-tv-event-top span {color:#8fd8f0;font-size:8px;letter-spacing:.07em;font-weight:700}
+.dg-tv-event p {margin:7px 0 4px;color:#c4dce9;font-size:11px}
+.dg-tv-event small {color:rgba(167,193,210,.78);font-size:10px}
+.dg-tv-foot {margin:11px 0 0;color:rgba(150,179,197,.85);font-size:10px;line-height:1.5}
+@media(max-width:700px) {
+  body[data-dgos-route="trading"] .dg-tradingview-feed {padding:13px;border-radius:18px}
+  .dg-tv-heading h3 {font-size:17px}
+  .dg-tv-actions {width:100%;justify-content:space-between}
+  .dg-tv-event-top span {font-size:7.5px}
+}

@@ -1,0 +1,51 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs'),path=require('node:path');
+const root=path.resolve(__dirname,'..');
+const read=p=>fs.readFileSync(path.join(root,p),'utf8');
+const {snapshot,validSeries}=require('../scripts/build-trading-brain-snapshot.js');
+const market=JSON.parse(read('data/market.json'));
+assert.equal(market.symbol,'XAU/USD');
+assert.ok(Array.isArray(market.candles.h1)&&market.candles.h1.length>=24,
+  'Initial fallback is actual H1 OHLC recovered from successful TwelveData CI log');
+const response=snapshot(market);
+assert.equal(response.symbol,'XAUUSD');
+assert.equal(response.mode,'PERIODIC_READ_ONLY');
+assert.equal(response.updatedAt,new Date(market.updatedAt).toISOString());
+assert.equal(response.brain.report.status,'DATA_NOT_READY');
+assert.equal(response.brain.decision.status,'DATA_NOT_READY');
+assert.equal(response.brain.entry.status,'DATA_NOT_READY');
+assert.ok(response.brain.report.summary.includes('Keine Live-Entry-Freigabe'));
+assert.ok(response.missingCoreTimeframes.includes('4h'),'Absent 4h is honestly missing');
+assert.ok(response.availability['1h']>=24,'Real hourly values still available');
+assert.ok(response.brain.sessionIntelligence.model==='OBSERVATIONS_ONLY');
+assert.ok(!response.brain.entry.entryZone);
+assert.ok(!response.brain.entry.stopLoss);
+assert.ok(!response.brain.decision.primaryPoi);
+assert.deepEqual(validSeries({series:[{datetime:'2026-11-04 01:00:00',
+  open:4000,high:4010,low:3990,close:4002},{datetime:'2026-11-04 02:00:00',open:0,high:0,low:0,close:0}]}).length,1);
+assert.throws(()=>snapshot({...market,price:null}),/invalid_real_market_snapshot/);
+assert.throws(()=>snapshot({...market,updatedAt:'bad'}),/invalid_real_market_snapshot/);
+const workflow=read('.github/workflows/market-data.yml');
+const gitignore=read('.gitignore');
+const ui=read('app.js');
+assert.ok(gitignore.includes('!data/market.json')&&gitignore.includes('!data/trading-brain.json'));
+assert.ok(workflow.includes('git add state/ data/market.json data/trading-brain.json'),
+  'Evidence is committed and survives any GitHub Pages code redeployment');
+assert.ok(workflow.includes('node scripts/build-trading-brain-snapshot.js'));
+assert.ok(workflow.includes('candlesByTimeframe'));
+assert.ok(workflow.includes("m15Raw=$(fetch_optional_series 15min 192)"));
+assert.ok(workflow.includes("m5Raw=$(fetch_optional_series 5min 288)"));
+assert.ok(workflow.includes("h4Raw=$(fetch_optional_series 4h 180)"));
+assert.ok(!workflow.includes('git add -A'),'Never commit unsanitized API responses');
+assert.ok(ui.includes('loadPeriodicBrainSnapshot'));
+assert.ok(ui.includes("snapshot.mode!=='PERIODIC_READ_ONLY'"));
+assert.ok(ui.includes('brain.report.status!==\'DATA_NOT_READY\''));
+assert.ok(ui.includes('periodic-read-only'));
+assert.ok(ui.includes('KEIN LIVE'),'Delayed source cannot claim LIVE');
+assert.ok(ui.includes('renderHeroAction(tradingBrainState)'),
+  'Only actual Always-On response drives the live hero');
+assert.ok(ui.includes('renderTradingBrain(tradingBrainState)'),'Always-On full brain still supported');
+const body=JSON.stringify(response);
+assert.ok(!body.includes('apikey')&&!body.includes('service_role')&&!body.includes('Authorization'));
+console.log('DG Trading Brain recovery OK: verified real H1 source, same engine, guarded delayed report, tracked GitHub Pages data, no synthetic entries.');

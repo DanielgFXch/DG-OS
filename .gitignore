@@ -1,4 +1,7 @@
-data/
+# Ignore temporary provider responses; commit only validated public snapshots.
+data/*
+!data/market.json
+!data/trading-brain.json
 .env
 node_modules/
 # Railway-Persistent-Volume-only runtime state (DG Trading Brain V1 Market

@@ -1,0 +1,43 @@
+name: DG Trading Brain Fallback Data Integrity
+on:
+  pull_request:
+    paths:
+      - '.gitignore'
+      - 'app.js'
+      - 'data/market.json'
+      - '.github/workflows/market-data.yml'
+      - '.github/workflows/trading-brain-snapshot.yml'
+      - 'scripts/build-trading-brain-snapshot.js'
+      - 'scripts/test-trading-brain-snapshot.js'
+  push:
+    branches: [main]
+    paths:
+      - '.gitignore'
+      - 'app.js'
+      - 'scripts/build-trading-brain-snapshot.js'
+      - 'scripts/test-trading-brain-snapshot.js'
+      - '.github/workflows/trading-brain-snapshot.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check-evidence-only:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax checks
+        run: |
+          node --check app.js
+          node --check scripts/build-trading-brain-snapshot.js
+          node --check scripts/test-trading-brain-snapshot.js
+      - name: Real candle fallback + safe decision gate
+        run: node scripts/test-trading-brain-snapshot.js
+      - name: Produce a test-only computed Trading Brain report
+        run: |
+          node scripts/build-trading-brain-snapshot.js
+          node -e 'const x=require("./data/trading-brain.json");if(x.mode!=="PERIODIC_READ_ONLY"||x.brain.decision.status!=="DATA_NOT_READY")process.exit(1)'
+      - name: Existing Session Intelligence regressions
+        run: node scripts/test-session-intelligence.js

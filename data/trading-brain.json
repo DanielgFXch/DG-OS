@@ -1,0 +1,544 @@
+{
+  "mode": "PERIODIC_READ_ONLY",
+  "symbol": "XAUUSD",
+  "updatedAt": "2026-11-04T21:10:15.000Z",
+  "source": "TwelveData via GitHub Actions · kein WebSocket",
+  "freshness": "CHECK_CLIENT_CLOCK",
+  "availability": {
+    "monthly": 0,
+    "weekly": 0,
+    "daily": 0,
+    "4h": 0,
+    "1h": 72,
+    "15min": 0,
+    "5min": 0
+  },
+  "missingCoreTimeframes": [
+    "weekly",
+    "daily",
+    "4h"
+  ],
+  "htfReady": false,
+  "brain": {
+    "status": "DATA_NOT_READY",
+    "htfContext": {
+      "monthly": {
+        "timeframe": "Monthly",
+        "candleCount": 0,
+        "range": null,
+        "internalBias": null,
+        "externalBias": null,
+        "premiumDiscount": null,
+        "fvgCount": 0,
+        "orderBlockCount": 0,
+        "lastCandle": null
+      },
+      "weekly": {
+        "timeframe": "Weekly",
+        "candleCount": 0,
+        "range": null,
+        "internalBias": null,
+        "externalBias": null,
+        "premiumDiscount": null,
+        "fvgCount": 0,
+        "orderBlockCount": 0,
+        "lastCandle": null
+      },
+      "daily": {
+        "timeframe": "Daily",
+        "candleCount": 0,
+        "range": null,
+        "internalBias": null,
+        "externalBias": null,
+        "premiumDiscount": null,
+        "fvgCount": 0,
+        "orderBlockCount": 0,
+        "lastCandle": null
+      },
+      "h4": {
+        "timeframe": "4H",
+        "candleCount": 0,
+        "range": null,
+        "internalBias": null,
+        "externalBias": null,
+        "premiumDiscount": null,
+        "fvgCount": 0,
+        "orderBlockCount": 0,
+        "lastCandle": null
+      },
+      "h1": {
+        "timeframe": "H1",
+        "candleCount": 72,
+        "range": {
+          "high": 4070.45747,
+          "low": 3866.02108
+        },
+        "internalBias": "bullish",
+        "externalBias": "bullish",
+        "premiumDiscount": {
+          "timeframe": "H1",
+          "rangeSource": "external_structure",
+          "fibPercentFromLow": 0.836,
+          "fibZone": null,
+          "high": 4070.45747,
+          "low": 4029.90986,
+          "range": 40.54760999999962,
+          "equilibrium": 4050.183665,
+          "price": 4063.8271,
+          "distanceToEq": 13.643434999999954,
+          "distanceToEqPercent": 33.64793880576458,
+          "zone": "premium",
+          "isPremium": true,
+          "isDiscount": false,
+          "isEquilibrium": false
+        },
+        "fvgCount": 17,
+        "orderBlockCount": 3,
+        "lastCandle": {
+          "datetime": "2026-11-04 21:00:00",
+          "open": 4061.19765,
+          "high": 4064.21459,
+          "low": 4061.19765,
+          "close": 4063.8271
+        }
+      },
+      "overallBias": "NEUTRAL_MIXED",
+      "confidence": null,
+      "macro": {
+        "state": "NEUTRAL_MIXED",
+        "tally": 0,
+        "reasoning": [
+          "Monthly: externe Struktur unklar",
+          "Weekly: externe Struktur unklar"
+        ]
+      },
+      "trading": {
+        "state": "NEUTRAL_MIXED",
+        "tally": 0,
+        "reasoning": [
+          "Daily: externe Struktur unklar",
+          "4H: externe Struktur unklar"
+        ]
+      },
+      "reasoning": [
+        "Macro Bias (Monthly/Weekly): NEUTRAL_MIXED",
+        "Monthly: externe Struktur unklar",
+        "Weekly: externe Struktur unklar",
+        "Trading Bias (Daily/4H): NEUTRAL_MIXED",
+        "Daily: externe Struktur unklar",
+        "4H: externe Struktur unklar"
+      ]
+    },
+    "report": {
+      "htfBias": {
+        "overallBias": "NEUTRAL_MIXED",
+        "confidence": null,
+        "macro": {
+          "state": "NEUTRAL_MIXED",
+          "tally": 0,
+          "reasoning": [
+            "Monthly: externe Struktur unklar",
+            "Weekly: externe Struktur unklar"
+          ]
+        },
+        "trading": {
+          "state": "NEUTRAL_MIXED",
+          "tally": 0,
+          "reasoning": [
+            "Daily: externe Struktur unklar",
+            "4H: externe Struktur unklar"
+          ]
+        },
+        "reasoning": [
+          "Macro Bias (Monthly/Weekly): NEUTRAL_MIXED",
+          "Monthly: externe Struktur unklar",
+          "Weekly: externe Struktur unklar",
+          "Trading Bias (Daily/4H): NEUTRAL_MIXED",
+          "Daily: externe Struktur unklar",
+          "4H: externe Struktur unklar"
+        ]
+      },
+      "weeklyContext": "Noch keine Daten.",
+      "dailyContext": "Noch keine Daten.",
+      "h4Context": "Noch keine Daten.",
+      "notableLiquidity": [
+        "Daily High (Daily) — APPROACHING bei 4067.19",
+        "Daily Low (Daily) — APPROACHING bei 4056.94",
+        "Asia High (Asia Session) — SWEPT bei 4028.95 [Swept At 2026-11-04T23:25:25.160Z] [Reaction: NO]",
+        "London High (London Session) — SWEPT bei 4051.85 [Swept At 2026-11-04T23:25:25.160Z] [Reaction: NO]",
+        "New York High (New York Session) — APPROACHING bei 4070.46"
+      ],
+      "freshBullishPOIs": [
+        {
+          "timeframe": "H1",
+          "type": "fvg",
+          "range": "4010.11–4014.36",
+          "status": "fresh",
+          "quality": "medium",
+          "score": 4,
+          "reasons": [
+            "✗ Vorheriger relevanter Liquidity Sweep/Grab",
+            "✗ Deutliche Reaktion vom Bereich",
+            "✓ Structure Break / BOS / CHOCH in Verbindung",
+            "✗ Passt zum aktuellen DG Trading Bias",
+            "✓ Sinnvolle Premium/Discount-Lage",
+            "✓ Deutlicher Displacement",
+            "✗ Überschneidung mit Order Block",
+            "✓ Frisch / offen (0% mitigiert)"
+          ]
+        },
+        {
+          "timeframe": "H1",
+          "type": "fvg",
+          "range": "3957.01–3995.46",
+          "status": "fresh",
+          "quality": "high",
+          "score": 5,
+          "reasons": [
+            "✓ Vorheriger relevanter Liquidity Sweep/Grab",
+            "✗ Deutliche Reaktion vom Bereich",
+            "✓ Structure Break / BOS / CHOCH in Verbindung",
+            "✗ Passt zum aktuellen DG Trading Bias",
+            "✓ Sinnvolle Premium/Discount-Lage",
+            "✓ Deutlicher Displacement",
+            "✗ Überschneidung mit Order Block",
+            "✓ Frisch / offen (0% mitigiert)"
+          ]
+        },
+        {
+          "timeframe": "H1",
+          "type": "fvg",
+          "range": "3940.73–3946.17",
+          "status": "fresh",
+          "quality": "high",
+          "score": 5,
+          "reasons": [
+            "✗ Vorheriger relevanter Liquidity Sweep/Grab",
+            "✗ Deutliche Reaktion vom Bereich",
+            "✓ Structure Break / BOS / CHOCH in Verbindung",
+            "✗ Passt zum aktuellen DG Trading Bias",
+            "✓ Sinnvolle Premium/Discount-Lage",
+            "✓ Deutlicher Displacement",
+            "✓ Überschneidung mit Order Block",
+            "✓ Frisch / offen (0% mitigiert)"
+          ]
+        },
+        {
+          "timeframe": "H1",
+          "type": "orderBlock",
+          "range": "3927.11–3940.73",
+          "status": "fresh",
+          "quality": "high",
+          "score": 5,
+          "reasons": [
+            "✗ Vorheriger relevanter Liquidity Sweep/Grab",
+            "✗ Deutliche Reaktion vom Bereich",
+            "✓ Structure Break / BOS / CHOCH in Verbindung",
+            "✗ Passt zum aktuellen DG Trading Bias",
+            "✓ Sinnvolle Premium/Discount-Lage",
+            "✓ Mit Displacement entstanden",
+            "✓ Offene FVG/Imbalance im Bereich",
+            "✓ Frisch (< 65% mitigiert, Kapitel-4-Richtwert)"
+          ]
+        },
+        {
+          "timeframe": "H1",
+          "type": "ifvg",
+          "range": "3910.22–3912.19",
+          "status": "fresh",
+          "quality": "medium",
+          "score": 4,
+          "reasons": [
+            "✗ Vorheriger relevanter Liquidity Sweep/Grab",
+            "✗ Deutliche Reaktion vom Bereich",
+            "✓ Structure Break / BOS / CHOCH in Verbindung",
+            "✗ Passt zum aktuellen DG Trading Bias",
+            "✓ Sinnvolle Premium/Discount-Lage",
+            "✓ Displacement in neue Richtung",
+            "✗ Lage an einem relevanten POI",
+            "✓ Ursprüngliche FVG klar gebrochen"
+          ]
+        }
+      ],
+      "freshBearishPOIs": [],
+      "targets": [
+        {
+          "direction": "up",
+          "price": 4067.18998,
+          "type": "liquidity",
+          "timeframe": "Daily",
+          "reason": "Daily High (Daily)",
+          "priority": "PRIMARY"
+        },
+        {
+          "direction": "up",
+          "price": 4070.45747,
+          "type": "liquidity",
+          "timeframe": "New York Session",
+          "reason": "New York High (New York Session)",
+          "priority": "SECONDARY"
+        },
+        {
+          "direction": "down",
+          "price": 4056.9432,
+          "type": "liquidity",
+          "timeframe": "Daily",
+          "reason": "Daily Low (Daily)",
+          "priority": "PRIMARY"
+        },
+        {
+          "direction": "down",
+          "price": 4029.90986,
+          "type": "liquidity",
+          "timeframe": "New York Session",
+          "reason": "New York Low (New York Session)",
+          "priority": "SECONDARY"
+        },
+        {
+          "direction": "down",
+          "price": 4021.63436,
+          "type": "liquidity",
+          "timeframe": "London Session",
+          "reason": "London Low (London Session)",
+          "priority": "EXTENDED"
+        },
+        {
+          "direction": "down",
+          "price": 4012.23,
+          "type": "poi-fvg",
+          "timeframe": "H1",
+          "reason": "FVG bullish (H1)",
+          "priority": "EXTENDED"
+        }
+      ],
+      "entry": {
+        "status": "DATA_NOT_READY",
+        "direction": null,
+        "entryZone": null,
+        "stopLoss": null,
+        "primaryPOI": null,
+        "reasons": [
+          "Keine Handelsfreigabe aus zeitverzögertem GitHub-Actions-Snapshot."
+        ]
+      },
+      "risk": null,
+      "sessionNotes": [
+        "Asia High ist gesweept bei 4028.95 — Kontext, keine automatische Trade-Regel (Kapitel 13).",
+        "London High ist gesweept bei 4051.85 — Kontext, keine automatische Trade-Regel (Kapitel 13)."
+      ],
+      "newsStatus": "DATA_SOURCE_NOT_CONNECTED",
+      "newsEvents": [],
+      "status": "DATA_NOT_READY",
+      "summary": "VERZÖGERTE MARKTAUFNAHME. Keine Live-Entry-Freigabe. Unvollständige HTF-Daten: weekly, daily, 4h. HTF Bias — Macro (Monthly/Weekly): NEUTRAL_MIXED · Trading (Daily/4H): NEUTRAL_MIXED\nWeekly: Noch keine Daten.\nDaily: Noch keine Daten.\n4H: Noch keine Daten.\nLiquidity (touched/sweeped): Daily High (Daily) — APPROACHING bei 4067.19 · Daily Low (Daily) — APPROACHING bei 4056.94 · Asia High (Asia Session) — SWEPT bei 4028.95 [Swept At 2026-11-04T23:25:25.160Z] [Reaction: NO] · London High (London Session) — SWEPT bei 4051.85 [Swept At 2026-11-04T23:25:25.160Z] [Reaction: NO] · New York High (New York Session) — APPROACHING bei 4070.46\nFresh Bullish POIs: 4010.11–4014.36 (H1, medium), 3957.01–3995.46 (H1, high), 3940.73–3946.17 (H1, high), 3927.11–3940.73 (H1, high), 3910.22–3912.19 (H1, medium)\nFresh Bearish POIs: keine.\nPrimary Target aufwärts: 4067.19 (Daily High (Daily))\nPrimary Target abwärts: 4056.94 (Daily Low (Daily))\nSessions: Asia High ist gesweept bei 4028.95 — Kontext, keine automatische Trade-Regel (Kapitel 13). · London High ist gesweept bei 4051.85 — Kontext, keine automatische Trade-Regel (Kapitel 13).\nEntry Status: WAIT — DG Trading Bias ist NEUTRAL/MIXED — und weder bullish noch bearish liegt aktuell ein unterstützender Liquidity Sweep + Reaktion vor (Kapitel 12: Mixed Context).\nNews: DATA_SOURCE_NOT_CONNECTED"
+    },
+    "entry": {
+      "status": "DATA_NOT_READY",
+      "direction": null,
+      "entryZone": null,
+      "stopLoss": null,
+      "primaryPOI": null,
+      "reasons": [
+        "Keine Handelsfreigabe aus zeitverzögertem GitHub-Actions-Snapshot."
+      ]
+    },
+    "risk": null,
+    "targets": [
+      {
+        "direction": "up",
+        "price": 4067.18998,
+        "type": "liquidity",
+        "timeframe": "Daily",
+        "reason": "Daily High (Daily)",
+        "priority": "PRIMARY"
+      },
+      {
+        "direction": "up",
+        "price": 4070.45747,
+        "type": "liquidity",
+        "timeframe": "New York Session",
+        "reason": "New York High (New York Session)",
+        "priority": "SECONDARY"
+      },
+      {
+        "direction": "down",
+        "price": 4056.9432,
+        "type": "liquidity",
+        "timeframe": "Daily",
+        "reason": "Daily Low (Daily)",
+        "priority": "PRIMARY"
+      },
+      {
+        "direction": "down",
+        "price": 4029.90986,
+        "type": "liquidity",
+        "timeframe": "New York Session",
+        "reason": "New York Low (New York Session)",
+        "priority": "SECONDARY"
+      },
+      {
+        "direction": "down",
+        "price": 4021.63436,
+        "type": "liquidity",
+        "timeframe": "London Session",
+        "reason": "London Low (London Session)",
+        "priority": "EXTENDED"
+      },
+      {
+        "direction": "down",
+        "price": 4012.23,
+        "type": "poi-fvg",
+        "timeframe": "H1",
+        "reason": "FVG bullish (H1)",
+        "priority": "EXTENDED"
+      }
+    ],
+    "decision": {
+      "status": "DATA_NOT_READY",
+      "direction": null,
+      "confidence": null,
+      "macroBias": "NEUTRAL_MIXED",
+      "tradingBias": "NEUTRAL_MIXED",
+      "primaryPoi": null,
+      "confirmation": null,
+      "confirmation5m": null,
+      "entryZone": null,
+      "invalidation": null,
+      "targets": [],
+      "riskReward": [],
+      "missingRequirements": [
+        "Ein oder mehrere HTF-Kern-Timeframes (Weekly/Daily/4H/1H) haben noch keine Kerzendaten (Kapitel 12: DATA_NOT_READY)."
+      ],
+      "reasons": [
+        "Nur Marktbeobachtung; ohne dauerhaft verbundene Echtzeitdaten kein Entry."
+      ],
+      "stopLoss": null
+    },
+    "sessionIntelligence": {
+      "status": "OBSERVED",
+      "symbol": "XAUUSD",
+      "source": "TwelveData · veröffentlichter H1-Snapshot (kein Live-Server)",
+      "asOf": "2026-11-04T21:10:15.000Z",
+      "model": "OBSERVATIONS_ONLY",
+      "sessionDate": "2026-11-04",
+      "asiasession": {
+        "date": "2026-11-04",
+        "startUTC": "00:00",
+        "endUTC": "08:00",
+        "high": 4028.95376,
+        "low": 3919.72405,
+        "range": 109.22971000000007,
+        "candles": 8,
+        "complete": true
+      },
+      "london": {
+        "date": "2026-11-04",
+        "observedCandles": 8,
+        "complete": true,
+        "range": {
+          "high": 4051.84956,
+          "low": 4021.63436
+        },
+        "asiaHigh": {
+          "state": "TAKEN_NO_RETURN",
+          "at": "2026-11-04T08:00:00.000Z",
+          "returnedAt": null,
+          "extreme": 4051.84956,
+          "notes": [
+            "Buyside Liquidity-Level in London überschritten (H1).",
+            "Noch kein H1-Schlusskurs zurück innerhalb der Asia-Range festgestellt."
+          ]
+        },
+        "asiaLow": {
+          "state": "OPEN",
+          "at": null,
+          "returnedAt": null,
+          "extreme": null,
+          "notes": [
+            "London hat das Asia Low mit den verfügbaren abgeschlossenen H1-Kerzen nicht überschritten."
+          ]
+        },
+        "bothTaken": false,
+        "sequence": "SINGLE_OR_NONE",
+        "note": "London-Session anhand abgeschlossener H1-Kerzen ausgewertet."
+      },
+      "londonLiquidity": {
+        "sessionDate": "2026-11-04",
+        "source": "Abgeschlossene UTC-H1-Kerzen (TwelveData)",
+        "status": "FIXED",
+        "high": 4051.84956,
+        "low": 4021.63436,
+        "observedLondonCandles": 8,
+        "rangeFinal": true,
+        "nyObservationStartUTC": "16:00",
+        "observedNYCandlesAfterClose": 5,
+        "highSweep": {
+          "state": "TAKEN_NO_RETURN",
+          "at": "2026-11-04T16:00:00.000Z",
+          "returnedAt": null,
+          "extreme": 4070.45747,
+          "notes": [
+            "London High (Buyside) nach 16:00 UTC durch eine abgeschlossene NY-H1-Kerze genommen.",
+            "Kein bestätigter H1-Schlusskurs wieder innerhalb der fixen London-Range.",
+            "Beobachtung ≠ Entry, keine intrabar-Reihenfolge ohne kleinere Zeiteinheit."
+          ]
+        },
+        "lowSweep": {
+          "state": "OPEN",
+          "at": null,
+          "returnedAt": null,
+          "extreme": null,
+          "notes": [
+            "Die fixierte London Low Liquidity wurde in den abgeschlossenen NY-H1-Kerzen nach London-Ende nicht überschritten."
+          ]
+        },
+        "sequence": "SINGLE_OR_NONE",
+        "note": "London High/Low sind fixiert. Nur abgeschlossene New-York-H1-Kerzen nach 16:00 UTC werden als mögliche Abholung und H1-Rückkehr ausgewertet."
+      },
+      "newYork": {
+        "date": "2026-11-04",
+        "observedCandles": 8,
+        "complete": true,
+        "range": {
+          "high": 4070.45747,
+          "low": 4029.90986
+        },
+        "context": "London hat Asia High überschritten. Status der Rückkehr prüfen."
+      },
+      "bias": {
+        "macro": {
+          "timeframes": "Monthly / Weekly",
+          "state": "NEUTRAL_MIXED",
+          "reasoning": [
+            "Monthly: externe Struktur unklar",
+            "Weekly: externe Struktur unklar"
+          ]
+        },
+        "medium": {
+          "timeframes": "Daily / 4H",
+          "state": "NEUTRAL_MIXED",
+          "reasoning": [
+            "Daily: externe Struktur unklar",
+            "4H: externe Struktur unklar"
+          ]
+        },
+        "intraday": {
+          "timeframes": "H1",
+          "state": "STRUCTURE_ONLY",
+          "internal": "bullish",
+          "external": "bullish"
+        }
+      },
+      "inducement": {
+        "status": "AWAITING_DG_RULE",
+        "label": "Nicht automatisch bestätigt",
+        "reason": "Eine kleinere interne Liquidity ist nicht allein dadurch Inducement. Für die DG-Bewertung sind externe Liquidity, Kontext und bestätigte Regeln notwendig."
+      },
+      "disclaimer": "London/Asia sind Kontext, niemals ein eigenständiger Entry. Kein Trading-Signal.",
+      "freshness": {
+        "lastClosedCandle": "2026-11-04T21:00:00.000Z",
+        "hoursSinceLastClosed": 0.2,
+        "stale": false
+      }
+    }
+  }
+}

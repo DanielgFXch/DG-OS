@@ -57,7 +57,7 @@ jobs:
               echo "$resp" | jq -r '.message // .' >&2
               exit 1
             fi
-            echo "$resp" | jq -c "$REAL_BAR_FILTER"
+            echo "$resp" | jq -c '.'
           }
 
           quote=$(curl -sS "https://api.twelvedata.com/quote?symbol=XAU/USD&apikey=${TWELVEDATA_API_KEY}")
@@ -71,9 +71,32 @@ jobs:
           # /quote's own open/high/low only cover "today" and go misleadingly flat
           # around weekends/day-boundaries - the daily candle from time_series is
           # the reliable source, same reasoning for weekly/monthly.
-          daily=$(fetch_series 1day 5)
-          weekly=$(fetch_series 1week 3)
-          monthly=$(fetch_series 1month 3)
+          # Preserve complete real OHLC history for the SAME core Market Brain
+          # (4H/15M/5M confirmation is derived from provider candles, never fake).
+          dailyRaw=$(fetch_series 1day 120)
+          weeklyRaw=$(fetch_series 1week 52)
+          monthlyRaw=$(fetch_series 1month 24)
+          daily=$(echo "$dailyRaw" | jq -c "$REAL_BAR_FILTER")
+          weekly=$(echo "$weeklyRaw" | jq -c "$REAL_BAR_FILTER")
+          monthly=$(echo "$monthlyRaw" | jq -c "$REAL_BAR_FILTER")
+
+          # Extra granular feeds are best effort. Missing entitlement/credits
+          # MUST NOT take down the existing price/session baseline. The
+          # snapshot engine then truthfully marks confirmations unavailable.
+          fetch_optional_series() {
+            local interval="$1" outputsize="$2" resp
+            if ! resp=$(curl -fsS --retry 1 --max-time 20               "https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=${interval}&outputsize=${outputsize}&timezone=UTC&apikey=${TWELVEDATA_API_KEY}"); then
+              echo "Optional TwelveData ${interval} temporarily unavailable." >&2
+              printf '{"values":[]}'
+              return
+            fi
+            if ! echo "$resp" | jq -e '(.values|type)=="array"' >/dev/null 2>&1; then
+              echo "Optional TwelveData ${interval} not authorized or unavailable — no synthetic candles." >&2
+              printf '{"values":[]}'
+              return
+            fi
+            echo "$resp" | jq -c '.'
+          }
 
           # Session Engine (Asia/London/NY): fetch enough hourly candles to reach
           # back across a full weekend (72h) in UTC, then for each session window
@@ -81,7 +104,7 @@ jobs:
           # is meaningful - same "scan forward for a real candle" reasoning as
           # daily/weekly/monthly, applied per session instead of per calendar
           # period. See docs/MARKET_BRAIN.md for the full write-up.
-          intraday=$(curl -sS "https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=1h&outputsize=72&timezone=UTC&apikey=${TWELVEDATA_API_KEY}")
+          intraday=$(curl -sS "https://api.twelvedata.com/time_series?symbol=XAU/USD&interval=1h&outputsize=168&timezone=UTC&apikey=${TWELVEDATA_API_KEY}")
           istatus=$(echo "$intraday" | jq -r '.status // empty')
           if [ "$istatus" = "error" ]; then
             echo "TwelveData time_series (1h) error:"
@@ -121,6 +144,17 @@ jobs:
             | sort_by(.datetime)
           '
           candlesH1=$(echo "$intraday" | jq -c "$CANDLE_FILTER")
+          # Spread API requests over time to respect TwelveData minute quotas.
+          sleep 8
+          h4Raw=$(fetch_optional_series 4h 180)
+          m15Raw=$(fetch_optional_series 15min 192)
+          m5Raw=$(fetch_optional_series 5min 288)
+          candlesMonthly=$(echo "$monthlyRaw" | jq -c "$CANDLE_FILTER")
+          candlesWeekly=$(echo "$weeklyRaw" | jq -c "$CANDLE_FILTER")
+          candlesDaily=$(echo "$dailyRaw" | jq -c "$CANDLE_FILTER")
+          candles4h=$(echo "$h4Raw" | jq -c "$CANDLE_FILTER")
+          candles15m=$(echo "$m15Raw" | jq -c "$CANDLE_FILTER")
+          candles5m=$(echo "$m5Raw" | jq -c "$CANDLE_FILTER")
 
           jq -n \
             --argjson quote "$quote" \
@@ -129,6 +163,12 @@ jobs:
             --argjson monthly "$monthly" \
             --argjson sessions "$sessions" \
             --argjson candlesH1 "$candlesH1" \
+            --argjson candlesMonthly "$candlesMonthly" \
+            --argjson candlesWeekly "$candlesWeekly" \
+            --argjson candlesDaily "$candlesDaily" \
+            --argjson candles4h "$candles4h" \
+            --argjson candles15m "$candles15m" \
+            --argjson candles5m "$candles5m" \
             --arg updatedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             '{
               updatedAt: $updatedAt,
@@ -161,6 +201,15 @@ jobs:
 
               candles: {
                 h1: $candlesH1
+              },
+              candlesByTimeframe: {
+                monthly: {series: $candlesMonthly},
+                weekly: {series: $candlesWeekly},
+                daily: {series: $candlesDaily},
+                "4h": {series: $candles4h},
+                "1h": {series: $candlesH1},
+                "15min": {series: $candles15m},
+                "5min": {series: $candles5m}
               }
             }' > data/market.json
           cat data/market.json
@@ -168,7 +217,10 @@ jobs:
       - name: Ingest — compute Market Brain, detect events, persist state
         run: node scripts/ingest.js
 
-      - name: Commit persisted state (Phase 1 — Core Foundation)
+      - name: Compute guarded Trading Brain snapshot (NO live entry signals)
+        run: node scripts/build-trading-brain-snapshot.js
+
+      - name: Commit actual market data and safe Trading Brain snapshot
         run: |
           # state/ is DG OS's only real datastore today (see
           # docs/DG_OS_V2_AUDIT.md): a git-committed, restart-safe snapshot
@@ -177,8 +229,13 @@ jobs:
           # quiet market doesn't spam the history with no-op commits.
           git config user.name "dg-os-bot"
           git config user.email "dg-os-bot@users.noreply.github.com"
-          git add state/
-          git diff --cached --quiet || git commit -m "DG OS state: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          # CRITICAL FIX: before this, data/ was gitignored and only existed
+          # inside a scheduled Actions artifact. The next normal Pages deploy
+          # (on a code push) removed it, leaving the public Trading UI empty.
+          # Publish ONLY sanitized market.json + read-only snapshot; never
+          # raw API responses, credentials or miscellaneous data/* files.
+          git add state/ data/market.json data/trading-brain.json
+          git diff --cached --quiet || git commit -m "DG OS market evidence: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           git push
 
       - uses: actions/configure-pages@v5

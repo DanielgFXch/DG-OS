@@ -293,6 +293,10 @@
       if(isOpen()&&event.detail?.text)setAnalysis(event.detail.text);
     });
     window.addEventListener('pagehide',close);
+    $('jmcBackToTrading').addEventListener('click',()=>{
+      close();
+      document.querySelector('.bottom-nav button[data-target="tradingWorkspace"]')?.click();
+    });
     $('jmcAskAgain').addEventListener('click',()=>{
       close();
       const input=$('jarvisLifeCommandInput');

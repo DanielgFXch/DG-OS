@@ -70,6 +70,28 @@
       return 'Audio durch eine andere App blockiert (audio-busy). Andere Audiowiedergabe stoppen.';
     return 'Geräte-Stimme konnte nicht starten ('+detail+'). Prüfe «Ton prüfen» und teste die Systemstimme in Safari.';
   }
+  // Safari sometimes terminates long SpeechSynthesisUtterances early.
+  // Deliver the COMPLETE final text in small, ordered chunks rather than
+  // dropping everything after character 800. No new API calls or charges.
+  function speechChunks(text,maxLength=560){
+    const tokens=String(text||'').trim().match(/\S+\s*/gu)||[];
+    const output=[];
+    let segment='';
+    for(const token of tokens){
+      let rest=token;
+      while(rest.length){
+        if(segment.length+rest.length<=maxLength){segment+=rest;rest='';continue;}
+        if(segment.trim()){
+          output.push(segment.trim());segment='';
+          continue;
+        }
+        output.push(rest.slice(0,maxLength).trim());
+        rest=rest.slice(maxLength);
+      }
+    }
+    if(segment.trim())output.push(segment.trim());
+    return output;
+  }
   function play({text,voice=null,lang='de-DE',rate=1,pitch=1,onState=()=>{}}){
     if(!isSupported()){
       onState({state:'error',error:'unsupported',message:'Lokale Sprachausgabe wird nicht unterstützt.'});
@@ -77,6 +99,7 @@
     }
     const transcript=String(text||'').trim();
     if(!transcript)return false;
+    const chunks=speechChunks(transcript);
     const hadActive=Boolean(active||restartTimer!==null);
     const browserBusy=Boolean(synth.speaking||synth.pending||synth.paused);
     const restartNeeded=hadActive&&browserBusy;
@@ -86,9 +109,9 @@
     const id=requestId;
     active=null;started=false;clearTimers();
 
-    const begin=()=>{
+    const begin=(index=0)=>{
       if(id!==requestId)return;
-      const u=new Utterance(transcript.slice(0,800));
+      const u=new Utterance(chunks[index]);
       u.lang=lang;
       const numericRate=Number(rate);
       u.rate=Number.isFinite(numericRate)?Math.min(1.3,Math.max(.7,numericRate)):1;
@@ -111,7 +134,11 @@
         if(id!==requestId||active!==u)return;
         active=null;started=false;
         if(watchdog!==null){clearTimeout(watchdog);watchdog=null;}
-        onState({state:'ended',message:'Wiedergabe beendet.'});
+        if(index+1<chunks.length){
+          // Queue the next segment only after the real preceding end event.
+          // Never start it if Stop or another response invalidated this turn.
+          begin(index+1);
+        }else onState({state:'ended',message:'Wiedergabe beendet.'});
       };
       u.onerror=(event)=>{
         if(id!==requestId||active!==u)return;

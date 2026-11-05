@@ -41,7 +41,7 @@ assert.match(stale,/keine gültigen Trading-Brain-Daten/);
 const fresh=chat.answerTrading('Wie sieht Gold aus?',{
  now,liveBrain:snapshot.brain,answerMarketQuestion:()=> 'Es sind keine bestätigten Einstiegsdaten vorhanden.'
 });
-assert.match(fresh,/verbundenen Market Server/);
+assert.match(fresh,/verbundener Market Server/);
 assert.match(fresh,/keine bestätigten Einstiegsdaten/);
 
 assert.ok(personal.includes('window.DGOSJarvisConversation?.isTradingQuestion(original)'));

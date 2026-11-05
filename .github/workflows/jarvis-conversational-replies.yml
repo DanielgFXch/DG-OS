@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - 'jarvis-replies.js'
+      - 'jarvis-conversation.js'
+      - 'jarvis-conversation.css'
+      - 'jarvis-brain.js'
+      - 'scripts/test-jarvis-conversation.js'
       - 'jarvis-voice.js'
       - 'jarvis-voice-audio.js'
       - 'jarvis-voice-audibility.css'
@@ -18,6 +22,10 @@ on:
     branches: [main]
     paths:
       - 'jarvis-replies.js'
+      - 'jarvis-conversation.js'
+      - 'jarvis-conversation.css'
+      - 'jarvis-brain.js'
+      - 'scripts/test-jarvis-conversation.js'
       - 'jarvis-voice.js'
       - 'jarvis-voice-audio.js'
       - 'jarvis-voice-audibility.css'
@@ -34,9 +42,13 @@ jobs:
         with:
           node-version: '22'
       - run: node --check jarvis-replies.js
+      - run: node --check jarvis-conversation.js
+      - run: node --check jarvis-native-voice.js
+      - run: node --check jarvis-brain.js
       - run: node --check jarvis-voice.js
       - run: node --check personal.js
       - run: node scripts/test-jarvis-replies.js
       - run: node scripts/test-jarvis-spoken-replies.js
+      - run: node scripts/test-jarvis-conversation.js
       - run: node --check jarvis-voice-audio.js
       - run: node scripts/test-jarvis-audible-replies.js

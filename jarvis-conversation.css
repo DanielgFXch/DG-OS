@@ -1,0 +1,22 @@
+/* DG OS conversational Jarvis: one clean 'DU' line above the real reply. */
+#personalJarvis .jpr-user-turn{
+  margin:0 0 13px;padding:10px 12px;
+  border:1px solid rgba(116,212,251,.18);border-radius:13px;
+  background:rgba(48,124,182,.10);
+}
+#personalJarvis .jpr-user-turn[hidden]{display:none!important}
+#personalJarvis .jpr-user-turn span{
+  display:block;margin-bottom:5px;color:#7fd4ec;
+  font-size:9px;font-weight:750;letter-spacing:.12em
+}
+#personalJarvis .jpr-user-turn p{
+  margin:0;color:#e3f4fb;font-size:12px;line-height:1.5;
+  overflow-wrap:anywhere;white-space:pre-wrap
+}
+#personalJarvis .jpr-reply-copy .jarvis-reply{
+  white-space:pre-wrap;overflow-wrap:anywhere;
+}
+@media(max-width:700px){
+  #personalJarvis .jpr-user-turn{padding:9px 10px;margin-bottom:10px}
+  #personalJarvis .jpr-user-turn p{font-size:11px}
+}

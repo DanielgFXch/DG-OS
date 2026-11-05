@@ -222,6 +222,16 @@
   $('jbPlanOpenPrivate').addEventListener('click',()=>{
     document.querySelector('.bottom-nav button[data-target="personalPrivate"]')?.click();
   });
+  // The same secured, owner-paired conversation is available from the Jarvis
+  // microphone and main text input. It only returns a result: the caller
+  // updates the visible answer and emits one final-response voice event.
+  async function askConversation(question){
+    const q=String(question||'').trim();
+    if(q.length<3||q.length>500)throw Error('question_required');
+    const result=await api('ask',{question:q,date:todayZurich()});
+    return String(result.answer||'Ich habe dazu noch keine bestätigten Informationen.').trim();
+  }
+  window.DGOSJarvisTalk=Object.freeze({ask:askConversation,errorMessage});
   $('jbAskForm').addEventListener('submit',async event=>{
     event.preventDefault();
     const question=$('jbAskInput').value.trim();
@@ -229,8 +239,7 @@
     const btn=$('jbAskSubmit');btn.disabled=true;
     $('jbAskAnswer').textContent='Jarvis denkt nach und prüft deine bestätigten Erinnerungen …';
     try{
-      const result=await api('ask',{question,date:todayZurich()});
-      const answer=result.answer||'Ich habe dazu noch keine bestätigten Informationen.';
+      const answer=await askConversation(question);
       $('jbAskAnswer').textContent=answer;
       // Existing voice engine observes this text and may speak if the owner
       // switched "Antworten vorlesen" on. No provider key reaches the browser.

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS public.dgos_trading_coach_examples (
   confirmation text NOT NULL CHECK (confirmation IN ('m5_engulfing','m1_structure','bos_choch','rejection','none','unknown')),
   note text NOT NULL DEFAULT '' CHECK (char_length(note) <= 800),
   result_r numeric(7,2) NULL CHECK (result_r BETWEEN -20 AND 100),
+  CONSTRAINT dgos_coach_missed_has_no_trade_result CHECK (label <> 'missed' OR result_r IS NULL),
   source text NOT NULL DEFAULT 'owner_manual' CHECK (source = 'owner_manual'),
   created_at timestamptz NOT NULL DEFAULT now()
 );

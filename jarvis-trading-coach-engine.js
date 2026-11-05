@@ -37,6 +37,7 @@
     if(fields.some(key=>!valid(key,raw[key])))return null;
     const result=raw.resultR==null||raw.resultR===''?null:Number(raw.resultR);
     if(result!==null&&(!Number.isFinite(result)||result < -20||result > 100))return null;
+    if(raw.label==='missed'&&result!==null)return null;
     return {
       id:typeof raw.id==='string'?raw.id:'',
       label:raw.label,side:raw.side,session:raw.session,timeframe:raw.timeframe,
@@ -69,7 +70,7 @@
     const labels={good:0,avoid:0,missed:0};
     data.forEach(v=>{labels[v.label]++;});
     // Self-reported R values are NOT actual broker executions.
-    const outcomes=data.filter(v=>v.resultR!==null);
+    const outcomes=data.filter(v=>v.label!=='missed'&&v.resultR!==null);
     const groups=new Map();
     for(const row of data.filter(v=>v.label!=='missed')){
       const key=[row.session,row.liquidity,row.zone,row.confirmation].join('/');

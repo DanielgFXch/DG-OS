@@ -4,6 +4,13 @@ on:
     paths:
       - 'jarvis-replies.js'
       - 'jarvis-conversation.js'
+      - 'jarvis-trading-coach-engine.js'
+      - 'jarvis-trading-coach-ui.js'
+      - 'jarvis-trading-coach.css'
+      - 'scripts/test-jarvis-trading-coach.js'
+      - 'supabase/functions/jarvis-trading-coach/**'
+      - 'supabase/migrations/20261106010000_dgos_trading_coach_examples.sql'
+      - 'supabase/config.toml'
       - 'jarvis-market-chart.js'
       - 'jarvis-market-chart.css'
       - 'scripts/test-jarvis-market-chart.js'
@@ -26,6 +33,13 @@ on:
     paths:
       - 'jarvis-replies.js'
       - 'jarvis-conversation.js'
+      - 'jarvis-trading-coach-engine.js'
+      - 'jarvis-trading-coach-ui.js'
+      - 'jarvis-trading-coach.css'
+      - 'scripts/test-jarvis-trading-coach.js'
+      - 'supabase/functions/jarvis-trading-coach/**'
+      - 'supabase/migrations/20261106010000_dgos_trading_coach_examples.sql'
+      - 'supabase/config.toml'
       - 'jarvis-market-chart.js'
       - 'jarvis-market-chart.css'
       - 'scripts/test-jarvis-market-chart.js'
@@ -49,6 +63,8 @@ jobs:
           node-version: '22'
       - run: node --check jarvis-replies.js
       - run: node --check jarvis-conversation.js
+      - run: node --check jarvis-trading-coach-engine.js
+      - run: node --check jarvis-trading-coach-ui.js
       - run: node --check jarvis-market-chart.js
       - run: node --check jarvis-native-voice.js
       - run: node --check jarvis-brain.js
@@ -57,6 +73,7 @@ jobs:
       - run: node scripts/test-jarvis-replies.js
       - run: node scripts/test-jarvis-spoken-replies.js
       - run: node scripts/test-jarvis-conversation.js
+      - run: node scripts/test-jarvis-trading-coach.js
       - run: node scripts/test-jarvis-market-chart.js
       - run: node --check jarvis-voice-audio.js
       - run: node scripts/test-jarvis-audible-replies.js

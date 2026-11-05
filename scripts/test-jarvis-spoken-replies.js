@@ -9,7 +9,8 @@ const source=read('jarvis-voice.js'),client=read('personal.js');
 assert.doesNotThrow(()=>new Function(source));
 assert.ok(client.includes("window.dispatchEvent(new CustomEvent('dgos-jarvis-final-response'"),'Finished answers must dispatch their speech event');
 assert.ok(client.includes("showReply('Welche Produkte soll ich hinzufügen?"),'Clarification is spoken, not a silent status');
-assert.ok(client.includes("showReply('Das kann ich noch nicht ausführen."),'Unknown commands return audible feedback');
+assert.ok(client.includes('void askNaturalQuestion(original,turn)') &&
+  client.includes('showReply(answer||'), 'Unknown natural questions now receive a completed Jarvis AI response (text + voice)');
 assert.ok(source.includes("read(enabledKey)!=='0'"),'Speech defaults on unless the owner explicitly muted it');
 assert.ok(source.includes("if(!voiceId){speakLocal(text,true);return;}"),'Missing premium provider falls back to local speech');
 assert.ok(!source.includes('OPENAI_API_KEY'),'Provider keys are never exposed in the browser');

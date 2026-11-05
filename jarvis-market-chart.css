@@ -1,0 +1,112 @@
+/* DG OS · Jarvis Chart Studio. Native, honest market candles.
+   Midnight sapphire / warm frost, smooth motion; no chart-library tracking. */
+#personalJarvis #jmcOpenButton {
+  margin:12px auto 0;display:flex;align-items:center;justify-content:center;gap:9px;
+  border:1px solid rgba(130,202,240,.3);border-radius:999px;
+  background:linear-gradient(135deg,rgba(25,87,132,.28),rgba(12,35,62,.28));
+  color:#d5f5ff;font-size:12px;font-weight:700;letter-spacing:.02em;
+  padding:11px 19px;cursor:pointer;transition:transform .22s ease,border-color .22s ease,background .22s ease;
+}
+#personalJarvis #jmcOpenButton:hover{transform:translateY(-2px);border-color:rgba(140,229,255,.7);background:rgba(36,105,150,.35)}
+#personalJarvis #jmcOpenButton:focus-visible{outline:2px solid #92e0ff;outline-offset:3px}
+#jarvisMarketDialog {
+  position:fixed;inset:0;margin:auto;padding:0;border:1px solid rgba(139,219,250,.23);
+  border-radius:26px;width:min(1280px,96vw);max-width:1280px;
+  height:min(790px,94dvh);max-height:94dvh;background:#071320;color:#e6f4ff;
+  box-shadow:0 24px 110px rgba(0,0,0,.68),inset 0 1px rgba(208,244,255,.13);
+  overflow:hidden;font-family:Inter,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+  color-scheme:dark;
+}
+#jarvisMarketDialog:not([open]){display:none!important}
+#jarvisMarketDialog[open]{
+  display:flex;flex-direction:column;animation:jmc-arrive .26s cubic-bezier(.22,1,.36,1) both;
+}
+#jarvisMarketDialog::backdrop{background:rgba(0,4,13,.80);backdrop-filter:blur(13px)}
+#jarvisMarketDialog *,#jarvisMarketDialog *::before,#jarvisMarketDialog *::after{box-sizing:border-box}
+#jarvisMarketDialog button {font:inherit;color:inherit;cursor:pointer}
+#jarvisMarketDialog button:focus-visible{outline:2px solid #84e4ff;outline-offset:2px}
+.jmc-header {
+  display:flex;align-items:center;justify-content:space-between;gap:15px;flex-shrink:0;
+  padding:19px 23px 17px;border-bottom:1px solid rgba(116,166,207,.14);
+  background:linear-gradient(110deg,rgba(15,43,68,.8),rgba(7,19,32,.5));
+}
+.jmc-eyebrow{font-size:10px;color:#82d4f2;letter-spacing:.17em;font-weight:750}
+.jmc-header h2{margin:5px 0 0;font-size:clamp(18px,2vw,24px);line-height:1.2;letter-spacing:-.04em;color:#edfaff}
+.jmc-header h2 span{font-weight:500;color:#7596ad;font-size:.8em;margin-left:8px}
+.jmc-close{
+  background:rgba(117,173,212,.09);border:1px solid rgba(154,205,236,.19);
+  border-radius:14px;width:42px;height:42px;display:grid;place-items:center;
+  font-size:23px!important;line-height:1
+}
+.jmc-main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,300px)}
+.jmc-chart-section{min-width:0;min-height:0;display:flex;flex-direction:column;padding:18px 16px 18px 19px}
+.jmc-toolbar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:13px}
+.jmc-symbol{display:flex;align-items:center;gap:11px}
+.jmc-symbol-icon{width:35px;height:35px;display:grid;place-items:center;
+  border-radius:12px;background:radial-gradient(circle at 35% 25%,#fff1b3,#b8903d 55%,#73561c);
+  color:#2b2519;font-weight:850;font-size:17px}
+.jmc-symbol strong{font-size:14px;color:#f0f8ff;display:block}
+.jmc-symbol small{color:#82a8bf;font-size:10px;display:block;margin-top:3px}
+.jmc-timeframes,.jmc-viewtools{display:flex;align-items:center;gap:3px;background:#0a2031;
+  padding:4px;border:1px solid rgba(118,173,206,.15);border-radius:12px}
+.jmc-timeframes button,.jmc-viewtools button{background:transparent;border:0;border-radius:8px;
+  min-width:35px;min-height:31px;padding:5px 8px;font-size:11px!important;color:#aac9dc!important}
+.jmc-timeframes button[aria-pressed="true"]{color:#eafaff!important;background:#28516e;
+  box-shadow:inset 0 1px rgba(217,246,255,.16)}
+.jmc-timeframes button:hover,.jmc-viewtools button:hover{background:rgba(116,189,221,.13)}
+.jmc-data-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:1px 0 10px}
+.jmc-status{display:inline-flex;align-items:center;gap:6px;color:#9fe4f9;font-size:10px;
+  font-weight:750;letter-spacing:.06em}
+.jmc-status::before{content:'';width:6px;height:6px;background:#77c6e9;border-radius:50%;box-shadow:0 0 10px rgba(77,182,255,.45)}
+.jmc-status[data-warning="true"]{color:#e1c695}
+.jmc-status[data-warning="true"]::before{background:#dba969;box-shadow:0 0 8px rgba(219,169,105,.35)}
+.jmc-data-time{font-size:10px;color:#8aa5b7}
+.jmc-chart-wrap{position:relative;flex:1;min-height:270px;background:#071523;
+  border:1px solid rgba(116,176,218,.15);border-radius:19px;overflow:hidden}
+.jmc-chart-wrap::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 53% -20%,rgba(43,92,127,.16),transparent 55%)}
+#jmcCanvas{width:100%;height:100%;display:block;touch-action:pan-y;cursor:crosshair;position:relative;z-index:1}
+.jmc-ohlc{min-height:18px;padding:10px 5px 0;color:#afcfdd;font-size:10px;line-height:1.55;font-variant-numeric:tabular-nums}
+.jmc-footnote{margin:3px 5px 0;font-size:10px;line-height:1.5;color:#7594a9}
+.jmc-side{min-height:0;display:flex;flex-direction:column;border-left:1px solid rgba(116,166,207,.15);
+  background:linear-gradient(170deg,#0b2236,#081622 85%);padding:21px 18px;gap:18px;overflow-y:auto}
+.jmc-side-kicker{display:block;font-size:10px;letter-spacing:.14em;font-weight:700;color:#83cde8}
+.jmc-price{font-size:clamp(26px,3vw,34px);font-weight:750;letter-spacing:-.05em;margin-top:7px;color:#f3fbff;font-variant-numeric:tabular-nums}
+.jmc-price-caption{font-size:10px;color:#90b0c7;margin-top:3px;line-height:1.5}
+.jmc-separator{height:1px;background:rgba(129,189,228,.14);flex-shrink:0}
+.jmc-question{padding:12px;border:1px solid rgba(93,172,223,.17);border-radius:13px;
+  background:rgba(13,51,79,.42);font-size:12px;color:#bcddec;line-height:1.5;overflow-wrap:anywhere}
+.jmc-answer{font-size:12px;color:#e1f1fc;line-height:1.7;white-space:pre-wrap;overflow-wrap:anywhere;
+  max-height:265px;overflow-y:auto;padding:4px 2px;scrollbar-color:#326080 transparent;scrollbar-width:thin}
+.jmc-side-actions{display:grid;gap:8px;margin-top:auto}
+.jmc-side-actions button{
+  border-radius:12px;border:1px solid rgba(125,199,232,.25);
+  padding:11px 12px;text-align:center;background:rgba(54,128,168,.18);
+  color:#cdefff;font-size:12px!important;font-weight:650;
+}
+.jmc-side-actions button:first-child{background:linear-gradient(115deg,#14416b,#245b7e)}
+@keyframes jmc-arrive{from{opacity:0;transform:translateY(16px) scale(.987)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(max-width:820px){
+  #jarvisMarketDialog{width:100vw;height:100dvh;max-height:100dvh;border-radius:0;border:0}
+  .jmc-main{display:flex;flex-direction:column;overflow-y:auto}
+  .jmc-header{padding:calc(env(safe-area-inset-top,0px) + 12px) 17px 15px}
+  .jmc-chart-section{min-height:490px;padding:14px 12px 10px;flex:none}
+  .jmc-chart-wrap{min-height:320px;height:48dvh;max-height:55dvh;flex:none;border-radius:15px}
+  .jmc-toolbar{gap:9px}
+  .jmc-symbol{flex:1 0 120px}
+  .jmc-timeframes{margin-left:auto}
+  .jmc-viewtools{width:100%;justify-content:flex-end}
+  .jmc-side{border-left:0;border-top:1px solid rgba(116,166,207,.15);
+    padding:18px 16px calc(env(safe-area-inset-bottom,0px) + 22px);overflow:visible;gap:15px}
+  .jmc-answer{max-height:none;overflow:visible}
+  .jmc-price{font-size:28px}
+}
+@media(max-width:390px){
+  .jmc-header h2 span{display:block;margin:3px 0 0;font-size:12px}
+  .jmc-timeframes button{min-width:33px;padding:5px}
+  .jmc-chart-wrap{height:42dvh;min-height:275px}
+}
+@media(prefers-reduced-motion:reduce){
+  #jarvisMarketDialog[open]{animation:none}
+  #personalJarvis #jmcOpenButton{transition:none}
+}

@@ -2170,6 +2170,20 @@
     // Woche zahlen" updates the EDITABLE draft, never performs payment.
     if(window.DGOSJarvisPhoto?.handleVoiceCommand(original))return true;
 
+    // Jarvis opens the real chart on voice OR keyboard commands.
+    // The exact same finalized text is passed to the existing speech engine
+    // and displayed beside the authentic (possibly delayed) candle history.
+    if(window.DGOSJarvisMarketChart?.shouldOpen(original)){
+      const chartOnly=/(?:öffn|zeig|aufmach)/i.test(original) &&
+        !/(?:analysier|prüf|warum|wie|liquidität|sweep|setup|einstieg)/i.test(original);
+      const answer=chartOnly
+        ? 'Ich habe den XAUUSD-Chart geöffnet. Die echten Kerzen und der letzte Datenzeitpunkt stehen direkt im Chart. Du kannst 5 Minuten bis Daily auswählen, zoomen und den Kursverlauf ansehen.'
+        : answerTradingQuestion(original);
+      showReply(answer);
+      void window.DGOSJarvisMarketChart.open({query:original,answer});
+      return true;
+    }
+
     // Like a real trading coach: answer the question aloud AND in text, not
     // just navigate to Trading. Personal MT5 trades are not inferred from
     // public gold candles or fictional demo performance.

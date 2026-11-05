@@ -156,7 +156,9 @@
     }catch(e){status(describeError(e),true);}
     finally{busy=false;$('jtcSave').disabled=false;}
   }
-  function open(){
+  function open(context={}){
+    if(engine.ENUMS.timeframe.includes(context?.timeframe))
+      $('jtcTimeframe').value=context.timeframe;
     root.hidden=false;
     const expandable=$('jtcExpand');if(expandable)expandable.open=true;
     root.scrollIntoView?.({behavior:'smooth',block:'start'});

@@ -293,6 +293,12 @@
       if(isOpen()&&event.detail?.text)setAnalysis(event.detail.text);
     });
     window.addEventListener('pagehide',close);
+    $('jmcCoach')?.addEventListener('click',()=>{
+      const map={'5min':'m5','15min':'m15','1h':'h1','4h':'h4',daily:'d1'};
+      const tf=map[state.timeframe]||'m5';
+      close();
+      window.DGOSTradingCoach?.open({timeframe:tf});
+    });
     $('jmcReplay').addEventListener('click',()=>{
       // Reuse the existing iOS gesture-unlocked Jarvis voice path. A paid
       // response reuses the already generated blob when available.

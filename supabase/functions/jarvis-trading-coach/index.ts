@@ -58,10 +58,10 @@ function validate(data:any){
   const entries=Object.keys(categories) as (keyof typeof categories)[];
   if(entries.some(k=>!isEnum(k,data[k])))return null;
   const note=typeof data.note==="string"?data.note.trim():"";
-  if(note.length>800)return null;
+  if(note.length<8||note.length>800)return null;
   const num=data.resultR==null||data.resultR===""?null:Number(data.resultR);
   if(num!==null&&(!Number.isFinite(num)||num < -20||num > 100||
-     Math.round(num*100)!==num*100))return null;
+     Math.abs(Math.round(num*100)-num*100)>0.0000001))return null;
   return {label:data.label,side:data.side,session:data.session,timeframe:data.timeframe,
     liquidity:data.liquidity,zone:data.zone,confirmation:data.confirmation,
     note,result_r:num};

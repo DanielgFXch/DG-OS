@@ -2170,6 +2170,21 @@
     // Woche zahlen" updates the EDITABLE draft, never performs payment.
     if(window.DGOSJarvisPhoto?.handleVoiceCommand(original))return true;
 
+    // The owner teaches Jarvis which SMC setups they consider high-quality.
+    // Verbal questions consult ONLY owner-approved journal examples and give
+    // counterarguments; they never train on fictional broker performance.
+    if(window.DGOSTradingCoachEngine?.isLearningCommand(original)){
+      window.DGOSTradingCoach?.open();
+      showReply('Ich habe dein persönliches SMC-Playbook geöffnet. Markiere dein Setup als gut, nicht gut oder verpasst und erzähl mir warum. Ich speichere es erst, wenn du ausdrücklich auf Bewerten und Speichern tippst.');
+      return true;
+    }
+    if(window.DGOSTradingCoachEngine?.isCoachingQuestion(original)){
+      window.DGOSTradingCoach?.open();
+      showReply(window.DGOSTradingCoach?.summary()||
+        'Dein Setup-Coach wird gerade geladen. Verbinde Jarvis mit Telegram, damit ich deine Bewertungen prüfen kann.');
+      return true;
+    }
+
     // Jarvis opens the real chart on voice OR keyboard commands.
     // The exact same finalized text is passed to the existing speech engine
     // and displayed beside the authentic (possibly delayed) candle history.

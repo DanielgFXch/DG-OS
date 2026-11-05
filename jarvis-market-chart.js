@@ -293,6 +293,25 @@
       if(isOpen()&&event.detail?.text)setAnalysis(event.detail.text);
     });
     window.addEventListener('pagehide',close);
+    $('jmcReplay').addEventListener('click',()=>{
+      // Reuse the existing iOS gesture-unlocked Jarvis voice path. A paid
+      // response reuses the already generated blob when available.
+      const replay=$('jvHeroRead')||$('jvRead');
+      if(replay && typeof replay.click==='function')replay.click();
+      else $('jmcVoiceStatus').textContent='Stimme nicht verfügbar. Prüfe Jarvis Voice Control.';
+    });
+    window.addEventListener('dgos-jarvis-voice-state',event=>{
+      if(!isOpen())return;
+      const state=String(event.detail?.state||'');
+      const label={
+        SPRICHT:'Jarvis spricht · Wiedergabe nicht unabhängig bestätigt',
+        STARTET:'Stimme wird gestartet',GENERIEREN:'Audio wird erstellt',
+        STARTEN:'iPhone blockiert Auto-Ton · ▶ tippen',
+        FEHLER:'Sprachausgabe prüfen',STUMM:'Stimme ist ausgeschaltet',
+        BEREIT:'Sprachausgabe bereit'
+      };
+      if(label[state])$('jmcVoiceStatus').textContent=label[state];
+    });
     $('jmcBackToTrading').addEventListener('click',()=>{
       close();
       document.querySelector('.bottom-nav button[data-target="tradingWorkspace"]')?.click();

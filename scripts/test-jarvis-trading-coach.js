@@ -22,6 +22,7 @@ assert.equal(coach.normalize(sample('good',{zone:'fake'})),null);
 assert.equal(coach.normalize(sample('good',{resultR:101})),null);
 assert.equal(coach.normalize(sample('good',{resultR:-21})),null);
 assert.equal(coach.normalize(sample('good',{resultR:1.1})).resultR,1.1);
+assert.equal(coach.normalize(sample('missed',{resultR:2.5})),null,'Missed setup cannot have realised R');
 assert.equal(coach.normalize(sample('good',{note:'<img onerror=alert(1)>'})).note,'<img onerror=alert(1)>');
 let result=coach.evaluate(sample(),[]);
 assert.equal(result.status,'learning','No personal examples never generate a READY signal');
@@ -46,7 +47,7 @@ assert.match(coach.coachThoughts([sample(),sample('avoid')]),/Gegenprobe|verglei
 const outcome=coach.reviewAnalysis([
   sample('good',{resultR:1.1}),sample('good',{resultR:-1}),
   sample('avoid',{resultR:0}),sample('good',{resultR:2}),
-  sample('missed',{resultR:.3})
+  sample('good',{resultR:.3})
 ]);
 assert.match(outcome.outcomeNote,/selbst eingetragenen R-Ergebnissen/);
 assert.match(outcome.outcomeNote,/keine verifizierte Broker-Statistik/);
@@ -101,5 +102,7 @@ assert.ok(migration.includes('ENABLE ROW LEVEL SECURITY'));
 assert.ok(migration.includes('REVOKE ALL ON public.dgos_trading_coach_examples FROM PUBLIC, anon, authenticated'));
 assert.ok(migration.includes('TO service_role'));
 assert.ok(migration.includes('result_r numeric') && migration.includes('source ='));
+assert.ok(migration.includes("label <> 'missed' OR result_r IS NULL"));
+assert.ok(ui.includes("$('jtcResultR').disabled=missed"));
 assert.ok(read('supabase/config.toml').includes('[functions.jarvis-trading-coach]'));
 console.log('Jarvis Trading Coach: private setup journal, natural voice intent, cautious evidence, security & UI PASS');

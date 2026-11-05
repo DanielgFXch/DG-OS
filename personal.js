@@ -2096,14 +2096,72 @@
     return true;
   }
 
+  let jarvisConversationTurn=0;
+  function showUserTurn(text){
+    const wrapper=$('jarvisUserTurn'),copy=$('jarvisLastQuestion');
+    if(wrapper&&copy){
+      copy.textContent=String(text||'').trim().slice(0,500);
+      wrapper.hidden=!copy.textContent;
+    }
+  }
+  async function askNaturalQuestion(question,turn){
+    setOrbState('thinking');
+    setStatus('Jarvis denkt nach …');
+    setReply('Ich prüfe deine Frage und meine bestätigten Informationen …');
+    try{
+      const api=window.DGOSJarvisTalk;
+      if(!api?.ask)throw Error('assistant_unavailable');
+      const answer=await api.ask(question.slice(0,500));
+      if(turn!==jarvisConversationTurn)return;
+      showReply(answer||'Ich habe dazu noch keine zuverlässige Antwort.');
+    }catch(e){
+      if(turn!==jarvisConversationTurn)return;
+      const reason=e?.message||'';
+      const message=reason==='device_pairing_required'?
+        'Ich kann deine persönlichen Daten noch nicht lesen. Bitte verbinde dieses Gerät im Jarvis-Bereich mit Telegram.':
+        reason==='ai_not_configured'?
+        'Für offene Fragen fehlt noch die sichere KI-Verbindung. Meine lokalen Funktionen sind weiter verfügbar.':
+        reason==='slow_down'?
+        'Ich kann gerade nicht so schnell hintereinander antworten. Bitte sende deine Frage nochmals.':
+        reason==='question_required'?
+        'Stell mir bitte eine etwas genauere Frage.':
+        'Meine gesicherte Gesprächsverbindung ist momentan nicht erreichbar. Bitte versuche es erneut.';
+      showReply(message);
+    }
+  }
+  function answerTradingQuestion(question){
+    const coach=window.DGOSJarvisConversation;
+    if(!coach?.answerTrading)return 'Meine Trading-Analyse ist momentan nicht verfügbar.';
+    let live=null,snapshot=null;
+    try{
+      if(typeof marketServerReachable!=='undefined' && marketServerReachable &&
+         typeof tradingBrainState!=='undefined')live=tradingBrainState;
+    }catch(_){}
+    try{
+      if(typeof periodicBrainSnapshot!=='undefined')snapshot=periodicBrainSnapshot;
+    }catch(_){}
+    return coach.answerTrading(question,{
+      liveBrain:live,historicalSnapshot:snapshot,now:new Date(),
+      answerMarketQuestion:typeof answerMarketQuestion==='function'?answerMarketQuestion:null
+    });
+  }
   function interpretCommand(raw) {
     const original = String(raw || '').trim();
     if (!original) return false;
+    const turn=++jarvisConversationTurn;
     const q = original.toLowerCase().replace(/[?!.,;:]+/g,' ').replace(/\s+/g,' ').trim();
 
     // If the owner just attached a photo, a phrase like "Das muss ich nächste
     // Woche zahlen" updates the EDITABLE draft, never performs payment.
     if(window.DGOSJarvisPhoto?.handleVoiceCommand(original))return true;
+
+    // Like a real trading coach: answer the question aloud AND in text, not
+    // just navigate to Trading. Personal MT5 trades are not inferred from
+    // public gold candles or fictional demo performance.
+    if(window.DGOSJarvisConversation?.isTradingQuestion(original)){
+      showReply(answerTradingQuestion(original));
+      return true;
+    }
 
     // Natural spoken invoice: ALWAYS opens a reviewable draft. No auto-save,
     // no payment and no invented invoice amount or due date.
@@ -2185,8 +2243,10 @@
     if (/trading|gold|xau|markt/.test(q)) return runLifeAction('trading');
     if (/sortier|organisier|ordnung|zentrale|übersicht/.test(q)) return runLifeAction('organize');
 
-    showReply('Das kann ich noch nicht ausführen. Versuch zum Beispiel «Was ist heute wichtig?», «Aufgabe Steuerrechnung prüfen», «Kalender», «Rechnungen» oder «Social».');
-    return false;
+    // Free-form conversation: don't respond to genuine questions with a
+    // fixed "unknown command" message. Reuse the existing private AI.
+    void askNaturalQuestion(original,turn);
+    return true;
   }
 
   document.querySelectorAll('[data-jarvis-action]').forEach(button => {
@@ -2200,6 +2260,7 @@
       commandInput?.focus();
       return;
     }
+    showUserTurn(value);
     setOrbState('thinking');
     setStatus('Ich ordne das …');
     setTimeout(() => interpretCommand(value), 180);
@@ -2225,6 +2286,7 @@
       window.dispatchEvent(new CustomEvent('dgos-jarvis-microphone-state',{detail:{state}}));
     },
     onTranscript: text => {
+      showUserTurn(text);
       setOrbState('thinking');
       setStatus('Ich verarbeite deine Worte …');
       setReply('Erkannt: «'+text+'»');

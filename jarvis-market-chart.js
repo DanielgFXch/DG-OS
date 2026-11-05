@@ -14,7 +14,7 @@
     const q=String(query||'').toLocaleLowerCase('de').trim();
     const chart=/\b(?:chart|charts|kerzen(?:chart)?|candlestick|tradingview|goldchart|gold-chart)\b/i.test(q);
     const market=/\b(?:gold|xau(?:usd)?|markt(?:analyse)?|liquidity|liquidität|sweep|fvg|order\s*block|bias)\b/i.test(q);
-    const action=/\b(?:öffne|öffnen|aufmach(?:en)?|zeige|zeig(?:en)?|analysier\w*|anschauen|anschau\w*|prüfe|prüfen|check\w*|erklär\w*|wie\s+sieht|betrachte)\b/i.test(q);
+    const action=/(?:öffn\w*|aufmach\w*|zeig\w*|analysier\w*|anschauen|anschau\w*|prüf\w*|check\w*|erklär\w*|wie\s+sieht|betrachte)/iu.test(q);
     const ownTrades=/\b(?:meine?\s+(?:letzten?\s+)?(?:\w+\s+){0,2}trades?|meine?\s+performance|mt5|kontoauszug|tradehistorie)\b/i.test(q);
     return !ownTrades && (chart&&(action||/\?$/.test(q)||q.startsWith('hey jarvis')) || market&&action);
   }

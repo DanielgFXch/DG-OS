@@ -173,6 +173,13 @@
     $('jtcAssessment').scrollIntoView?.({behavior:'smooth',block:'nearest'});
   });
   $('jtcReload').addEventListener('click',()=>void refresh());
+  function syncMissedOutcome(){
+    const missed=$('jtcLabel').value==='missed';
+    $('jtcResultR').disabled=missed;
+    if(missed)$('jtcResultR').value='';
+  }
+  $('jtcLabel').addEventListener('change',syncMissedOutcome);
+  syncMissedOutcome();
   for(const id of fields){
     $('jtc'+id[0].toUpperCase()+id.slice(1))?.addEventListener('change',evaluate);
   }

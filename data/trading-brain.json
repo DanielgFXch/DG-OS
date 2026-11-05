@@ -1,76 +1,172 @@
 {
   "mode": "PERIODIC_READ_ONLY",
   "symbol": "XAUUSD",
-  "updatedAt": "2026-11-04T21:10:15.000Z",
+  "updatedAt": "2026-11-05T01:28:49.000Z",
   "source": "TwelveData via GitHub Actions · kein WebSocket",
   "freshness": "CHECK_CLIENT_CLOCK",
   "availability": {
-    "monthly": 0,
-    "weekly": 0,
-    "daily": 0,
-    "4h": 0,
-    "1h": 72,
-    "15min": 0,
-    "5min": 0
+    "monthly": 24,
+    "weekly": 52,
+    "daily": 120,
+    "4h": 180,
+    "1h": 168,
+    "15min": 192,
+    "5min": 288
   },
-  "missingCoreTimeframes": [
-    "weekly",
-    "daily",
-    "4h"
-  ],
-  "htfReady": false,
+  "missingCoreTimeframes": [],
+  "htfReady": true,
   "brain": {
     "status": "DATA_NOT_READY",
     "htfContext": {
       "monthly": {
         "timeframe": "Monthly",
-        "candleCount": 0,
-        "range": null,
-        "internalBias": null,
-        "externalBias": null,
-        "premiumDiscount": null,
-        "fvgCount": 0,
+        "candleCount": 24,
+        "range": {
+          "high": 5595.45996,
+          "low": 2583.49463
+        },
+        "internalBias": "bearish",
+        "externalBias": "bearish",
+        "premiumDiscount": {
+          "timeframe": "Monthly",
+          "rangeSource": "external_structure",
+          "fibPercentFromLow": 0.097,
+          "fibZone": null,
+          "high": 5595.45996,
+          "low": 3944.22998,
+          "range": 1651.22998,
+          "equilibrium": 4769.84497,
+          "price": 4104.92281,
+          "distanceToEq": -664.9221600000001,
+          "distanceToEqPercent": -40.268295031804115,
+          "zone": "discount",
+          "isPremium": false,
+          "isDiscount": true,
+          "isEquilibrium": false
+        },
+        "fvgCount": 7,
         "orderBlockCount": 0,
-        "lastCandle": null
+        "lastCandle": {
+          "datetime": "2026-11-01",
+          "open": 3875.35765,
+          "high": 4119.76098,
+          "low": 3866.02108,
+          "close": 4104.92281
+        }
       },
       "weekly": {
         "timeframe": "Weekly",
-        "candleCount": 0,
-        "range": null,
-        "internalBias": null,
-        "externalBias": null,
-        "premiumDiscount": null,
-        "fvgCount": 0,
-        "orderBlockCount": 0,
-        "lastCandle": null
+        "candleCount": 52,
+        "range": {
+          "high": 5595.45996,
+          "low": 3866.02108
+        },
+        "internalBias": "bearish",
+        "externalBias": "bearish",
+        "premiumDiscount": {
+          "timeframe": "Weekly",
+          "rangeSource": "external_structure",
+          "fibPercentFromLow": 0.213,
+          "fibZone": null,
+          "high": 4697.66016,
+          "low": 3944.22998,
+          "range": 753.4301800000003,
+          "equilibrium": 4320.94507,
+          "price": 4104.92281,
+          "distanceToEq": -216.02225999999973,
+          "distanceToEqPercent": -28.67183525884239,
+          "zone": "discount",
+          "isPremium": false,
+          "isDiscount": true,
+          "isEquilibrium": false
+        },
+        "fvgCount": 9,
+        "orderBlockCount": 4,
+        "lastCandle": {
+          "datetime": "2026-11-02",
+          "open": 3875.34685,
+          "high": 4119.76098,
+          "low": 3866.02108,
+          "close": 4104.92281
+        }
       },
       "daily": {
         "timeframe": "Daily",
-        "candleCount": 0,
-        "range": null,
-        "internalBias": null,
-        "externalBias": null,
-        "premiumDiscount": null,
-        "fvgCount": 0,
-        "orderBlockCount": 0,
-        "lastCandle": null
+        "candleCount": 120,
+        "range": {
+          "high": 4697.66016,
+          "low": 3866.02108
+        },
+        "internalBias": "bullish",
+        "externalBias": "bullish",
+        "premiumDiscount": {
+          "timeframe": "Daily",
+          "rangeSource": "external_structure",
+          "fibPercentFromLow": 1.106,
+          "fibZone": null,
+          "high": 4081.96587,
+          "low": 3866.02108,
+          "range": 215.94479,
+          "equilibrium": 3973.993475,
+          "price": 4104.92281,
+          "distanceToEq": 130.9293349999998,
+          "distanceToEqPercent": 60.63093024842128,
+          "zone": "premium",
+          "isPremium": true,
+          "isDiscount": false,
+          "isEquilibrium": false
+        },
+        "fvgCount": 22,
+        "orderBlockCount": 9,
+        "lastCandle": {
+          "datetime": "2026-11-05",
+          "open": 4057.70407,
+          "high": 4119.76098,
+          "low": 4056.9432,
+          "close": 4104.92281
+        }
       },
       "h4": {
         "timeframe": "4H",
-        "candleCount": 0,
-        "range": null,
-        "internalBias": null,
-        "externalBias": null,
-        "premiumDiscount": null,
-        "fvgCount": 0,
-        "orderBlockCount": 0,
-        "lastCandle": null
+        "candleCount": 180,
+        "range": {
+          "high": 4216.2071,
+          "low": 3866.02108
+        },
+        "internalBias": "bullish",
+        "externalBias": "bullish",
+        "premiumDiscount": {
+          "timeframe": "4H",
+          "rangeSource": "external_structure",
+          "fibPercentFromLow": 2.859,
+          "fibZone": null,
+          "high": 3969.19902,
+          "low": 3896.2051,
+          "range": 72.99391999999989,
+          "equilibrium": 3932.70206,
+          "price": 4104.92281,
+          "distanceToEq": 172.22074999999995,
+          "distanceToEqPercent": 235.93848638352375,
+          "zone": "premium",
+          "isPremium": true,
+          "isDiscount": false,
+          "isEquilibrium": false
+        },
+        "fvgCount": 32,
+        "orderBlockCount": 13,
+        "lastCandle": {
+          "datetime": "2026-11-05 00:00:00",
+          "open": 4064.97609,
+          "high": 4119.76098,
+          "low": 4061.90341,
+          "close": 4104.92281
+        }
       },
       "h1": {
         "timeframe": "H1",
-        "candleCount": 72,
+        "candleCount": 168,
         "range": {
-          "high": 4070.45747,
+          "high": 4119.76098,
           "low": 3866.02108
         },
         "internalBias": "bullish",
@@ -78,101 +174,249 @@
         "premiumDiscount": {
           "timeframe": "H1",
           "rangeSource": "external_structure",
-          "fibPercentFromLow": 0.836,
+          "fibPercentFromLow": 1.85,
           "fibZone": null,
           "high": 4070.45747,
           "low": 4029.90986,
           "range": 40.54760999999962,
           "equilibrium": 4050.183665,
-          "price": 4063.8271,
-          "distanceToEq": 13.643434999999954,
-          "distanceToEqPercent": 33.64793880576458,
+          "price": 4104.92281,
+          "distanceToEq": 54.73914500000001,
+          "distanceToEqPercent": 134.99968308859764,
           "zone": "premium",
           "isPremium": true,
           "isDiscount": false,
           "isEquilibrium": false
         },
-        "fvgCount": 17,
-        "orderBlockCount": 3,
+        "fvgCount": 26,
+        "orderBlockCount": 7,
         "lastCandle": {
-          "datetime": "2026-11-04 21:00:00",
-          "open": 4061.19765,
-          "high": 4064.21459,
-          "low": 4061.19765,
-          "close": 4063.8271
+          "datetime": "2026-11-05 01:00:00",
+          "open": 4091.99059,
+          "high": 4119.76098,
+          "low": 4087.4719,
+          "close": 4104.92281
         }
       },
-      "overallBias": "NEUTRAL_MIXED",
+      "overallBias": "BULLISH",
       "confidence": null,
       "macro": {
-        "state": "NEUTRAL_MIXED",
-        "tally": 0,
+        "state": "BULLISH",
+        "tally": 2,
         "reasoning": [
-          "Monthly: externe Struktur unklar",
-          "Weekly: externe Struktur unklar"
+          "Monthly: externe Struktur BEARISH",
+          "Weekly: externe Struktur BEARISH",
+          "Monthly: Preis im Discount",
+          "Weekly: Preis im Discount",
+          "Relevante Liquidity-Sweeps auf Macro-Ebene: Tendenz BULLISH",
+          "Frische POIs auf Macro-Ebene: Tendenz BULLISH"
         ]
       },
       "trading": {
-        "state": "NEUTRAL_MIXED",
-        "tally": 0,
+        "state": "BULLISH",
+        "tally": 2,
         "reasoning": [
-          "Daily: externe Struktur unklar",
-          "4H: externe Struktur unklar"
+          "Daily: externe Struktur BULLISH",
+          "4H: externe Struktur BULLISH",
+          "Daily: Preis im Premium",
+          "4H: Preis im Premium",
+          "Relevante Liquidity-Sweeps auf Trading-Ebene: Tendenz BULLISH",
+          "Frische POIs auf Trading-Ebene: Tendenz BULLISH"
         ]
       },
       "reasoning": [
-        "Macro Bias (Monthly/Weekly): NEUTRAL_MIXED",
-        "Monthly: externe Struktur unklar",
-        "Weekly: externe Struktur unklar",
-        "Trading Bias (Daily/4H): NEUTRAL_MIXED",
-        "Daily: externe Struktur unklar",
-        "4H: externe Struktur unklar"
+        "Macro Bias (Monthly/Weekly): BULLISH",
+        "Monthly: externe Struktur BEARISH",
+        "Weekly: externe Struktur BEARISH",
+        "Monthly: Preis im Discount",
+        "Weekly: Preis im Discount",
+        "Relevante Liquidity-Sweeps auf Macro-Ebene: Tendenz BULLISH",
+        "Frische POIs auf Macro-Ebene: Tendenz BULLISH",
+        "Trading Bias (Daily/4H): BULLISH",
+        "Daily: externe Struktur BULLISH",
+        "4H: externe Struktur BULLISH",
+        "Daily: Preis im Premium",
+        "4H: Preis im Premium",
+        "Relevante Liquidity-Sweeps auf Trading-Ebene: Tendenz BULLISH",
+        "Frische POIs auf Trading-Ebene: Tendenz BULLISH"
       ]
     },
     "report": {
       "htfBias": {
-        "overallBias": "NEUTRAL_MIXED",
+        "overallBias": "BULLISH",
         "confidence": null,
         "macro": {
-          "state": "NEUTRAL_MIXED",
-          "tally": 0,
+          "state": "BULLISH",
+          "tally": 2,
           "reasoning": [
-            "Monthly: externe Struktur unklar",
-            "Weekly: externe Struktur unklar"
+            "Monthly: externe Struktur BEARISH",
+            "Weekly: externe Struktur BEARISH",
+            "Monthly: Preis im Discount",
+            "Weekly: Preis im Discount",
+            "Relevante Liquidity-Sweeps auf Macro-Ebene: Tendenz BULLISH",
+            "Frische POIs auf Macro-Ebene: Tendenz BULLISH"
           ]
         },
         "trading": {
-          "state": "NEUTRAL_MIXED",
-          "tally": 0,
+          "state": "BULLISH",
+          "tally": 2,
           "reasoning": [
-            "Daily: externe Struktur unklar",
-            "4H: externe Struktur unklar"
+            "Daily: externe Struktur BULLISH",
+            "4H: externe Struktur BULLISH",
+            "Daily: Preis im Premium",
+            "4H: Preis im Premium",
+            "Relevante Liquidity-Sweeps auf Trading-Ebene: Tendenz BULLISH",
+            "Frische POIs auf Trading-Ebene: Tendenz BULLISH"
           ]
         },
         "reasoning": [
-          "Macro Bias (Monthly/Weekly): NEUTRAL_MIXED",
-          "Monthly: externe Struktur unklar",
-          "Weekly: externe Struktur unklar",
-          "Trading Bias (Daily/4H): NEUTRAL_MIXED",
-          "Daily: externe Struktur unklar",
-          "4H: externe Struktur unklar"
+          "Macro Bias (Monthly/Weekly): BULLISH",
+          "Monthly: externe Struktur BEARISH",
+          "Weekly: externe Struktur BEARISH",
+          "Monthly: Preis im Discount",
+          "Weekly: Preis im Discount",
+          "Relevante Liquidity-Sweeps auf Macro-Ebene: Tendenz BULLISH",
+          "Frische POIs auf Macro-Ebene: Tendenz BULLISH",
+          "Trading Bias (Daily/4H): BULLISH",
+          "Daily: externe Struktur BULLISH",
+          "4H: externe Struktur BULLISH",
+          "Daily: Preis im Premium",
+          "4H: Preis im Premium",
+          "Relevante Liquidity-Sweeps auf Trading-Ebene: Tendenz BULLISH",
+          "Frische POIs auf Trading-Ebene: Tendenz BULLISH"
         ]
       },
-      "weeklyContext": "Noch keine Daten.",
-      "dailyContext": "Noch keine Daten.",
-      "h4Context": "Noch keine Daten.",
+      "weeklyContext": "Struktur BEARISH, Preis im Discount (Range 3866.02–5595.46)",
+      "dailyContext": "Struktur BULLISH, Preis im Premium (Range 3866.02–4697.66)",
+      "h4Context": "Struktur BULLISH, Preis im Premium (Range 3866.02–4216.21)",
       "notableLiquidity": [
-        "Daily High (Daily) — APPROACHING bei 4067.19",
-        "Daily Low (Daily) — APPROACHING bei 4056.94",
-        "Asia High (Asia Session) — SWEPT bei 4028.95 [Swept At 2026-11-04T23:25:25.160Z] [Reaction: NO]",
-        "London High (London Session) — SWEPT bei 4051.85 [Swept At 2026-11-04T23:25:25.160Z] [Reaction: NO]",
-        "New York High (New York Session) — APPROACHING bei 4070.46"
+        "London High (London Session) — SWEPT bei 4051.85 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO]",
+        "New York High (New York Session) — SWEPT bei 4070.46 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO]",
+        "Daily Swing Low (Daily) — SWEPT bei 4310.73 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO]",
+        "Daily Swing Low (Daily) — SWEPT bei 4282.71 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO]",
+        "Daily Swing Low (Daily) — SWEPT bei 4235.08 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO]",
+        "Daily Swing Low (Daily) — SWEPT bei 4110.95 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO]",
+        "4H Swing High (4H) — SWEPT bei 4034.68 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO]",
+        "4H Swing High (4H) — SWEPT bei 4081.97 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO]",
+        "4H Swing High (4H) — SWEPT bei 3969.99 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO]",
+        "4H Swing Low (4H) — SWEPT bei 4105.76 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO]",
+        "4H Swing Low (4H) — SWEPT bei 4111.84 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO]"
       ],
       "freshBullishPOIs": [
         {
           "timeframe": "H1",
           "type": "fvg",
-          "range": "4010.11–4014.36",
+          "range": "4071.33–4087.47",
+          "status": "fresh",
+          "quality": "high",
+          "score": 5,
+          "reasons": [
+            "✓ Vorheriger relevanter Liquidity Sweep/Grab",
+            "✗ Deutliche Reaktion vom Bereich",
+            "✓ Structure Break / BOS / CHOCH in Verbindung",
+            "✓ Passt zum aktuellen DG Trading Bias",
+            "✗ Sinnvolle Premium/Discount-Lage",
+            "✓ Deutlicher Displacement",
+            "✗ Überschneidung mit Order Block",
+            "✓ Frisch / offen (0% mitigiert)"
+          ]
+        },
+        {
+          "timeframe": "4H",
+          "type": "fvg",
+          "range": "4051.85–4056.94",
+          "status": "fresh",
+          "quality": "medium",
+          "score": 4,
+          "reasons": [
+            "✓ Vorheriger relevanter Liquidity Sweep/Grab",
+            "✗ Deutliche Reaktion vom Bereich",
+            "✓ Structure Break / BOS / CHOCH in Verbindung",
+            "✓ Passt zum aktuellen DG Trading Bias",
+            "✗ Sinnvolle Premium/Discount-Lage",
+            "✗ Deutlicher Displacement",
+            "✗ Überschneidung mit Order Block",
+            "✓ Frisch / offen (0% mitigiert)"
+          ]
+        },
+        {
+          "timeframe": "Daily",
+          "type": "breaker",
+          "range": "4028.01–4070.81",
+          "status": "fresh",
+          "quality": "high",
+          "score": 5,
+          "reasons": [
+            "✓ Vorheriger relevanter Liquidity Sweep/Grab",
+            "✗ Deutliche Reaktion vom Bereich",
+            "✓ Structure Break / BOS / CHOCH in Verbindung",
+            "✓ Passt zum aktuellen DG Trading Bias",
+            "✗ Sinnvolle Premium/Discount-Lage",
+            "✗ Displacement durch ursprünglichen Bereich",
+            "✓ Offene FVG/iFVG in Verbindung",
+            "✓ Ursprünglicher Order Block klar invalidiert"
+          ]
+        },
+        {
+          "timeframe": "4H",
+          "type": "ifvg",
+          "range": "4046.45–4051.04",
+          "status": "fresh",
+          "quality": "medium",
+          "score": 4,
+          "reasons": [
+            "✓ Vorheriger relevanter Liquidity Sweep/Grab",
+            "✗ Deutliche Reaktion vom Bereich",
+            "✓ Structure Break / BOS / CHOCH in Verbindung",
+            "✓ Passt zum aktuellen DG Trading Bias",
+            "✗ Sinnvolle Premium/Discount-Lage",
+            "✗ Displacement in neue Richtung",
+            "✗ Lage an einem relevanten POI",
+            "✓ Ursprüngliche FVG klar gebrochen"
+          ]
+        },
+        {
+          "timeframe": "4H",
+          "type": "fvg",
+          "range": "4028.95–4029.91",
+          "status": "fresh",
+          "quality": "medium",
+          "score": 4,
+          "reasons": [
+            "✓ Vorheriger relevanter Liquidity Sweep/Grab",
+            "✗ Deutliche Reaktion vom Bereich",
+            "✓ Structure Break / BOS / CHOCH in Verbindung",
+            "✓ Passt zum aktuellen DG Trading Bias",
+            "✗ Sinnvolle Premium/Discount-Lage",
+            "✗ Deutlicher Displacement",
+            "✗ Überschneidung mit Order Block",
+            "✓ Frisch / offen (0% mitigiert)"
+          ]
+        }
+      ],
+      "freshBearishPOIs": [
+        {
+          "timeframe": "Daily",
+          "type": "fvg",
+          "range": "4155.90–4164.58",
+          "status": "fresh",
+          "quality": "medium",
+          "score": 3,
+          "reasons": [
+            "✗ Vorheriger relevanter Liquidity Sweep/Grab",
+            "✗ Deutliche Reaktion vom Bereich",
+            "✓ Structure Break / BOS / CHOCH in Verbindung",
+            "✗ Passt zum aktuellen DG Trading Bias",
+            "✓ Sinnvolle Premium/Discount-Lage",
+            "✗ Deutlicher Displacement",
+            "✗ Überschneidung mit Order Block",
+            "✓ Frisch / offen (0% mitigiert)"
+          ]
+        },
+        {
+          "timeframe": "4H",
+          "type": "fvg",
+          "range": "4170.32–4170.33",
           "status": "fresh",
           "quality": "medium",
           "score": 4,
@@ -188,9 +432,9 @@
           ]
         },
         {
-          "timeframe": "H1",
-          "type": "fvg",
-          "range": "3957.01–3995.46",
+          "timeframe": "Daily",
+          "type": "orderBlock",
+          "range": "4254.45–4316.81",
           "status": "fresh",
           "quality": "high",
           "score": 5,
@@ -200,51 +444,33 @@
             "✓ Structure Break / BOS / CHOCH in Verbindung",
             "✗ Passt zum aktuellen DG Trading Bias",
             "✓ Sinnvolle Premium/Discount-Lage",
-            "✓ Deutlicher Displacement",
-            "✗ Überschneidung mit Order Block",
-            "✓ Frisch / offen (0% mitigiert)"
-          ]
-        },
-        {
-          "timeframe": "H1",
-          "type": "fvg",
-          "range": "3940.73–3946.17",
-          "status": "fresh",
-          "quality": "high",
-          "score": 5,
-          "reasons": [
-            "✗ Vorheriger relevanter Liquidity Sweep/Grab",
-            "✗ Deutliche Reaktion vom Bereich",
-            "✓ Structure Break / BOS / CHOCH in Verbindung",
-            "✗ Passt zum aktuellen DG Trading Bias",
-            "✓ Sinnvolle Premium/Discount-Lage",
-            "✓ Deutlicher Displacement",
-            "✓ Überschneidung mit Order Block",
-            "✓ Frisch / offen (0% mitigiert)"
-          ]
-        },
-        {
-          "timeframe": "H1",
-          "type": "orderBlock",
-          "range": "3927.11–3940.73",
-          "status": "fresh",
-          "quality": "high",
-          "score": 5,
-          "reasons": [
-            "✗ Vorheriger relevanter Liquidity Sweep/Grab",
-            "✗ Deutliche Reaktion vom Bereich",
-            "✓ Structure Break / BOS / CHOCH in Verbindung",
-            "✗ Passt zum aktuellen DG Trading Bias",
-            "✓ Sinnvolle Premium/Discount-Lage",
             "✓ Mit Displacement entstanden",
-            "✓ Offene FVG/Imbalance im Bereich",
+            "✗ Offene FVG/Imbalance im Bereich",
             "✓ Frisch (< 65% mitigiert, Kapitel-4-Richtwert)"
           ]
         },
         {
-          "timeframe": "H1",
+          "timeframe": "Daily",
           "type": "ifvg",
-          "range": "3910.22–3912.19",
+          "range": "4541.49–4594.68",
+          "status": "fresh",
+          "quality": "high",
+          "score": 5,
+          "reasons": [
+            "✗ Vorheriger relevanter Liquidity Sweep/Grab",
+            "✗ Deutliche Reaktion vom Bereich",
+            "✓ Structure Break / BOS / CHOCH in Verbindung",
+            "✗ Passt zum aktuellen DG Trading Bias",
+            "✓ Sinnvolle Premium/Discount-Lage",
+            "✓ Displacement in neue Richtung",
+            "✓ Lage an einem relevanten POI",
+            "✓ Ursprüngliche FVG klar gebrochen"
+          ]
+        },
+        {
+          "timeframe": "Daily",
+          "type": "orderBlock",
+          "range": "4566.17–4643.35",
           "status": "fresh",
           "quality": "medium",
           "score": 4,
@@ -254,17 +480,16 @@
             "✓ Structure Break / BOS / CHOCH in Verbindung",
             "✗ Passt zum aktuellen DG Trading Bias",
             "✓ Sinnvolle Premium/Discount-Lage",
-            "✓ Displacement in neue Richtung",
-            "✗ Lage an einem relevanten POI",
-            "✓ Ursprüngliche FVG klar gebrochen"
+            "✓ Mit Displacement entstanden",
+            "✗ Offene FVG/Imbalance im Bereich",
+            "✓ Frisch (< 65% mitigiert, Kapitel-4-Richtwert)"
           ]
         }
       ],
-      "freshBearishPOIs": [],
       "targets": [
         {
           "direction": "up",
-          "price": 4067.18998,
+          "price": 4119.76098,
           "type": "liquidity",
           "timeframe": "Daily",
           "reason": "Daily High (Daily)",
@@ -272,39 +497,55 @@
         },
         {
           "direction": "up",
-          "price": 4070.45747,
+          "price": 4142.67368,
           "type": "liquidity",
-          "timeframe": "New York Session",
-          "reason": "New York High (New York Session)",
+          "timeframe": "4H",
+          "reason": "4H Swing High (4H)",
           "priority": "SECONDARY"
         },
         {
-          "direction": "down",
-          "price": 4056.9432,
+          "direction": "up",
+          "price": 4155.90064,
           "type": "liquidity",
-          "timeframe": "Daily",
-          "reason": "Daily Low (Daily)",
-          "priority": "PRIMARY"
+          "timeframe": "4H",
+          "reason": "4H Swing High (4H)",
+          "priority": "EXTENDED"
         },
         {
-          "direction": "down",
-          "price": 4029.90986,
+          "direction": "up",
+          "price": 4119.76098,
           "type": "liquidity",
-          "timeframe": "New York Session",
-          "reason": "New York Low (New York Session)",
-          "priority": "SECONDARY"
-        },
-        {
-          "direction": "down",
-          "price": 4021.63436,
-          "type": "liquidity",
-          "timeframe": "London Session",
-          "reason": "London Low (London Session)",
+          "timeframe": "Asia Session",
+          "reason": "Asia High (Asia Session)",
           "priority": "EXTENDED"
         },
         {
           "direction": "down",
-          "price": 4012.23,
+          "price": 4070.45747,
+          "type": "liquidity",
+          "timeframe": "Daily",
+          "reason": "Previous Day High (Daily)",
+          "priority": "PRIMARY"
+        },
+        {
+          "direction": "down",
+          "price": 4066.060059,
+          "type": "liquidity",
+          "timeframe": "Daily",
+          "reason": "Daily Swing Low (Daily)",
+          "priority": "SECONDARY"
+        },
+        {
+          "direction": "down",
+          "price": 4073.81757,
+          "type": "liquidity",
+          "timeframe": "4H",
+          "reason": "4H Swing Low (4H)",
+          "priority": "EXTENDED"
+        },
+        {
+          "direction": "down",
+          "price": 4079.4,
           "type": "poi-fvg",
           "timeframe": "H1",
           "reason": "FVG bullish (H1)",
@@ -313,30 +554,30 @@
       ],
       "entry": {
         "status": "DATA_NOT_READY",
-        "direction": null,
+        "direction": "bullish",
         "entryZone": null,
         "stopLoss": null,
-        "primaryPOI": null,
+        "primaryPOI": "ifvg-Daily-2026-11-04-3887.2692-4006.1547",
         "reasons": [
           "Keine Handelsfreigabe aus zeitverzögertem GitHub-Actions-Snapshot."
         ]
       },
       "risk": null,
       "sessionNotes": [
-        "Asia High ist gesweept bei 4028.95 — Kontext, keine automatische Trade-Regel (Kapitel 13).",
-        "London High ist gesweept bei 4051.85 — Kontext, keine automatische Trade-Regel (Kapitel 13)."
+        "London High ist gesweept bei 4051.85 — Kontext, keine automatische Trade-Regel (Kapitel 13).",
+        "New York High ist gesweept bei 4070.46 — Kontext, keine automatische Trade-Regel (Kapitel 13)."
       ],
       "newsStatus": "DATA_SOURCE_NOT_CONNECTED",
       "newsEvents": [],
       "status": "DATA_NOT_READY",
-      "summary": "VERZÖGERTE MARKTAUFNAHME. Keine Live-Entry-Freigabe. Unvollständige HTF-Daten: weekly, daily, 4h. HTF Bias — Macro (Monthly/Weekly): NEUTRAL_MIXED · Trading (Daily/4H): NEUTRAL_MIXED\nWeekly: Noch keine Daten.\nDaily: Noch keine Daten.\n4H: Noch keine Daten.\nLiquidity (touched/sweeped): Daily High (Daily) — APPROACHING bei 4067.19 · Daily Low (Daily) — APPROACHING bei 4056.94 · Asia High (Asia Session) — SWEPT bei 4028.95 [Swept At 2026-11-04T23:25:25.160Z] [Reaction: NO] · London High (London Session) — SWEPT bei 4051.85 [Swept At 2026-11-04T23:25:25.160Z] [Reaction: NO] · New York High (New York Session) — APPROACHING bei 4070.46\nFresh Bullish POIs: 4010.11–4014.36 (H1, medium), 3957.01–3995.46 (H1, high), 3940.73–3946.17 (H1, high), 3927.11–3940.73 (H1, high), 3910.22–3912.19 (H1, medium)\nFresh Bearish POIs: keine.\nPrimary Target aufwärts: 4067.19 (Daily High (Daily))\nPrimary Target abwärts: 4056.94 (Daily Low (Daily))\nSessions: Asia High ist gesweept bei 4028.95 — Kontext, keine automatische Trade-Regel (Kapitel 13). · London High ist gesweept bei 4051.85 — Kontext, keine automatische Trade-Regel (Kapitel 13).\nEntry Status: WAIT — DG Trading Bias ist NEUTRAL/MIXED — und weder bullish noch bearish liegt aktuell ein unterstützender Liquidity Sweep + Reaktion vor (Kapitel 12: Mixed Context).\nNews: DATA_SOURCE_NOT_CONNECTED"
+      "summary": "VERZÖGERTE MARKTAUFNAHME. Keine Live-Entry-Freigabe. HTF Bias — Macro (Monthly/Weekly): BULLISH · Trading (Daily/4H): BULLISH\nWeekly: Struktur BEARISH, Preis im Discount (Range 3866.02–5595.46)\nDaily: Struktur BULLISH, Preis im Premium (Range 3866.02–4697.66)\n4H: Struktur BULLISH, Preis im Premium (Range 3866.02–4216.21)\nLiquidity (touched/sweeped): London High (London Session) — SWEPT bei 4051.85 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO] · New York High (New York Session) — SWEPT bei 4070.46 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO] · Daily Swing Low (Daily) — SWEPT bei 4310.73 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO] · Daily Swing Low (Daily) — SWEPT bei 4282.71 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO] · Daily Swing Low (Daily) — SWEPT bei 4235.08 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO] · Daily Swing Low (Daily) — SWEPT bei 4110.95 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO] · 4H Swing High (4H) — SWEPT bei 4034.68 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO] · 4H Swing High (4H) — SWEPT bei 4081.97 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO] · 4H Swing High (4H) — SWEPT bei 3969.99 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO] · 4H Swing Low (4H) — SWEPT bei 4105.76 [Swept At 2026-11-05T01:28:50.179Z] [Reaction: NO] · 4H Swing Low (4H) — SWEPT bei 4111.84 "
     },
     "entry": {
       "status": "DATA_NOT_READY",
-      "direction": null,
+      "direction": "bullish",
       "entryZone": null,
       "stopLoss": null,
-      "primaryPOI": null,
+      "primaryPOI": "ifvg-Daily-2026-11-04-3887.2692-4006.1547",
       "reasons": [
         "Keine Handelsfreigabe aus zeitverzögertem GitHub-Actions-Snapshot."
       ]
@@ -345,7 +586,7 @@
     "targets": [
       {
         "direction": "up",
-        "price": 4067.18998,
+        "price": 4119.76098,
         "type": "liquidity",
         "timeframe": "Daily",
         "reason": "Daily High (Daily)",
@@ -353,39 +594,55 @@
       },
       {
         "direction": "up",
-        "price": 4070.45747,
+        "price": 4142.67368,
         "type": "liquidity",
-        "timeframe": "New York Session",
-        "reason": "New York High (New York Session)",
+        "timeframe": "4H",
+        "reason": "4H Swing High (4H)",
         "priority": "SECONDARY"
       },
       {
-        "direction": "down",
-        "price": 4056.9432,
+        "direction": "up",
+        "price": 4155.90064,
         "type": "liquidity",
-        "timeframe": "Daily",
-        "reason": "Daily Low (Daily)",
-        "priority": "PRIMARY"
+        "timeframe": "4H",
+        "reason": "4H Swing High (4H)",
+        "priority": "EXTENDED"
       },
       {
-        "direction": "down",
-        "price": 4029.90986,
+        "direction": "up",
+        "price": 4119.76098,
         "type": "liquidity",
-        "timeframe": "New York Session",
-        "reason": "New York Low (New York Session)",
-        "priority": "SECONDARY"
-      },
-      {
-        "direction": "down",
-        "price": 4021.63436,
-        "type": "liquidity",
-        "timeframe": "London Session",
-        "reason": "London Low (London Session)",
+        "timeframe": "Asia Session",
+        "reason": "Asia High (Asia Session)",
         "priority": "EXTENDED"
       },
       {
         "direction": "down",
-        "price": 4012.23,
+        "price": 4070.45747,
+        "type": "liquidity",
+        "timeframe": "Daily",
+        "reason": "Previous Day High (Daily)",
+        "priority": "PRIMARY"
+      },
+      {
+        "direction": "down",
+        "price": 4066.060059,
+        "type": "liquidity",
+        "timeframe": "Daily",
+        "reason": "Daily Swing Low (Daily)",
+        "priority": "SECONDARY"
+      },
+      {
+        "direction": "down",
+        "price": 4073.81757,
+        "type": "liquidity",
+        "timeframe": "4H",
+        "reason": "4H Swing Low (4H)",
+        "priority": "EXTENDED"
+      },
+      {
+        "direction": "down",
+        "price": 4079.4,
         "type": "poi-fvg",
         "timeframe": "H1",
         "reason": "FVG bullish (H1)",
@@ -394,20 +651,63 @@
     ],
     "decision": {
       "status": "DATA_NOT_READY",
-      "direction": null,
+      "direction": "bullish",
       "confidence": null,
-      "macroBias": "NEUTRAL_MIXED",
-      "tradingBias": "NEUTRAL_MIXED",
+      "macroBias": "BULLISH",
+      "tradingBias": "BULLISH",
       "primaryPoi": null,
-      "confirmation": null,
-      "confirmation5m": null,
+      "confirmation": {
+        "status": "NO_CONFIRMATION",
+        "entryZone": "UNDEFINED",
+        "reasons": [
+          "Noch keine Reaktion am POI erkannt — Confirmation setzt eine Reaktion voraus."
+        ]
+      },
+      "confirmation5m": {
+        "status": "NO_CONFIRMATION",
+        "entryZone": "UNDEFINED",
+        "reasons": [
+          "Noch keine Reaktion am POI erkannt — Confirmation setzt eine Reaktion voraus."
+        ]
+      },
       "entryZone": null,
       "invalidation": null,
-      "targets": [],
-      "riskReward": [],
-      "missingRequirements": [
-        "Ein oder mehrere HTF-Kern-Timeframes (Weekly/Daily/4H/1H) haben noch keine Kerzendaten (Kapitel 12: DATA_NOT_READY)."
+      "targets": [
+        {
+          "direction": "up",
+          "price": 4119.76098,
+          "type": "liquidity",
+          "timeframe": "Daily",
+          "reason": "Daily High (Daily)",
+          "priority": "PRIMARY"
+        },
+        {
+          "direction": "up",
+          "price": 4142.67368,
+          "type": "liquidity",
+          "timeframe": "4H",
+          "reason": "4H Swing High (4H)",
+          "priority": "SECONDARY"
+        },
+        {
+          "direction": "up",
+          "price": 4155.90064,
+          "type": "liquidity",
+          "timeframe": "4H",
+          "reason": "4H Swing High (4H)",
+          "priority": "EXTENDED"
+        },
+        {
+          "direction": "up",
+          "price": 4119.76098,
+          "type": "liquidity",
+          "timeframe": "Asia Session",
+          "reason": "Asia High (Asia Session)",
+          "priority": "EXTENDED"
+        }
       ],
+      "riskReward": [],
+      "missingRequirements": [],
       "reasons": [
         "Nur Marktbeobachtung; ohne dauerhaft verbundene Echtzeitdaten kein Entry."
       ],
@@ -417,7 +717,7 @@
       "status": "OBSERVED",
       "symbol": "XAUUSD",
       "source": "TwelveData · veröffentlichter H1-Snapshot (kein Live-Server)",
-      "asOf": "2026-11-04T21:10:15.000Z",
+      "asOf": "2026-11-05T01:28:49.000Z",
       "model": "OBSERVATIONS_ONLY",
       "sessionDate": "2026-11-04",
       "asiasession": {
@@ -507,18 +807,24 @@
       "bias": {
         "macro": {
           "timeframes": "Monthly / Weekly",
-          "state": "NEUTRAL_MIXED",
+          "state": "BULLISH",
           "reasoning": [
-            "Monthly: externe Struktur unklar",
-            "Weekly: externe Struktur unklar"
+            "Monthly: externe Struktur BEARISH",
+            "Weekly: externe Struktur BEARISH",
+            "Monthly: Preis im Discount",
+            "Weekly: Preis im Discount",
+            "Relevante Liquidity-Sweeps auf Macro-Ebene: Tendenz BULLISH"
           ]
         },
         "medium": {
           "timeframes": "Daily / 4H",
-          "state": "NEUTRAL_MIXED",
+          "state": "BULLISH",
           "reasoning": [
-            "Daily: externe Struktur unklar",
-            "4H: externe Struktur unklar"
+            "Daily: externe Struktur BULLISH",
+            "4H: externe Struktur BULLISH",
+            "Daily: Preis im Premium",
+            "4H: Preis im Premium",
+            "Relevante Liquidity-Sweeps auf Trading-Ebene: Tendenz BULLISH"
           ]
         },
         "intraday": {
@@ -535,8 +841,8 @@
       },
       "disclaimer": "London/Asia sind Kontext, niemals ein eigenständiger Entry. Kein Trading-Signal.",
       "freshness": {
-        "lastClosedCandle": "2026-11-04T21:00:00.000Z",
-        "hoursSinceLastClosed": 0.2,
+        "lastClosedCandle": "2026-11-05T01:00:00.000Z",
+        "hoursSinceLastClosed": 0.5,
         "stale": false
       }
     }

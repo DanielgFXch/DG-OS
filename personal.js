@@ -2174,8 +2174,8 @@
     // The exact same finalized text is passed to the existing speech engine
     // and displayed beside the authentic (possibly delayed) candle history.
     if(window.DGOSJarvisMarketChart?.shouldOpen(original)){
-      const chartOnly=/\\b(?:öffne|öffnen|zeig|zeige|aufmachen)\\b/i.test(original) &&
-        !/\\b(?:analysier|prüf|warum|wie|liquidität|sweep|setup|einstieg)\\b/i.test(original);
+      const chartOnly=/(?:öffn|zeig|aufmach)/i.test(original) &&
+        !/(?:analysier|prüf|warum|wie|liquidität|sweep|setup|einstieg)/i.test(original);
       const answer=chartOnly
         ? 'Ich habe den XAUUSD-Chart geöffnet. Die echten Kerzen und der letzte Datenzeitpunkt stehen direkt im Chart. Du kannst 5 Minuten bis Daily auswählen, zoomen und den Kursverlauf ansehen.'
         : answerTradingQuestion(original);

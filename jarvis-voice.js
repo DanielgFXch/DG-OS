@@ -22,7 +22,7 @@
   try{prefs=JSON.parse(read(storageKey)||'{}')||{};}catch{}
   let provider=['browser','cartesia','openai-tts'].includes(prefs.provider)?prefs.provider:'browser';
   let voiceId=read(providerVoiceKey())||'';
-  let voices=[],currentAudio=null,objectUrl='',abort=null,sequence=0,lastText='',lastPrepared='',lastCompleted='',microphoneBusy=false;
+  let voices=[],currentAudio=null,lastAudioBlob=null,objectUrl='',abort=null,sequence=0,lastText='',lastPrepared='',lastCompleted='',microphoneBusy=false;
   let validatedServerVoice=null,serverTestBusy=false;
   const controls=document.createElement('div');
   controls.className='jarvis-voice-console';
@@ -89,6 +89,12 @@
       heroNotice.textContent=message;
       heroNotice.dataset.state=badge;
     }
+    // Keep the Orb state tied to actual audio playback, not only the text
+    // rendering timer. Text remains visible if iOS denies autoplay.
+    if(['SPRICHT','STARTET','GENERIEREN','BEREIT','FEHLER','STUMM','STARTEN'].includes(badge)){
+      try{window.dispatchEvent(new CustomEvent('dgos-jarvis-voice-state',
+        {detail:{state:badge,message}}));}catch(_){}
+    }
   };
   $('jvRead').textContent='▶ Letzte Antwort anhören';
   $('jvEngine').value=provider;
@@ -123,6 +129,7 @@
     if(currentAudio){currentAudio.pause();currentAudio.removeAttribute('src');currentAudio.load();currentAudio.hidden=true;currentAudio=null;}
     if(objectUrl){URL.revokeObjectURL(objectUrl);objectUrl='';}
     lastPrepared='';
+    lastAudioBlob=null;
   }
   function options(items,selected){
     const select=$('jvVoice');select.replaceChildren();
@@ -275,6 +282,7 @@
       currentAudio.src=objectUrl;
       currentAudio.hidden=false;
       lastPrepared=text;
+      lastAudioBlob=blob;
       currentAudio.onended=()=>setMessage('Die Audio-Datei wurde abgespielt. Hast du die Stimme gehört?','BEREIT');
       validatedServerVoice=chosen;
       $('jvUseServerVoice').hidden=false;
@@ -330,19 +338,35 @@
       // A manual replay takes over from any current Web Audio output so
       // the user never hears two Jarvis voices speaking simultaneously.
       window.DGOSVoiceAudio?.stopPlayback?.();
-      try{
+      const direct=lastAudioBlob?await window.DGOSVoiceAudio?.playBlob?.(lastAudioBlob,()=>{
+        setMessage('Wiedergabe beendet.','BEREIT');
+      }):false;
+      if(direct){
+        setMessage('Jarvis spielt deine Antwort erneut ab.','SPRICHT');
+      }else try{
         currentAudio.currentTime=0;
         await currentAudio.play();
-        setMessage('Jarvis spielt die gespeicherte Antwort ab.','SPRICHT');
+        setMessage('Jarvis spielt deine Antwort erneut ab.','SPRICHT');
       }catch{
         currentAudio.hidden=false;
-        setMessage('iOS braucht eine Freigabe. Tippe auf ▶ im Audioplayer oder auf «Antwort anhören».','STARTEN');
+        setMessage('iOS braucht eine Freigabe. Tippe direkt auf ▶ im Audioplayer.','STARTEN');
       }
       return;
     }
     stop();
     const thisRequest=sequence;
-    const limited=String(text).trim().slice(0,300);
+    // Both premium bridges cap audio to 300 characters/request. Speak a
+    // sentence-bounded excerpt instead of silently cutting off mid-word.
+    // Native device voice speaks the full text in sequential chunks.
+    const original=String(text).trim();
+    const excerpt=original.length>300;
+    let limited=excerpt?original.slice(0,297):original;
+    if(excerpt){
+      const boundary=Math.max(limited.lastIndexOf('. '),limited.lastIndexOf('! '),
+        limited.lastIndexOf('? '));
+      if(boundary>=80)limited=limited.slice(0,boundary+1);
+      else limited=limited.slice(0,limited.lastIndexOf(' ')).trim()+' …';
+    }
     abort=new AbortController();
     setMessage('Premium-Antwort wird erzeugt …','GENERIEREN');
     try{
@@ -352,7 +376,7 @@
       if(thisRequest!==sequence)return;
       if(!blob.type.includes('audio')||!blob.size)throw Error('Keine Audiodaten empfangen.');
       objectUrl=URL.createObjectURL(blob);
-      currentAudio=$('jvAudioPlayer');currentAudio.src=objectUrl;currentAudio.hidden=false;lastPrepared=text;
+      currentAudio=$('jvAudioPlayer');currentAudio.src=objectUrl;currentAudio.hidden=false;lastPrepared=text;lastAudioBlob=blob;
       currentAudio.onended=()=>setMessage('Wiedergabe beendet.','BEREIT');
       // iOS can refuse HTMLMediaElement.play() after asynchronous microphone
       // transcription. The orb tap pre-unlocks a Web Audio context: try it
@@ -362,7 +386,7 @@
       });
       if(thisRequest!==sequence)return;
       if(direct){
-        setMessage('Jarvis gibt die Audioantwort wieder.','SPRICHT');
+        setMessage(excerpt?'Jarvis spricht die Kurzfassung. Der vollständige Text steht oben.':'Jarvis gibt die Audioantwort wieder.','SPRICHT');
       }else{
         // Keep visible native audio controls, NEVER report a blocked play()
         // as successful audio. A real user tap always has a fallback.

@@ -60,6 +60,7 @@ function validate(data:any){
   const note=typeof data.note==="string"?data.note.trim():"";
   if(note.length<8||note.length>800)return null;
   const num=data.resultR==null||data.resultR===""?null:Number(data.resultR);
+  if(data.label==='missed'&&num!==null)return null;
   if(num!==null&&(!Number.isFinite(num)||num < -20||num > 100||
      Math.abs(Math.round(num*100)-num*100)>0.0000001))return null;
   return {label:data.label,side:data.side,session:data.session,timeframe:data.timeframe,

@@ -51,16 +51,16 @@ for(const tf of ['5min','15min','1h','4h','daily']){
 for(const id of ['jarvisMarketDialog','jmcTitle','jmcClose','jmcCanvas',
   'jmcChartViewport','jmcFeedStatus','jmcOhlc','jmcQuestion',
   'jmcJarvisAnswer','jmcOpenButton','jmcBackToTrading',
-  'jmcZoomIn','jmcZoomOut','jmcFit','jmcReload','jmcAskAgain',
+  'jmcZoomIn','jmcZoomOut','jmcFit','jmcReload','jmcAskAgain','jmcReplay','jmcVoiceStatus',
   'jmcLastPrice','jmcLastPriceLabel','jmcDataTime','jmcCandleCount']){
  assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,id);
 }
-for(const file of ['jarvis-market-chart.js?v=1','jarvis-market-chart.css?v=1']){
+for(const file of ['jarvis-market-chart.js?v=2','jarvis-market-chart.css?v=2']){
  assert.ok(html.includes(file),'HTML missing '+file);
  assert.ok(sw.includes("'./"+file+"'"),'PWA cache missing '+file);
 }
-assert.ok(html.indexOf('jarvis-market-chart.js?v=1')<html.indexOf('personal.js?v=0.59.12.3'));
-assert.ok(html.indexOf('jarvis-market-chart.css?v=1')<html.indexOf('dg-unified-premium.css?v=1'));
+assert.ok(html.indexOf('jarvis-market-chart.js?v=2')<html.indexOf('personal.js?v=0.59.12.3'));
+assert.ok(html.indexOf('jarvis-market-chart.css?v=2')<html.indexOf('dg-unified-premium.css?v=1'));
 assert.ok(personal.includes('DGOSJarvisMarketChart?.shouldOpen(original)'));
 assert.ok(personal.includes('window.DGOSJarvisMarketChart.open({query:original,answer})'));
 assert.ok(personal.includes('showReply(answer)'),'Keep existing finalized text/speech event');
@@ -72,6 +72,8 @@ assert.ok(source.includes('devicePixelRatio'),'HiDPI displays');
 assert.ok(source.includes('setPointerCapture'),'Touch drag support');
 assert.ok(source.includes("aria-pressed"),'Selected timeframe accessibility');
 assert.ok(source.includes('jmcBackToTrading'),'Back button must be operational');
+assert.ok(source.includes("$('jvHeroRead')||$('jvRead')"),'Replay must reuse Jarvis iPhone audio path');
+assert.ok(source.includes('dgos-jarvis-voice-state'),'Surface true audio state');
 assert.ok(style.includes('prefers-reduced-motion')&&style.includes('@media(max-width:820px)'));
 assert.ok(!source.includes('Math.random(')&&!source.includes('innerHTML')&&!source.includes('placeOrder('));
 assert.match(sw,/const CACHE='dgos-personal-shell-[0-9]+'/);

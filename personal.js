@@ -1890,6 +1890,20 @@
     el.scrollIntoView({behavior:'smooth', block:'center'});
     return true;
   }
+  let jarvisAudioPlaying=false;
+  window.addEventListener('dgos-jarvis-voice-state',event=>{
+    const audioState=String(event.detail?.state||'');
+    jarvisAudioPlaying=['GENERIEREN','STARTET','SPRICHT'].includes(audioState);
+    if(jarvisAudioPlaying){
+      panel.classList.toggle('is-speaking',audioState==='SPRICHT');
+      setOrbState(audioState==='SPRICHT'?'speaking':'thinking');
+      setStatus(audioState==='SPRICHT'?'Jarvis spricht …':'Sprachantwort wird vorbereitet …');
+    }else if(['BEREIT','FEHLER','STUMM','STARTEN'].includes(audioState)){
+      panel.classList.remove('is-speaking');
+      setOrbState('idle');
+      setStatus(audioState==='STARTEN'?'Tippe auf ▶ zum Anhören':'Bereit');
+    }
+  });
   function showReply(text) {
     panel.classList.remove('is-listening');
     panel.classList.add('is-speaking');
@@ -1900,6 +1914,7 @@
     window.dispatchEvent(new CustomEvent('dgos-jarvis-final-response',{detail:{text}}));
     clearTimeout(panel._jarvisSpeakingTimer);
     panel._jarvisSpeakingTimer = setTimeout(() => {
+      if(jarvisAudioPlaying)return; // keep speaking orb until the voice actually finishes
       panel.classList.remove('is-speaking');
       setOrbState('idle');
       setStatus('Bereit');

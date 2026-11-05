@@ -42,6 +42,7 @@
   <link rel="stylesheet" href="./trading-london-radar.css?v=1" />
   <link rel="stylesheet" href="./jarvis-voice-audibility.css?v=1" />
   <link rel="stylesheet" href="./jarvis-conversation.css?v=1" />
+  <link rel="stylesheet" href="./jarvis-market-chart.css?v=1" />
   <link rel="stylesheet" href="./trading-session-clock.css?v=1" />
   <link rel="stylesheet" href="./tradingview-feed.css?v=1" />
   <link rel="stylesheet" href="./dg-unified-premium.css?v=1" />
@@ -210,6 +211,7 @@
             </div>
           </div>
         </section>
+        <button id="jmcOpenButton" type="button" aria-haspopup="dialog" aria-controls="jarvisMarketDialog">✦ XAUUSD-Chart öffnen</button>
       </div>
 
       <section id="jarvisWeatherAdvisor" class="jwa" data-state="loading" aria-labelledby="jwaTitle">
@@ -1441,6 +1443,46 @@
     <button type="button" data-target="personalSocial">Social</button>
     <button type="button" data-target="tradingWorkspace">Trading</button>
   </nav>
+  <dialog id="jarvisMarketDialog" aria-modal="true" aria-labelledby="jmcTitle" aria-describedby="jmcFootnote">
+    <header class="jmc-header">
+      <div><span class="jmc-eyebrow">DG OS · JARVIS MARKET STUDIO</span><h2 id="jmcTitle">Gold Chart <span>Trading Brain · XAUUSD</span></h2></div>
+      <button id="jmcClose" class="jmc-close" type="button" aria-label="Chart schliessen">×</button>
+    </header>
+    <div class="jmc-main">
+      <section class="jmc-chart-section" aria-label="XAUUSD Candlestick-Chart">
+        <div class="jmc-toolbar">
+          <div class="jmc-symbol"><span class="jmc-symbol-icon" aria-hidden="true">Au</span><div><strong>XAUUSD</strong><small id="jmcCandleCount">Echte Kerzen laden …</small></div></div>
+          <div class="jmc-timeframes" aria-label="Zeitrahmen wählen">
+            <button type="button" data-jmc-timeframe="5min" aria-pressed="false">5M</button>
+            <button type="button" data-jmc-timeframe="15min" aria-pressed="false">15M</button>
+            <button type="button" data-jmc-timeframe="1h" aria-pressed="true">1H</button>
+            <button type="button" data-jmc-timeframe="4h" aria-pressed="false">4H</button>
+            <button type="button" data-jmc-timeframe="daily" aria-pressed="false">1D</button>
+          </div>
+          <div class="jmc-viewtools" aria-label="Chart-Steuerung">
+            <button type="button" id="jmcZoomIn" aria-label="Chart vergrössern">＋</button>
+            <button type="button" id="jmcZoomOut" aria-label="Chart verkleinern">−</button>
+            <button type="button" id="jmcFit" aria-label="Chart zurücksetzen">Fit</button>
+            <button type="button" id="jmcReload" aria-label="Kerzendaten aktualisieren">↻</button>
+          </div>
+        </div>
+        <div class="jmc-data-bar"><span id="jmcFeedStatus" class="jmc-status" role="status" data-warning="true">MARKTDATEN PRÜFEN</span><span id="jmcDataTime" class="jmc-data-time">TwelveData · Zeitstempel folgt</span></div>
+        <div id="jmcChartViewport" class="jmc-chart-wrap"><canvas id="jmcCanvas" role="img" aria-label="Interaktiver Candlestick-Chart für XAUUSD aus echten historischen TwelveData-Kerzen. Nutze die Zeitraumtasten und Kursdetails."></canvas></div>
+        <div id="jmcOhlc" class="jmc-ohlc" aria-live="off">Kursdaten werden geladen …</div>
+        <p id="jmcFootnote" class="jmc-footnote">Echte Kurskerzen · keine simulierten Trades, keine automatischen Einstiege. Die Daten können verzögert sein.</p>
+      </section>
+      <aside class="jmc-side" aria-label="Jarvis Chart-Analyse">
+        <div><span class="jmc-side-kicker">LETZTER KERZENSCHLUSS</span><div id="jmcLastPrice" class="jmc-price">—</div><div id="jmcLastPriceLabel" class="jmc-price-caption">Preis erst nach echten Marktdaten</div></div>
+        <div class="jmc-separator"></div>
+        <div><span class="jmc-side-kicker">DEINE FRAGE AN JARVIS</span><p id="jmcQuestion" class="jmc-question">Zeig mir den Gold-Chart</p></div>
+        <div><span class="jmc-side-kicker">JARVIS · ANALYSE &amp; SPRACHE</span><div id="jmcJarvisAnswer" class="jmc-answer" aria-live="polite">Frag Jarvis, was er auf dem Chart prüfen soll.</div></div>
+        <div class="jmc-side-actions">
+          <button id="jmcAskAgain" type="button">✦ Jarvis weiterfragen</button>
+          <button type="button" id="jmcBackToTrading" aria-label="Zum vollständigen Trading-Bereich wechseln">Trading-Bereich öffnen</button>
+        </div>
+      </aside>
+    </div>
+  </dialog>
   <dialog id="localEventDialog" class="personal-dialog"><form id="localEventForm">
     <div class="personal-panel-head"><h2>Termin erstellen</h2><button type="button" id="closeLocalEvent" aria-label="Schliessen">×</button></div>
     <p>Wähle, wo der Termin gespeichert wird. Google-Ziele werden nach der sicheren Hub-Verbindung automatisch freigeschaltet. Uhrzeiten gelten für Europe/Zurich.</p>
@@ -1469,7 +1511,8 @@
   <script src="./jarvis-microphone.js?v=2"></script>
   <script src="./jarvis-replies.js?v=1"></script>
   <script src="./jarvis-conversation.js?v=1"></script>
-  <script src="./personal.js?v=0.59.12.2"></script>
+  <script src="./jarvis-market-chart.js?v=1"></script>
+  <script src="./personal.js?v=0.59.12.3"></script>
   <script src="./whoop-sleep-analytics.js?v=1"></script>
   <script src="./whoop-sleep-ui.js?v=2"></script>
   <script src="./jarvis-sound-check.js?v=1"></script>

@@ -55,11 +55,11 @@ for(const id of ['jarvisMarketDialog','jmcTitle','jmcClose','jmcCanvas',
   'jmcLastPrice','jmcLastPriceLabel','jmcDataTime','jmcCandleCount']){
  assert.equal((html.match(new RegExp('id="'+id+'"','g'))||[]).length,1,id);
 }
-for(const file of ['jarvis-market-chart.js?v=2','jarvis-market-chart.css?v=2']){
+for(const file of ['jarvis-market-chart.js?v=3','jarvis-market-chart.css?v=2']){
  assert.ok(html.includes(file),'HTML missing '+file);
  assert.ok(sw.includes("'./"+file+"'"),'PWA cache missing '+file);
 }
-assert.ok(html.indexOf('jarvis-market-chart.js?v=2')<html.indexOf('personal.js?v=0.59.12.3'));
+assert.ok(html.indexOf('jarvis-market-chart.js?v=3')<html.indexOf('personal.js?v=0.59.12.3'));
 assert.ok(html.indexOf('jarvis-market-chart.css?v=2')<html.indexOf('dg-unified-premium.css?v=1'));
 assert.ok(personal.includes('DGOSJarvisMarketChart?.shouldOpen(original)'));
 assert.ok(personal.includes('window.DGOSJarvisMarketChart.open({query:original,answer})'));

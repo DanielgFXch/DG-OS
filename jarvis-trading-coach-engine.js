@@ -154,7 +154,7 @@
     return /(?:mein(?:en|e|em)?\s+(?:trading|setup|stil|fehler)|besser\s+(?:traden|werden)|was\s+soll\s+ich.{0,65}verbessern|was\s+mach\s+ich.{0,40}falsch|wie\s+kann\s+ich.{0,50}besser\s+trad\w*|analysier\w*\s+mein\w*\s+trading|coaching|coach|playbook|welche\s+setups?\s+(?:mag|passen)|lerne?\s+(?:aus|von)\s+meinen\s+setups?)/iu.test(text);
   }
   function isLearningCommand(q){
-    return /(?:setup\s+(?:bewerten|speichern|markieren)|(?:gutes?|schlechtes?)\s+setup\s+(?:speichern|merken)|aus\s+(?:diesem|meinem)\s+setup\s+lernen|setup[\s-]journal)/iu.test(String(q||''));
+    return /(?:setup\s+(?:bewerten|speichern|markieren)|(?:gutes?|schlechtes?)\s+setup\s+(?:speichern|merken)|(?:speicher\w*|merk\w*|bewert\w*).{0,35}\bsetup\b|aus\s+(?:diesem|meinem)\s+setup\s+lernen|setup[\s-]journal)/iu.test(String(q||''));
   }
   return Object.freeze({ENUMS,name,normalize,reviewAnalysis,evaluate,coachThoughts,isCoachingQuestion,isLearningCommand});
 });

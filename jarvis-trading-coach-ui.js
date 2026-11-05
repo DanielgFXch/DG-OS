@@ -158,6 +158,7 @@
   }
   function open(){
     root.hidden=false;
+    const expandable=$('jtcExpand');if(expandable)expandable.open=true;
     root.scrollIntoView?.({behavior:'smooth',block:'start'});
     $('jtcLabel')?.focus();
     if(!loaded)void refresh();

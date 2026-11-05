@@ -3,3 +3,8 @@
 # Other function deployments retain their existing explicit settings.
 [functions.dgos-tradingview-feed]
 verify_jwt = false
+
+# Jarvis SMC setup journal uses existing custom Telegram owner-device auth.
+# JWT verification is disabled ONLY for this function, with explicit SHA-256 device validation.
+[functions.jarvis-trading-coach]
+verify_jwt = false

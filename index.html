@@ -43,6 +43,7 @@
   <link rel="stylesheet" href="./jarvis-voice-audibility.css?v=1" />
   <link rel="stylesheet" href="./jarvis-conversation.css?v=1" />
   <link rel="stylesheet" href="./jarvis-market-chart.css?v=2" />
+  <link rel="stylesheet" href="./jarvis-trading-coach.css?v=1" />
   <link rel="stylesheet" href="./trading-session-clock.css?v=1" />
   <link rel="stylesheet" href="./tradingview-feed.css?v=1" />
   <link rel="stylesheet" href="./dg-unified-premium.css?v=1" />
@@ -213,6 +214,64 @@
         </section>
         <button id="jmcOpenButton" type="button" aria-haspopup="dialog" aria-controls="jarvisMarketDialog">✦ XAUUSD-Chart öffnen</button>
       </div>
+
+      <section id="jtcCoach" class="jtc-shell" aria-labelledby="jtcTitle">
+        <details id="jtcExpand">
+          <summary class="jtc-summary">
+            <span class="jtc-symbol" aria-hidden="true">✦</span>
+            <span class="jtc-summary-copy"><small>JARVIS · PERSÖNLICHER TRADING COACH</small><strong id="jtcTitle">Mein SMC Playbook</strong>
+              <em>Setups zeigen · erklären · daraus besser werden</em></span>
+            <span id="jtcCount" class="jtc-count">0 Setups</span>
+            <span class="jtc-chevron" aria-hidden="true">⌄</span>
+          </summary>
+          <div class="jtc-inner">
+            <p class="jtc-intro">Du entscheidest, was ein gutes Setup ist. Jarvis merkt sich deine Gründe, vergleicht ähnliche Fälle und hinterfragt deine Muster. Er handelt nicht selbst und verändert keine Regeln.</p>
+            <div class="jtc-stats" aria-label="Deine Bewertungen">
+              <div><small>Gut bewertet</small><strong id="jtcGoodCount">0</strong></div>
+              <div><small>Nicht gut</small><strong id="jtcAvoidCount">0</strong></div>
+              <div><small>Verpasst</small><strong id="jtcMissedCount">0</strong></div>
+            </div>
+            <div class="jtc-layout">
+              <form id="jtcForm" class="jtc-card" autocomplete="off">
+                <div class="jtc-card-head"><div><small>01 / DEIN BEISPIEL</small><h3>Was war das für ein Setup?</h3></div></div>
+                <div class="jtc-fields">
+                  <label>Deine Bewertung<select id="jtcLabel" required><option value="good">✓ Gutes Setup</option><option value="avoid">× Kein gutes Setup</option><option value="missed">◷ Verpasst</option></select></label>
+                  <label>Richtung<select id="jtcSide" required><option value="watch">Nur Beobachtung</option><option value="buy">Buy</option><option value="sell">Sell</option></select></label>
+                  <label>Session<select id="jtcSession" required><option value="other">Andere / offen</option><option value="asia">Asia</option><option value="london">London</option><option value="new_york">New York</option><option value="zvieri">Zvieri 16:00</option></select></label>
+                  <label>Zeitrahmen<select id="jtcTimeframe" required><option value="m5">M5</option><option value="m1">M1</option><option value="m15">M15</option><option value="h1">H1</option><option value="h4">H4</option><option value="d1">Daily</option></select></label>
+                  <label>Liquidity<select id="jtcLiquidity" required><option value="unknown">Nicht bestätigt</option><option value="sweep">Sweep bestätigt</option><option value="touch">Level nur berührt</option><option value="none">Keine</option></select></label>
+                  <label>POI / Zone<select id="jtcZone" required><option value="unknown">Noch offen</option><option value="fvg">FVG</option><option value="order_block">Order Block</option><option value="ote">OTE / Fibonacci</option><option value="breaker">Breaker</option><option value="none">Keine</option></select></label>
+                  <label class="jtc-field-wide">Bestätigung<select id="jtcConfirmation" required><option value="unknown">Noch nicht geprüft</option><option value="m5_engulfing">M5 Engulfing</option><option value="m1_structure">M1 Strukturwechsel</option><option value="bos_choch">BOS / CHOCH</option><option value="rejection">Klare Rejection</option><option value="none">Keine</option></select></label>
+                  <label class="jtc-field-wide">Warum siehst du das so?<textarea id="jtcNote" maxlength="800" rows="3" placeholder="Z. B. Asia Low Sweep, frische M5 FVG, starke Reaktion, aber der M1 CHOCH fehlte …" aria-describedby="jtcNoteHint"></textarea><small id="jtcNoteHint">Zum Speichern mindestens 8 Zeichen. Deine Begründung ist besonders wichtig.</small></label>
+                  <label class="jtc-field-wide">Resultat in R (freiwillig)<input id="jtcResultR" type="number" min="-20" max="100" step="0.01" inputmode="decimal" placeholder="z. B. 2.5 oder -1" /><small>Nur selbst eingetragen, kein MT5-Nachweis. Leer lassen, wenn nicht bekannt.</small></label>
+                </div>
+                <div class="jtc-buttons">
+                  <button type="button" id="jtcEvaluate">✦ Jarvis einschätzen lassen</button>
+                  <button type="submit" id="jtcSave">Bewertung speichern</button>
+                </div>
+                <p id="jtcStatus" class="jtc-status" role="status" aria-live="polite">Gesicherte Verbindung wird geprüft …</p>
+              </form>
+              <div class="jtc-side">
+                <article class="jtc-card">
+                  <div class="jtc-card-head"><div><small>02 / COACH-GEDANKEN</small><h3>Wie Jarvis dein Setup einschätzt</h3></div></div>
+                  <div id="jtcAssessment" class="jtc-assessment" data-state="learning" aria-live="polite">
+                    <strong>Noch kein Setup geprüft</strong><p>Wähle die Merkmale und tippe auf «Jarvis einschätzen lassen».</p>
+                  </div>
+                </article>
+                <article class="jtc-card jtc-thoughts">
+                  <div class="jtc-card-head"><div><small>03 / DEIN LERNMUSTER</small><h3>Was kannst du verbessern?</h3></div></div>
+                  <p id="jtcThoughts" aria-live="polite">Sobald du Bewertungen speicherst, kann Jarvis Muster und Widersprüche suchen.</p>
+                  <small>Keine erfundenen Trefferquoten. Persönliche Präferenzen sind nicht automatisch profitable Strategien.</small>
+                </article>
+              </div>
+            </div>
+            <div class="jtc-history">
+              <div class="jtc-history-head"><div><small>DEINE PRIVATEN SETUPS</small><strong>Trainingsbeispiele</strong></div><button type="button" id="jtcReload">↻ Aktualisieren</button></div>
+              <div id="jtcExamples" class="jtc-examples"><p class="jtc-empty">Lade deine gesicherten Bewertungen …</p></div>
+            </div>
+          </div>
+        </details>
+      </section>
 
       <section id="jarvisWeatherAdvisor" class="jwa" data-state="loading" aria-labelledby="jwaTitle">
         <div class="jwa-head">
@@ -1512,8 +1571,9 @@
   <script src="./jarvis-microphone.js?v=2"></script>
   <script src="./jarvis-replies.js?v=1"></script>
   <script src="./jarvis-conversation.js?v=1"></script>
+  <script src="./jarvis-trading-coach-engine.js?v=1"></script>
   <script src="./jarvis-market-chart.js?v=2"></script>
-  <script src="./personal.js?v=0.59.12.3"></script>
+  <script src="./personal.js?v=0.59.12.4"></script>
   <script src="./whoop-sleep-analytics.js?v=1"></script>
   <script src="./whoop-sleep-ui.js?v=2"></script>
   <script src="./jarvis-sound-check.js?v=1"></script>
@@ -1521,6 +1581,7 @@
   <script src="./jarvis-native-voice.js?v=3.2"></script>
   <script src="./jarvis-voice.js?v=14.2"></script>
   <script src="./jarvis-brain.js?v=3.1"></script>
+  <script src="./jarvis-trading-coach-ui.js?v=1"></script>
   <script src="./jarvis-device-pairing.js?v=1"></script>
   <script src="./jarvis-dashboard.js?v=3"></script>
   <script src="./social.js?v=0.61.2"></script>

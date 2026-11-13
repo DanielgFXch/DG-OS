@@ -99,7 +99,8 @@ const missingQuote=chat.answerTrading('Wo steht Gold gerade?',{
  now,liveBrain:completeBrain,liveVerified:true,
  liveQuote:null
 });
-assert.match(missingQuote,/keinen angeblich aktuellen Kurs/);
+assert.match(missingQuote,/kein ausreichend frischer Livepreis/i);
+assert.doesNotMatch(missingQuote,/3\.900,22/);
 const historicClose=chat.answerTrading('Wo steht Gold gerade?',{
  now,historicalSnapshot:{
    ...snapshot,

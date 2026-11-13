@@ -46,6 +46,9 @@
     if(!brain||brain.symbol!=='XAUUSD'||!brain.report){
       return{available:false,reason:'Keine belegten XAUUSD-Brain-Daten.'};
     }
+    if(brain.status==='DATA_NOT_READY'||brain.report.status==='DATA_NOT_READY'){
+      return{available:false,reason:'Unvollständige HTF-Kerzendaten: kein belastbarer Trend-/Gegentrend-Kontext.'};
+    }
     const htf=brain.htfContext||brain.report.htfBias||{};
     const reportBias=brain.report.htfBias||{};
     const macro=htf.macro||reportBias.macro||null;

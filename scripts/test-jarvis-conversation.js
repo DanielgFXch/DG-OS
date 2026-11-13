@@ -39,7 +39,7 @@ const stale=chat.answerTrading('Wie sieht der Markt aus?',{
 });
 assert.match(stale,/keine gültigen Trading-Brain-Daten/);
 const fresh=chat.answerTrading('Kannst du den London Sweep prüfen?',{
- now,liveBrain:snapshot.brain,liveVerified:true,
+ now,liveBrain:{...snapshot.brain,symbol:'XAUUSD'},liveVerified:true,
  liveQuote:{price:3899.82,at:'2026-11-05T11:59:56Z'},
  answerMarketQuestion:()=> 'Es sind keine bestätigten Einstiegsdaten vorhanden.'
 });
@@ -87,7 +87,7 @@ const staleQuote=chat.answerTrading('Wo steht Gold gerade?',{
  liveQuote:{price:3900.22,at:'2026-11-05T11:59:20Z'},
  trendContext:{read:()=>({available:false})}
 });
-assert.match(staleQuote,/kein verifizierter Livepreis/i);
+assert.match(staleQuote,/kein ausreichend frischer Livepreis/i);
 assert.doesNotMatch(staleQuote,/3\.900,22/);
 const unreachable=chat.answerTrading('Wo steht Gold gerade?',{
  now,liveBrain:completeBrain,liveVerified:false,
@@ -129,9 +129,9 @@ assert.ok(voice.includes('lastAudioBlob=blob'));
 assert.ok(voice.includes('DGOSVoiceAudio?.playBlob?.(lastAudioBlob,'));
 assert.ok(voice.includes('dgos-jarvis-voice-state'));
 assert.ok(native.includes('speechChunks(transcript)'));
-assert.ok(html.indexOf('jarvis-conversation.js?v=1')<html.indexOf('personal.js?v='));
+assert.ok(html.indexOf('jarvis-conversation.js?v=2')<html.indexOf('personal.js?v='));
 assert.ok(html.indexOf('jarvis-conversation.css?v=1')<html.indexOf('dg-unified-premium.css?v=1'));
-for(const asset of ['jarvis-conversation.css?v=1','jarvis-conversation.js?v=1'])
+for(const asset of ['jarvis-conversation.css?v=1','jarvis-conversation.js?v=2'])
   assert.ok(html.includes(asset)&&sw.includes(asset),'PWA cache includes '+asset);
 for(const name of ['jarvisUserTurn','jarvisLastQuestion'])
   assert.equal((html.match(new RegExp('id="'+name+'"','g'))||[]).length,1);

@@ -54,7 +54,8 @@ assert.ok(ui.includes('periodic-read-only'));
 assert.ok(ui.includes('KEIN LIVE'),'Delayed source cannot claim LIVE');
 assert.ok(ui.includes('renderHeroAction(tradingBrainState)'),
   'Only actual Always-On response drives the live hero');
-assert.ok(ui.includes('renderTradingBrain(tradingBrainState)'),'Always-On full brain still supported');
+assert.ok(ui.includes("source:'always-on'"),'Always-On full brain still supported');
+assert.ok(ui.includes('renderTradingBrain(active.brain)'),'Verified primary source drives actual DG brain UI');
 const body=JSON.stringify(response);
 assert.ok(!body.includes('apikey')&&!body.includes('service_role')&&!body.includes('Authorization'));
 console.log('DG Trading Brain recovery OK: verified real H1 source, same engine, guarded delayed report, tracked GitHub Pages data, no synthetic entries.');

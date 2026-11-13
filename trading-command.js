@@ -445,7 +445,8 @@
     if(liveVerified){
       explanation='Jarvis kann den verifizierten Goldpreis und die vorhandenen DG-Analysefelder vorlesen.';
     }else if(directLive){
-      explanation='Direkter TwelveData-WebSocket liefert den aktuellen Goldpreis. Für Echtzeit-Setups, Sweeps und Entries fehlt weiterhin der Always-On Trading Brain.';
+      explanation='Letzter bestätigter Gold-Tick: '+fmt(directQuote.price)+
+        ' USD pro Feinunze. Für Echtzeit-Setups, Sweeps und Entries fehlt weiterhin der Always-On Trading Brain.';
     }else if(!configured){
       explanation='Direkter Livepreis möglich: Unter „XAUUSD Live“ deinen TwelveData-API-Key eingeben und Live-Stream verbinden. Historische Aufnahmen sind keine Live-Signale.';
     }else if(reachable){

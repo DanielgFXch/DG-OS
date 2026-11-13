@@ -38,11 +38,85 @@ const stale=chat.answerTrading('Wie sieht der Markt aus?',{
  answerMarketQuestion:()=>{throw Error('Must not call strategy on stale data');}
 });
 assert.match(stale,/keine gültigen Trading-Brain-Daten/);
-const fresh=chat.answerTrading('Wie sieht Gold aus?',{
- now,liveBrain:snapshot.brain,answerMarketQuestion:()=> 'Es sind keine bestätigten Einstiegsdaten vorhanden.'
+const fresh=chat.answerTrading('Kannst du den London Sweep prüfen?',{
+ now,liveBrain:snapshot.brain,liveVerified:true,
+ liveQuote:{price:3899.82,at:'2026-11-05T11:59:56Z'},
+ answerMarketQuestion:()=> 'Es sind keine bestätigten Einstiegsdaten vorhanden.'
 });
-assert.match(fresh,/verbundener Market Server/);
+assert.match(fresh,/bestätigter Market Server/);
 assert.match(fresh,/keine bestätigten Einstiegsdaten/);
+
+const completeBrain={
+ symbol:'XAUUSD',status:'WAIT',
+ report:{status:'WAIT',freshBullishPOIs:[{range:'3880–3890'}]},
+ htfContext:{macro:{state:'BULLISH'},trading:{state:'BEARISH'}},
+ decision:{status:'WAIT',direction:null,tradingBias:'BEARISH',macroBias:'BULLISH',
+   reasons:['15M Confirmation fehlt'],missingRequirements:['15M Confirmation fehlt']}
+};
+const verifiedQuote={price:3900.22,at:'2026-11-05T11:59:55Z'};
+const spoken=chat.answerTrading('Hey Jarvis, wo steht Gold gerade, und was sollte man mit Gold nun machen?',{
+ now,liveBrain:completeBrain,liveVerified:true,liveQuote:verifiedQuote,
+ trendContext:{read:()=>({
+   available:true,tradingBias:'BEARISH',macroBias:'BULLISH',
+   downTargets:[{price:3870,reason:'Daily Low'}],upTargets:[{price:3925,reason:'4H OB'}],
+   sweptLows:[{label:'Asia Low',price:3880,reactionConfirmed:true}],
+   countertrend:{isCountertrendContext:true}
+ })},
+ setupClarity:{read:()=>({
+   entryStatus:'WAIT',reason:'Kein bestätigter Entry.',
+   missing:['15M Confirmation fehlt'],risks:['Gegen den bearishen Trading Bias.'],
+   antiFomo:'Nicht chasen. Kein FOMO.'
+ })}
+});
+assert.equal(chat.isTradingQuestion('Hey Jarvis wo steht Gold gerade und was sollte man nun machen?'),true);
+assert.equal(chat.isGoldStatusQuestion('Wo steht XAUUSD gerade?'),true);
+assert.match(spoken,/3\.900,22/);
+assert.match(spoken,/US-Dollar je Feinunze/);
+assert.match(spoken,/5 Sekunden/);
+assert.match(spoken,/Daily und 4 Stunden: BEARISH/);
+assert.match(spoken,/3\.870,00/);
+assert.match(spoken,/3\.925,00/);
+assert.match(spoken,/Asia Low/);
+assert.match(spoken,/Long.*gegen den bearishen Trading Trend/);
+assert.match(spoken,/DG-Setup-Status: WAIT/);
+assert.match(spoken,/Kein FOMO/);
+assert.doesNotMatch(spoken,/BUY_READY|SELL_READY/);
+
+const staleQuote=chat.answerTrading('Wo steht Gold gerade?',{
+ now,liveBrain:completeBrain,liveVerified:true,
+ liveQuote:{price:3900.22,at:'2026-11-05T11:59:20Z'},
+ trendContext:{read:()=>({available:false})}
+});
+assert.match(staleQuote,/kein verifizierter Livepreis/i);
+assert.doesNotMatch(staleQuote,/3\.900,22/);
+const unreachable=chat.answerTrading('Wo steht Gold gerade?',{
+ now,liveBrain:completeBrain,liveVerified:false,
+ liveQuote:verifiedQuote, historicalSnapshot:snapshot
+});
+assert.match(unreachable,/Historische Marktaufnahme/);
+assert.doesNotMatch(unreachable,/3\.900,22/);
+const missingQuote=chat.answerTrading('Wo steht Gold gerade?',{
+ now,liveBrain:completeBrain,liveVerified:true,
+ liveQuote:null
+});
+assert.match(missingQuote,/keinen angeblich aktuellen Kurs/);
+const historicClose=chat.answerTrading('Wo steht Gold gerade?',{
+ now,historicalSnapshot:{
+   ...snapshot,
+   brain:{...snapshot.brain,
+     htfContext:{h1:{lastCandle:{close:3880.44}}}}
+ },
+ answerMarketQuestion:()=> 'DATA_NOT_READY'
+});
+assert.match(historicClose,/Letzter dokumentierter H1-Schlusskurs: 3\.880,44/);
+assert.match(historicClose,/nicht der aktuelle Livepreis/);
+assert.match(historicClose,/Kein FOMO/);
+assert.ok(personal.includes('DGTradingEvidenceGate.assess('));
+assert.ok(personal.includes('liveQuote:marketServerState.quote')||
+   personal.includes('price:marketServerState.quote?.price'));
+assert.ok(personal.includes('liveVerified:verified'));
+assert.ok(personal.includes('trendContext:window.DGTrendContext'));
+assert.ok(personal.includes('setupClarity:window.DGSetupClarity'));
 
 assert.ok(personal.includes('window.DGOSJarvisConversation?.isTradingQuestion(original)'));
 assert.ok(personal.includes('DGOSJarvisTalk'));
@@ -66,9 +140,9 @@ assert.ok(!read('jarvis-conversation.js').includes('fetch('));
 assert.ok(!read('jarvis-conversation.js').includes('placeOrder('));
 
 // Long voice replies are all spoken in chunks, not cut off after 800 chars.
-const spoken=[];
+const spokenChunks=[];
 const synth={last:null,speaking:false,pending:false,paused:false,
- speak(u){spoken.push(u.text);this.last=u;this.speaking=true;u.onstart?.();},
+ speak(u){spokenChunks.push(u.text);this.last=u;this.speaking=true;u.onstart?.();},
  cancel(){this.speaking=false;this.pending=false;this.paused=false;}
 };
 class Utterance{constructor(text){this.text=text;}}
@@ -84,14 +158,14 @@ while(guard++<100){
  previous.onend?.();
  if(synth.last===previous)break;
 }
-assert.ok(spoken.length>=3,'Long answers must create multiple utterances');
-assert.equal(spoken.join(' ').replace(/\s+/g,' ').trim(),input.replace(/\s+/g,' ').trim());
+assert.ok(spokenChunks.length>=3,'Long answers must create multiple utterances');
+assert.equal(spokenChunks.join(' ').replace(/\s+/g,' ').trim(),input.replace(/\s+/g,' ').trim());
 assert.equal(state,'ended');
 // Stopping an ongoing reply cannot automatically start a delayed old segment.
-spoken.length=0;
+spokenChunks.length=0;
 root.DGOSLocalVoice.play({text:input});
 const previous=synth.last;
 root.DGOSLocalVoice.stop();
 previous.onend?.();
-assert.equal(spoken.length,1);
+assert.equal(spokenChunks.length,1);
 console.log('Jarvis dialogue: natural typed/mic intent, private owner AI, trading evidence, iOS complete speech/replay, UI and PWA PASS');

@@ -82,6 +82,50 @@ assert.match(spoken,/DG-Setup-Status: WAIT/);
 assert.match(spoken,/Kein FOMO/);
 assert.doesNotMatch(spoken,/BUY_READY|SELL_READY/);
 
+// Browser-only TwelveData WebSocket is a genuine real-time PRICE source but
+// intentionally cannot turn an old candle snapshot into a current DG entry.
+const directQuote={
+ price:3900.22,at:'2026-11-05T11:59:55Z',
+ symbol:'XAUUSD',source:'TWELVEDATA_BROWSER_WEBSOCKET'
+};
+const pastBrain={...snapshot,brain:{...snapshot.brain,
+ decision:{status:'DATA_NOT_READY',macroBias:'BEARISH',tradingBias:'NEUTRAL_MIXED'},
+ targets:[{direction:'down',price:3870,reason:'Daily Low'},{direction:'up',price:3940,reason:'H1 FVG'}]}};
+const browserSpoken=chat.answerTrading('Hey Jarvis wo steht Gold gerade und soll ich kaufen?',{
+ now,browserQuote:directQuote,historicalSnapshot:pastBrain
+});
+assert.match(browserSpoken,/direktem TwelveData-WebSocket/);
+assert.match(browserSpoken,/3\.900,22/);
+assert.match(browserSpoken,/5 Sekunden/);
+assert.match(browserSpoken,/Macro-Bias BEARISH/);
+assert.match(browserSpoken,/Trading-Bias NEUTRAL_MIXED/);
+assert.match(browserSpoken,/historische Orientierung/);
+assert.match(browserSpoken,/3\.870,00/);
+assert.match(browserSpoken,/3\.940,00/);
+assert.match(browserSpoken,/nicht aktuell bestätigt/);
+assert.match(browserSpoken,/WAIT/);
+assert.match(browserSpoken,/NICHT bestätigt/);
+assert.doesNotMatch(browserSpoken,/BUY_READY|SELL_READY|Kauf empfohlen/);
+const browserOnly=chat.answerTrading('Was ist der Goldpreis jetzt?',{
+ now,browserQuote:directQuote
+});
+assert.match(browserOnly,/3\.900,22/);
+assert.match(browserOnly,/keine ausreichend aktuellen Kerzen/);
+assert.doesNotMatch(browserOnly,/BUY_READY|SELL_READY/);
+for(const bad of [
+ {...directQuote,at:'2026-11-05T11:59:20Z'},
+ {...directQuote,price:NaN},
+ {...directQuote,price:-1},
+ {...directQuote,symbol:'EURUSD'},
+ {...directQuote,source:'FAKE'},
+ {...directQuote,at:'2026-11-05T12:01:00Z'}
+]){
+ const unsafe=chat.answerTrading('Wo steht Gold gerade?',{
+   now,browserQuote:bad,historicalSnapshot:pastBrain
+ });
+ assert.doesNotMatch(unsafe,/3\.900,22/,'No false live quote');
+ assert.match(unsafe,/Historische Marktaufnahme/);
+}
 const staleQuote=chat.answerTrading('Wo steht Gold gerade?',{
  now,liveBrain:completeBrain,liveVerified:true,
  liveQuote:{price:3900.22,at:'2026-11-05T11:59:20Z'},
@@ -112,6 +156,14 @@ const historicClose=chat.answerTrading('Wo steht Gold gerade?',{
 assert.match(historicClose,/Letzter dokumentierter H1-Schlusskurs: 3\.880,44/);
 assert.match(historicClose,/nicht der aktuelle Livepreis/);
 assert.match(historicClose,/Kein FOMO/);
+const clientApp=read('app.js');
+assert.ok(clientApp.includes('window.DGOSBrowserGoldFeed=Object.freeze'));
+assert.ok(clientApp.includes('tdLastGoldPriceTick={price:msg.price'));
+assert.ok(clientApp.includes('readyState!==WebSocket.OPEN'));
+assert.ok(clientApp.includes('age>20000'));
+assert.ok(clientApp.includes("msg.symbol==='XAU/USD'"));
+assert.ok(personal.includes('DGOSBrowserGoldFeed?.getQuote?.()'));
+assert.ok(personal.includes('liveQuote,browserQuote'));
 assert.ok(personal.includes('DGTradingEvidenceGate.assess('));
 assert.ok(personal.includes('liveQuote:marketServerState.quote')||
    personal.includes('price:marketServerState.quote?.price'));

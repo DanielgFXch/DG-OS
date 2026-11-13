@@ -81,10 +81,9 @@
       lastError,errors:{...errors}
     });
     async function request(def,key,nowMs){
-      const url=API+'?symbol=XAU%2FUSD&interval='+encodeURIComponent(def.t)+
+      const url=API+'?symbol=XAU%2FUSD&interval='+encodeURIComponent(def.td)+
         '&outputsize='+def.count+'&timezone=UTC&apikey='+encodeURIComponent(key);
-      const actualUrl=url.replace('interval=undefined','interval='+encodeURIComponent(def.td));
-      const response=await fetcher(actualUrl,{cache:'no-store'});
+      const response=await fetcher(url,{cache:'no-store'});
       if(!response?.ok)throw Error('TwelveData HTTP '+(response?.status||'Fehler'));
       const body=await response.json();
       const list=parseSeries(body,def,nowMs);

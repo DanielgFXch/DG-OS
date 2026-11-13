@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="./private-hub.css?v=1" />
   <link rel="stylesheet" href="./mobile.css?v=0.46.3" />
   <link rel="stylesheet" href="./jarvis-visuals.css?v=0.56.0" />
-  <link rel="stylesheet" href="./trading-command.css?v=0.57.2" />
+  <link rel="stylesheet" href="./trading-command.css?v=0.59.2" />
   <link rel="stylesheet" href="./trading-intelligence.css?v=1" />
   <link rel="stylesheet" href="./ambient-glass.css?v=0.58.1" />
   <link rel="stylesheet" href="./jarvis-os-v2.css?v=0.59.0" />
@@ -1038,6 +1038,46 @@
           </article>
         </div>
 
+        <section class="trading-context-board" aria-labelledby="tradingContextHeading">
+          <div class="trading-context-heading">
+            <div>
+              <span>JARVIS · TREND &amp; LIQUIDITY INTELLIGENCE</span>
+              <h3 id="tradingContextHeading">Trend. Ziele. Gegentrend.</h3>
+              <p>Ist Gold bearish? Welche Liquidity ist noch offen? Sind relevante Lows bereits genommen worden?</p>
+            </div>
+            <small id="tradingContextSource">KEIN LIVE-FEED</small>
+          </div>
+          <div class="trading-context-grid">
+            <article class="trading-context-panel">
+              <span class="trading-context-kicker">01 / MARKTSTRUKTUR</span>
+              <div class="trading-context-bias-row"><span>Macro · Monthly / Weekly</span><strong id="tradingTrendMacro">—</strong></div>
+              <div class="trading-context-bias-row"><span>Trading · Daily / 4H</span><strong id="tradingTrendTrading">—</strong></div>
+              <p id="tradingTrendStructure">Noch keine bestätigte Marktaufnahme.</p>
+            </article>
+            <article class="trading-context-panel">
+              <span class="trading-context-kicker">02 / OFFENE MARKTZIELE</span>
+              <div class="trading-context-target-label is-down">▼ Bearishe Ziele · unten</div>
+              <div id="tradingTargetsDown" class="trading-context-targets"><div class="trading-context-empty">Warte auf Marktdaten.</div></div>
+              <div class="trading-context-target-label is-up">▲ Bullishe Ziele · oben</div>
+              <div id="tradingTargetsUp" class="trading-context-targets"><div class="trading-context-empty">Warte auf Marktdaten.</div></div>
+            </article>
+            <article class="trading-context-panel">
+              <span class="trading-context-kicker">03 / SELLSIDE LIQUIDITY</span>
+              <strong id="tradingSweptLowTitle" class="trading-context-low">Nicht geprüft</strong>
+              <p id="tradingSweptLowDetail">Warte auf bestätigte Low-Sweep-Daten.</p>
+              <small>Low abgeholt ≠ bullishe Trendwende ≠ BUY READY</small>
+            </article>
+          </div>
+          <div id="tradingCountertrendNotice" class="trading-countertrend-notice" data-state="neutral">
+            <div>
+              <span>JARVIS · MÖGLICHE GEGENBEWEGUNG</span>
+              <strong id="tradingCountertrendTitle">Auf aktuelle Marktdaten warten</strong>
+              <p id="tradingCountertrendDetail">Ein möglicher Long gegen den bearishen Trend braucht nach dem Low-Sweep relevante POIs, Reaktion und Confirmation.</p>
+            </div>
+            <small id="tradingCountertrendEntry">Kein Entry</small>
+          </div>
+        </section>
+
         <div class="trading-focus-grid">
           <section class="trading-focus-card">
             <div class="trading-focus-head">
@@ -1592,7 +1632,8 @@
   <script src="./social.js?v=0.61.2"></script>
   <script src="./navigation.js?v=0.60.1"></script>
   <script src="./private-hub.js?v=2"></script>
-  <script src="./trading-command.js?v=0.57.2"></script>
+  <script src="./trading-trend-context.js?v=1"></script>
+  <script src="./trading-command.js?v=0.59.2"></script>
   <script src="./trading-intelligence.js?v=2"></script>
   <script src="./trading-intelligence-ui.js?v=2"></script>
   <script src="./trading-session-clock.js?v=1"></script>

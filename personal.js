@@ -2147,7 +2147,7 @@
   function answerTradingQuestion(question){
     const coach=window.DGOSJarvisConversation;
     if(!coach?.answerTrading)return 'Meine Trading-Analyse ist momentan nicht verfügbar.';
-    let live=null,snapshot=null,verified=false,liveQuote=null;
+    let live=null,snapshot=null,verified=false,liveQuote=null,browserQuote=null;
     try{
       if(typeof DGTradingEvidenceGate!=='undefined'&&
          typeof marketServerState!=='undefined'&&
@@ -2174,8 +2174,13 @@
     try{
       if(typeof periodicBrainSnapshot!=='undefined')snapshot=periodicBrainSnapshot;
     }catch(_){}
+    try{
+      // A separate genuine XAU/USD tick may arrive through the user-configured
+      // direct TwelveData WebSocket even without paid Always-On hosting.
+      browserQuote=window.DGOSBrowserGoldFeed?.getQuote?.()||null;
+    }catch(_){browserQuote=null;}
     return coach.answerTrading(question,{
-      liveBrain:live,liveVerified:verified,liveQuote,
+      liveBrain:live,liveVerified:verified,liveQuote,browserQuote,
       historicalSnapshot:snapshot,now:new Date(),
       trendContext:window.DGTrendContext,
       setupClarity:window.DGSetupClarity,

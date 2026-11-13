@@ -435,24 +435,32 @@
   function renderJarvisLaunch(liveVerified,historical){
     const configured=typeof marketServerUrl!=='undefined'&&Boolean(marketServerUrl);
     const reachable=typeof marketServerReachable!=='undefined'&&marketServerReachable;
-    const status=liveVerified?'XAUUSD LIVE-TICK BESTÄTIGT':
+    let directQuote=null;
+    try{directQuote=window.DGOSBrowserGoldFeed?.getQuote?.()||null;}catch(_){}
+    const directLive=Boolean(directQuote);
+    const status=liveVerified?'XAUUSD LIVE-TICK & DG-BRAIN BESTÄTIGT':
+      directLive?'GOLD-PREIS LIVE · DG-BRAIN NICHT LIVE':
       historical?'HISTORISCHE DATEN · KEIN LIVE':'LIVE-DATEN NICHT BESTÄTIGT';
     let explanation;
     if(liveVerified){
       explanation='Jarvis kann den verifizierten Goldpreis und die vorhandenen DG-Analysefelder vorlesen.';
+    }else if(directLive){
+      explanation='Letzter bestätigter Gold-Tick: '+fmt(directQuote.price)+
+        ' USD pro Feinunze. Für Echtzeit-Setups, Sweeps und Entries fehlt weiterhin der Always-On Trading Brain.';
     }else if(!configured){
-      explanation='Für einen aktuellen Goldpreis fehlt der konfigurierte Always-On-Marktserver. Historische Aufnahmen sind keine Live-Signale.';
+      explanation='Direkter Livepreis möglich: Unter „XAUUSD Live“ deinen TwelveData-API-Key eingeben und Live-Stream verbinden. Historische Aufnahmen sind keine Live-Signale.';
     }else if(reachable){
       explanation='Der Server antwortet, aber ein ausreichend frischer TwelveData-WebSocket-Tick fehlt. Keine Live-Entry-Freigabe.';
     }else{
-      explanation='Die gespeicherte Server-Adresse ist gerade nicht erreichbar oder nicht mit echten WebSocket-Kursen verbunden.';
+      explanation='Die gespeicherte Server-Adresse ist gerade nicht erreichbar. Direkten WebSocket-Livepreis unter „XAUUSD Live“ einrichten.';
     }
     text('tradingJarvisLiveStatus',status);
     text('tradingJarvisLiveExplanation',explanation);
     const host=$('tradingJarvisLaunch');
-    if(host)host.dataset.live=liveVerified?'true':'false';
+    if(host)host.dataset.live=liveVerified?'true':directLive?'price':'false';
     const setup=$('tradingSetupLive');
-    if(setup)setup.textContent=configured?'Verbindung prüfen':'Live-Daten einrichten';
+    if(setup)setup.textContent=liveVerified?'Verbindung prüfen':
+      directLive?'Trading Brain verbinden':'Gold-Livepreis verbinden';
   }
 
   function render() {
@@ -607,7 +615,11 @@
   $('tradingSetupLive')?.addEventListener('click',()=>{
     const advanced=$('tradingAdvanced');
     if(advanced)advanced.open=true;
-    const field=$('marketServerUrl');
+    let directLive=false;
+    try{directLive=Boolean(window.DGOSBrowserGoldFeed?.getQuote?.());}catch(_){}
+    // Make the no-cost, existing browser WebSocket setup the first step.
+    // When price streaming already works, offer the full Always-On Brain URL.
+    const field=directLive?$('marketServerUrl'):$('tdKey');
     if(field){
       field.scrollIntoView({block:'center',behavior:'smooth'});
       field.focus({preventScroll:true});

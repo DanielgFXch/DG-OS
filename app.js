@@ -994,6 +994,20 @@ let tdHeartbeatTimer=null;
 let tdReconnectAttempts=0;
 let tdStreaming=false;
 
+// Only real XAU/USD WebSocket *price events* can populate this quote.
+// Successful subscription / server reachability is not a fresh tick.
+let tdLastGoldPriceTick=null;
+function getLiveBrowserGoldQuote(){
+  const tick=tdLastGoldPriceTick;
+  if(!tick||!tdSocket||!tdStreaming||tdSocket.readyState!==WebSocket.OPEN)return null;
+  const age=Date.now()-Date.parse(tick.at);
+  if(!Number.isFinite(age)||age< -5000||age>20000||
+     !Number.isFinite(tick.price)||tick.price<=0)return null;
+  return Object.freeze({price:tick.price,at:tick.at,source:'TWELVEDATA_BROWSER_WEBSOCKET',symbol:'XAUUSD'});
+}
+// Read-only bridge for the existing Jarvis text + speech controller.
+window.DGOSBrowserGoldFeed=Object.freeze({getQuote:getLiveBrowserGoldQuote});
+
 function setStreamStatus(text){$('tdStatus').textContent=text}
 
 function stopTdHeartbeat(){
@@ -1001,6 +1015,7 @@ function stopTdHeartbeat(){
 }
 
 function openTdSocket(key){
+  tdLastGoldPriceTick=null;
   setStreamStatus('Verbinde…');
   const ws=new WebSocket(`${TD_WS_URL}?apikey=${encodeURIComponent(key)}`);
   tdSocket=ws;
@@ -1015,6 +1030,8 @@ function openTdSocket(key){
   });
 
   ws.addEventListener('message',e=>{
+    // Ignore late messages from the previous disconnected/replaced socket.
+    if(tdSocket!==ws)return;
     let msg;
     try{ msg=JSON.parse(e.data) }catch(err){ return }
 
@@ -1030,9 +1047,12 @@ function openTdSocket(key){
       return;
     }
 
-    if(msg.event==='price' && typeof msg.price==='number'){
+    if(msg.event==='price' &&
+       typeof msg.price==='number' && Number.isFinite(msg.price) && msg.price>0 &&
+       (!msg.symbol||msg.symbol==='XAU/USD'||msg.symbol==='XAUUSD')){
       tdStreaming=true;
-      lastMarketUpdateAt=new Date(); // TD's WS price message carries no usable timestamp of its own — receipt time is the honest proxy, same as liveUpdated below
+      lastMarketUpdateAt=new Date();
+      tdLastGoldPriceTick={price:msg.price,at:lastMarketUpdateAt.toISOString()}; // TD's WS price message carries no usable timestamp of its own — receipt time is the honest proxy, same as liveUpdated below
       $('livePrice').textContent=fmtPrice(msg.price);
       $('liveUpdated').textContent=lastMarketUpdateAt.toLocaleTimeString('de-DE');
       if(typeof lastPreviousClose==='number' && lastPreviousClose>0){
@@ -1052,6 +1072,7 @@ function openTdSocket(key){
     stopTdHeartbeat();
     if(tdSocket!==ws) return;
     tdStreaming=false;
+    tdLastGoldPriceTick=null;
     renderFreshness(); // threshold set changes back to 'baseline' the moment streaming stops
     tdReconnectAttempts++;
     if(tdReconnectAttempts<=TD_MAX_RECONNECTS){

@@ -1,3 +1,22 @@
+# v0.59.6 — Jarvis reads genuine XAU/USD price from the existing iPhone WebSocket
+
+## Live Gold price without new paid hosting
+- The existing user-configured TwelveData browser WebSocket now provides a read-only XAU/USD quote to Jarvis, including source and verified tick age (20-second freshness limit).
+- Only genuine XAU/USD price events from the current open WebSocket count; subscription success, stale prices, old WebSocket connections, invalid symbols, or historical JSON never count as live prices.
+- Jarvis answers a spoken or typed "wo steht Gold gerade?" with the real browser price, even if the full Always-On Trading Brain is not online.
+- Reuses the same text + voice answer path. If available, the historical DG bias and prior levels are explicitly labelled as historical, never current strategy entry confirmation.
+- Trading shows a separate status for **GOLD-PREIS LIVE · DG-BRAIN NICHT LIVE** versus fully verified Trading Brain; setup button first guides users to the existing TwelveData API key / browser streaming settings, only then to server settings.
+- Existing strategy engine, risk rules, broker execution and user secrets are unchanged.
+
+## Important
+- Browser WebSocket needs the user's own TwelveData API key and an open app tab. It is not an always-on server, and will not provide continuous background/push monitoring.
+- A full live SMC/DG market analysis with real-time candle/sweep/15M-confirmation still requires a deployed Always-On server, separate candle sources and a valid TwelveData plan.
+- No new Render plan, paid service or subscription has been created.
+
+## Tests
+- Extended Jarvis conversation regressions for browser-only price, timestamp, historical context, stale/replaced/untrusted quotes, no fabricated READY.
+- iPhone PWA cache and JS/CSS script versions bumped.
+
 # v0.59.5 — Clear Jarvis Gold entry and live feed status on Trading
 
 ## New

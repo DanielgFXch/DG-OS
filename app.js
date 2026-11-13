@@ -1097,11 +1097,19 @@ function openTdSocket(key){
        typeof msg.price==='number' && Number.isFinite(msg.price) && msg.price>0 &&
        (!msg.symbol||msg.symbol==='XAU/USD'||msg.symbol==='XAUUSD')){
       tdStreaming=true;
-      lastMarketUpdateAt=new Date();
-      tdLastGoldPriceTick={price:msg.price,at:lastMarketUpdateAt.toISOString()};
+      // TwelveData WS price events may carry a provider timestamp in Unix
+      // seconds; honor it so a delayed feed cannot look fresh just because
+      // this iPhone received the message now. Receipt time is a fallback
+      // only if the provider did not supply a timestamp.
+      const reportedMs=typeof msg.timestamp==='number'&&Number.isFinite(msg.timestamp)
+        ?(msg.timestamp<1e12?msg.timestamp*1000:msg.timestamp):null;
+      const eventMs=reportedMs!==null?reportedMs:Date.now();
+      lastMarketUpdateAt=new Date(eventMs);
+      tdLastGoldPriceTick=Number.isFinite(lastMarketUpdateAt.getTime())
+        ?{price:msg.price,at:lastMarketUpdateAt.toISOString()}:null;
       // Trading panels and Jarvis read this verified tick + cached candles.
       renderCurrentBrainSource();
-      renderHeroAction(tradingBrainState); // TD's WS price message carries no usable timestamp of its own — receipt time is the honest proxy, same as liveUpdated below
+      renderHeroAction(tradingBrainState);
       $('livePrice').textContent=fmtPrice(msg.price);
       $('liveUpdated').textContent=lastMarketUpdateAt.toLocaleTimeString('de-DE');
       if(typeof lastPreviousClose==='number' && lastPreviousClose>0){

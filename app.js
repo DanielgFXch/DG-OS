@@ -403,10 +403,22 @@ function renderTradingBrain(brain){
 let periodicBrainSnapshot=null;
 const PERIODIC_BRAIN_URL='./data/trading-brain.json';
 function renderCurrentBrainSource(){
-  if(isVerifiedLiveTradingBrain()&&tradingBrainState?.report){
-    renderTradingBrain(tradingBrainState);
-    const badge=$('brainStatus');
-    if(badge)badge.dataset.source='always-on';
+  const active=verifiedLiveBrainSource();
+  if(active?.brain?.report){
+    renderTradingBrain(active.brain);
+    const badge=$('brainStatus'),summary=$('brainSummary');
+    if(badge){
+      badge.dataset.source=active.source;
+      if(active.source==='browser'){
+        badge.textContent='LIVE-KONTEXT · WAIT';
+        badge.className='brain-status brain-status-awaiting';
+      }
+    }
+    if(active.source==='browser'&&summary){
+      summary.textContent='TwelveData im geöffneten Browser · Preis live, frische geschlossene Kerzen. '+
+        'Keine kontinuierliche 24/7-Sweep-Überwachung und KEINE Entry-Freigabe.\n\n'+
+        String(active.brain.report?.summary||'');
+    }
     return;
   }
   const snapshot=periodicBrainSnapshot;
@@ -474,9 +486,10 @@ const HERO_ACTION_LABEL={WAIT:'WAIT',DATA_NOT_READY:'DATA NOT READY',MISSED:'MIS
 
 let heroWasLive=false;
 function renderHeroAction(brain){
-  // An HTTP 200 can serve an old READY decision. Fail closed when the
-  // WebSocket has no verified fresh tick, including after a live disconnect.
-  if(brain&&!isVerifiedLiveTradingBrain())brain=null;
+  // A stale server decision must never override the independently-verified
+  // source. Browser DG mode is ALWAYS WAIT (even if the raw engine saw READY).
+  const active=verifiedLiveBrainSource();
+  brain=active?.brain||null;
   const badge=$('heroSourceBadge');
   if(!brain||!brain.decision){
     const hasHistoricalEvidence=marketServerReachable||Boolean(periodicBrainSnapshot)||heroWasLive;
@@ -494,7 +507,10 @@ function renderHeroAction(brain){
     return;
   }
   heroWasLive=true;
-  if(badge){ badge.textContent='LIVE'; badge.className='badge-live'; }
+  if(badge){
+    badge.textContent=active.source==='browser'?'BROWSER LIVE · KEIN ENTRY':'LIVE';
+    badge.className=active.source==='browser'?'badge-test':'badge-live';
+  }
 
   const d=brain.decision;
   const cls=HERO_ACTION_CLASS[d.status]||'wait';
@@ -575,14 +591,26 @@ let marketServerState=null;      // last successful /api/market/XAUUSD response,
 let marketServerReachable=false;
 let tradingBrainState=null;      // last successful /api/brain/XAUUSD response, or null — DG Trading Brain V1, only reachable via the Always-On Server
 
+// Priority: real Always-On server; otherwise authentic browser-hosted
+// TwelveData WebSocket + fresh closed REST candles. Both use the same DG engine.
+// Browser context is strictly WAIT-only (no persistent event history).
+function verifiedLiveBrainSource(){
+  if(typeof DGTradingEvidenceGate!=='undefined'&&
+    DGTradingEvidenceGate.assess({
+      reachable:marketServerReachable,
+      marketState:marketServerState,
+      brain:tradingBrainState,
+      maxAgeSeconds:FRESHNESS_THRESHOLDS.streaming.live
+    }).live)return{brain:tradingBrainState,source:'always-on'};
+  try{
+    const browser=window.DGOSBrowserTradingBrain?.getSnapshot?.();
+    if(browser?.verified&&browser?.brain?.report&&browser?.brain?.decision)
+      return{brain:browser.brain,source:'browser',snapshot:browser};
+  }catch(_){}
+  return null;
+}
 function isVerifiedLiveTradingBrain(){
-  if(typeof DGTradingEvidenceGate==='undefined')return false;
-  return DGTradingEvidenceGate.assess({
-    reachable:marketServerReachable,
-    marketState:marketServerState,
-    brain:tradingBrainState,
-    maxAgeSeconds:FRESHNESS_THRESHOLDS.streaming.live
-  }).live;
+  return Boolean(verifiedLiveBrainSource());
 }
 
 async function pollMarketServer(){
@@ -997,6 +1025,23 @@ let tdStreaming=false;
 // Only real XAU/USD WebSocket *price events* can populate this quote.
 // Successful subscription / server reachability is not a fresh tick.
 let tdLastGoldPriceTick=null;
+// This session-scoped engine never stores or exposes the TwelveData API key.
+const browserCandleBrain=typeof DGOSBrowserCandleBrain!=='undefined'
+  ?DGOSBrowserCandleBrain.create({engine:{computeTradingBrainV1,computeAllDerivedModules}}):null;
+window.DGOSBrowserTradingBrain=Object.freeze({
+  getSnapshot:()=>browserCandleBrain?.snapshot?.()||null,
+  getDiagnostic:()=>browserCandleBrain?.diagnostic?.()||null,
+  refresh:()=>refreshBrowserCandleBrain()
+});
+async function refreshBrowserCandleBrain(){
+  const key=localStorage.getItem('dgos.tdKey')||'';
+  if(!key||!browserCandleBrain)return null;
+  const result=await browserCandleBrain.refresh(key);
+  renderCurrentBrainSource();
+  renderHeroAction(tradingBrainState);
+  window.dispatchEvent(new Event('dgos-trading-browser-brain'));
+  return result;
+}
 function getLiveBrowserGoldQuote(){
   const tick=tdLastGoldPriceTick;
   if(!tick||!tdSocket||!tdStreaming||tdSocket.readyState!==WebSocket.OPEN)return null;
@@ -1040,7 +1085,8 @@ function openTdSocket(key){
         tdStreaming=true;
         setStreamStatus('Live-Stream verbunden · XAU/USD');
         renderFreshness(); // subscribed, not necessarily "live" yet — honest until the first tick actually arrives
-        $('liveHint').textContent='Live-Stream aktiv (TwelveData WebSocket) – Preis aktualisiert sich in Echtzeit.';
+        $('liveHint').textContent='Live-Stream verbunden. Jarvis lädt zusätzlich echte Weekly/Daily/4H/H1/15M/5M-Kerzen für eine sichere Marktbeobachtung.';
+        void refreshBrowserCandleBrain();
       } else {
         setStreamStatus(`Fehler: ${msg.status||'Subscribe fehlgeschlagen'}`);
       }
@@ -1051,8 +1097,19 @@ function openTdSocket(key){
        typeof msg.price==='number' && Number.isFinite(msg.price) && msg.price>0 &&
        (!msg.symbol||msg.symbol==='XAU/USD'||msg.symbol==='XAUUSD')){
       tdStreaming=true;
-      lastMarketUpdateAt=new Date();
-      tdLastGoldPriceTick={price:msg.price,at:lastMarketUpdateAt.toISOString()}; // TD's WS price message carries no usable timestamp of its own — receipt time is the honest proxy, same as liveUpdated below
+      // TwelveData WS price events may carry a provider timestamp in Unix
+      // seconds; honor it so a delayed feed cannot look fresh just because
+      // this iPhone received the message now. Receipt time is a fallback
+      // only if the provider did not supply a timestamp.
+      const reportedMs=typeof msg.timestamp==='number'&&Number.isFinite(msg.timestamp)
+        ?(msg.timestamp<1e12?msg.timestamp*1000:msg.timestamp):null;
+      const eventMs=reportedMs!==null?reportedMs:Date.now();
+      lastMarketUpdateAt=new Date(eventMs);
+      tdLastGoldPriceTick=Number.isFinite(lastMarketUpdateAt.getTime())
+        ?{price:msg.price,at:lastMarketUpdateAt.toISOString()}:null;
+      // Trading panels and Jarvis read this verified tick + cached candles.
+      renderCurrentBrainSource();
+      renderHeroAction(tradingBrainState);
       $('livePrice').textContent=fmtPrice(msg.price);
       $('liveUpdated').textContent=lastMarketUpdateAt.toLocaleTimeString('de-DE');
       if(typeof lastPreviousClose==='number' && lastPreviousClose>0){
@@ -1676,6 +1733,12 @@ setInterval(renderGreeting,60000);
 setInterval(renderTicker,1000);
 setInterval(renderFreshness,1000);
 setInterval(()=>{ if(marketServerUrl) pollMarketServer(); },3000);
+// Costs are bounded by the per-timeframe TTLs in browser-trading-brain.js.
+// Nothing runs for the browser-only brain while the page is not visible.
+setInterval(()=>{
+  if(!document.hidden&&tdStreaming&&tdSocket?.readyState===WebSocket.OPEN)
+    void refreshBrowserCandleBrain();
+},60000);
 setInterval(updateSessionStatuses,30000);
 setInterval(loadMarketData,60000);
 loadPeriodicBrainSnapshot();

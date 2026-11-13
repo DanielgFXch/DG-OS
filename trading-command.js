@@ -388,6 +388,48 @@
       read.countertrend.isCountertrendContext?'watch':'neutral');
   }
 
+  // Setup clarity reads the existing DG Decision summary; it NEVER changes
+  // the status, approves orders, or assigns an invented success probability.
+  function renderSetupClarityRows(id,items,fallback){
+    const host=$(id);
+    if(!host)return;
+    host.replaceChildren();
+    if(!items.length){
+      const p=document.createElement('p');
+      p.className='trading-fomo-empty';
+      p.textContent=fallback;
+      host.append(p);
+      return;
+    }
+    items.slice(0,4).forEach(item=>{
+      const p=document.createElement('p');
+      p.textContent=item;
+      host.append(p);
+    });
+  }
+
+  function renderSetupClarity(analysisBrain,liveVerified,historical){
+    const read=typeof DGSetupClarity!=='undefined'
+      ?DGSetupClarity.read(analysisBrain,{liveVerified,historical})
+      :{kind:'offline',title:'FOMO-Schutz nicht verbunden',
+        reason:'Die Setup-Prüfung ist aktuell nicht verfügbar.',pros:[],
+        missing:['DG Setup-Clarity-Modul nicht geladen.'],risks:[],
+        antiFomo:'Kein Entry ohne vollständige DG-Prüfung.',entryStatus:'DATA_NOT_READY'};
+    const panel=$('tradingFomoGuard');
+    if(panel)panel.dataset.state=read.kind;
+    text('tradingFomoVerdict',read.title);
+    text('tradingFomoDetail',read.reason);
+    text('tradingFomoEntry',liveVerified?'DG Status: '+read.entryStatus:'KEIN LIVE-ENTRY');
+    text('tradingFomoBanner',read.antiFomo);
+    renderSetupClarityRows('tradingFomoListPros',read.pros,
+      'Noch keine vollständige positive DG-Setup-Kette belegt.');
+    renderSetupClarityRows('tradingFomoListMissing',read.missing,
+      read.kind==='ready'?'Keine weitere Confirmation aus der DG Engine ausstehend.':
+        'Auf vollständige DG-Daten warten.');
+    renderSetupClarityRows('tradingFomoListRisks',read.risks,
+      'Keine zusätzlichen Kontext-Warnungen aus den vorliegenden DG-Daten.');
+  }
+
   function render() {
     const now=new Date();
     const ctx=currentSession(now);
@@ -417,6 +459,7 @@
     const bias=biasFrom(analysisBrain);
     const analysisReport=reportFrom(analysisBrain);
     renderTrendContext(analysisBrain,realBrain,Boolean(historical));
+    renderSetupClarity(analysisBrain,realBrain,Boolean(historical));
 
     text('tradingActiveSession',
       (SESSION_LABEL[ctx.session.id]||ctx.session.name||ctx.session.id).toUpperCase()+

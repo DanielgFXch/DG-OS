@@ -59,7 +59,7 @@ for(const file of ['jarvis-market-chart.js?v=3','jarvis-market-chart.css?v=2']){
  assert.ok(html.includes(file),'HTML missing '+file);
  assert.ok(sw.includes("'./"+file+"'"),'PWA cache missing '+file);
 }
-assert.ok(html.indexOf('jarvis-market-chart.js?v=3')<html.indexOf('personal.js?v=0.59.12.4'));
+assert.ok(html.indexOf('jarvis-market-chart.js?v=3')<html.indexOf('personal.js?v=0.59.12.5'));
 assert.ok(html.indexOf('jarvis-market-chart.css?v=2')<html.indexOf('dg-unified-premium.css?v=1'));
 assert.ok(personal.includes('DGOSJarvisMarketChart?.shouldOpen(original)'));
 assert.ok(personal.includes('window.DGOSJarvisMarketChart.open({query:original,answer})'));

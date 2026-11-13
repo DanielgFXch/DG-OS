@@ -2175,6 +2175,19 @@
       if(typeof periodicBrainSnapshot!=='undefined')snapshot=periodicBrainSnapshot;
     }catch(_){}
     try{
+      // The same real DG engine can run on fresh browser REST candles while
+      // this tab stays open. The browser decision is WAIT-only; it must never
+      // impersonate uninterrupted Always-On sweep/entry history.
+      if(!verified){
+        const ctx=window.DGOSBrowserTradingBrain?.getSnapshot?.();
+        if(ctx?.verified&&ctx.brain?.report&&ctx.brain?.decision&&ctx.quote?.symbol==='XAUUSD'){
+          live=ctx.brain;
+          liveQuote={price:ctx.quote.price,at:ctx.quote.at};
+          verified=true;
+        }
+      }
+    }catch(_){}
+    try{
       // A separate genuine XAU/USD tick may arrive through the user-configured
       // direct TwelveData WebSocket even without paid Always-On hosting.
       browserQuote=window.DGOSBrowserGoldFeed?.getQuote?.()||null;

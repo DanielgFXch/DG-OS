@@ -7,6 +7,8 @@ on:
       - 'trading-command.js'
       - 'trading-command.css'
       - 'trading-evidence-gate.js'
+      - 'browser-trading-brain.js'
+      - 'scripts/test-browser-trading-brain.js'
       - 'trading-trend-context.js'
       - 'trading-fomo-guard.js'
       - 'scripts/test-trading-fomo-guard.js'
@@ -54,5 +56,9 @@ jobs:
           node --check trading-fomo-guard.js
           node --check trading-command.js
           node scripts/test-trading-fomo-guard.js
+      - name: Verify browser-based TwelveData closed-candle DG analysis never invents entries
+        run: |
+          node --check browser-trading-brain.js
+          node scripts/test-browser-trading-brain.js
       - name: Verify existing session clock and overlap rules
         run: node scripts/test-trading-session-clock.js

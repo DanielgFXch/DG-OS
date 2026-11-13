@@ -403,7 +403,7 @@ function renderTradingBrain(brain){
 let periodicBrainSnapshot=null;
 const PERIODIC_BRAIN_URL='./data/trading-brain.json';
 function renderCurrentBrainSource(){
-  if(marketServerReachable&&tradingBrainState?.report){
+  if(isVerifiedLiveTradingBrain()&&tradingBrainState?.report){
     renderTradingBrain(tradingBrainState);
     const badge=$('brainStatus');
     if(badge)badge.dataset.source='always-on';
@@ -411,7 +411,12 @@ function renderCurrentBrainSource(){
   }
   const snapshot=periodicBrainSnapshot;
   if(!snapshot?.brain?.report || snapshot.mode!=='PERIODIC_READ_ONLY'){
-    renderTradingBrain(null);return;
+    renderTradingBrain(null);
+    if(marketServerReachable){
+      $('brainStatus').textContent='KEIN LIVE';
+      $('brainSummary').textContent='Server erreichbar, aber kein bestätigter aktueller WebSocket-Tick. Keine Live-Entry-Freigabe.';
+    }
+    return;
   }
   renderTradingBrain(snapshot.brain);
   const badge=$('brainStatus'), summary=$('brainSummary');
@@ -427,7 +432,8 @@ function renderCurrentBrainSource(){
     badge.dataset.source='periodic-read-only';
   }
   if(summary){
-    summary.textContent='LETZTE ECHTE MARKTAUFNAHME · '+stamp+
+    summary.textContent=(marketServerReachable?'SERVER OHNE BESTÄTIGTEN LIVE-TICK. Kein Entry.\n':'')+
+      'LETZTE ECHTE MARKTAUFNAHME · '+stamp+
       ' (Schweiz) · '+(Number.isFinite(ageM)?ageM+' Minuten alt':'Alter unbekannt')+
       '\nNicht tickgenau. Kein BUY/SELL-Entry und keine automatische Handelsfreigabe.\n\n'+
       String(snapshot.brain.report.summary||'');
@@ -467,9 +473,22 @@ const HERO_ACTION_ICON={wait:'ic-clock',watch:'ic-eye',buy:'ic-trend-up',sell:'i
 const HERO_ACTION_LABEL={WAIT:'WAIT',DATA_NOT_READY:'DATA NOT READY',MISSED:'MISSED / NO ENTRY',WATCH_BUY:'WATCH BUY',WATCH_SELL:'WATCH SELL',BUY_CONFIRMATION:'BUY CONFIRMATION',SELL_CONFIRMATION:'SELL CONFIRMATION',BUY_READY:'BUY READY',SELL_READY:'SELL READY'};
 
 function renderHeroAction(brain){
+  // An HTTP 200 can serve an old READY decision. Fail closed when the
+  // WebSocket has no verified fresh tick, including after a live disconnect.
+  if(brain&&!isVerifiedLiveTradingBrain())brain=null;
   const badge=$('heroSourceBadge');
   if(!brain||!brain.decision){
-    if(badge){ badge.textContent='SIMULATION'; badge.className='badge-test'; }
+    const hasHistoricalEvidence=marketServerReachable||Boolean(periodicBrainSnapshot);
+    if(badge){badge.textContent=hasHistoricalEvidence?'KEIN LIVE':'SIMULATION';badge.className='badge-test';}
+    if(hasHistoricalEvidence){
+      $('action').className='action wait';
+      $('action').innerHTML='<svg class="ic ic-action"><use href="#ic-clock"></use></svg><span>WAIT · KEIN LIVE</span>';
+      $('tradeType').textContent='Kein aktueller bestätigter WebSocket-Kurs.';
+      $('decisionReason').textContent='Zeitverzögerte oder fehlende Ticks: kein Entry freigegeben.';
+      $('confidence').textContent='—';
+      const ring=$('confRing');
+      if(ring){ring.style.stroke=TIER_COLOR.wait;ring.style.strokeDashoffset=CONF_RING_CIRCUMFERENCE;}
+    }
     return;
   }
   if(badge){ badge.textContent='LIVE'; badge.className='badge-live'; }
@@ -552,6 +571,16 @@ let marketServerUrl=localStorage.getItem('dgos.marketServerUrl')||'';
 let marketServerState=null;      // last successful /api/market/XAUUSD response, or null
 let marketServerReachable=false;
 let tradingBrainState=null;      // last successful /api/brain/XAUUSD response, or null — DG Trading Brain V1, only reachable via the Always-On Server
+
+function isVerifiedLiveTradingBrain(){
+  if(typeof DGTradingEvidenceGate==='undefined')return false;
+  return DGTradingEvidenceGate.assess({
+    reachable:marketServerReachable,
+    marketState:marketServerState,
+    brain:tradingBrainState,
+    maxAgeSeconds:FRESHNESS_THRESHOLDS.streaming.live
+  }).live;
+}
 
 async function pollMarketServer(){
   if(!marketServerUrl){

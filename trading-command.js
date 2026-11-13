@@ -97,6 +97,9 @@
     return {session:defs[0],state:'upcoming-next-day'};
   }
 
+  function browserBrainContext(){
+    try{return window.DGOSBrowserTradingBrain?.getSnapshot?.()||null;}catch(_){return null;}
+  }
   function brainState() {
     try { return typeof tradingBrainState !== 'undefined' ? tradingBrainState : null; }
     catch (_) { return null; }
@@ -108,6 +111,8 @@
   }
 
   function sessionData() {
+    const browser=browserBrainContext();
+    if(browser?.verified&&browser.sessions)return browser.sessions;
     try {
       if (typeof currentSessionZoneData === 'function') return currentSessionZoneData();
     } catch (_) {}
@@ -115,6 +120,8 @@
   }
 
   function liquidityData() {
+    const browser=browserBrainContext();
+    if(browser?.verified)return browser.brain?.liquidity||[];
     try {
       if (typeof currentSessionZoneLiquidity === 'function') return currentSessionZoneLiquidity() || [];
     } catch (_) {}
@@ -432,18 +439,21 @@
 
   // The first visible Trading card links to the real Jarvis microphone +
   // transcript interface. It also reveals why live gold analysis cannot run.
-  function renderJarvisLaunch(liveVerified,historical){
+  function renderJarvisLaunch(liveVerified,historical,browserVerified=false){
     const configured=typeof marketServerUrl!=='undefined'&&Boolean(marketServerUrl);
     const reachable=typeof marketServerReachable!=='undefined'&&marketServerReachable;
     let directQuote=null;
     try{directQuote=window.DGOSBrowserGoldFeed?.getQuote?.()||null;}catch(_){}
     const directLive=Boolean(directQuote);
     const status=liveVerified?'XAUUSD LIVE-TICK & DG-BRAIN BESTÄTIGT':
-      directLive?'GOLD-PREIS LIVE · DG-BRAIN NICHT LIVE':
+      browserVerified?'DG TREND LIVE IM BROWSER · ENTRY WAIT':
+      directLive?'GOLD-PREIS LIVE · KERZEN WERDEN GEPRÜFT':
       historical?'HISTORISCHE DATEN · KEIN LIVE':'LIVE-DATEN NICHT BESTÄTIGT';
     let explanation;
     if(liveVerified){
       explanation='Jarvis kann den verifizierten Goldpreis und die vorhandenen DG-Analysefelder vorlesen.';
+    }else if(browserVerified){
+      explanation='Frischer XAUUSD-WebSocket-Preis und geschlossene TwelveData-Kerzen. DG-Trend und Ziele sind aktuell berechnet. Keine 24/7-Memory oder bestätigte Entry-Freigabe; WAIT / NO FOMO.';
     }else if(directLive){
       explanation='Letzter bestätigter Gold-Tick: '+fmt(directQuote.price)+
         ' USD pro Feinunze. Für Echtzeit-Setups, Sweeps und Entries fehlt weiterhin der Always-On Trading Brain.';
@@ -457,7 +467,7 @@
     text('tradingJarvisLiveStatus',status);
     text('tradingJarvisLiveExplanation',explanation);
     const host=$('tradingJarvisLaunch');
-    if(host)host.dataset.live=liveVerified?'true':directLive?'price':'false';
+    if(host)host.dataset.live=liveVerified?'true':browserVerified?'brain':directLive?'price':'false';
     const setup=$('tradingSetupLive');
     if(setup)setup.textContent=liveVerified?'Verbindung prüfen':
       directLive?'Trading Brain verbinden':'Gold-Livepreis verbinden';
@@ -466,15 +476,18 @@
   function render() {
     const now=new Date();
     const ctx=currentSession(now);
-    const brain=brainState();
-    const report=reportFrom(brain);
+    const serverBrain=brainState();
+    const browser=browserBrainContext();
     const feedGate=typeof DGTradingEvidenceGate!=='undefined'?
       DGTradingEvidenceGate.assess({
         reachable:serverIsReachable(),
         marketState:typeof marketServerState!=='undefined'?marketServerState:null,
-        brain,maxAgeSeconds:FRESHNESS_THRESHOLDS.streaming.live
+        brain:serverBrain,maxAgeSeconds:FRESHNESS_THRESHOLDS.streaming.live
       }):{live:false,reason:'GATE_MISSING',ageSeconds:null};
-    const realBrain=feedGate.live;
+    const browserVerified=!feedGate.live&&browser?.verified===true;
+    const realBrain=feedGate.live||browserVerified;
+    const brain=browserVerified?browser.brain:serverBrain;
+    const report=reportFrom(brain);
     // A real, published TwelveData snapshot exists even without paid Always-On
     // hosting. Show that evidence as historical ONLY; never use it to authorize
     // BUY/SELL READY, entries, or orders in this top-level command center.
@@ -488,7 +501,7 @@
     const historical=periodic && Number.isFinite(ageMs) && ageMs>=0;
     const periodicLabel=historical?(ageMs<=3600000?'ZEITVERZÖGERT':'HISTORISCH'):'';
     const analysisBrain=realBrain?brain:historical?periodic.brain:null;
-    renderJarvisLaunch(realBrain,Boolean(historical));
+    renderJarvisLaunch(feedGate.live,Boolean(historical),browserVerified);
     const decision=realBrain?decisionFrom(brain):null;
     const bias=biasFrom(analysisBrain);
     const analysisReport=reportFrom(analysisBrain);
@@ -506,16 +519,19 @@
       dataState.classList.toggle('is-live',realBrain);
       dataState.classList.toggle('is-offline',!realBrain);
       const span=dataState.querySelector('span');
-      if(span) span.textContent=realBrain?'TRADING BRAIN LIVE':
+      if(span) span.textContent=feedGate.live?'TRADING BRAIN LIVE':
+        browserVerified?'DG BROWSER-TREND LIVE · ENTRY WAIT':
         serverIsReachable()?'SERVER VERBUNDEN · KEIN LIVE-TICK':
         historical?periodicLabel+' · KEIN LIVE':'BRAIN OFFLINE';
     }
     const sourceClock=historical?new Intl.DateTimeFormat('de-CH',{
       timeZone:'Europe/Zurich',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'
     }).format(new Date(periodic.updatedAt)):'';
-    text('tradingSourceEvidence',realBrain
+    text('tradingSourceEvidence',feedGate.live
       ? 'TwelveData WebSocket · letzter Tick vor '+Math.round(feedGate.ageSeconds)+' s · XAUUSD'
-      : serverIsReachable()
+      : browserVerified
+        ? 'TwelveData im Browser · WebSocket-Preis + echte geschlossene REST-Kerzen · keine Entry-Freigabe'
+        : serverIsReachable()
         ? 'Server erreichbar, doch der WebSocket-Preis ist nicht live. Keine Entry-Freigabe.'
         : historical
           ? 'TwelveData-Snapshot · '+sourceClock+' CH · '+Math.floor(ageMs/60000)+' Min. alt · nur Markt-Kontext'
@@ -580,6 +596,8 @@
         'Noch keine vollständige DG-Setup-Kette.';
     }
     text('tradingScenarioTitle',scenarioTitle);
+    if(browserVerified)scenarioText='Browser-Auswertung: '+scenarioText+
+      ' Die komplette Setup-Historie fehlt; ein Entry bleibt WAIT.';
     text('tradingScenarioText',scenarioText);
 
     const target=primaryTarget(brain,decision);

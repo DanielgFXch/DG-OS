@@ -1,3 +1,19 @@
+# v0.59.7 — Browser Trading Brain: echte XAUUSD-Kerzen, Trend, Ziele und Jarvis
+
+## Implemented
+- Uses existing user-configured TwelveData browser WebSocket ticks **plus authentic closed REST OHLC** to compute a per-tab version of the already-defined DG Trading Brain (Macro/Trading bias, relevant targets, liquidity and POIs).
+- Reads seven intervals: Monthly, Weekly, Daily, 4H, H1, 15M and 5M. Rejects invalid symbols, too few bars, unfinished candles, stale price, stale core timeframe data and REST failures. Source and missing inputs are visible.
+- Reuses the exact `marketBrain.js` DG strategy computation, `DGTrendContext`, and FOMO guard for written and spoken Gold market answers. No new trade scoring rules.
+- Explicitly downgrades all browser-derived Entry statuses to `WAIT`: no persistent sweep/setup invalidation history while the app is closed; no false `BUY_READY`, `SELL_READY`, Stop Loss or automatic orders.
+- The Trading dashboard can now display browser-held live trend facts when genuine market data is complete, with an explicit `DG BROWSER-TREND LIVE · ENTRY WAIT` label. Existing Always-On market server takes priority when available.
+- Limits TwelveData REST traffic with per-timeframe refresh intervals and updates only while the browser tab is visible; requests go directly to TwelveData using the user's already-configured browser API key.
+- Jarvis still speaks and renders the exact same final response text.
+
+## Operational constraints
+- **Not an always-on backend**: the app must remain open and live WebSocket + valid TwelveData subscription/API entitlements are required. A missing or restricted key, blocked browser cross-origin request, or closed market may prevent a verified live analysis.
+- Continuous event memory, real-time unattended monitoring and push notifications still require a separately deployed Always-On Node market service. No paid Render service or upgrade was ordered.
+- Tests exercise errors, no invented price/entries, valid closed candles and integration.
+
 # v0.59.6 — Jarvis reads genuine XAU/USD price from the existing iPhone WebSocket
 
 ## Live Gold price without new paid hosting

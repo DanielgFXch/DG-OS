@@ -317,6 +317,77 @@
       targets.find(t=>t&&t.direction===direction) || null;
   }
 
+  // Informational trend/target/low-sweep panel. Never derives a trade signal,
+  // uses the same evidence gate and historical provenance as the command center.
+  function renderContextTargetRows(id,items) {
+    const host=$(id);
+    if(!host) return;
+    host.replaceChildren();
+    if(!items.length){
+      const empty=document.createElement('div');
+      empty.className='trading-context-empty';
+      empty.textContent='Kein belegtes offenes Markt-Target.';
+      host.append(empty);
+      return;
+    }
+    items.forEach(item=>{
+      const row=document.createElement('div');
+      row.className='trading-context-target-row';
+      const note=document.createElement('span');
+      note.textContent=(item.priority!=='—'?item.priority+' · ':'')+item.reason;
+      const value=document.createElement('strong');
+      value.textContent=fmt(item.price);
+      row.append(note,value);
+      host.append(row);
+    });
+  }
+
+  function renderTrendContext(analysisBrain,liveVerified,historical){
+    const read=typeof DGTrendContext!=='undefined'?
+      DGTrendContext.read(analysisBrain):{available:false,reason:'Kontext-Modul nicht geladen.'};
+    text('tradingContextSource',liveVerified?'LIVE-TICK BESTÄTIGT':historical?'HISTORISCHE AUFNAHME':'KEIN LIVE-FEED');
+    if(!read.available){
+      text('tradingTrendMacro','—');
+      text('tradingTrendTrading','—');
+      text('tradingTrendStructure',read.reason||'Keine belegten Marktstrukturen.');
+      renderContextTargetRows('tradingTargetsDown',[]);
+      renderContextTargetRows('tradingTargetsUp',[]);
+      text('tradingSweptLowTitle','Nicht geprüft');
+      text('tradingSweptLowDetail','Keine gültige Marktaufnahme für einen Low-Sweep.');
+      text('tradingCountertrendTitle','Auf aktuelle Marktdaten warten');
+      text('tradingCountertrendDetail','Keine Gegentrend-Bewertung ohne echte XAUUSD-Daten.');
+      text('tradingCountertrendEntry','Kein Entry');
+      $('tradingCountertrendNotice')?.setAttribute('data-state','neutral');
+      return;
+    }
+    text('tradingTrendMacro',read.macroBias);
+    text('tradingTrendTrading',read.tradingBias);
+    text('tradingTrendStructure',read.structureFacts
+      .map(value=>value.timeframe+' Struktur: '+value.direction).join(' · '));
+    renderContextTargetRows('tradingTargetsDown',read.downTargets);
+    renderContextTargetRows('tradingTargetsUp',read.upTargets);
+
+    const mostRelevantLow=read.sweptLows[0];
+    text('tradingSweptLowTitle',mostRelevantLow
+      ? mostRelevantLow.label+' · '+fmt(mostRelevantLow.price)
+      : 'Kein relevantes Low als SWEPT registriert');
+    text('tradingSweptLowDetail',mostRelevantLow
+      ? (mostRelevantLow.reactionConfirmed
+        ? 'H1-Reaktion erkannt: '+mostRelevantLow.reactionReason
+        : 'Low im Trading Brain als SWEPT geführt. Eine bullishe Reaktion ist noch nicht bestätigt.')+
+        (read.sweptLows.length>1?' · '+(read.sweptLows.length-1)+' weitere gesweepte Lows':'')
+      : 'Eine Berührung oder ein Low allein beweist keinen Sweep mit Rückkehr.');
+
+    text('tradingCountertrendTitle',read.countertrend.status);
+    text('tradingCountertrendDetail',read.countertrend.detail+
+      (!liveVerified?' Nur historischer Kontext; keine aktuelle Entry-Freigabe.':''));
+    text('tradingCountertrendEntry',liveVerified
+      ? 'DG Entry: '+read.countertrend.entryStatus
+      : 'DG Entry: NICHT LIVE GEPRÜFT');
+    $('tradingCountertrendNotice')?.setAttribute('data-state',
+      read.countertrend.isCountertrendContext?'watch':'neutral');
+  }
+
   function render() {
     const now=new Date();
     const ctx=currentSession(now);
@@ -345,6 +416,7 @@
     const decision=realBrain?decisionFrom(brain):null;
     const bias=biasFrom(analysisBrain);
     const analysisReport=reportFrom(analysisBrain);
+    renderTrendContext(analysisBrain,realBrain,Boolean(historical));
 
     text('tradingActiveSession',
       (SESSION_LABEL[ctx.session.id]||ctx.session.name||ctx.session.id).toUpperCase()+

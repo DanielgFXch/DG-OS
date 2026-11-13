@@ -75,6 +75,13 @@ const unknown=read(make({
 assert.equal(unknown.tradingBias,'UNBESTIMMT');
 assert.equal(unknown.countertrend.isCountertrendContext,false);
 
+const missingHtf=read(make({
+  status:'DATA_NOT_READY',
+  report:{...BASE.report,status:'DATA_NOT_READY'},
+  liquidity:[swept]
+}));
+assert.equal(missingHtf.available,false,'Incomplete HTF data cannot yield a confirmed trend or contra-trend watch');
+
 const missingTargets=read(make({targets:[]}));
 assert.deepEqual(missingTargets.upTargets,[]);
 assert.deepEqual(missingTargets.downTargets,[]);

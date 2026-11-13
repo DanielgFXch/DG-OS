@@ -1020,3 +1020,7 @@ body[data-dgos-route="trading"] .app-footer{
 @media(max-width:380px){
   .trading-jarvis-launch-actions{grid-template-columns:1fr}
 }
+
+/* A verified direct browser quote is live price, NOT a live DG entry engine. */
+.trading-jarvis-launch[data-live="price"] .trading-jarvis-live{border-left-color:#82d8ff}
+.trading-jarvis-launch[data-live="price"] .trading-jarvis-live strong{color:#9ee5ff}

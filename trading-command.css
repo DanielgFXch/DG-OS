@@ -919,3 +919,104 @@ body[data-dgos-route="trading"] .app-footer{
   .trading-fomo-footer{flex-direction:column;align-items:flex-start;gap:5px}
   .trading-fomo-footer small{flex:auto}
 }
+
+/* Immediate Jarvis Gold access: visible above the session and TradingView cards. */
+.trading-jarvis-launch{
+  position:relative;
+  z-index:2;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:14px;
+  padding:16px;
+  margin:8px 0 14px;
+  border:1px solid rgba(130,218,250,.27);
+  border-top-color:rgba(215,250,255,.39);
+  border-radius:19px;
+  background:linear-gradient(120deg,rgba(18,60,98,.72),rgba(4,24,50,.7));
+  box-shadow:0 16px 38px rgba(0,0,0,.14),inset 0 1px rgba(255,255,255,.07);
+}
+.trading-jarvis-launch-copy{min-width:0;flex:1}
+.trading-jarvis-launch-kicker{
+  color:#8de7fb;
+  font-family:var(--hud-font);
+  font-size:9px;
+  font-weight:650;
+  letter-spacing:.13em;
+}
+.trading-jarvis-launch h3{
+  margin:5px 0;
+  color:#f2fbff;
+  font-size:clamp(17px,2.9vw,22px);
+  letter-spacing:-.035em;
+}
+.trading-jarvis-launch p{
+  margin:0 0 10px;
+  color:rgba(193,221,235,.82);
+  font-size:11px;
+  line-height:1.5;
+}
+.trading-jarvis-live{
+  display:grid;
+  gap:3px;
+  border-left:2px solid rgba(235,173,105,.9);
+  padding-left:9px;
+}
+.trading-jarvis-launch[data-live="true"] .trading-jarvis-live{
+  border-left-color:#7ae3ce;
+}
+.trading-jarvis-live strong{
+  color:#f4cca2;
+  font-family:var(--hud-font);
+  font-size:9px;
+  letter-spacing:.05em;
+}
+.trading-jarvis-launch[data-live="true"] .trading-jarvis-live strong{
+  color:#8beddd;
+}
+.trading-jarvis-live small{
+  color:rgba(202,224,237,.78);
+  font-size:10px;
+  line-height:1.45;
+}
+.trading-jarvis-launch-actions{
+  flex:0 0 auto;
+  display:grid;
+  gap:7px;
+  min-width:152px;
+}
+.trading-jarvis-launch-actions button{
+  min-height:39px;
+  padding:9px 12px;
+  border-radius:12px;
+  font-size:11px;
+  font-weight:700;
+}
+#tradingAskJarvis{
+  color:#08283a;
+  border:1px solid rgba(205,255,255,.75);
+  background:linear-gradient(140deg,#c3f4ff,#76d9f4);
+}
+#tradingSetupLive{
+  color:#daebf5;
+  border:1px solid rgba(169,211,236,.24);
+  background:rgba(8,30,52,.7);
+}
+@media(max-width:700px){
+  .trading-jarvis-launch{
+    padding:13px;
+    flex-direction:column;
+    align-items:stretch;
+    gap:10px;
+    border-radius:16px;
+  }
+  .trading-jarvis-launch-actions{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    min-width:0;
+  }
+  .trading-jarvis-launch-actions button{font-size:10px;padding:8px 9px}
+}
+@media(max-width:380px){
+  .trading-jarvis-launch-actions{grid-template-columns:1fr}
+}

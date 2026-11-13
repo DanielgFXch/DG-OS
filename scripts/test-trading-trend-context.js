@@ -108,7 +108,7 @@ assert.ok(command.includes("data-target=\"personalJarvis\""),'Jarvis button rout
 assert.ok(command.includes("jarvisLifeCommandInput"),'Pre-populate sample Gold question');
 assert.ok(command.includes("tradingAdvanced"),'Setup button opens server settings');
 assert.ok(command.includes("marketServerUrl"),'Setup button points at real server URL');
-assert.ok(command.includes("renderJarvisLaunch(realBrain,Boolean(historical))"));
+assert.ok(command.includes("renderJarvisLaunch(feedGate.live,Boolean(historical),browserVerified)"));
 assert.ok(command.includes("HISTORISCHE DATEN · KEIN LIVE"));
 assert.ok(command.includes("Der Server antwortet, aber ein ausreichend frischer TwelveData-WebSocket-Tick fehlt"));
 console.log('DG Jarvis trend/target/countertrend read-only context: PASS');

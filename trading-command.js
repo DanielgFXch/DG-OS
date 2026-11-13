@@ -455,8 +455,18 @@
     }else if(browserVerified){
       explanation='Frischer XAUUSD-WebSocket-Preis und geschlossene TwelveData-Kerzen. DG-Trend und Ziele sind aktuell berechnet. Keine 24/7-Memory oder bestätigte Entry-Freigabe; WAIT / NO FOMO.';
     }else if(directLive){
+      const diag=window.DGOSBrowserTradingBrain?.getDiagnostic?.()||{};
+      const missing=Array.isArray(diag.missing)?diag.missing:[];
+      const condition=diag.refreshing
+        ?'DG-Kerzen werden geprüft …'
+        :diag.lastError
+          ?diag.lastError
+          :missing.length
+            ?'Noch fehlende geschlossene Candle-Zeitfenster: '+missing.join(', ')+'.'
+            :'DG-Daten werden validiert.';
       explanation='Letzter bestätigter Gold-Tick: '+fmt(directQuote.price)+
-        ' USD pro Feinunze. Für Echtzeit-Setups, Sweeps und Entries fehlt weiterhin der Always-On Trading Brain.';
+        ' USD pro Feinunze. '+condition+
+        ' Bis dahin kein bestätigtes Entry-Setup.';
     }else if(!configured){
       explanation='Direkter Livepreis möglich: Unter „XAUUSD Live“ deinen TwelveData-API-Key eingeben und Live-Stream verbinden. Historische Aufnahmen sind keine Live-Signale.';
     }else if(reachable){

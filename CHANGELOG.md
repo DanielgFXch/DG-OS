@@ -1,3 +1,21 @@
+# v0.59.5 — Clear Jarvis Gold entry and live feed status on Trading
+
+## New
+- Visible "Frag Jarvis direkt zu Gold" card at the start of the Trading screen, above the session clock and TradingView cards.
+- One tap opens the real Jarvis voice/text page and prefills an example XAUUSD question without automatically placing an order or starting the microphone.
+- Separate "Live-Daten einrichten" action opens the genuine Always-On Market Server URL field in the advanced section.
+- The card clearly distinguishes verified WebSocket XAUUSD live ticks, historical snapshots, no configured server, unreachable server, and a reachable server without a verified live tick.
+
+## Important operational limitation
+- A deployed GitHub Pages site does NOT host the persistent TwelveData WebSocket market server.
+- The current scheduled TwelveData snapshots are historical and their GitHub Actions schedule is not a reliable substitute for real-time quotes.
+- No subscription, Render service, market data plan, trade execution or notification was activated.
+- Existing DG strategy and confirmation/entry rules are unchanged.
+
+## Verification
+- Extended trading context tests ensure the new CTA is visible before the session clock and opens the voice/text route and actual connection settings.
+- iPhone PWA asset cache bumped to load the new components.
+
 # v0.59.4 — Jarvis speaks real Gold price with DG market briefing
 
 ## Implemented

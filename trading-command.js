@@ -430,6 +430,31 @@
       'Keine zusätzlichen Kontext-Warnungen aus den vorliegenden DG-Daten.');
   }
 
+  // The first visible Trading card links to the real Jarvis microphone +
+  // transcript interface. It also reveals why live gold analysis cannot run.
+  function renderJarvisLaunch(liveVerified,historical){
+    const configured=typeof marketServerUrl!=='undefined'&&Boolean(marketServerUrl);
+    const reachable=typeof marketServerReachable!=='undefined'&&marketServerReachable;
+    const status=liveVerified?'XAUUSD LIVE-TICK BESTÄTIGT':
+      historical?'HISTORISCHE DATEN · KEIN LIVE':'LIVE-DATEN NICHT BESTÄTIGT';
+    let explanation;
+    if(liveVerified){
+      explanation='Jarvis kann den verifizierten Goldpreis und die vorhandenen DG-Analysefelder vorlesen.';
+    }else if(!configured){
+      explanation='Für einen aktuellen Goldpreis fehlt der konfigurierte Always-On-Marktserver. Historische Aufnahmen sind keine Live-Signale.';
+    }else if(reachable){
+      explanation='Der Server antwortet, aber ein ausreichend frischer TwelveData-WebSocket-Tick fehlt. Keine Live-Entry-Freigabe.';
+    }else{
+      explanation='Die gespeicherte Server-Adresse ist gerade nicht erreichbar oder nicht mit echten WebSocket-Kursen verbunden.';
+    }
+    text('tradingJarvisLiveStatus',status);
+    text('tradingJarvisLiveExplanation',explanation);
+    const host=$('tradingJarvisLaunch');
+    if(host)host.dataset.live=liveVerified?'true':'false';
+    const setup=$('tradingSetupLive');
+    if(setup)setup.textContent=configured?'Verbindung prüfen':'Live-Daten einrichten';
+  }
+
   function render() {
     const now=new Date();
     const ctx=currentSession(now);
@@ -455,6 +480,7 @@
     const historical=periodic && Number.isFinite(ageMs) && ageMs>=0;
     const periodicLabel=historical?(ageMs<=3600000?'ZEITVERZÖGERT':'HISTORISCH'):'';
     const analysisBrain=realBrain?brain:historical?periodic.brain:null;
+    renderJarvisLaunch(realBrain,Boolean(historical));
     const decision=realBrain?decisionFrom(brain):null;
     const bias=biasFrom(analysisBrain);
     const analysisReport=reportFrom(analysisBrain);
@@ -566,6 +592,27 @@
     }
     text('tradingSessionSummary',summary);
   }
+
+  $('tradingAskJarvis')?.addEventListener('click',()=>{
+    const nav=document.querySelector('.bottom-nav button[data-target="personalJarvis"]');
+    if(nav)nav.click();
+    else{
+      history.pushState({dgosRoute:'jarvis'},'',location.pathname+location.search+'#jarvis');
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    }
+    const command=$('jarvisLifeCommandInput');
+    if(command&&!command.value.trim())command.value='Hey Jarvis, wo steht Gold gerade und was sagt meine DG-Strategie?';
+    // Do not auto-start the microphone or submit a trade: user activation is required.
+  });
+  $('tradingSetupLive')?.addEventListener('click',()=>{
+    const advanced=$('tradingAdvanced');
+    if(advanced)advanced.open=true;
+    const field=$('marketServerUrl');
+    if(field){
+      field.scrollIntoView({block:'center',behavior:'smooth'});
+      field.focus({preventScroll:true});
+    }
+  });
 
   $('tradingBackPersonal')?.addEventListener('click',()=>{
     const home=document.querySelector('.bottom-nav button[data-target="personalHome"]');

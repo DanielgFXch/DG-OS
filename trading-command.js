@@ -154,10 +154,17 @@
     return (liquidity || []).find(item=>item && item.id===id) || null;
   }
 
-  function buildSessionLevels(sessionCtx) {
+  function buildSessionLevels(sessionCtx,liveVerified) {
     const host=$('tradingSessionLevels');
     if (!host) return;
     host.replaceChildren();
+    if(!liveVerified){
+      const empty=document.createElement('div');
+      empty.className='trading-empty';
+      empty.textContent='Keine aktuell bestätigten Session-Level. Ohne frische Live-Ticks nur historischer Kontext.';
+      host.append(empty);
+      return;
+    }
 
     const sessions=sessionData();
     const liquidity=liquidityData();
@@ -206,7 +213,7 @@
     if (!report) {
       const empty=document.createElement('div');
       empty.className='trading-empty';
-      empty.textContent='Trading Brain nicht verbunden – keine Zonenbewertung.';
+      empty.textContent='Keine verifizierten Live-POIs. WebSocket- und Kursstatus prüfen.';
       host.append(empty);
       return;
     }
@@ -245,13 +252,25 @@
     });
   }
 
-  function buildLiquidityRead(sessionCtx) {
+  function buildLiquidityRead(sessionCtx,liveVerified) {
+    if(!liveVerified){
+      text('tradingLiquidityState','NICHT LIVE GEPRÜFT');
+      text('tradingLiquidityDetail','Ohne aktuelle WebSocket-Ticks kein bestätigter Session-Sweep.');
+      text('tradingSweptSummary','Nicht live geprüft');
+      return {swept:[],touched:[]};
+    }
     const liquidity=liquidityData();
     const relevantIds=new Set(relevantSessionIds(sessionCtx.session.id));
     const sessionItems=(liquidity||[]).filter(item=>{
       if(!item||!item.id) return false;
       return [...relevantIds].some(id=>item.id===id+'High'||item.id===id+'Low');
     });
+    if(!sessionItems.length){
+      text('tradingLiquidityState','DATEN FEHLEN');
+      text('tradingLiquidityDetail','Keine Session-Liquidity-Level von der Datenquelle vorhanden.');
+      text('tradingSweptSummary','Daten fehlen');
+      return {swept:[],touched:[]};
+    }
     const swept=sessionItems.filter(item=>item.status==='sweeped');
     const touched=sessionItems.filter(item=>item.status==='touched');
 
@@ -303,7 +322,13 @@
     const ctx=currentSession(now);
     const brain=brainState();
     const report=reportFrom(brain);
-    const realBrain=Boolean(serverIsReachable() && brain && report);
+    const feedGate=typeof DGTradingEvidenceGate!=='undefined'?
+      DGTradingEvidenceGate.assess({
+        reachable:serverIsReachable(),
+        marketState:typeof marketServerState!=='undefined'?marketServerState:null,
+        brain,maxAgeSeconds:FRESHNESS_THRESHOLDS.streaming.live
+      }):{live:false,reason:'GATE_MISSING',ageSeconds:null};
+    const realBrain=feedGate.live;
     // A real, published TwelveData snapshot exists even without paid Always-On
     // hosting. Show that evidence as historical ONLY; never use it to authorize
     // BUY/SELL READY, entries, or orders in this top-level command center.
@@ -333,8 +358,19 @@
       dataState.classList.toggle('is-offline',!realBrain);
       const span=dataState.querySelector('span');
       if(span) span.textContent=realBrain?'TRADING BRAIN LIVE':
+        serverIsReachable()?'SERVER VERBUNDEN · KEIN LIVE-TICK':
         historical?periodicLabel+' · KEIN LIVE':'BRAIN OFFLINE';
     }
+    const sourceClock=historical?new Intl.DateTimeFormat('de-CH',{
+      timeZone:'Europe/Zurich',day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'
+    }).format(new Date(periodic.updatedAt)):'';
+    text('tradingSourceEvidence',realBrain
+      ? 'TwelveData WebSocket · letzter Tick vor '+Math.round(feedGate.ageSeconds)+' s · XAUUSD'
+      : serverIsReachable()
+        ? 'Server erreichbar, doch der WebSocket-Preis ist nicht live. Keine Entry-Freigabe.'
+        : historical
+          ? 'TwelveData-Snapshot · '+sourceClock+' CH · '+Math.floor(ageMs/60000)+' Min. alt · nur Markt-Kontext'
+          : 'Keine bestätigten Live-Kursdaten. Kein Setup wird freigegeben.');
 
     const status=decision&&decision.status?decision.status:'WAIT';
     const stage=STATUS_STAGE[status]||'WAIT';
@@ -362,9 +398,9 @@
           : 'Keine Richtung ohne echte Trading-Brain-Daten.'
     );
 
-    const liquidityRead=buildLiquidityRead(ctx);
-    buildSessionLevels(ctx);
-    buildRelevantZones(brain);
+    const liquidityRead=buildLiquidityRead(ctx,realBrain);
+    buildSessionLevels(ctx,realBrain);
+    buildRelevantZones(realBrain?brain:null);
 
     const waiting=waitingLabel(decision);
     text('tradingWaitingFor',waiting.title);

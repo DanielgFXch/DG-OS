@@ -1,3 +1,18 @@
+# v0.59.2 — Jarvis Trend, Market Targets & Countertrend Awareness
+
+## New
+- Premium XAUUSD trading-context board separates Macro (Monthly/Weekly), Trading (Daily/4H), and individually observed structural trend facts.
+- Shows real downward and upward liquidity/POI targets concurrently instead of assuming every target supports the prevailing trend.
+- Displays relevant registered Sellside Low sweeps and independently verified H1 reaction evidence.
+- When the DG Trading Bias is bearish, a recorded low sweep is explicitly framed as a **possible countertrend long context**, not a trend reversal or trade approval.
+- Read-only context module `trading-trend-context.js` and regression tests cover missing data, invalid lows, unconfirmed reactions, HTF bias conflicts, and no fabricated BUY_READY.
+
+## Safety & source quality
+- Historical TwelveData snapshots are visibly marked and never authorize live entry.
+- An observed level breach (`SWEPT`) does not count as a confirmed bullish rejection or valid 15M entry.
+- No modification to `rules/strategy.md`, the Entry/Decision Engine, position sizing, orders, Telegram delivery, or hosting.
+- This release improves in-app transparency; persistent push notifications require a separately verified live data and delivery service.
+
 # v0.59.1 — Trading Brain: Verified Live Evidence
 
 ## New

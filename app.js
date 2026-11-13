@@ -472,13 +472,15 @@ const HERO_ACTION_CLASS={WAIT:'wait',DATA_NOT_READY:'wait',MISSED:'wait',WATCH_B
 const HERO_ACTION_ICON={wait:'ic-clock',watch:'ic-eye',buy:'ic-trend-up',sell:'ic-trend-down'};
 const HERO_ACTION_LABEL={WAIT:'WAIT',DATA_NOT_READY:'DATA NOT READY',MISSED:'MISSED / NO ENTRY',WATCH_BUY:'WATCH BUY',WATCH_SELL:'WATCH SELL',BUY_CONFIRMATION:'BUY CONFIRMATION',SELL_CONFIRMATION:'SELL CONFIRMATION',BUY_READY:'BUY READY',SELL_READY:'SELL READY'};
 
+let heroWasLive=false;
 function renderHeroAction(brain){
   // An HTTP 200 can serve an old READY decision. Fail closed when the
   // WebSocket has no verified fresh tick, including after a live disconnect.
   if(brain&&!isVerifiedLiveTradingBrain())brain=null;
   const badge=$('heroSourceBadge');
   if(!brain||!brain.decision){
-    const hasHistoricalEvidence=marketServerReachable||Boolean(periodicBrainSnapshot);
+    const hasHistoricalEvidence=marketServerReachable||Boolean(periodicBrainSnapshot)||heroWasLive;
+    heroWasLive=false;
     if(badge){badge.textContent=hasHistoricalEvidence?'KEIN LIVE':'SIMULATION';badge.className='badge-test';}
     if(hasHistoricalEvidence){
       $('action').className='action wait';
@@ -491,6 +493,7 @@ function renderHeroAction(brain){
     }
     return;
   }
+  heroWasLive=true;
   if(badge){ badge.textContent='LIVE'; badge.className='badge-live'; }
 
   const d=brain.decision;

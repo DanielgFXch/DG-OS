@@ -96,6 +96,52 @@
     }
     return lines.join(' ');
   }
+  // A live PRICE from the browser is different from live candles/strategy.
+  // This safe fallback is useful without Always-On hosting but never converts
+  // historical DG Bias, levels or sweeps into current Entry approval.
+  function browserPriceAnswer(quote,snapshot,now){
+    const tick=readLivePrice(quote,now);
+    if(!tick)return '';
+    const lines=[
+      'Gold, XAUUSD, steht laut direktem TwelveData-WebSocket bei '+
+        formatGold(tick.price)+' US-Dollar je Feinunze. '+
+        'Letzter echter Kurs-Tick vor '+tick.ageSeconds+' Sekunden.',
+      'Der Goldpreis ist aktuell, aber mein vollständiger DG Trading Brain ist nicht live verbunden.'
+    ];
+    const at=new Date(snapshot?.updatedAt||'');
+    const age=now.getTime()-at.getTime();
+    if(snapshot?.symbol==='XAUUSD'&&snapshot?.mode==='PERIODIC_READ_ONLY'&&
+       snapshot?.brain?.report&&Number.isFinite(age)&&age>=0&&age<14*86400000){
+      const decision=snapshot.brain.decision||{};
+      const macro=decision.macroBias;
+      const trading=decision.tradingBias;
+      if(typeof macro==='string'||typeof trading==='string'){
+        lines.push('Historische DG-Marktaufnahme vom '+formatDate(at)+
+          ': Macro-Bias '+(macro||'UNBEKANNT')+
+          ', Trading-Bias '+(trading||'UNBEKANNT')+
+          '. Diese Einschätzung ist nicht aktuell bestätigt.');
+      }else{
+        lines.push('Die historische DG-Aufnahme vom '+formatDate(at)+
+          ' enthält keinen zuverlässig zuordenbaren aktuellen Bias.');
+      }
+      const values=Array.isArray(snapshot.brain.targets)?snapshot.brain.targets:[];
+      const targets=values.filter(t=>typeof t.price==='number'&&Number.isFinite(t.price)&&
+        (t.direction==='up'||t.direction==='down')).slice(0,2);
+      if(targets.length){
+        lines.push('Nur als historische Orientierung waren folgende Ziele registriert: '+
+          targets.map(t=>(t.direction==='up'?'oberhalb ':'unterhalb ')+
+            formatGold(t.price)+' US-Dollar').join('; ')+
+          '. Diese Ziele sind noch nicht mit dem aktuellen Chart verifiziert.');
+      }
+    }else{
+      lines.push('Für eine DG-Markteinschätzung liegen keine ausreichend aktuellen Kerzen und Struktur-Nachweise vor.');
+    }
+    lines.push('Ein aktueller Liquidity-Sweep, eine POI-Reaktion, 15M Confirmation und ein valider Entry sind damit NICHT bestätigt.');
+    lines.push('Mein Rat: WAIT, nicht aus FOMO kaufen oder verkaufen. '+
+      'Für aktuelle Setup-Bestätigungen brauchen wir den Always-On Trading Brain mit frischen Candles.');
+    return lines.join(' ');
+  }
+
   function answerTrading(question,options={}){
     if(asksForOwnTrades(question)){
       return 'Ich kann deine persönlichen Trades noch nicht direkt aus MT5 oder deinem Broker auslesen. '+
@@ -117,6 +163,12 @@
       snapshot?.symbol==='XAUUSD'&&snapshot?.brain?.report&&
       snapshot?.brain?.decision&&Number.isFinite(age)&&age>=0&&age<14*86400000;
     const brain=live||(historical?snapshot.brain:null);
+    const browser=options.browserQuote;
+    const browserTick=browser?.source==='TWELVEDATA_BROWSER_WEBSOCKET'&&
+      browser?.symbol==='XAUUSD'?readLivePrice(browser,now):null;
+    if(!live&&browserTick&&isGoldStatusQuestion(question)){
+      return browserPriceAnswer(browser,snapshot,now);
+    }
     if(!brain)return 'Ich kann Gold gerade nicht zuverlässig analysieren: Es sind keine gültigen Trading-Brain-Daten oder kein ausreichend frischer Livepreis verfügbar. '+
       'Die Session-Uhr ist kein Kursfeed und ich gebe ohne belegte Kerzen keine Buy- oder Sell-Empfehlung. Kein FOMO.';
 

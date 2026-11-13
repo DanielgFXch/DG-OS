@@ -59,7 +59,7 @@ const engine={
       entry:{status:'BUY_READY',direction:'bullish',entryZone:{priceLow:4090,priceHigh:4095},stopLoss:4080,reasons:['BAD BUY']},
       decision:{status:'BUY_READY',direction:'bullish',entryZone:{priceLow:4090,priceHigh:4095},invalidation:4080,reasons:['BAD BUY']},
       risk:{entryPrice:4092},
-      report:{status:'BUY_READY',summary:'Original engine: READY',
+      report:{status:'BUY_READY',summary:'HTF Bias — Trading BEARISH\nEntry Status: BUY_READY\nEntry 4092, SL 4080, Risk-Distanz 12',
         htfBias:{macro:{state:'BULLISH'},trading:{state:'BEARISH'}},
         freshBullishPOIs:[],freshBearishPOIs:[]}
     };
@@ -85,7 +85,9 @@ const engine={
  assert.equal(state.brain.decision.invalidation,null);
  assert.equal(state.brain.risk,null);
  assert.match(state.brain.report.summary,/NO FOMO/);
- assert.doesNotMatch(state.brain.report.summary,/BUY READY/);
+ assert.doesNotMatch(state.brain.report.summary,/BUY_READY|SELL_READY|SL 4080/);
+ assert.equal(state.brain.report.entry.status,'WAIT');
+ assert.match(state.brain.report.summary,/Trading BEARISH/);
  const second=await brain.refresh('private-test-key');
  assert.equal(f.requests.length,7,'No repeated API calls inside timeframe TTL');
  assert.equal(second.missing.length,0);
@@ -128,6 +130,7 @@ const engine={
  assert.match(app,/DGOSBrowserTradingBrain=Object.freeze/);
  assert.match(app,/verifiedLiveBrainSource\(\)/);
  assert.match(app,/browserCandleBrain\.refresh\(key\)/);
+ assert.match(app,/const reportedMs=/,'Provider timestamp is checked');
  assert.match(personal,/DGOSBrowserTradingBrain\?\.getSnapshot\?\.\(\)/);
  assert.match(cmd,/browserVerified/);
  assert.match(cmd,/DG BROWSER-TREND LIVE/);

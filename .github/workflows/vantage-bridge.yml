@@ -1,0 +1,20 @@
+name: DG Jarvis Vantage Bridge Security
+on:
+  pull_request:
+    paths:
+      - 'tradingview/DG_Jarvis_Vantage_Bridge_V1.pine'
+      - 'supabase/functions/dgos-vantage-bridge/**'
+      - 'supabase/migrations/*vantage*.sql'
+      - 'scripts/test-vantage-bridge.js'
+      - '.github/workflows/vantage-bridge.yml'
+  workflow_dispatch:
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Bridge validation test
+        run: node scripts/test-vantage-bridge.js

@@ -1,0 +1,23 @@
+name: DG Jarvis HTF Zone Intelligence Tests
+on:
+  pull_request:
+    paths:
+      - 'server/lib/htfZoneBriefing.js'
+      - 'server/lib/htfZoneBriefing.test.js'
+      - 'server/index.js'
+      - '.github/workflows/htf-zone-briefing.yml'
+  workflow_dispatch:
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: HTF zone formatter and Europe/Zurich scheduler
+        run: |
+          node --check server/index.js
+          node --check server/lib/htfZoneBriefing.js
+          node --test server/lib/htfZoneBriefing.test.js

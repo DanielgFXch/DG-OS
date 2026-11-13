@@ -30,6 +30,7 @@ const { GoogleCalendarIntegration } = require('./lib/googleCalendarIntegration.j
 const { WhoopIntegration } = require('./lib/whoopIntegration.js');
 const scheduledBriefingStore = require('./lib/scheduledBriefingStore.js');
 const sessionOpenStore = require('./lib/sessionOpenStore.js');
+const htfZoneBriefing = require('./lib/htfZoneBriefing.js');
 const MB = require('../marketBrain.js');
 
 const PORT = parseInt(process.env.PORT, 10) || 8080;
@@ -221,6 +222,7 @@ async function main() {
   // dedups by `${UTC-date}-${sessionId}`, same idea as
   // scheduledBriefingStore.js's per-day dedup).
   const sessionOpenInterval = setInterval(() => {
+    if (process.env.DGOS_HTF_ZONE_BRIEFINGS_ENABLED === 'true') return;
     if (!telegramToken || !telegramChatId) return;
     const sentKeys = sessionOpenStore.readSentKeys();
     const next = MB.nextSessionOpenToSend(new Date(), sentKeys);
@@ -236,6 +238,34 @@ async function main() {
       .catch(err => console.error('[server] session-open zones send failed:', err.message));
   }, SESSION_OPEN_CHECK_MS);
 
+  // Optional independent London/New York HTF reports (Europe/Zurich).
+  // This does not add MT windows or LTF zones.
+  const htfPending = new Set();
+  const htfBriefingInterval = setInterval(() => {
+    if (process.env.DGOS_HTF_ZONE_BRIEFINGS_ENABLED !== 'true') return;
+    if (!telegramToken || !telegramChatId) return;
+    const now = new Date();
+    const slot = htfZoneBriefing.nextBriefing(now, sessionOpenStore.readSentKeys(), {
+      londonTime: process.env.DGOS_HTF_LONDON_TIME || '08:50',
+      newYorkTime: process.env.DGOS_HTF_NEW_YORK_TIME || '13:50'
+    });
+    if (!slot || htfPending.has(slot.key)) return;
+    if (!htfZoneBriefing.isHTFDataReady(marketState, now)) return;
+    const brain = marketState.getTradingBrain();
+    const message = htfZoneBriefing.buildHTFZoneBriefing(slot, brain, {
+      now, price: htfZoneBriefing.freshPrice(marketState, now)
+    });
+    if (!message) return;
+    htfPending.add(slot.key);
+    sendTelegramMessage(telegramToken, telegramChatId, message)
+      .then(() => {
+        sessionOpenStore.appendSentKey(slot.key);
+        console.log('[server] HTF zone briefing sent:', slot.label);
+      })
+      .catch(err => console.error('[server] HTF zone briefing failed:', err.message))
+      .finally(() => htfPending.delete(slot.key));
+  }, 60 * 1000);
+
   function shutdown() {
     console.log('[server] shutting down...');
     socket.disconnect();
@@ -244,6 +274,7 @@ async function main() {
     clearInterval(newsInterval);
     clearInterval(scheduledBriefingInterval);
     clearInterval(sessionOpenInterval);
+    clearInterval(htfBriefingInterval);
     apiServer.close(() => process.exit(0));
     setTimeout(() => process.exit(0), 2000).unref();
   }

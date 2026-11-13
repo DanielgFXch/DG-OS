@@ -18,7 +18,7 @@
     {id:'15min',td:'15min',count:192,min:28,seconds:900,ttl:10*60000,maxLag:3600000},
     {id:'5min',td:'5min',count:288,min:48,seconds:300,ttl:10*60000,maxLag:30*60000}
   ];
-  const CORE=['weekly','daily','4h','1h','15min','5min'];
+  const CORE=['monthly','weekly','daily','4h','1h','15min','5min'];
   const safeNum=v=>typeof v==='number'?v:typeof v==='string'&&v.trim()?Number(v):NaN;
   const validNum=n=>Number.isFinite(n)&&n>0;
   function utcMs(value){
@@ -163,13 +163,21 @@
         // confirmation from being misrepresented as trade authorization.
         const note='Browser-Goldkurs und frische echte Kerzen vorhanden. '+
           'Nur SMC-Kontext; ohne kontinuierlichen Setup-Verlauf kein LIVE-ENTRY. WAIT / NO FOMO.';
+        const safeEntry={...real.entry,status:'WAIT',direction:null,
+          primaryPOI:null,entryZone:null,stopLoss:null,reasons:[note]};
+        const safeDecision={...real.decision,status:'WAIT',direction:null,primaryPoi:null,
+          entryZone:null,invalidation:null,riskReward:[],targets:[],
+          missingRequirements:[note],reasons:[note]};
+        // The underlying report may contain a raw READY status in its
+        // narrative even after the decision is downgraded. Remove ONLY
+        // trade-action lines; keep genuine HTF/POI/liquidity facts.
+        const contextualLines=String(real.report?.summary||'').split('\n').filter(line=>
+          !/Entry Status:|^Entry\s+.*(?:SL|Risk-Distanz)|\b(?:BUY_READY|SELL_READY|BUY_CONFIRMATION|SELL_CONFIRMATION)\b/i.test(line));
         const brain={
           ...real,status:'WAIT',risk:null,
-          entry:{...real.entry,status:'WAIT',entryZone:null,stopLoss:null,reasons:[note]},
-          decision:{...real.decision,status:'WAIT',direction:null,primaryPoi:null,
-            entryZone:null,invalidation:null,riskReward:[],
-            missingRequirements:[note],reasons:[note]},
-          report:{...real.report,status:'WAIT',risk:null,summary:note+'\n'+String(real.report?.summary||'')}
+          entry:safeEntry,decision:safeDecision,
+          report:{...real.report,status:'WAIT',entry:safeEntry,risk:null,
+            summary:note+'\n'+contextualLines.join('\n')}
         };
         cached={verified:true,reason:'BROWSER_CANDLE_CONTEXT_VERIFIED',
           source:'BROWSER_TWELVEDATA_LIVE',brain,sessions,quote,

@@ -2147,19 +2147,42 @@
   function answerTradingQuestion(question){
     const coach=window.DGOSJarvisConversation;
     if(!coach?.answerTrading)return 'Meine Trading-Analyse ist momentan nicht verfügbar.';
-    let live=null,snapshot=null;
+    let live=null,snapshot=null,verified=false,liveQuote=null;
     try{
-      if(typeof marketServerReachable!=='undefined' && marketServerReachable &&
-         typeof tradingBrainState!=='undefined')live=tradingBrainState;
-    }catch(_){}
+      if(typeof DGTradingEvidenceGate!=='undefined'&&
+         typeof marketServerState!=='undefined'&&
+         typeof tradingBrainState!=='undefined'&&
+         typeof marketServerReachable!=='undefined'){
+        const gate=DGTradingEvidenceGate.assess({
+          reachable:marketServerReachable,
+          marketState:marketServerState,
+          brain:tradingBrainState,
+          maxAgeSeconds:FRESHNESS_THRESHOLDS.streaming.live
+        });
+        verified=gate.live===true;
+        if(verified){
+          live=tradingBrainState;
+          // The price is supplied only from the very same verified
+          // XAUUSD market snapshot, never a stale DOM label or demo quote.
+          liveQuote={
+            price:marketServerState.quote?.price,
+            at:marketServerState.freshness?.lastPriceUpdate
+          };
+        }
+      }
+    }catch(_){verified=false;live=null;liveQuote=null;}
     try{
       if(typeof periodicBrainSnapshot!=='undefined')snapshot=periodicBrainSnapshot;
     }catch(_){}
     return coach.answerTrading(question,{
-      liveBrain:live,historicalSnapshot:snapshot,now:new Date(),
+      liveBrain:live,liveVerified:verified,liveQuote,
+      historicalSnapshot:snapshot,now:new Date(),
+      trendContext:window.DGTrendContext,
+      setupClarity:window.DGSetupClarity,
       answerMarketQuestion:typeof answerMarketQuestion==='function'?answerMarketQuestion:null
     });
   }
+
   function interpretCommand(raw) {
     const original = String(raw || '').trim();
     if (!original) return false;

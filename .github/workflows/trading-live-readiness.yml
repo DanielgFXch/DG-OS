@@ -13,14 +13,16 @@ on:
       - 'scripts/test-trading-evidence-gate.js'
       - 'docs/DG_TRADING_LIVE_START.md'
       - 'scripts/test-trading-live-readiness.js'
-      - 'trading-trend-context.js'
-      - 'trading-command.js'
-      - 'scripts/test-trading-trend-context.js'
       - '.github/workflows/trading-live-readiness.yml'
   push:
     branches: [main]
     paths:
       - 'render.yaml'
+      - 'trading-trend-context.js'
+      - 'trading-command.js'
+      - 'trading-command.css'
+      - 'index.html'
+      - 'scripts/test-trading-trend-context.js'
       - 'docs/DG_TRADING_LIVE_START.md'
       - 'scripts/test-trading-live-readiness.js'
 jobs:

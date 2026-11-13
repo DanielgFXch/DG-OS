@@ -16,7 +16,16 @@ assert.equal(response.brain.report.status,'DATA_NOT_READY');
 assert.equal(response.brain.decision.status,'DATA_NOT_READY');
 assert.equal(response.brain.entry.status,'DATA_NOT_READY');
 assert.ok(response.brain.report.summary.includes('Keine Live-Entry-Freigabe'));
-assert.ok(response.missingCoreTimeframes.includes('4h'),'Absent 4h is honestly missing');
+// Tracked market evidence now contains real 4H candles. Validate the current
+// coverage AND verify the explicit missing-4H failure mode independently.
+assert.deepEqual(response.missingCoreTimeframes,
+  ['weekly','daily','4h','1h'].filter(tf=>!response.availability[tf]),
+  'Reported missing timeframes must match actual provider coverage');
+const without4h=snapshot({...market,candlesByTimeframe:{
+  ...(market.candlesByTimeframe||{}),'4h':{series:[]}
+}});
+assert.ok(without4h.missingCoreTimeframes.includes('4h'),'Absent 4h is honestly missing');
+assert.equal(without4h.brain.decision.status,'DATA_NOT_READY');
 assert.ok(response.availability['1h']>=24,'Real hourly values still available');
 assert.ok(response.brain.sessionIntelligence.model==='OBSERVATIONS_ONLY');
 assert.ok(!response.brain.entry.entryZone);

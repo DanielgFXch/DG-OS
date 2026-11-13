@@ -106,7 +106,9 @@
     const now=options.now instanceof Date?options.now:new Date();
     // Reachability is not evidence of a live price. The caller must have
     // passed the strict DGTradingEvidenceGate and the quote must be recent.
-    const live=options.liveVerified===true&&options.liveBrain?.report&&
+    const verifiedQuote=readLivePrice(options.liveQuote,now);
+    const live=options.liveVerified===true&&verifiedQuote&&
+      options.liveBrain?.symbol==='XAUUSD'&&options.liveBrain?.report&&
       options.liveBrain?.decision?options.liveBrain:null;
     const snapshot=options.historicalSnapshot;
     const at=new Date(snapshot?.updatedAt||'');
@@ -115,8 +117,8 @@
       snapshot?.symbol==='XAUUSD'&&snapshot?.brain?.report&&
       snapshot?.brain?.decision&&Number.isFinite(age)&&age>=0&&age<14*86400000;
     const brain=live||(historical?snapshot.brain:null);
-    if(!brain)return 'Ich kann Gold gerade nicht zuverlässig analysieren: Es sind keine gültigen Trading-Brain-Daten verfügbar. '+
-      'Die Session-Uhr ist kein Kursfeed und ich gebe ohne belegte Kerzen keine Buy- oder Sell-Empfehlung.';
+    if(!brain)return 'Ich kann Gold gerade nicht zuverlässig analysieren: Es sind keine gültigen Trading-Brain-Daten oder kein ausreichend frischer Livepreis verfügbar. '+
+      'Die Session-Uhr ist kein Kursfeed und ich gebe ohne belegte Kerzen keine Buy- oder Sell-Empfehlung. Kein FOMO.';
 
     if(live&&isGoldStatusQuestion(question)){
       return buildLiveGoldAnswer(live,options.liveQuote,options,now);

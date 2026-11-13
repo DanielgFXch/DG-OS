@@ -7,6 +7,8 @@ on:
       - 'trading-command.js'
       - 'trading-command.css'
       - 'trading-evidence-gate.js'
+      - 'trading-trend-context.js'
+      - 'scripts/test-trading-trend-context.js'
       - 'index.html'
       - 'scripts/test-trading-evidence-gate.js'
       - 'docs/DG_TRADING_LIVE_START.md'
@@ -16,6 +18,11 @@ on:
     branches: [main]
     paths:
       - 'render.yaml'
+      - 'trading-trend-context.js'
+      - 'trading-command.js'
+      - 'trading-command.css'
+      - 'index.html'
+      - 'scripts/test-trading-trend-context.js'
       - 'docs/DG_TRADING_LIVE_START.md'
       - 'scripts/test-trading-live-readiness.js'
 jobs:
@@ -34,5 +41,10 @@ jobs:
           node --check trading-command.js
           node --check app.js
           node scripts/test-trading-evidence-gate.js
+      - name: Verify DG trend / targets / countertrend briefing never forces entries
+        run: |
+          node --check trading-trend-context.js
+          node --check trading-command.js
+          node scripts/test-trading-trend-context.js
       - name: Verify existing session clock and overlap rules
         run: node scripts/test-trading-session-clock.js

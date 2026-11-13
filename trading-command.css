@@ -597,3 +597,193 @@ body[data-dgos-route="trading"] .app-footer{
   .trading-command-data-state span{font-size:6px}
   .trading-session-copy h2{font-size:29px}
 }
+
+/* Jarvis trend/targets/countertrend board. Read-only market facts. */
+.trading-context-board{
+  position:relative;
+  z-index:2;
+  margin:10px 0;
+  padding:15px;
+  border:1px solid rgba(119,200,248,.16);
+  border-top-color:rgba(203,240,255,.24);
+  border-radius:20px;
+  background:linear-gradient(140deg,rgba(16,36,59,.61),rgba(4,16,31,.50));
+  box-shadow:inset 0 1px rgba(255,255,255,.06),0 18px 45px rgba(0,0,0,.12);
+}
+.trading-context-heading{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:16px;
+  margin-bottom:13px;
+}
+.trading-context-heading span,
+.trading-context-kicker,
+.trading-countertrend-notice>div>span{
+  color:rgba(108,213,243,.85);
+  font-family:var(--hud-font);
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:.12em;
+}
+.trading-context-heading h3{
+  margin:5px 0 4px;
+  color:#f0faff;
+  font-size:clamp(18px,2.6vw,26px);
+  font-weight:650;
+  letter-spacing:-.035em;
+}
+.trading-context-heading p{
+  max-width:700px;
+  margin:0;
+  color:rgba(176,205,222,.8);
+  font-size:12px;
+  line-height:1.5;
+}
+#tradingContextSource{
+  flex:0 0 auto;
+  padding:7px 10px;
+  border:1px solid rgba(139,196,225,.18);
+  border-radius:30px;
+  background:rgba(8,25,40,.6);
+  color:#b0cddf;
+  font-size:9px;
+  font-weight:600;
+  letter-spacing:.05em;
+}
+.trading-context-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+}
+.trading-context-panel{
+  min-width:0;
+  padding:13px;
+  border:1px solid rgba(148,219,243,.12);
+  border-radius:15px;
+  background:rgba(2,12,26,.48);
+}
+.trading-context-bias-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+  gap:8px;
+  padding:12px 0 8px;
+  border-bottom:1px solid rgba(150,210,234,.10);
+}
+.trading-context-bias-row>span{
+  color:rgba(167,202,220,.75);
+  font-size:11px;
+}
+.trading-context-bias-row strong{
+  color:#eaf7ff;
+  font-size:14px;
+  font-weight:700;
+}
+.trading-context-panel p{
+  margin:11px 0 0;
+  color:rgba(169,200,220,.8);
+  font-size:11px;
+  line-height:1.55;
+  overflow-wrap:anywhere;
+}
+.trading-context-panel>small{
+  display:block;
+  margin-top:9px;
+  color:rgba(153,190,210,.65);
+  font-size:9px;
+  line-height:1.5;
+}
+.trading-context-target-label{
+  margin:10px 0 6px;
+  font-size:10px;
+  font-weight:650;
+}
+.trading-context-target-label.is-down{color:#f1a3b2}
+.trading-context-target-label.is-up{color:#8debd5}
+.trading-context-targets{display:grid;gap:5px}
+.trading-context-target-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:10px;
+  padding:7px 8px;
+  border-radius:9px;
+  background:rgba(38,65,91,.25);
+}
+.trading-context-target-row span{
+  min-width:0;
+  color:rgba(191,218,231,.84);
+  font-size:10px;
+  line-height:1.45;
+  overflow-wrap:anywhere;
+}
+.trading-context-target-row strong{
+  flex:0 0 auto;
+  color:#ecfaff;
+  font-family:var(--hud-font);
+  font-size:12px;
+}
+.trading-context-empty{
+  padding:7px 0;
+  color:rgba(161,192,205,.6);
+  font-size:10px;
+}
+.trading-context-low{
+  display:block;
+  margin-top:14px;
+  color:#e6f6ff;
+  font-size:15px;
+  line-height:1.35;
+}
+.trading-countertrend-notice{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:15px;
+  margin-top:9px;
+  padding:13px;
+  border:1px solid rgba(120,186,234,.14);
+  border-left:3px solid rgba(131,188,231,.55);
+  border-radius:13px;
+  background:rgba(10,34,52,.48);
+}
+.trading-countertrend-notice[data-state="watch"]{
+  border-left-color:#e9bd70;
+  background:linear-gradient(110deg,rgba(82,60,25,.21),rgba(8,28,48,.45));
+}
+.trading-countertrend-notice strong{
+  display:block;
+  margin-top:5px;
+  color:#eefaff;
+  font-size:14px;
+  letter-spacing:.005em;
+}
+.trading-countertrend-notice p{
+  max-width:780px;
+  margin:5px 0 0;
+  color:rgba(183,211,226,.78);
+  font-size:11px;
+  line-height:1.5;
+}
+.trading-countertrend-notice>small{
+  flex:0 0 auto;
+  padding:7px 9px;
+  border-radius:8px;
+  background:rgba(14,36,55,.7);
+  color:#cde6f1;
+  font-size:10px;
+  font-weight:650;
+}
+@media(max-width:900px){
+  .trading-context-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .trading-context-panel:last-child{grid-column:1 / -1}
+}
+@media(max-width:650px){
+  .trading-context-board{padding:12px;border-radius:16px}
+  .trading-context-heading{flex-direction:column;gap:8px}
+  .trading-context-grid{grid-template-columns:1fr;gap:7px}
+  .trading-context-panel:last-child{grid-column:auto}
+  .trading-countertrend-notice{align-items:flex-start;flex-direction:column;gap:8px}
+  .trading-context-heading p{font-size:11px}
+}

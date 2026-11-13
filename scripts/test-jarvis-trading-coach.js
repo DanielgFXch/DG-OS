@@ -73,9 +73,9 @@ for(const asset of ['jarvis-trading-coach-engine.js?v=1',
   assert.ok(html.includes(asset)&&sw.includes(asset),'missing PWA asset '+asset);
 }
 assert.ok(html.indexOf('jarvis-trading-coach-engine.js?v=1')<
-  html.indexOf('personal.js?v=0.59.12.5'),'Voice intent engine before personal route');
+  html.indexOf('personal.js?v=0.59.12.6'),'Voice intent engine before personal route');
 assert.ok(html.indexOf('jarvis-trading-coach-ui.js?v=1')>
-  html.indexOf('personal.js?v=0.59.12.5'),'Private journal initializes after Jarvis');
+  html.indexOf('personal.js?v=0.59.12.6'),'Private journal initializes after Jarvis');
 assert.ok(personal.indexOf('DGOSTradingCoachEngine?.isCoachingQuestion(original)')<
   personal.indexOf('DGOSJarvisMarketChart?.shouldOpen(original)'),'Coach intent must win over chart intent');
 assert.ok(personal.includes('showReply(window.DGOSTradingCoach?.summary()'));

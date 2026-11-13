@@ -1,3 +1,20 @@
+# v0.59.3 — Jarvis Setup Clarity / No FOMO
+
+## New
+- Read-only Jarvis Setup Clarity panel distinguishes DG Entry progress (WAIT, WATCH, CONFIRMATION, READY, MISSED) from trading certainty.
+- Three transparent evidence areas: what is documented, what conditions are still missing, and what might contradict the setup.
+- Missing entry zone, SL invalidation or target is made explicit even if the existing engine reports READY.
+- Countertrend and mixed HTF bias are shown as contextual risks, not invented numerical confidence.
+- MISSED gets an explicit no-chasing message; WAIT is a valid deliberate outcome.
+
+## Safety
+- Old or missing WebSocket evidence never grants live trade approval. The panel explicitly blocks historical snapshots from showing as live entries.
+- No new trade rules, scoring formula, profit probability, execution, position sizing, or alerts.
+- DG rules and trading engine remain untouched; presentation reads only existing fact fields.
+
+## Tests
+- `scripts/test-trading-fomo-guard.js` verifies stage behavior, countertrend risk, lack of trade plan, historical fail-closed data, and UI integration.
+
 # v0.59.2 — Jarvis Trend, Market Targets & Countertrend Awareness
 
 ## New

@@ -3,6 +3,12 @@ on:
   pull_request:
     paths:
       - 'render.yaml'
+      - 'app.js'
+      - 'trading-command.js'
+      - 'trading-command.css'
+      - 'trading-evidence-gate.js'
+      - 'index.html'
+      - 'scripts/test-trading-evidence-gate.js'
       - 'docs/DG_TRADING_LIVE_START.md'
       - 'scripts/test-trading-live-readiness.js'
       - '.github/workflows/trading-live-readiness.yml'
@@ -22,5 +28,11 @@ jobs:
           node-version: '22'
       - name: Check existing server wiring and secret-safe Render template
         run: node scripts/test-trading-live-readiness.js
+      - name: Reject stale, disconnected and unverified Trading Brain signals
+        run: |
+          node --check trading-evidence-gate.js
+          node --check trading-command.js
+          node --check app.js
+          node scripts/test-trading-evidence-gate.js
       - name: Verify existing session clock and overlap rules
         run: node scripts/test-trading-session-clock.js

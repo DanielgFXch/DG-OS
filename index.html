@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="./private-hub.css?v=1" />
   <link rel="stylesheet" href="./mobile.css?v=0.46.3" />
   <link rel="stylesheet" href="./jarvis-visuals.css?v=0.56.0" />
-  <link rel="stylesheet" href="./trading-command.css?v=0.57.0" />
+  <link rel="stylesheet" href="./trading-command.css?v=0.57.2" />
   <link rel="stylesheet" href="./trading-intelligence.css?v=1" />
   <link rel="stylesheet" href="./ambient-glass.css?v=0.58.1" />
   <link rel="stylesheet" href="./jarvis-os-v2.css?v=0.59.0" />
@@ -931,7 +931,10 @@
       <section id="tradingCommandCenter" class="trading-command-center" aria-labelledby="tradingCommandTitle">
         <div class="trading-command-top">
           <button id="tradingBackPersonal" class="trading-back-personal" type="button" aria-label="Zurück zur persönlichen Zentrale">← <span>Personal Zentrale</span></button>
-          <div id="tradingCommandDataState" class="trading-command-data-state"><i aria-hidden="true"></i><span>DATEN WERDEN GEPRÜFT</span></div>
+          <div class="trading-command-data-meta">
+            <div id="tradingCommandDataState" class="trading-command-data-state"><i aria-hidden="true"></i><span>DATEN WERDEN GEPRÜFT</span></div>
+            <small id="tradingSourceEvidence" aria-live="off">Datenquelle wird geprüft.</small>
+          </div>
         </div>
 
         <section id="dgTradingSessionClock" class="dg-trading-session-clock" aria-label="Aktuelle Trading-Sessions und Countdown" data-state="loading">
@@ -1563,7 +1566,8 @@
     <button type="submit">E-Mail senden</button>
   </form></dialog>
   <script src="./marketBrain.js"></script>
-  <script src="./app.js?v=0.59.2"></script>
+  <script src="./trading-evidence-gate.js?v=1"></script>
+  <script src="./app.js?v=0.59.3"></script>
   <script src="./jarvis-shopping-intent.js?v=2"></script>
   <script src="./jarvis-life-intent.js?v=1"></script>
   <script src="./jarvis-bill-speech.js?v=1"></script>
@@ -1588,7 +1592,7 @@
   <script src="./social.js?v=0.61.2"></script>
   <script src="./navigation.js?v=0.60.1"></script>
   <script src="./private-hub.js?v=2"></script>
-  <script src="./trading-command.js?v=0.57.1"></script>
+  <script src="./trading-command.js?v=0.57.2"></script>
   <script src="./trading-intelligence.js?v=2"></script>
   <script src="./trading-intelligence-ui.js?v=2"></script>
   <script src="./trading-session-clock.js?v=1"></script>

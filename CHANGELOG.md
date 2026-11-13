@@ -1,3 +1,23 @@
+# v0.59.1 — Trading Brain: Verified Live Evidence
+
+## New
+- Trading Command Center shows the real data source and last tick/snapshot age in a compact status line.
+- A fail-closed WebSocket evidence check distinguishes an HTTP-reachable server from a genuinely live XAUUSD price feed.
+
+## Improved
+- A missing, delayed, disconnected or future-dated WebSocket tick cannot display LIVE or a live BUY/SELL READY decision.
+- Session sweeps and current POIs are no longer claimed when there is no verified live feed; missing liquidity observations are distinguished from an observed NO SWEEP.
+- Historical TwelveData reports remain available as clearly labeled context, never as entry authorization.
+- Previous live hero decisions are cleared if the live feed disconnects.
+
+## Checks
+- Added regression tests for disconnected, stale, missing, and future-dated market evidence.
+- No change to DG strategy, Market Brain formulas, TradingView alerts, trading execution or paid services.
+
+## Changed files
+- `trading-evidence-gate.js`, `app.js`, `trading-command.js`, `index.html`, `trading-command.css`
+- `scripts/test-trading-evidence-gate.js`, `.github/workflows/trading-live-readiness.yml`, `package.json`, `CHANGELOG.md`
+
 # v0.59.0 — Fixed Dock + Jarvis Pixel Wave OS
 
 ## Navigation

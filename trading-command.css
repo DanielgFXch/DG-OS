@@ -64,6 +64,24 @@ body[data-dgos-route="trading"] #tradingWorkspace>summary{
   margin-bottom:13px;
 }
 
+.trading-command-data-meta{
+  display:flex;
+  align-items:flex-end;
+  flex-direction:column;
+  gap:6px;
+  min-width:0;
+}
+
+#tradingSourceEvidence{
+  display:block;
+  max-width:405px;
+  text-align:right;
+  color:rgba(166,209,225,.72);
+  font-size:9px;
+  line-height:1.4;
+  letter-spacing:.01em;
+}
+
 .trading-back-personal{
   display:inline-flex;
   align-items:center;
@@ -513,6 +531,8 @@ body[data-dgos-route="trading"] .app-footer{
     padding:6px 8px;
     font-size:6.4px;
   }
+  .trading-command-data-meta{max-width:70%;}
+  #tradingSourceEvidence{max-width:260px;font-size:8px;}
 
   .trading-session-hero{
     grid-template-columns:minmax(0,1fr) 82px;

@@ -1030,6 +1030,8 @@ function openTdSocket(key){
   });
 
   ws.addEventListener('message',e=>{
+    // Ignore late messages from the previous disconnected/replaced socket.
+    if(tdSocket!==ws)return;
     let msg;
     try{ msg=JSON.parse(e.data) }catch(err){ return }
 

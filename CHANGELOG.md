@@ -1,3 +1,18 @@
+# v0.59.4 — Jarvis speaks real Gold price with DG market briefing
+
+## Implemented
+- Spoken or typed questions such as "Hey Jarvis, wo steht Gold gerade und was sollte man nun machen?" get a coherent XAUUSD price/strategy readout when the server has a verified live tick.
+- Voice output explicitly names the observed USD/oz quote, tick age, DG Macro/Trading Bias, relevant downward/upward targets, swept low and reaction, countertrend caveat, DG Entry status, missing evidence, and anti-FOMO advice.
+- The voice question uses the same DG Trading Brain, Trend Context and Setup Clarity already displayed in the trading dashboard. No second or invented price source.
+- The personal Jarvis voice bridge now requires the existing strict Trading Evidence Gate (current WebSocket tick, XAUUSD symbol, current brain) rather than HTTP reachability.
+- Historical TwelveData snapshots remain labeled as historical and may display the last genuine H1 candle close explicitly as NOT the current live Gold quote.
+- No automatic entry/financial promise; personal broker positions remain unconnected.
+
+## Safety checks
+- A quote that is missing, stale, malformed, or has no verified live brain cannot produce a live price or live trading advice.
+- Regression tests added for spoken price, liquidity goals, bearish trend, countertrend caution, stale ticks, historical H1 closing price, and response readout.
+- Existing voice TTS, transcription provider configuration, and DG trading rules are unchanged.
+
 # v0.59.3 — Jarvis Setup Clarity / No FOMO
 
 ## New

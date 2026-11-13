@@ -8,6 +8,8 @@ on:
       - 'trading-command.css'
       - 'trading-evidence-gate.js'
       - 'trading-trend-context.js'
+      - 'trading-fomo-guard.js'
+      - 'scripts/test-trading-fomo-guard.js'
       - 'scripts/test-trading-trend-context.js'
       - 'index.html'
       - 'scripts/test-trading-evidence-gate.js'
@@ -19,6 +21,7 @@ on:
     paths:
       - 'render.yaml'
       - 'trading-trend-context.js'
+      - 'trading-fomo-guard.js'
       - 'trading-command.js'
       - 'trading-command.css'
       - 'index.html'
@@ -46,5 +49,10 @@ jobs:
           node --check trading-trend-context.js
           node --check trading-command.js
           node scripts/test-trading-trend-context.js
+      - name: Verify Jarvis anti-FOMO clarity is evidence-only and fail-closed
+        run: |
+          node --check trading-fomo-guard.js
+          node --check trading-command.js
+          node scripts/test-trading-fomo-guard.js
       - name: Verify existing session clock and overlap rules
         run: node scripts/test-trading-session-clock.js

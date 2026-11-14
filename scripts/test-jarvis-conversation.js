@@ -184,9 +184,9 @@ assert.ok(voice.includes('lastAudioBlob=blob'));
 assert.ok(voice.includes('DGOSVoiceAudio?.playBlob?.(lastAudioBlob,'));
 assert.ok(voice.includes('dgos-jarvis-voice-state'));
 assert.ok(native.includes('speechChunks(transcript)'));
-assert.ok(html.indexOf('jarvis-conversation.js?v=3')<html.indexOf('personal.js?v='));
+assert.ok(html.indexOf('jarvis-conversation.js?v=4')<html.indexOf('personal.js?v='));
 assert.ok(html.indexOf('jarvis-conversation.css?v=1')<html.indexOf('dg-unified-premium.css?v=1'));
-for(const asset of ['jarvis-conversation.css?v=1','jarvis-conversation.js?v=3'])
+for(const asset of ['jarvis-conversation.css?v=1','jarvis-conversation.js?v=4'])
   assert.ok(html.includes(asset)&&sw.includes(asset),'PWA cache includes '+asset);
 for(const name of ['jarvisUserTurn','jarvisLastQuestion'])
   assert.equal((html.match(new RegExp('id="'+name+'"','g'))||[]).length,1);

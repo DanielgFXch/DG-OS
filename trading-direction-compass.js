@@ -48,7 +48,7 @@
     const priceValid=finitePrice(price);
     const direction=trading==='BULLISH'?'BUY':trading==='BEARISH'?'SELL':null;
     const evidence=[],opposition=[];
-    const ownTargets=direction==='BUY'?tr.upTargets:tr.downTargets;
+    const ownTargets=direction==='BUY'?tr.upTargets:direction==='SELL'?tr.downTargets:[];
     const sideMatches=direction==='BUY'?v=>v.price>price:v=>v.price<price;
     const directionalTargets=Array.isArray(ownTargets)&&priceValid?
       ownTargets.filter(v=>finitePrice(v.price)&&sideMatches(v)):[];

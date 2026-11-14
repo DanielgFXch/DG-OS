@@ -55,7 +55,14 @@ const completeBrain={
 };
 const verifiedQuote={price:3900.22,at:'2026-11-05T11:59:55Z'};
 const spoken=chat.answerTrading('Hey Jarvis, wo steht Gold gerade, und was sollte man mit Gold nun machen?',{
- now,liveBrain:completeBrain,liveVerified:true,liveQuote:verifiedQuote,
+ now,liveBrain:completeBrain,liveVerified:true,continuousVerified:false,liveQuote:verifiedQuote,
+ directionCompass:{read:()=>({
+   focus:'SELL',contextLabel:'KONTEXT WIDERSPRÜCHLICH',
+   evidence:['Trading-Bias Daily/4H: BEARISH.'],
+   opposition:['Macro bullish; Trading bearish.'],
+   entryLabel:'ENTRY: WAIT / NO TRADE',
+   nextStep:'Auf gültige 15M Confirmation und vollständige DG Setup-Kette warten.'
+ })},
  trendContext:{read:()=>({
    available:true,tradingBias:'BEARISH',macroBias:'BULLISH',
    downTargets:[{price:3870,reason:'Daily Low'}],upTargets:[{price:3925,reason:'4H OB'}],
@@ -79,6 +86,10 @@ assert.match(spoken,/3\.925,00/);
 assert.match(spoken,/Asia Low/);
 assert.match(spoken,/Long.*gegen den bearishen Trading Trend/);
 assert.match(spoken,/DG-Setup-Status: WAIT/);
+assert.match(spoken,/SELL bevorzugt, noch kein Entry-Signal/);
+assert.match(spoken,/KONTEXT WIDERSPRÜCHLICH/);
+assert.match(spoken,/ENTRY: WAIT \/ NO TRADE/);
+assert.doesNotMatch(spoken,/Garantiert|\d+ % Trefferquote/);
 assert.match(spoken,/Kein FOMO/);
 assert.doesNotMatch(spoken,/BUY_READY|SELL_READY/);
 

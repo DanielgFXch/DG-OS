@@ -59,6 +59,19 @@
 
     const trend=options.trendContext?.read?.(brain)||null;
     const clarity=options.setupClarity?.read?.(brain,{liveVerified:true})||null;
+    const compass=options.directionCompass?.read?.(brain,{
+      liveVerified:true,continuousVerified:options.continuousVerified===true,
+      price:liveQuote?.price??null,trendContext:options.trendContext
+    })||null;
+    if(compass){
+      lines.push('Meine aktuelle Beobachtungsrichtung nach deinen DG-Regeln: '+
+        (compass.focus==='WAIT'?'WAIT, keine eindeutige Richtung.':
+         compass.focus+' bevorzugt, noch kein Entry-Signal.')+
+        ' '+compass.contextLabel+'.');
+      if(compass.evidence?.length)lines.push('Dafür spricht: '+compass.evidence.slice(0,2).join(' '));
+      if(compass.opposition?.length)lines.push('Dagegen spricht: '+compass.opposition.slice(0,2).join(' '));
+      lines.push(compass.entryLabel+'. '+compass.nextStep);
+    }
     if(trend?.available){
       lines.push('Trading Bias auf Daily und 4 Stunden: '+trend.tradingBias+
         '. Macro Bias auf Monthly und Weekly: '+trend.macroBias+'.');

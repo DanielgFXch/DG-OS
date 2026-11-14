@@ -1024,3 +1024,98 @@ body[data-dgos-route="trading"] .app-footer{
 /* A verified direct browser quote is live price, NOT a live DG entry engine. */
 .trading-jarvis-launch[data-live="price"] .trading-jarvis-live{border-left-color:#82d8ff}
 .trading-jarvis-launch[data-live="price"] .trading-jarvis-live strong{color:#9ee5ff}
+
+/* Direction Compass: strong directional orientation, never trade authorisation. */
+.trading-direction-compass{
+  margin:11px 0 12px;
+  padding:15px;
+  border:1px solid rgba(125,209,254,.22);
+  border-radius:19px;
+  background:linear-gradient(130deg,rgba(10,43,71,.65),rgba(3,20,38,.63));
+  box-shadow:inset 0 1px rgba(255,255,255,.055),0 13px 36px rgba(0,0,0,.12);
+}
+.trading-direction-head{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:15px;margin-bottom:12px;
+}
+.trading-direction-head>div:first-child{min-width:0;flex:1}
+.trading-direction-kicker{
+  color:#89d9fd;font-family:var(--hud-font);font-size:9px;
+  font-weight:700;letter-spacing:.11em;
+}
+.trading-direction-head h3{
+  margin:6px 0;color:#eaf8ff;
+  font-size:clamp(17px,2.8vw,22px);line-height:1.3;
+  letter-spacing:-.025em;
+}
+.trading-direction-head p{
+  margin:0;color:rgba(190,219,236,.77);
+  font-size:11px;line-height:1.5;
+}
+.trading-direction-verdict{
+  min-width:185px;max-width:255px;
+  flex:0 0 auto;
+  display:grid;gap:6px;
+  border:1px solid rgba(141,195,226,.26);
+  border-radius:13px;
+  padding:12px 14px;
+  background:rgba(1,17,32,.71);
+}
+.trading-direction-verdict strong{
+  color:#d7efff;font-size:14px;line-height:1.33;
+  letter-spacing:-.01em;
+}
+.trading-direction-verdict small{
+  color:#8eb4cb;font-size:9px;line-height:1.4;
+  font-family:var(--hud-font);
+  letter-spacing:.035em;
+}
+.trading-direction-compass[data-focus="BUY"] .trading-direction-verdict{
+  border-color:rgba(111,232,192,.37);
+}
+.trading-direction-compass[data-focus="BUY"] .trading-direction-verdict strong{color:#94efd5}
+.trading-direction-compass[data-focus="SELL"] .trading-direction-verdict{
+  border-color:rgba(255,174,143,.33);
+}
+.trading-direction-compass[data-focus="SELL"] .trading-direction-verdict strong{color:#ffbb9f}
+.trading-direction-columns{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+}
+.trading-direction-columns>div{
+  border:1px solid rgba(140,195,225,.12);
+  border-radius:12px;padding:11px 12px;
+  background:rgba(5,21,37,.45);
+}
+.trading-direction-label{
+  display:block;color:#a3c9df;font-size:10px;
+  font-weight:700;letter-spacing:.015em;margin-bottom:6px;
+}
+.trading-direction-columns p{
+  margin:0;color:#c7dce9;font-size:11px;
+  line-height:1.55;overflow-wrap:anywhere;
+}
+.trading-direction-next{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  margin-top:8px;padding:11px 12px;
+  border:1px solid rgba(255,194,112,.15);
+  border-radius:12px;background:rgba(82,51,18,.13);
+}
+.trading-direction-next strong{
+  display:block;color:#f4d3a1;font-size:11px;
+}
+.trading-direction-next p{
+  margin:4px 0 0;color:#b9cdd9;
+  font-size:10px;line-height:1.5;
+}
+.trading-direction-next small{
+  color:#92c5e1;font-size:10px;line-height:1.45;
+  text-align:right;max-width:255px;
+}
+@media(max-width:680px){
+  .trading-direction-compass{padding:12px;border-radius:16px}
+  .trading-direction-head{align-items:stretch;flex-direction:column;gap:9px}
+  .trading-direction-verdict{min-width:0;max-width:none}
+  .trading-direction-columns{grid-template-columns:1fr}
+  .trading-direction-next{align-items:flex-start;flex-direction:column;gap:7px}
+  .trading-direction-next small{max-width:none;text-align:left}
+}

@@ -1,3 +1,25 @@
+# v0.59.8 — Jarvis Direction Compass: BUY, SELL or WAIT without fake confidence
+
+## Added
+- A dedicated **DG Direction Compass** in the XAUUSD Trading area answers "which direction is more relevant?" separately from "can I enter now?"
+- Uses only the already-implemented real DG Macro/Trading bias, validated current Gold price, targets and registered Sellside sweeps via `DGTrendContext.read()`.
+- Reports **BUY-FOKUS**, **SELL-FOKUS**, or **WAIT / MIXED**, and visibly states why, which open target in that direction is actually beyond the current price, what contradicts it, and what evidence the DG rules require next.
+- Distinguishes aligned Monthly/Weekly and Daily/4H context from conflicting Macro/Trading Bias; countertrend BUY observations after registered low sweeps remain conditional, not auto-entries.
+- Voice and text Gold briefing reuses the very same Direction Compass and explicitly names the preferred *observation* direction and the independent DG Entry status.
+- No numerical "win probability" or confidence metric is fabricated.
+- Actual **DG BUY_READY/SELL_READY** is displayed only if the continuously verified Always-On engine reports that entry and complete entry zone, direction-correct SL invalidation and authentic directional target.
+- Browser-only trading brain remains **WAIT** for entries because it lacks continuous setup history; unavailable/stale feeds cannot produce directional market focus.
+- Premium responsive blue card, iPhone PWA asset versioning and regression coverage.
+
+## Tests
+- New `scripts/test-trading-direction-compass.js` covers bearish/bullish/mixed bias, macro conflicts, swept low reversal caveats, wrong-way targets, stale context, browser-only WAIT, continuous READY with complete risk plan and UI/voice wiring.
+- Extended voice regression tests that distinguish SELL-FOKUS from an entry signal.
+
+## Limitations
+- This is DG-rule-based decision support, not a prediction of guaranteed outcome or a statistical trading edge.
+- The existing TwelveData feed must supply verified current data and sufficient closed candles.
+- Continuous push and full event/missed-trade history require the separately hosted Always-On market server; no subscriptions or live orders were created.
+
 # v0.59.7 — Browser Trading Brain: echte XAUUSD-Kerzen, Trend, Ziele und Jarvis
 
 ## Implemented

@@ -324,6 +324,33 @@
       targets.find(t=>t&&t.direction===direction) || null;
   }
 
+  // Separate the evidence-backed directional WATCH preference from the
+  // DG engine's actual Entry/WAIT state. No guessed probability or signal.
+  function renderDirectionCompass(analysisBrain,liveVerified,continuousVerified,historical,price){
+    const result=typeof DGDirectionCompass!=='undefined'?
+      DGDirectionCompass.read(analysisBrain,{
+        liveVerified,continuousVerified,historical,price,
+        trendContext:typeof DGTrendContext!=='undefined'?DGTrendContext:null
+      }):{focus:'WAIT',headline:'Richtung nicht verfügbar',contextLabel:'MODUL FEHLT',
+        explanation:'Der DG Richtungs-Kompass ist nicht geladen.',
+        entryLabel:'ENTRY: WAIT',evidence:[],opposition:[],
+        nextStep:'Zuerst die vollständigen Marktdaten prüfen.',target:null};
+    const host=$('tradingDirectionCompass');
+    if(host)host.dataset.focus=result.focus||'WAIT';
+    text('tradingDirectionFocus',result.headline);
+    text('tradingDirectionQuality',result.contextLabel);
+    text('tradingDirectionExplanation',result.explanation);
+    text('tradingDirectionEvidence',result.evidence?.length?
+      result.evidence.join(' ') : 'Noch keine belastbare Richtungspräferenz belegt.');
+    text('tradingDirectionOpposition',result.opposition?.length?
+      result.opposition.join(' ') : 'Keine zusätzlichen Gegenargumente aus den aktuell geprüften Daten.');
+    text('tradingDirectionEntry',result.entryLabel);
+    text('tradingDirectionNextStep',result.nextStep);
+    text('tradingDirectionTarget',result.target?
+      'NÄCHSTES ZIEL · '+fmt(result.target.price)+' · '+result.target.reason:
+      'MARKT-ZIEL · NICHT IN RICHTUNG BESTÄTIGT');
+  }
+
   // Informational trend/target/low-sweep panel. Never derives a trade signal,
   // uses the same evidence gate and historical provenance as the command center.
   function renderContextTargetRows(id,items) {
@@ -516,6 +543,10 @@
     const bias=biasFrom(analysisBrain);
     const analysisReport=reportFrom(analysisBrain);
     renderTrendContext(analysisBrain,realBrain,Boolean(historical));
+    const compassPrice=feedGate.live
+      ? (typeof marketServerState!=='undefined'?marketServerState?.quote?.price:null)
+      :browserVerified?browser.quote?.price:null;
+    renderDirectionCompass(analysisBrain,realBrain,feedGate.live,Boolean(historical),compassPrice);
     renderSetupClarity(analysisBrain,realBrain,Boolean(historical));
 
     text('tradingActiveSession',

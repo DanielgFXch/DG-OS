@@ -89,7 +89,11 @@
       v?.direction===side&&finitePrice(v.price));
     const planComplete=zone&&typeof zone==='object'&&finitePrice(zone.priceLow)&&
       finitePrice(zone.priceHigh)&&zone.priceLow<=zone.priceHigh&&finitePrice(invalid)&&
-      Boolean(plannedTarget);
+      Boolean(plannedTarget)&&(
+        status==='BUY_READY'
+          ?invalid<zone.priceLow&&plannedTarget.price>zone.priceHigh
+          :invalid>zone.priceHigh&&plannedTarget.price<zone.priceLow
+      );
     const tradeReady=Boolean(rawReady&&planComplete);
     let entryLabel='ENTRY: WAIT / NO TRADE';
     if(status==='MISSED')entryLabel='ENTRY: MISSED · NICHT CHASEN';

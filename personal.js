@@ -2147,7 +2147,7 @@
   function answerTradingQuestion(question){
     const coach=window.DGOSJarvisConversation;
     if(!coach?.answerTrading)return 'Meine Trading-Analyse ist momentan nicht verfügbar.';
-    let live=null,snapshot=null,verified=false,liveQuote=null,browserQuote=null;
+    let live=null,snapshot=null,verified=false,continuousVerified=false,liveQuote=null,browserQuote=null;
     try{
       if(typeof DGTradingEvidenceGate!=='undefined'&&
          typeof marketServerState!=='undefined'&&
@@ -2160,6 +2160,7 @@
           maxAgeSeconds:FRESHNESS_THRESHOLDS.streaming.live
         });
         verified=gate.live===true;
+        continuousVerified=verified;
         if(verified){
           live=tradingBrainState;
           // The price is supplied only from the very same verified
@@ -2193,8 +2194,9 @@
       browserQuote=window.DGOSBrowserGoldFeed?.getQuote?.()||null;
     }catch(_){browserQuote=null;}
     return coach.answerTrading(question,{
-      liveBrain:live,liveVerified:verified,liveQuote,browserQuote,
-      historicalSnapshot:snapshot,now:new Date(),
+      liveBrain:live,liveVerified:verified,continuousVerified,
+      liveQuote,browserQuote,historicalSnapshot:snapshot,now:new Date(),
+      directionCompass:window.DGDirectionCompass,
       trendContext:window.DGTrendContext,
       setupClarity:window.DGSetupClarity,
       answerMarketQuestion:typeof answerMarketQuestion==='function'?answerMarketQuestion:null

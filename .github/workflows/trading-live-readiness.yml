@@ -10,6 +10,8 @@ on:
       - 'browser-trading-brain.js'
       - 'scripts/test-browser-trading-brain.js'
       - 'trading-trend-context.js'
+      - 'trading-direction-compass.js'
+      - 'scripts/test-trading-direction-compass.js'
       - 'trading-fomo-guard.js'
       - 'scripts/test-trading-fomo-guard.js'
       - 'scripts/test-trading-trend-context.js'
@@ -23,6 +25,8 @@ on:
     paths:
       - 'render.yaml'
       - 'trading-trend-context.js'
+      - 'trading-direction-compass.js'
+      - 'scripts/test-trading-direction-compass.js'
       - 'trading-fomo-guard.js'
       - 'trading-command.js'
       - 'trading-command.css'
@@ -60,5 +64,10 @@ jobs:
         run: |
           node --check browser-trading-brain.js
           node scripts/test-browser-trading-brain.js
+      - name: Verify independent BUY/SELL directional preference never forces an entry
+        run: |
+          node --check trading-direction-compass.js
+          node --check jarvis-conversation.js
+          node scripts/test-trading-direction-compass.js
       - name: Verify existing session clock and overlap rules
         run: node scripts/test-trading-session-clock.js

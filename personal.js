@@ -1904,11 +1904,11 @@
       setStatus(audioState==='STARTEN'?'Tippe auf ▶ zum Anhören':'Bereit');
     }
   });
-  function showReply(text) {
+  function showReply(text, outcome = 'Antwort') {
     panel.classList.remove('is-listening');
     panel.classList.add('is-speaking');
     setOrbState('speaking');
-    setStatus('Erledigt');
+    setStatus(outcome);
     setReply(text);
     // Speak only completed answers, never an interim listening/transcription state.
     window.dispatchEvent(new CustomEvent('dgos-jarvis-final-response',{detail:{text}}));
@@ -1966,7 +1966,7 @@
         return true;
       case 'task':
         if (focusTask(payload)) {
-          showReply(payload ? 'Aufgabe wurde an deine Aufgabenliste übergeben.' : 'Aufgabenliste ist bereit. Was möchtest du erledigen?');
+          showReply(payload ? 'Ich habe die Aufgabe ins Aufgabenformular übernommen. Prüfe bitte den Eintrag in der Aufgabenliste.' : 'Aufgabenliste ist bereit. Was möchtest du erledigen?','Formular geöffnet');
           return true;
         }
         break;
@@ -2102,10 +2102,12 @@
         if(response.status===401)throw Error('Gerätesitzung abgelaufen. Bitte erneut mit Telegram verbinden.');
         throw Error('Aufgabe konnte nicht gespeichert werden. Bitte erneut versuchen.');
       }
+      if(!result.task?.id || result.task.title!==command.title || result.task.due_date!==command.dueDate)
+        throw Error('Der Server hat die Aufgabe nicht eindeutig bestätigt. Bitte Aufgabenliste prüfen.');
       window.dispatchEvent(new Event('dgos-jarvis-tasks-updated'));
       const notice=command.kind==='payment_reminder'?' Ich habe keine Zahlung ausgeführt.':
         command.kind==='purchase_reminder'?' Es wurde noch nichts eingekauft.':'';
-      showReply('Gespeichert: «'+command.title+'» am '+command.dueDate+' ('+command.dateLabel+').'+notice);
+      showReply('Gespeichert in DG-OS: «'+command.title+'» am '+command.dueDate+' ('+command.dateLabel+').'+notice,'Gespeichert');
     }catch(e){shoppingFailure(e?.message||'Aufgabe konnte nicht gespeichert werden.');}
     finally{scheduledTaskInFlight=false;}
     return true;
@@ -2203,6 +2205,26 @@
     });
   }
 
+  // Voice and keyboard share one authenticated action bridge. Only server receipts count.
+  const verifiedActions=window.DGOSJarvisActions?.create({
+    lifeIntent:window.DGOSLifeIntent,
+    onThinking:message=>{
+      setOrbState('thinking');
+      setStatus('Wird gespeichert …');
+      setReply(message);
+    },
+    onSuccess:message=>showReply(message,'Gespeichert'),
+    onQuestion:message=>showReply(message,'Rückfrage'),
+    onError:message=>shoppingFailure(message),
+    onUpdate:type=>{
+      if(type==='tasks')window.dispatchEvent(new Event('dgos-jarvis-tasks-updated'));
+      else{
+        window.dispatchEvent(new Event('dgos-private-updated'));
+        window.dispatchEvent(new Event('dgos-jarvis-tasks-updated'));
+      }
+    }
+  });
+
   function interpretCommand(raw) {
     const original = String(raw || '').trim();
     if (!original) return false;
@@ -2267,6 +2289,9 @@
       return true;
     }
 
+
+    // Natural commands create tasks, appointments or notes through secured APIs.
+    if(verifiedActions?.handle(original))return true;
 
     // Explicit future actions take priority over immediate shopping.
     const planned = window.DGOSLifeIntent?.parseScheduledCommand(original);

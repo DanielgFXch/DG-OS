@@ -29,6 +29,7 @@ assert.equal(event.intent,'appointment');
 assert.equal(event.date,'2026-11-24');
 assert.equal(event.time,'15:00');
 assert.equal(actions.parse('Trag Termin Arzt am Sonntag ein',life,now).intent,'clarify');
+assert.equal(actions.parse('Trag Termin Arzt am Sonntag um 15 Uhr in Google Kalender ein',life,now).intent,'clarify');
 assert.equal(actions.parse('Notier eine Notiz: Ich will Jarvis verbessern',life,now).intent,'note');
 assert.equal(actions.parse('Aufgabe: Steuererklärung machen',life,now).date,life.todayZurich(now));
 assert.equal(actions.parse('Was ist am Sonntag wichtig?',life,now),null);

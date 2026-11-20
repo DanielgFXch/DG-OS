@@ -9,7 +9,8 @@
     "test:calendar": "node server/lib/googleCalendarIntegration.test.js",
     "test:integrations": "npm run test:gmail && npm run test:calendar && npm run test:whoop",
     "test:whoop": "node server/lib/whoopIntegration.test.js",
-    "test:voice": "node scripts/test-jarvis-voice.js"
+    "test:voice": "node scripts/test-jarvis-voice.js",
+    "test:jarvis-actions": "node scripts/test-jarvis-actions.js"
   },
   "engines": {
     "node": ">=22"

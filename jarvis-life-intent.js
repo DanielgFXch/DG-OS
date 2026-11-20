@@ -24,6 +24,25 @@
     const today=todayZurich(now);
     const index=new Date(today+'T12:00:00Z').getUTCDay();
     const nextMonday=plusDays(today,(8-index)%7||7);
+    // Explicit German dates: 24.11., 24.11.2026 or 24/11.
+    // An omitted year means the next occurrence in Europe/Zurich.
+    const numeric=/(?:^|\s)(\d{1,2})[./](\d{1,2})(?:[./](\d{2,4}))?(?=$|\s|[,;!?])/i.exec(text);
+    const monthNames={januar:1,februar:2,märz:3,maerz:3,april:4,mai:5,juni:6,
+      juli:7,august:8,september:9,oktober:10,november:11,dezember:12};
+    const written=/(?:^|\s)(\d{1,2})\.?\s+(januar|februar|märz|maerz|april|mai|juni|juli|august|september|oktober|november|dezember)(?:\s+(\d{4}))?(?=$|\s|[,;!?])/i.exec(text);
+    if(numeric||written){
+      const hit=numeric||written;
+      const day=Number(hit[1]);
+      const month=numeric?Number(hit[2]):monthNames[hit[2].toLocaleLowerCase('de')];
+      const yearText=hit[3]||'';
+      let year=yearText?(Number(yearText)<100?2000+Number(yearText):Number(yearText)):Number(today.slice(0,4));
+      const build=()=>String(year).padStart(4,'0')+'-'+String(month).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+      if(!yearText&&build()<today)year++;
+      const full=build();
+      const check=new Date(full+'T12:00:00Z');
+      if(year>=2000&&year<=2100&&check.toISOString().slice(0,10)===full)
+        return {date:full,label:day+'.'+String(month).padStart(2,'0')+'.'+year};
+    }
     let base=null, label='';
     if(/(?:^|\s)(?:übernächste|uebernaechste)\s+woche\b/.test(text)){base=plusDays(nextMonday,7);label='Montag übernächste Woche';}
     else if(/\b(?:nächste|naechste|kommende)\s+woche\b/.test(text)){base=nextMonday;label='Montag nächste Woche';}

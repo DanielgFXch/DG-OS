@@ -8,7 +8,7 @@
 })(typeof globalThis!=='undefined'?globalThis:this,function(){
   'use strict';
   const TRANSCRIBE='https://jzvnmhfhyvmmbontsoej.supabase.co/functions/v1/jarvis-private?action=transcribe';
-  const MAX_MS=15000, MAX_BYTES=1900000;
+  const MAX_MS=30000, MAX_BYTES=1900000;
   function isIOS(userAgent,platform,touchPoints){
     return /iPad|iPhone|iPod/i.test(userAgent||'') || (platform==='MacIntel' && Number(touchPoints)>1);
   }

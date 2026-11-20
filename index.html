@@ -206,7 +206,7 @@
               <p id="jarvisLastQuestion"></p>
             </div>
             <div class="jpr-reply-meta"><strong>JARVIS · ANTWORTET</strong><time id="jarvisReplyTime" aria-label="Zeit der letzten Antwort">—</time></div>
-            <p id="personalJarvisReply" class="jarvis-reply" aria-live="polite">Sag mir, was du brauchst.</p>
+            <p id="personalJarvisReply" class="jarvis-reply" aria-live="polite">Sag mir, was du brauchst. Ich bestätige dir nach dem Speichern, was wirklich erledigt wurde.</p>
             <div class="jpr-waveform" aria-hidden="true">
               <i style="--h:7"></i><i style="--h:14"></i><i style="--h:9"></i><i style="--h:22"></i><i style="--h:12"></i><i style="--h:28"></i><i style="--h:20"></i><i style="--h:35"></i><i style="--h:13"></i><i style="--h:25"></i><i style="--h:10"></i><i style="--h:18"></i><i style="--h:8"></i><i style="--h:12"></i><i style="--h:30"></i><i style="--h:39"></i><i style="--h:25"></i><i style="--h:11"></i><i style="--h:19"></i><i style="--h:8"></i><i style="--h:20"></i><i style="--h:11"></i><i style="--h:16"></i><i style="--h:8"></i><i style="--h:23"></i><i style="--h:9"></i><i style="--h:16"></i><i style="--h:8"></i>
             </div>
@@ -310,7 +310,7 @@
 
       <form id="jarvisLifeCommandForm" class="jarvis-life-command" autocomplete="off">
         <span aria-hidden="true">⌘</span>
-        <input id="jarvisLifeCommandInput" type="text" maxlength="320" placeholder="Schreiben oder sprechen: «Ich brauche Milch»" aria-label="Jarvis Befehl" />
+        <input id="jarvisLifeCommandInput" type="text" maxlength="1000" placeholder="Sprich oder schreib: «Erinnere mich am Sonntag an Sanitas»" aria-label="Jarvis Befehl" />
         <button type="submit" aria-label="Befehl ausführen">→</button>
       </form>
 
@@ -1694,6 +1694,7 @@
   <script src="./jarvis-replies.js?v=1"></script>
   <script src="./trading-direction-compass.js?v=1"></script>
   <script src="./jarvis-conversation.js?v=4"></script>
+   <script src="./jarvis-action-bridge.js?v=1"></script>
   <script src="./jarvis-trading-coach-engine.js?v=1"></script>
   <script src="./jarvis-market-chart.js?v=3"></script>
   <script src="./personal.js?v=0.59.12.8"></script>

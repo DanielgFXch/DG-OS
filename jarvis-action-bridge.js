@@ -41,6 +41,11 @@
           return {intent:'tasks',date:when.date,dateLabel:when.label,items:[...new Set(entries)].map(title=>({title:title+' klären',notes:'Als offene Aufgabe vorgemerkt. Es wurde nichts bezahlt oder versendet.'}))};
       }
     }
+    // Do not silently write to the DG-OS calendar when the owner explicitly
+    // requested a different provider.
+    if(/\b(?:termin|meeting|treffen|arzttermin|besprechung)\b/i.test(text)&&
+       /\b(?:google\s+kalender|icloud|outlook)\b/i.test(text))
+      return {intent:'clarify',message:'Ich kann den Termin hier direkt im DG-OS-Kalender speichern. Für Google, iCloud oder Outlook fehlt die direkte Schreibfreigabe. Sag bitte ausdrücklich DG-OS-Kalender, wenn ich ihn dort eintragen soll.'};
     if(/\b(?:termin|meeting|treffen|arzttermin|besprechung)\b/i.test(text)&&
        /\b(?:eintrag\w*|trag\w*|erstell\w*|speicher\w*|notier\w*|plan\w*|vereinbar\w*|habe|haben)\b/i.test(text)&&
        !/\b(?:absagen|stornieren|verschieben|löschen)\b/i.test(text)){

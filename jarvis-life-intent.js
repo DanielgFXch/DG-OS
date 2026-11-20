@@ -40,7 +40,7 @@
       if(!yearText&&build()<today)year++;
       const full=build();
       const check=new Date(full+'T12:00:00Z');
-      if(year>=2000&&year<=2100&&check.toISOString().slice(0,10)===full)
+      if(year>=2000&&year<=2100&&Number.isFinite(check.getTime())&&check.toISOString().slice(0,10)===full)
         return {date:full,label:day+'.'+String(month).padStart(2,'0')+'.'+year};
     }
     let base=null, label='';

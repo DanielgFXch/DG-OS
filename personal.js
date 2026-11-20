@@ -344,6 +344,7 @@
   readHubStatus().finally(()=>{greet();render();});
   window.addEventListener('focus',()=>{jarvisRangeKey='';render();});
   window.addEventListener('dgos-device-session',()=>{jarvisRangeKey='';render();});
+  window.addEventListener('dgos-private-updated',()=>{jarvisRangeKey='';render();});
   setInterval(()=>{greet();jarvisRangeKey='';render();},60000);
 })();
 

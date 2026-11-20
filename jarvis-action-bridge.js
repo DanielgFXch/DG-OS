@@ -60,12 +60,20 @@
       let title=text.replace(/^(?:bitte\s+)?(?:notier\w*|schreib\w*)\s*(?:(?:mir|dir)\s+)?(?:eine\s+)?(?:notiz\s*)?(?:dass\s+|:\s*|über\s+|zu\s+)?/i,'').trim();
       if(title.length>=4&&title.length<=240&&title!==text)return {intent:'note',title};
     }
-    if(when&&/^(?:erinnere?\s+(?:mich|uns)|erinnerung|reminder|denk\s+dran|denke\s+daran)\b/i.test(text)){
-      let task=withoutDate(text.replace(/^(?:erinnere?\s+(?:mich|uns)|erinnerung|reminder|denk\s+dran|denke\s+daran)\s*/i,''))
+    if(when&&/^(?:erinnere?\s+(?:mich|uns)|erinnerung|reminder|denk\s+dran|denke\s+daran|merk(?:e)?\s+(?:dir|mir)|notier(?:e)?\s+(?:dir|mir))\b/i.test(text)){
+      let task=withoutDate(text.replace(/^(?:erinnere?\s+(?:mich|uns)|erinnerung|reminder|denk\s+dran|denke\s+daran|merk(?:e)?\s+(?:dir|mir)|notier(?:e)?\s+(?:dir|mir))\s*/i,''))
         .replace(/^(?:(?:daran|darauf)\s*,?\s*)?(?:(?:dass|an|wegen|zu)\s+)?/i,'').replace(/[.!?,;]+$/,'').trim();
       if(task.length<3||task.length>190||/[\n<>[\]{}]/.test(task))
         return {intent:'clarify',message:'Was genau soll ich dir für '+when.label+' notieren?'};
       return {intent:'tasks',date:when.date,dateLabel:when.label,time:timeFrom(text),items:[{title:task[0].toUpperCase()+task.slice(1),notes:'Als Aufgabe notiert. Eine Push-Benachrichtigung wird dadurch nicht automatisch aktiviert.'}]};
+    }
+    // A bare "Aufgabe: ..." is an explicit task command. Without a date
+    // it belongs to today, and Jarvis states the chosen date in its receipt.
+    if(/^(?:aufgabe|todo|to-do)\s*[: -]\s*\S/i.test(text)){
+      const title=withoutDate(text.replace(/^(?:aufgabe|todo|to-do)\s*[: -]\s*/i,'')).trim();
+      if(title.length>=3&&title.length<=200&&!/[\n<>[\]{}]/.test(title))
+        return {intent:'tasks',date:when?.date||life?.todayZurich?.(now),
+          dateLabel:when?.label||'Heute',items:[{title,notes:'Als Aufgabe direkt mit Jarvis erfasst.'}]};
     }
     return null;
   }
